@@ -1,0 +1,201 @@
+== BinData
+
+A declarative way to read and write structured binary data.
+
+== Why?
+
+Let's suppose we wish to write a ruby program that manipulates an ELF file.
+(Elf is the executable file format for Linux - amongst others.  Examine
+/usr/include/elf.h for details.)  To simplify the example, we'll assume 32bit
+little endian files only.
+
+To read in the Ehdr we'd write something like this:
+  EV_CURRENT = 1
+  io = File.open(...)
+  string = io.read(16)
+  @eid, @cls, @encoding, @iversion, @padding = string.unpack("a4CCCa9")
+  raise "Not an elf file" unless @eid == "\x7fELF"
+  raise "Bad version" unless @iversion == EV_CURRENT
+  string = io.read(36)
+  @etype, @machine, @version, @entry,
+  @phoff, @shoff, @flags, @ehsize,
+  @phentsize, @phnom, @shentsize,
+  @shnum, @shstrndx = string.unpack("vvVVVVVvvvvvv")
+  raise "Bad version" unless @version == EV_CURRENT
+
+And to write, we'd do something similar with Array.pack.
+
+This is ugly.  It is difficult for a reader to understand the structure of the
+file format from glancing at the code.  Even worse, it fails to follow DRY
+(Don't Repeat Yourself) as the reader and writer functions will be near
+identical.
+
+BinData allows us to declare the structure of the data in a human readable
+way.
+
+  require 'bindata'
+  class Ehdr < BinData::Struct
+    EV_CURRENT = 1
+
+    string   :eid, :length => 4, :check_value => "\x7fELF"
+    uint8    :cls
+    uint8    :encoding
+    uint8    :iversion, :check_value => EV_CURRENT
+    string   :padding, :length => 9
+    uint16le :etype
+    uint16le :machine
+    uint32le :version, :check_value => EV_CURRENT
+    uint32le :entry
+    uint32le :phoff
+    uint32le :shoff
+    uint32le :flags
+    uint16le :hsize
+    uint16le :phentsize
+    uint16le :phnum
+    uint16le :shentsize
+    uint16le :shnum
+    uint16le :shstrndx
+  end
+
+Reading, writing and field access is simple.
+
+  io = File.open(...)
+  e = Ehdr.new
+  e.read(io)
+  puts "phoffset is at " + e.phoff
+  
+  io = File.open(...)
+  e = Ehdr.new
+  e.phnum = XX   # modify fields
+  ...
+  e.write(io)
+
+== Handling dependencies between fields
+
+A common occurance in binary file formats is one field depending upon the value
+of another.  e.g. A string preceeded by it's length.
+
+As an example, let's assume a Pascal style string where the byte preceeding the
+string contains the string's length.
+
+  # reading
+  io = File.open(...)
+  len = io.getc
+  str = io.read(len)
+  puts "string is " + str
+
+  # writing
+  io = File.open(...)
+  str = "this is a string"
+  io.putc(str.length)
+  io.write(str)
+
+Here's how we'd implement the same example with BinData.
+
+  class PascalString < BinData::Struct
+    uint8  :len,  :value => lambda { data.length }
+    string :data, :initial_length => :len
+  end
+
+  # reading
+  io = File.open(...)
+  ps = PascalString.new
+  ps.read(io)
+  puts "string is " + ps.data
+
+  # writing
+  io = File.open(...)
+  ps = PascalString.new
+  ps.data = "this is a string"
+  ps.write(io)
+
+This syntax needs explaining.  Let's simplify by examining reading and writing
+separately.
+
+  class PascalStringReader < BinData::Struct
+    uint8  :len
+    string :data, :initial_length => :len
+  end
+
+This states that when reading the string, the initial length of the string
+(and hence the number of bytes to read) is determined by the value of the
++len+ field.
+
+Note that <tt>:initial_length => :len</tt> is syntactic sugar for
+<tt>:initial_length => lambda { len }</tt>, but more on that later.
+
+  class PascalStringWriter < BinData::Struct
+    uint8  :len, :value => lambda { data.length }
+    string :data
+  end
+
+This states that the value of +len+ is always equal to the length of +data+.
++len+ may not be manually modified.
+
+Combining these two definitions gives the definition for +PascalString+ as
+previously defined.
+
+== Primitive Types
+
+Structured binary data is composed of primitive types.  The defined
+primitive types are:
+
+* Integers
+* Strings
+* Null terminated strings
+* Arrays
+* Choices
+* Structures
+
+=== Integers
+
+Both signed and unsigned integers are predefined.  Integers have an endian
+(big or little) and a size in bits (8, 16, 32).
+
+=== Strings
+
+Strings are a sequence of bytes.  The issue of character encoding is ignored.
+Strings may contain the zero byte "\0".  If the length of a string is
+specified, short strings can be padded to the desired length.
+
+=== Null terminated strings
+
+A sequence of non zero bytes.
+
+=== Arrays
+
+=== Choices
+
+=== Structures
+
+
+== Parameters
+
+  class PascalStringWriter < BinData::Struct
+    uint8  :len, :value => lambda { data.length }
+    string :data
+  end
+
+Revisiting the Pascal string writer, we see that a field can take
+parameters.  Parameters are passed as a Hash, where the key is a symbol.
+It should be noted that parameters are designed to be lazily evaluated,
+possibly multiple times.  This means that any parameter value must not have
+side effects.
+
+Here are some examples of legal values for parameters.
+
+* :param => 5
+* :param => lambda { 5 + 2 }
+* :param => lambda { foo + 2 }
+* :param => :foo
+
+The simplest case is when the value is a literal value, such as 5.
+
+If the value is not a literal, it is expected to be a lambda.  The lambda
+will be evaluated in the context of the parent, in this case the parent is
+an instance of +PascalStringWriter+.
+
+If the value is a symbol, it is taken as syntactic sugar for a lambda
+containing the value of the symbol.
+e.g <tt>:param => :foo</tt> is <tt>:param => lambda { foo }</tt>
+

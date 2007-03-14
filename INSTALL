@@ -1,0 +1,7 @@
+  ($ su)
+  # ruby setup.rb
+
+This simple step installs bindata under the default location for Ruby
+libraries.  You can also customize the installation by supplying some
+options to setup.rb.
+Try "ruby setup.rb --help".
