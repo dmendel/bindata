@@ -17,7 +17,8 @@ module BinData
   # [<tt>:check_offset</tt>]  Raise an error if the current IO offest doesn't
   #                           meet this criteria.  A boolean return indicates
   #                           success or failure.  Any other return is compared
-  #                           to the current offset.
+  #                           to the current offset.  This parameter is
+  #                           only checked before reading.
   class Base
     class << self
       # Returns the mandatory parameters used by this class.  Any given args
@@ -157,7 +158,7 @@ module BinData
     end
 
     # Returns whether this data object contains a single value.  Single
-    # value data objects respond to <tt>value</tt> and <tt>value=</tt>.
+    # value data objects respond to <tt>#value</tt> and <tt>#value=</tt>.
     def single_value?
       respond_to? :value
     end

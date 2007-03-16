@@ -3,6 +3,8 @@ require 'bindata/base'
 module BinData
   # A Struct is an ordered collection of named data objects.
   #
+  #    require 'bindata'
+  #
   #    class Tuple < BinData::Struct
   #      int8  :x
   #      int8  :y
@@ -38,7 +40,7 @@ module BinData
   #                    by name.
   class Struct < Base
     # A hash that can be accessed via attributes.
-    class Snapshot < Hash
+    class Snapshot < Hash #:nodoc:
       def method_missing(symbol, *args)
         self[symbol.id2name] || super
       end
@@ -224,7 +226,7 @@ module BinData
     end
 
     # Returns whether this data object contains a single value.  Single
-    # value data objects respond to <tt>value</tt> and <tt>value=</tt>.
+    # value data objects respond to <tt>#value</tt> and <tt>#value=</tt>.
     def single_value?
       # need to use original respond_to? to prevent infinite recursion
       orig_respond_to?(:value)

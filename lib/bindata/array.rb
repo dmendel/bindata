@@ -3,6 +3,14 @@ require 'bindata/base'
 module BinData
   # An Array is a list of data objects of the same type.
   #
+  #   require 'bindata'
+  #   require 'stringio'
+  #
+  #   a = BinData::Array.new(:type => :int8, :initial_length => 5)
+  #   io = StringIO.new("\x03\x04\x05\x06\x07")
+  #   a.read(io)
+  #   a.snapshot #=> [3, 4, 5, 6, 7]
+  #
   # == Parameters
   #
   # Parameters may be provided at initialisation to control the behaviour of
@@ -11,7 +19,7 @@ module BinData
   # <tt>:type</tt>::           The symbol representing the data type of the
   #                            array elements.  If the type is to have params
   #                            passed to it, then it should be provided as
-  #                            [type_symbol, hash_params].
+  #                            <tt>[type_symbol, hash_params]</tt>.
   # <tt>:initial_length</tt>:: The initial length of the array.
   class Array < Base
     include Enumerable

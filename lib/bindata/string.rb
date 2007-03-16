@@ -6,7 +6,7 @@ module BinData
   #
   # == Parameters
   #
-  # String objects accept all the params that BinData:Single
+  # String objects accept all the params that BinData::Single
   # does, as well as the following:
   #
   # <tt>:initial_length</tt>:: The initial length to use before a value is
@@ -16,7 +16,7 @@ module BinData
   # <tt>:pad_char</tt>::       The character to use when padding a string to a
   #                            set length.  Valid values are Integers and
   #                            Strings of length 1.  "\0" is the default.
-  # <tt>:trim_value</tt>::     Boolean, default false.  If set #value will
+  # <tt>:trim_value</tt>::     Boolean, default false.  If set, #value will
   #                            return the value with all pad_chars trimmed
   #                            from the end of the string.  The value will
   #                            not be trimmed when writing.

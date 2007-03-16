@@ -9,7 +9,7 @@ module BinData
   #
   # == Parameters
   #
-  # Stringz objects accept all the params that BinData:Single
+  # Stringz objects accept all the params that BinData::Single
   # does, as well as the following:
   #
   # <tt>:max_length</tt>:: The maximum length of the string including the zero

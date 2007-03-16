@@ -9,7 +9,7 @@ module BinData
   # == Parameters
   #
   # Parameters may be provided at initialisation to control the behaviour of
-  # an object.  These params are:
+  # an object.  These params include those for BinData::Base as well as:
   #
   # [<tt>:initial_value</tt>] This is the initial value to use before one is
   #                           either #read or explicitly set with #value=.
@@ -87,7 +87,7 @@ module BinData
       value
     end
 
-    # Single objects don't contain fields.
+    # Single objects don't contain fields so this returns an empty list.
     def field_names
       []
     end

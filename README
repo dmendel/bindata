@@ -1,82 +1,90 @@
-== BinData
+= BinData
 
 A declarative way to read and write structured binary data.
 
-== Why?
+== What is it for?
 
-Let's suppose we wish to write a ruby program that manipulates an ELF file.
-(Elf is the executable file format for Linux - amongst others.  Examine
-/usr/include/elf.h for details.)  To simplify the example, we'll assume 32bit
-little endian files only.
+Do you ever find yourself writing code like this?
 
-To read in the Ehdr we'd write something like this:
-  EV_CURRENT = 1
   io = File.open(...)
-  string = io.read(16)
-  @eid, @cls, @encoding, @iversion, @padding = string.unpack("a4CCCa9")
-  raise "Not an elf file" unless @eid == "\x7fELF"
-  raise "Bad version" unless @iversion == EV_CURRENT
-  string = io.read(36)
-  @etype, @machine, @version, @entry,
-  @phoff, @shoff, @flags, @ehsize,
-  @phentsize, @phnom, @shentsize,
-  @shnum, @shstrndx = string.unpack("vvVVVVVvvvvvv")
-  raise "Bad version" unless @version == EV_CURRENT
+  len = io.read(2).unpack("v")
+  name = io.read(len)
+  width, height = io.read(8).unpack("VV")
+  puts "Rectangle #{name} is #{width} x #{height}"
 
-And to write, we'd do something similar with Array.pack.
+It's ugly, violates DRY and feels like you're writing Perl, not Ruby.
+There is a better way.
 
-This is ugly.  It is difficult for a reader to understand the structure of the
-file format from glancing at the code.  Even worse, it fails to follow DRY
-(Don't Repeat Yourself) as the reader and writer functions will be near
-identical.
-
-BinData allows us to declare the structure of the data in a human readable
-way.
-
-  require 'bindata'
-  class Ehdr < BinData::Struct
-    EV_CURRENT = 1
-
-    string   :eid, :length => 4, :check_value => "\x7fELF"
-    uint8    :cls
-    uint8    :encoding
-    uint8    :iversion, :check_value => EV_CURRENT
-    string   :padding, :length => 9
-    uint16le :etype
-    uint16le :machine
-    uint32le :version, :check_value => EV_CURRENT
-    uint32le :entry
-    uint32le :phoff
-    uint32le :shoff
-    uint32le :flags
-    uint16le :hsize
-    uint16le :phentsize
-    uint16le :phnum
-    uint16le :shentsize
-    uint16le :shnum
-    uint16le :shstrndx
+  class Rectangle < BinData::Struct
+    uint16le :len
+    string   :name, :initial_length => :len
+    uint32le :width
+    uint32le :height
   end
 
-Reading, writing and field access is simple.
+  io = File.open(...)
+  r = Rectangle.read(io)
+  puts "Rectangle #{r.name} is #{r.width} x #{r.height}"
 
-  io = File.open(...)
-  e = Ehdr.new
-  e.read(io)
-  puts "phoffset is at " + e.phoff
-  
-  io = File.open(...)
-  e = Ehdr.new
-  e.phnum = XX   # modify fields
-  ...
-  e.write(io)
+BinData makes it easy to specify the structure of the data you are
+manipulating.
+
+Read on for the tutorial, or go straight to the
+download[http://rubyforge.org/frs/?group_id=3252] page.
+
+== Syntax
+
+BinData declarations are easy to read.  Here's an example.
+
+  class MyFancyFormat < BinData::Struct
+    stringz :comment
+    uint8   :count, :check_value => lambda { (value % 2) == 0 }
+    array   :some_ints, :type => :int32be, :initial_length => :count
+  end
+
+The structure of the data in this example is
+1. A zero terminated string
+2. An unsigned 8bit integer which must by even
+3. A sequence of unsigned 32bit integers in big endian form, the total
+   number of which is determined by the value of the 8bit integer.
+
+The BinData declaration matches the english description closely.  Just for
+fun, lets look at how we'd implement this using #pack and #unpack.  Here's
+the writing function, have a go at the reading function.
+
+  def write_my_fancy_format(io, comment, some_ints)
+    comment = "this is a comment"
+    some_ints = [2, 3, 8, 9, 1, 8]
+    io.write([comment, some_ints.size, *some_ints].pack("Z*CN*"))
+  end
+
+
+The general format of a BinData declaration is a class containing one or more
+fields.
+
+  class MyName < BinData::Struct
+    type field_name, :param1 => "foo", :param2 => bar, ...
+    ...
+  end
+
+*type* is the name of a supplied type (e.g. +uint32be+,  +string+) or a
+user defined type.  For user defined types, convert the class name from
+CamelCase to lowercase underscore_style.
+
+*field_name* is the name by which you can access the data.  Use either a
+String or a Symbol.  You may specify a name as nil, but this is described
+later in the tutorial.
+
+Each field may have *parameters* for how to process the data.  The
+parameters are passed as a Hash using Symbols for keys.
 
 == Handling dependencies between fields
 
-A common occurance in binary file formats is one field depending upon the value
-of another.  e.g. A string preceeded by it's length.
+A common occurance in binary file formats is one field depending upon the
+value of another.  e.g. A string preceded by it's length.
 
-As an example, let's assume a Pascal style string where the byte preceeding the
-string contains the string's length.
+As an example, let's assume a Pascal style string where the byte preceding
+the string contains the string's length.
 
   # reading
   io = File.open(...)
@@ -109,8 +117,8 @@ Here's how we'd implement the same example with BinData.
   ps.data = "this is a string"
   ps.write(io)
 
-This syntax needs explaining.  Let's simplify by examining reading and writing
-separately.
+This syntax needs explaining.  Let's simplify by examining reading and
+writing separately.
 
   class PascalStringReader < BinData::Struct
     uint8  :len
@@ -135,39 +143,33 @@ This states that the value of +len+ is always equal to the length of +data+.
 Combining these two definitions gives the definition for +PascalString+ as
 previously defined.
 
-== Primitive Types
+Once thing to note with dependencies, is that a field can only depend on one
+before it.  You can't have a string which has the characters first and the
+length afterwards.
 
-Structured binary data is composed of primitive types.  The defined
-primitive types are:
+== Predefined Types
 
-* Integers
-* Strings
-* Null terminated strings
-* Arrays
-* Choices
-* Structures
+These are the predefined types.  Custom types can be created by composing
+these types.
 
-=== Integers
+BinData::Int8::     Signed  8 bit integer.
+BinData::Int16le::  Signed 16 bit integer (little endian).
+BinData::Int16be::  Signed 16 bit integer (big endian).
+BinData::Int32le::  Signed 32 bit integer (little endian).
+BinData::Int32be::  Signed 32 bit integer (big endian).
 
-Both signed and unsigned integers are predefined.  Integers have an endian
-(big or little) and a size in bits (8, 16, 32).
+BinData::Uint8::    Unsigned  8 bit integer.
+BinData::Uint16le:: Unsigned 16 bit integer (little endian).
+BinData::Uint16be:: Unsigned 16 bit integer (big endian).
+BinData::Uint32le:: Unsigned 32 bit integer (little endian).
+BinData::Uint32be:: Unsigned 32 bit integer (big endian).
 
-=== Strings
+BinData::String::   A sequence of bytes.
+BinData::Stringz::  A zero terminated sequence of bytes.
 
-Strings are a sequence of bytes.  The issue of character encoding is ignored.
-Strings may contain the zero byte "\0".  If the length of a string is
-specified, short strings can be padded to the desired length.
-
-=== Null terminated strings
-
-A sequence of non zero bytes.
-
-=== Arrays
-
-=== Choices
-
-=== Structures
-
+BinData::Array::    A list of objects of the same type.
+BinData::Choice::   A choice between several objects.
+BinData::Struct::   An ordered collection of named objects.
 
 == Parameters
 
@@ -184,10 +186,10 @@ side effects.
 
 Here are some examples of legal values for parameters.
 
-* :param => 5
-* :param => lambda { 5 + 2 }
-* :param => lambda { foo + 2 }
-* :param => :foo
+  * :param => 5
+  * :param => lambda { 5 + 2 }
+  * :param => lambda { foo + 2 }
+  * :param => :foo
 
 The simplest case is when the value is a literal value, such as 5.
 
@@ -199,3 +201,15 @@ If the value is a symbol, it is taken as syntactic sugar for a lambda
 containing the value of the symbol.
 e.g <tt>:param => :foo</tt> is <tt>:param => lambda { foo }</tt>
 
+== Creating custom types
+
+Custom types should be created by subclassing BinData::Struct.
+Ocassionally it may be useful to subclass BinData::Single.  Subclassing
+other classes may have unexpected results and is unsupported.
+
+
+== License
+
+BinData is released under the same license as Ruby.
+
+Copyright (c) 2007 Dion Mendel

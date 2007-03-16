@@ -4,6 +4,13 @@ module BinData
   # A Choice is a collection of data objects of which only one is active
   # at any particular time.
   #
+  #   require 'bindata'
+  #   require 'stringio'
+  #
+  #   choices = [ [:int8, {:value => 3}], [:int8, {:value => 5}] ]
+  #   a = BinData::Choice.new(:choices => choices, :selection => 1)
+  #   a.value # => 5
+  #
   # == Parameters
   #
   # Parameters may be provided at initialisation to control the behaviour of
