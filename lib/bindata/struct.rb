@@ -87,6 +87,12 @@ module BinData
           raise SyntaxError, "duplicate field '#{name}' in #{self}", caller
         end
 
+        # check that name doesn't shadow an existing method
+        if self.instance_methods.include?(name)
+          raise NameError.new("", name),
+                "field '#{name}' shadows an existing method", caller
+        end
+
         # remember this field.  These fields will be recalled upon creating
         # an instance of this class
         @fields.push([type, name, params])
@@ -110,6 +116,9 @@ module BinData
       @fields = param(:fields).collect do |type, name, params|
         klass = self.class.lookup(type)
         raise TypeError, "unknown type '#{type}' for #{self}" if klass.nil?
+        if methods.include?(name)
+          raise NameError.new("field '#{name}' shadows an existing method",name)
+        end
         [name, klass.new(params, create_env)]
       end
     end

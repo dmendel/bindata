@@ -58,6 +58,20 @@ context "Defining a Struct" do
       END
     }.should raise_error(SyntaxError)
   end
+
+  specify "should fail when field name shadows an existing method" do
+    lambda {
+      eval <<-END
+        class ExistingName < BinData::Struct
+          int8 :object_id
+        end
+      END
+    }.should raise_error(NameError)
+
+    lambda {
+      BinData::Struct.new(:fields => [[:int8, :object_id]])
+    }.should raise_error(NameError)
+  end
 end
 
 context "A Struct with multiple fields" do
