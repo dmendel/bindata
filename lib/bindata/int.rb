@@ -4,168 +4,168 @@ module BinData
   # Provides a number of classes that contain an integer.  The integer
   # is defined by endian, signedness and number of bytes.
 
-  module BaseUint #:nodoc: all
-
-    def value=(val)
-      super(clamp(val))
-    end
-
-    #---------------
-    private
-
-    def sensible_default
-      0
-    end
-
-    def val_to_str(val)
-      _val_to_str(clamp(val))
-    end
-
-    # Clamps +val+ to the range 0 .. max_val
-    def clamp(val)
-      v = val
-      nbytes = val_num_bytes(0)
-      min = 0
-      max = (1 << (nbytes * 8)) - 1
-      val = min if val < min
-      val = max if val > max
-      val
-    end
-  end
-
-  module BaseInt #:nodoc: all
-    def uint2int(val)
-      nbytes = val_num_bytes(0)
-      mask = (1 << (nbytes * 8 - 1)) - 1
-      msb = (val >> (nbytes * 8 - 1)) & 0x1
-      (msb == 1) ? -(((~val) & mask) + 1) : val & mask
-    end
-
-    def int2uint(val)
-      nbytes = val_num_bytes(0)
-      mask = (1 << (nbytes * 8)) - 1
-      val & mask
-    end
-
-    def value=(val)
-      super(clamp(val))
-    end
-
-    #---------------
-    private
-
-    def sensible_default
-      0
-    end
-
-    def val_to_str(val)
-      _val_to_str(int2uint(clamp(val)))
-    end
-
-    def read_val(io)
-      uint2int(_read_val(io))
-    end
-
-    # Clamps +val+ to the range min_val .. max_val, where min and max
-    # are the largest representable integers.
-    def clamp(val)
-      nbytes = val_num_bytes(0)
-      max = (1 << (nbytes * 8 - 1)) - 1
+  module Integer #:nodoc: all
+    def self.create_int_methods(klass, nbits, endian)
+      max = (1 << (nbits - 1)) - 1
       min = -(max + 1)
-      val = min if val < min
-      val = max if val > max
-      val
+      clamp = "val = (val < #{min}) ? #{min} : (val > #{max}) ? #{max} : val"
+
+      int2uint = "val = val & #{(1 << nbits) - 1}"
+      uint2int = "val = ((val & #{1 << (nbits - 1)}).zero?) ? " +
+                 "val & #{max} : -(((~val) & #{max}) + 1)"
+
+      read = create_read_code(nbits, endian)
+      to_s = create_to_s_code(nbits, endian)
+
+      define_methods(klass, nbits / 8, clamp, read, to_s, int2uint, uint2int)
+    end
+
+    def self.create_uint_methods(klass, nbits, endian)
+      min = 0
+      max = (1 << nbits) - 1
+      clamp = "val = (val < #{min}) ? #{min} : (val > #{max}) ? #{max} : val"
+
+      read = create_read_code(nbits, endian)
+      to_s = create_to_s_code(nbits, endian)
+
+      define_methods(klass, nbits / 8, clamp, read, to_s)
+    end
+
+    def self.create_read_code(nbits, endian)
+      c16 = (endian == :little) ? 'v' : 'n'
+      c32 = (endian == :little) ? 'V' : 'N'
+      b1  = (endian == :little) ? 0 : 1
+      b2  = (endian == :little) ? 1 : 0
+
+      case nbits
+      when  8; "readbytes(io,1)[0]"
+      when 16; "readbytes(io,2).unpack('#{c16}').at(0)"
+      when 32; "readbytes(io,4).unpack('#{c32}').at(0)"
+      when 64; "(a = readbytes(io,8).unpack('#{c32 * 2}'); " +
+                     "(a.at(#{b2}) << 32) + a.at(#{b1}))"
+      else
+        raise "unknown nbits '#{nbits}'"
+      end
+    end
+
+    def self.create_to_s_code(nbits, endian)
+      c16 = (endian == :little) ? 'v' : 'n'
+      c32 = (endian == :little) ? 'V' : 'N'
+      v1  = (endian == :little) ? 'val' : '(val >> 32)'
+      v2  = (endian == :little) ? '(val >> 32)' : 'val'
+
+      case nbits
+      when  8; "val.chr"
+      when 16; "[val].pack('#{c16}')"
+      when 32; "[val].pack('#{c32}')"
+      when 64; "[#{v1} & 0xffffffff, #{v2} & 0xffffffff].pack('#{c32 * 2}')"
+      else
+        raise "unknown nbits '#{nbits}'"
+      end
+    end
+
+    def self.define_methods(klass, nbytes, clamp, read, to_s,
+                            int2uint = nil, uint2int = nil)
+      # define methods in the given class
+      klass.module_eval <<-END
+        def value=(val)
+          #{clamp}
+          super(val)
+        end
+
+        def _num_bytes(ignored)
+          #{nbytes}
+        end
+
+        #---------------
+        private
+
+        def sensible_default
+          0
+        end
+
+        def val_to_str(val)
+          #{clamp}
+          #{int2uint unless int2uint.nil?}
+          #{to_s}
+        end
+
+        def read_val(io)
+          val = #{read}
+          #{uint2int unless uint2int.nil?}
+        end
+      END
     end
   end
 
 
   # Unsigned 1 byte integer.
   class Uint8 < Single
-    include BaseUint
-    private
-    def val_num_bytes(val) 1 end
-    def read_val(io)       readbytes(io,1)[0] end
-    def _val_to_str(val)   val.chr end
+    Integer.create_uint_methods(self, 8, :little)
   end
 
   # Unsigned 2 byte little endian integer.
   class Uint16le < Single
-    include BaseUint
-    private
-    def val_num_bytes(val) 2 end
-    def read_val(io)       readbytes(io,2).unpack("v")[0] end
-    def _val_to_str(val)   [val].pack("v") end
+    Integer.create_uint_methods(self, 16, :little)
   end
 
   # Unsigned 2 byte big endian integer.
   class Uint16be < Single
-    include BaseUint
-    private
-    def val_num_bytes(val) 2 end
-    def read_val(io)       readbytes(io,2).unpack("n")[0] end
-    def _val_to_str(val)   [val].pack("n") end
+    Integer.create_uint_methods(self, 16, :big)
   end
 
   # Unsigned 4 byte little endian integer.
   class Uint32le < Single
-    include BaseUint
-    private
-    def val_num_bytes(val) 4 end
-    def read_val(io)       readbytes(io,4).unpack("V")[0] end
-    def _val_to_str(val)   [val].pack("V") end
+    Integer.create_uint_methods(self, 32, :little)
   end
 
   # Unsigned 4 byte big endian integer.
   class Uint32be < Single
-    include BaseUint
-    private
-    def val_num_bytes(val) 4 end
-    def read_val(io)       readbytes(io,4).unpack("N")[0] end
-    def _val_to_str(val)   [val].pack("N") end
+    Integer.create_uint_methods(self, 32, :big)
+  end
+
+  # Unsigned 8 byte little endian integer.
+  class Uint64le < Single
+    Integer.create_uint_methods(self, 64, :little)
+  end
+
+  # Unsigned 8 byte big endian integer.
+  class Uint64be < Single
+    Integer.create_uint_methods(self, 64, :big)
   end
 
   # Signed 1 byte integer.
   class Int8 < Single
-    include BaseInt
-    private
-    def val_num_bytes(val) 1 end
-    def _read_val(io)      readbytes(io,1)[0] end
-    def _val_to_str(val)   val.chr end
+    Integer.create_int_methods(self, 8, :little)
   end
 
   # Signed 2 byte little endian integer.
   class Int16le < Single
-    include BaseInt
-    private
-    def val_num_bytes(val) 2 end
-    def _read_val(io)      readbytes(io,2).unpack("v")[0] end
-    def _val_to_str(val)   [val].pack("v") end
+    Integer.create_int_methods(self, 16, :little)
   end
 
   # Signed 2 byte big endian integer.
   class Int16be < Single
-    include BaseInt
-    private
-    def val_num_bytes(val) 2 end
-    def _read_val(io)      readbytes(io,2).unpack("n")[0] end
-    def _val_to_str(val)   [val].pack("n") end
+    Integer.create_int_methods(self, 16, :big)
   end
 
   # Signed 4 byte little endian integer.
   class Int32le < Single
-    include BaseInt
-    private
-    def val_num_bytes(val) 4 end
-    def _read_val(io)      readbytes(io,4).unpack("V")[0] end
-    def _val_to_str(val)   [val].pack("V") end
+    Integer.create_int_methods(self, 32, :little)
   end
 
   # Signed 4 byte big endian integer.
   class Int32be < Single
-    include BaseInt
-    private
-    def val_num_bytes(val) 4 end
-    def _read_val(io)      readbytes(io,4).unpack("N")[0] end
-    def _val_to_str(val)   [val].pack("N") end
+    Integer.create_int_methods(self, 32, :big)
+  end
+
+  # Signed 8 byte little endian integer.
+  class Int64le < Single
+    Integer.create_int_methods(self, 64, :little)
+  end
+
+  # Signed 8 byte big endian integer.
+  class Int64be < Single
+    Integer.create_int_methods(self, 64, :big)
   end
 end

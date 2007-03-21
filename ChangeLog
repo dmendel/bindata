@@ -1,5 +1,9 @@
 = BinData Changelog
 
+== Version NEW_VERSION
+
+* Added 64 bit integers.
+
 == Version 0.5.1 (2007-03-21)
 
 * Updated documentation.

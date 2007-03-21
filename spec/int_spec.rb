@@ -9,7 +9,9 @@ context "All signed integers" do
      BinData::Int16le,
      BinData::Int16be,
      BinData::Int32le,
-     BinData::Int32be].each do |klass|
+     BinData::Int32be,
+     BinData::Int64le,
+     BinData::Int64be].each do |klass|
       klass.new.value.should eql(0)
     end
   end
@@ -21,6 +23,8 @@ context "All signed integers" do
       [2, true,  BinData::Int16be],
       [4, false, BinData::Int32le],
       [4, true,  BinData::Int32be],
+      [8, false, BinData::Int64le],
+      [8, true,  BinData::Int64be],
     ].each do |nbytes, big_endian, klass|
       gen_int_test_data(nbytes, big_endian).each do |val, clamped_val, str|
         test_read_write(klass, val, clamped_val, str)
@@ -35,7 +39,9 @@ context "All unsigned integers" do
      BinData::Uint16le,
      BinData::Uint16be,
      BinData::Uint32le,
-     BinData::Uint32be].each do |klass|
+     BinData::Uint32be,
+     BinData::Uint64le,
+     BinData::Uint64be].each do |klass|
       klass.new.value.should eql(0)
     end
   end
@@ -47,6 +53,8 @@ context "All unsigned integers" do
       [2, true,  BinData::Uint16be],
       [4, false, BinData::Uint32le],
       [4, true,  BinData::Uint32be],
+      [8, false, BinData::Uint64le],
+      [8, true,  BinData::Uint64be],
     ].each do |nbytes, big_endian, klass|
       gen_uint_test_data(nbytes, big_endian).each do |val, clamped_val, str|
         test_read_write(klass, val, clamped_val, str)

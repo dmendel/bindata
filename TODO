@@ -3,8 +3,6 @@
 
 * Add scoping so the value of a param doesn't need to call parent
 
-* Optimise int.rb for speed.
-
 * Maybe add an endian method to struct so you can say int16 instead of int16le.
   - Should this by lazily evaluated, or evaluated only once when
     instantiating fields?
