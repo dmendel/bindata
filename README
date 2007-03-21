@@ -50,11 +50,11 @@ The structure of the data in this example is
 
 The BinData declaration matches the english description closely.  Just for
 fun, lets look at how we'd implement this using #pack and #unpack.  Here's
-the writing function, have a go at the reading function.
+the writing code, have a go at the reading code.
 
-  def write_my_fancy_format(io, comment, some_ints)
-    comment = "this is a comment"
-    some_ints = [2, 3, 8, 9, 1, 8]
+  comment = "this is a comment"
+  some_ints = [2, 3, 8, 9, 1, 8]
+  File.open(...) do |io|
     io.write([comment, some_ints.size, *some_ints].pack("Z*CN*"))
   end
 
@@ -67,9 +67,9 @@ fields.
     ...
   end
 
-*type* is the name of a supplied type (e.g. +uint32be+,  +string+) or a
-user defined type.  For user defined types, convert the class name from
-CamelCase to lowercase underscore_style.
+*type* is the name of a supplied type (e.g. <tt>uint32be</tt>,  +string+)
+or a user defined type.  For user defined types, convert the class name
+from CamelCase to lowercase underscore_style.
 
 *field_name* is the name by which you can access the data.  Use either a
 String or a Symbol.  You may specify a name as nil, but this is described
