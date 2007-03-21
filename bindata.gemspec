@@ -16,7 +16,7 @@ spec = Gem::Specification.new do |s|
   s.autorequire = 'bindata'
 
   s.has_rdoc = true
-  s.rdoc_options = ["README", "lib/bindata", "-m", "README"]
+  s.rdoc_options = %w[README lib/bindata -m README]
 
   s.files = Dir.glob("[A-Z]*") +  Dir.glob("{examples,spec,lib}/**/*")
 end
