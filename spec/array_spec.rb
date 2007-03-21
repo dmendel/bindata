@@ -28,20 +28,20 @@ context "An Array with several elements" do
   end
 
   specify "should return a correct snapshot" do
-    @data.snapshot.should == [1, 2, 3, 4, 5]
+    @data.snapshot.should eql([1, 2, 3, 4, 5])
   end
 
   specify "should have correct num elements" do
-    @data.length.should == 5
-    @data.size.should == 5
+    @data.length.should eql(5)
+    @data.size.should eql(5)
   end
 
   specify "should have correct num_bytes" do
-    @data.num_bytes.should == 10
+    @data.num_bytes.should eql(10)
   end
 
   specify "should have correct num_bytes for individual elements" do
-    @data.num_bytes(0).should == 2
+    @data.num_bytes(0).should eql(2)
   end
 
   specify "should have no field_names" do
@@ -50,23 +50,23 @@ context "An Array with several elements" do
 
   specify "should be able to directly access elements" do
     @data[1] = 8
-    @data[1].should == 8
+    @data[1].should eql(8)
   end
 
   specify "should be able to use methods from Enumerable" do
-    @data.select { |x| (x % 2) == 0 }.should == [2, 4]
+    @data.select { |x| (x % 2) == 0 }.should eql([2, 4])
   end
 
   specify "should clear" do
     @data[1] = 8
     @data.clear
-    @data.collect.should == [1, 2, 3, 4, 5]
+    @data.collect.should eql([1, 2, 3, 4, 5])
   end
 
   specify "should clear a single element" do
     @data[1] = 8
     @data.clear(1)
-    @data[1].should == 2
+    @data[1].should eql(2)
   end
 
   specify "should be clear upon creation" do
@@ -92,10 +92,10 @@ context "An Array with several elements" do
 
     @data.clear
     io.rewind
-    @data[1].should == 2
+    @data[1].should eql(2)
 
     @data.read(io)
-    @data[1].should == 8
+    @data[1].should eql(8)
   end
 end
 
@@ -108,7 +108,7 @@ context "An Array containing structs" do
   end
 
   specify "should access elements, not values" do
-    @data[3].a.should == 3
+    @data[3].a.should eql(3)
   end
 
   specify "should not be able to modify elements" do
@@ -116,6 +116,6 @@ context "An Array containing structs" do
   end
 
   specify "should interate over each element" do
-    @data.collect { |s| s.a }.should == [0, 1, 2, 3, 4]
+    @data.collect { |s| s.a }.should eql([0, 1, 2, 3, 4])
   end
 end

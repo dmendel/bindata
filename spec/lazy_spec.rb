@@ -31,17 +31,17 @@ context "A single environment" do
   end
 
   specify "should evaluate value" do
-    @e1.lazy_eval(lambda { value }).should == 'v1'
+    @e1.lazy_eval(lambda { value }).should eql('v1')
   end
 
   specify "should evaluate index" do
     @e1.index = 7
-    @e1.lazy_eval(lambda { index }).should == 7
+    @e1.lazy_eval(lambda { index }).should eql(7)
   end
 
   specify "should evaluate offset" do
     @e1.offset = 9
-    @e1.lazy_eval(lambda { offset }).should == 9
+    @e1.lazy_eval(lambda { offset }).should eql(9)
   end
 
   specify "should not resolve any unknown fields" do
@@ -53,9 +53,9 @@ context "A single environment" do
   specify "should accept symbols as a shortcut to lambda" do
     @e1.index  = 7
     @e1.offset = 9
-    @e1.lazy_eval(:value).should == 'v1'
-    @e1.lazy_eval(:index).should == 7
-    @e1.lazy_eval(:offset).should == 9
+    @e1.lazy_eval(:value).should eql('v1')
+    @e1.lazy_eval(:index).should eql(7)
+    @e1.lazy_eval(:offset).should eql(9)
   end
 end
 
@@ -74,15 +74,15 @@ context "An environment with one parent" do
   end
 
   specify "should evaluate parent parameter" do
-    @e1.lazy_eval(:p2).should == 'p2'
+    @e1.lazy_eval(:p2).should eql('p2')
   end
 
   specify "should evaluate parent field" do
-    @e1.lazy_eval(:f2).should == 'f2'
+    @e1.lazy_eval(:f2).should eql('f2')
   end
 
   specify "should prefer parent param over parent field" do
-    @e1.lazy_eval(:common).should == 'param2'
+    @e1.lazy_eval(:common).should eql('param2')
   end
 end
 
@@ -109,12 +109,12 @@ context "A nested environment" do
   end
 
   specify "should access parent environments" do
-    @e1.lazy_eval(lambda { parent.p3 }).should == 'p3'
-    @e1.lazy_eval(lambda { parent.parent.p4 }).should == 'p4'
+    @e1.lazy_eval(lambda { parent.p3 }).should eql('p3')
+    @e1.lazy_eval(lambda { parent.parent.p4 }).should eql('p4')
   end
 
   specify "should cascade lambdas" do
-    @e1.lazy_eval(lambda { l2 }).should == 'l4'
-    @e1.lazy_eval(lambda { s2 }).should == 's4'
+    @e1.lazy_eval(lambda { l2 }).should eql('l4')
+    @e1.lazy_eval(lambda { s2 }).should eql('s4')
   end
 end

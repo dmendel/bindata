@@ -23,9 +23,9 @@ context "A Struct with hidden fields" do
   end
 
   specify "should be able to access hidden fields directly" do
-    @obj.b.should == 10
+    @obj.b.should eql(10)
     @obj.c = 15
-    @obj.c.should == 15
+    @obj.c.should eql(15)
 
     @obj.should respond_to?(:b=)
   end
@@ -69,9 +69,9 @@ context "A Struct with multiple fields" do
   end
 
   specify "should return num_bytes" do
-    @obj.num_bytes(:a).should == 1
-    @obj.num_bytes(:b).should == 1
-    @obj.num_bytes.should == 2
+    @obj.num_bytes(:a).should eql(1)
+    @obj.num_bytes(:b).should eql(1)
+    @obj.num_bytes.should     eql(2)
   end
 
   specify "should clear" do
@@ -93,21 +93,21 @@ context "A Struct with multiple fields" do
     @obj.write(io)
 
     io.rewind
-    io.read.should == "\x01\x02"
+    io.read.should eql("\x01\x02")
   end
 
   specify "should read ordered" do
     io = StringIO.new "\x03\x04"
     @obj.read(io)
 
-    @obj.a.should == 3
-    @obj.b.should == 4
+    @obj.a.should eql(3)
+    @obj.b.should eql(4)
   end
 
   specify "should return a snapshot" do
     snap = @obj.snapshot
-    snap.a.should == 1
-    snap.b.should == 2
+    snap.a.should eql(1)
+    snap.b.should eql(2)
     snap.should == { "a" => 1, "b" => 2 }
   end
 
@@ -175,16 +175,16 @@ context "A Struct with nested structs" do
   end
 
   specify "should access nested fields" do
-    @obj.a.should == 6
-    @obj.b.w.should == 3
-    @obj.b.x.should == 6
-    @obj.y.should == 3
+    @obj.a.should   eql(6)
+    @obj.b.w.should eql(3)
+    @obj.b.x.should eql(6)
+    @obj.y.should   eql(3)
   end
 
   specify "should return correct offset of" do
-    @obj.offset_of("b").should == 1
-    @obj.offset_of("y").should == 3
-    @obj.offset_of("z").should == 4
+    @obj.offset_of("b").should eql(1)
+    @obj.offset_of("y").should eql(3)
+    @obj.offset_of("z").should eql(4)
   end
 end
 

@@ -80,16 +80,16 @@ context "A data object with parameters" do
 
   specify "should evaluate mandatory and optional parameters" do
     obj = WithParam.new(:p1 => 1, :p3 => lambda {1 + 2}, :p4 => 4, :p5 => 5)
-    obj.eval_param(:p1).should == 1
+    obj.eval_param(:p1).should eql(1)
     obj.eval_param(:p2).should_be_nil
-    obj.eval_param(:p3).should == 3
+    obj.eval_param(:p3).should eql(3)
     obj.eval_param(:p4).should_be_nil
     obj.eval_param(:p5).should_be_nil
   end
 
   specify "should be able to access without evaluating" do
     obj = WithParam.new(:p1 => :asym, :p3 => lambda {1 + 2})
-    obj.param(:p1).should == :asym
+    obj.param(:p1).should eql(:asym)
     obj.param(:p2).should_be_nil
     obj.param(:p3).should respond_to(:arity)
   end
@@ -164,17 +164,17 @@ context "A data object with :readwrite => false" do
   specify "should not read" do
     io = StringIO.new("12345678901234567890")
     @obj.read(io)
-    @obj._do_read.should_not == true
+    @obj._do_read.should_not eql(true)
   end
 
   specify "should not write" do
     io = StringIO.new
     @obj.write(io)
-    @obj._do_write.should_not == true
+    @obj._do_write.should_not eql(true)
   end
 
   specify "should have zero num_bytes" do
-    @obj.num_bytes.should == 0
+    @obj.num_bytes.should eql(0)
   end
 end
 

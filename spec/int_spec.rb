@@ -10,7 +10,7 @@ context "All signed integers" do
      BinData::Int16be,
      BinData::Int32le,
      BinData::Int32be].each do |klass|
-      klass.new.value.should == 0
+      klass.new.value.should eql(0)
     end
   end
 
@@ -36,7 +36,7 @@ context "All unsigned integers" do
      BinData::Uint16be,
      BinData::Uint32le,
      BinData::Uint32be].each do |klass|
-      klass.new.value.should == 0
+      klass.new.value.should eql(0)
     end
   end
 
@@ -60,7 +60,7 @@ def test_read_write(klass, val, clamped_val, str)
   # set the data and ensure clamping occurs
   data = klass.new
   data.value = val
-  data.value.should == clamped_val
+  data.value.should eql(clamped_val)
   
   # write the data
   io = StringIO.new
@@ -68,13 +68,13 @@ def test_read_write(klass, val, clamped_val, str)
 
   # check that we write the expected byte pattern
   io.rewind
-  io.read.should == str
+  io.read.should eql(str)
 
   # check that we read in the same data that was written
   io.rewind
   data = klass.new
   data.read(io)
-  data.value.should == clamped_val
+  data.value.should eql(clamped_val)
 end
 
 # return test data for testing unsigned ints

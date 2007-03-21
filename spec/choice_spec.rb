@@ -40,15 +40,15 @@ context "A Choice with several choices" do
 
   specify "should be able to select the choice" do
     @env.choose = 0
-    @data.value.should == 3
+    @data.value.should eql(3)
     @env.choose = 1
-    @data.value.should == 5
+    @data.value.should eql(5)
     @env.choose = 2
-    @data.value.should == 0
+    @data.value.should eql(0)
     @env.choose = 3
-    @data.a.should == 0
+    @data.a.should eql(0)
     @env.choose = 4
-    @data.value.should == 7
+    @data.value.should eql(7)
   end
 
   specify "should not be able to select an invalid choice" do
@@ -61,7 +61,7 @@ context "A Choice with several choices" do
   specify "should be able to interact directly with the choice" do
     @env.choose = 0
     @data.value = 17
-    @data.value.should == 17
+    @data.value.should eql(17)
   end
 
   specify "should handle missing methods correctly" do
@@ -77,29 +77,29 @@ context "A Choice with several choices" do
     @data.value = 17
 
     @data.find_obj_for_name("does_not_exist").should be_nil
-    @data.num_bytes.should == 2
+    @data.num_bytes.should eql(2)
     @data.field_names.should be_empty
-    @data.value.should == 17
+    @data.value.should eql(17)
 
     io = StringIO.new
     @data.write(io)
 
     @data.clear
     @data.clear?.should be_true
-    @data.value.should == 5
+    @data.value.should eql(5)
 
     io.rewind
     @data.read(io)
-    @data.value.should == 17
+    @data.value.should eql(17)
 
-    @data.snapshot.should == 17
+    @data.snapshot.should eql(17)
   end
 
   specify "should delegate methods to the selected complex choice" do
     @env.choose = 3
     @data.find_obj_for_name("a").should_not be_nil
-    @data.field_names.should == ["a"]
-    @data.num_bytes.should == 1
+    @data.field_names.should eql(["a"])
+    @data.num_bytes.should eql(1)
   end
 end
 
