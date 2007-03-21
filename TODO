@@ -11,4 +11,3 @@
 
 * Think how offset_of should work.
 
-* Raise error when a struct defines a name of an existing method

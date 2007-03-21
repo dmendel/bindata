@@ -1,9 +1,10 @@
 = BinData Changelog
 
-== Version THE_NEXT_VERSION
+== Version 0.5.1 (2007-03-21)
 
-Updated documentation.
+* Updated documentation.
+* Struct now raises an error if a field name shadows an existing method.
 
 == Version 0.5.0 (2007-03-14)
 
-Initial public release.
+* Initial public release.
