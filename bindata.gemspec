@@ -1,4 +1,4 @@
-$:.unshift '../lib'
+$:.unshift 'lib'
 require 'rubygems'
 require 'bindata'
 
