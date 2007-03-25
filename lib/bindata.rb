@@ -3,6 +3,7 @@
 
 require 'bindata/array'
 require 'bindata/choice'
+require 'bindata/float'
 require 'bindata/int'
 require 'bindata/string'
 require 'bindata/stringz'

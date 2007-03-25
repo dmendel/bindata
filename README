@@ -164,6 +164,11 @@ BinData::Uint16be:: Unsigned 16 bit integer (big endian).
 BinData::Uint32le:: Unsigned 32 bit integer (little endian).
 BinData::Uint32be:: Unsigned 32 bit integer (big endian).
 
+BinData::FloatLe::  Single precision floating point number (little endian).
+BinData::FloatBe::  Single precision floating point number (big endian).
+BinData::DoubleLe:: Double precision floating point number (little endian).
+BinData::DoubleBe:: Double precision floating point number (big endian).
+
 BinData::String::   A sequence of bytes.
 BinData::Stringz::  A zero terminated sequence of bytes.
 
