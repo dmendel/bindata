@@ -1,9 +1,10 @@
 = BinData Changelog
 
-== Version NEW_VERSION
+== Version 0.6.0 (2007-03-28)
 
 * Added 64 bit integers.
 * Added floating point numbers.
+* Added endian keyword to Struct to reduce the amount of typing needed.
 
 == Version 0.5.1 (2007-03-21)
 
