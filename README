@@ -206,6 +206,37 @@ If the value is a symbol, it is taken as syntactic sugar for a lambda
 containing the value of the symbol.
 e.g <tt>:param => :foo</tt> is <tt>:param => lambda { foo }</tt>
 
+== Saving Typing
+
+The endianess of numeric types must be explicitly defined so that the code
+produced is independent of architecture.  Explicitly specifying the
+endianess of each numeric type can become tedious, so the following
+shortcut is provided.
+
+  class A < BinData::Struct
+    endian :little
+
+    uint16   :a
+    uint32   :b
+    double   :c
+    uint32be :d
+    array    :e, :type => :int16
+  end
+
+is equivalent to:
+
+  class A < BinData::Struct
+    uint16le  :a
+    uint32le  :b
+    double_le :c
+    uint32be  :d
+    array     :e, :type => :int16le
+  end
+
+Using the endian keyword improves the readability of the declaration as well
+as reducing the amount of typing necessary.  Note that the endian keyword will
+cascade to nested types, as illustrated with the array in the above example.
+
 == Creating custom types
 
 Custom types should be created by subclassing BinData::Struct.

@@ -35,7 +35,7 @@ module BinData
       super(params, env)
 
       type, el_params = param(:type)
-      klass = self.class.lookup(type)
+      klass = klass_lookup(type)
       raise TypeError, "unknown type '#{type}' for #{self}" if klass.nil?
 
       @element_list    = nil

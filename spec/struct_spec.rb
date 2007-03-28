@@ -1,8 +1,7 @@
 #!/usr/bin/env ruby
 
 require File.expand_path(File.dirname(__FILE__)) + '/spec_common'
-require 'bindata/struct'
-require 'bindata/int'
+require 'bindata'
 
 context "A Struct with hidden fields" do
   context_setup do
@@ -71,6 +70,16 @@ context "Defining a Struct" do
     lambda {
       BinData::Struct.new(:fields => [[:int8, :object_id]])
     }.should raise_error(NameError)
+  end
+
+  specify "should fail on unknown endian" do
+    lambda {
+      eval <<-END
+        class BadEndian < BinData::Struct
+          endian 'a bad value'
+        end
+      END
+    }.should raise_error(ArgumentError)
   end
 end
 
@@ -202,3 +211,37 @@ context "A Struct with nested structs" do
   end
 end
 
+context "A Struct with an endian defined" do
+  context_setup do
+    eval <<-END
+      class StructWithEndian < BinData::Struct
+        endian :little
+
+        uint16 :a
+        float  :b
+        array  :c, :type => :int8, :initial_length => 2
+        choice :d, :choices => [ [:uint16], [:uint32] ], :selection => 1
+        struct :e, :fields => [ [:uint16, :f], [:uint32be, :g] ]
+      end
+    END
+    @obj = StructWithEndian.new
+  end
+
+  specify "should use correct endian" do
+    @obj.a = 1
+    @obj.b = 2.0
+    @obj.c[0] = 3
+    @obj.c[1] = 4
+    @obj.d = 5
+    @obj.e.f = 6
+    @obj.e.g = 7
+
+    expected = [1, 2.0, 3, 4, 5, 6, 7].pack('veCCVvN')
+
+    io = StringIO.new
+    @obj.write(io)
+
+    io.rewind
+    io.read.should == expected
+  end
+end

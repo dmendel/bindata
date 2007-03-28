@@ -55,6 +55,20 @@ module BinData
         register(subclass.name, subclass)
       end
 
+      # Returns or sets the endianess of numerics used in this stucture.
+      # Endianess is propagated to nested data objects unless overridden
+      # in a nested Struct.
+      # Valid values are :little and :big.
+      def endian(endian = nil)
+        @endian ||= nil
+        if [:little, :big].include?(endian)
+          @endian = endian
+        elsif endian != nil
+          raise ArgumentError, "unknown value for endian '#{endian}'"
+        end
+        @endian
+      end
+
       # Returns the names of any hidden fields in this struct.  Any given args
       # are appended to the hidden list.
       def hide(*args)
@@ -106,7 +120,7 @@ module BinData
 
     # These are the parameters used by this class.
     mandatory_parameter :fields
-    optional_parameter :hide
+    optional_parameter :endian, :hide
 
     # Creates a new Struct.
     def initialize(params = {}, env = nil)
@@ -114,7 +128,7 @@ module BinData
 
       # create instances of the fields
       @fields = param(:fields).collect do |type, name, params|
-        klass = self.class.lookup(type)
+        klass = klass_lookup(type)
         raise TypeError, "unknown type '#{type}' for #{self}" if klass.nil?
         if methods.include?(name)
           raise NameError.new("field '#{name}' shadows an existing method",name)

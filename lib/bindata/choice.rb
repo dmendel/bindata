@@ -38,7 +38,7 @@ module BinData
       @choices = []
       param(:choices).each do |choice_type, choice_params|
         choice_params ||= {}
-        klass = self.class.lookup(choice_type)
+        klass = klass_lookup(choice_type)
         if klass.nil?
           raise TypeError, "unknown type '#{choice_type.id2name}' for #{self}"
         end

@@ -37,6 +37,11 @@ module BinData
       end
     end
 
+    # Returns the data_object for the parent environment.
+    def parent_data_object
+      @parent.nil? ? nil : @parent.data_object
+    end
+
     # Returns the value of the data object wrapped by this environment.
     def value
       @data_object.respond_to?(:value) ? @data_object.value : nil

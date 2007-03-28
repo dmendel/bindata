@@ -83,7 +83,21 @@ module BinData
 
       # Returns the class matching a previously registered +name+.
       def lookup(name)
-        Registry.instance.lookup(name)
+        klass = Registry.instance.lookup(name)
+        if klass.nil?
+          # lookup failed so attempt endian lookup
+          if self.respond_to?(:endian) and self.endian != nil
+            name = name.to_s
+            if /^u?int\d\d?$/ =~ name
+              new_name = name + ((self.endian == :little) ? "le" : "be")
+              klass = Registry.instance.lookup(new_name)
+            elsif ["float", "double"].include?(name)
+              new_name = name + ((self.endian == :little) ? "_le" : "_be")
+              klass = Registry.instance.lookup(new_name)
+            end
+          end
+        end
+        klass
       end
     end
 
@@ -129,6 +143,16 @@ module BinData
       @env             = env || LazyEvalEnv.new
       @env.params      = extra
       @env.data_object = self
+    end
+
+    # Returns the class matching a previously registered +name+.
+    def klass_lookup(name)
+      klass = self.class.lookup(name)
+      if klass.nil? and @env.parent_data_object != nil
+        # lookup failed so retry in the context of the parent data object
+        klass = @env.parent_data_object.klass_lookup(name)
+      end
+      klass
     end
 
     # Reads data into this bin object by calling #do_read then #done_read.
