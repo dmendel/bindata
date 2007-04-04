@@ -56,8 +56,7 @@ module BinData
       end
 
       # Returns or sets the endianess of numerics used in this stucture.
-      # Endianess is propagated to nested data objects unless overridden
-      # in a nested Struct.
+      # Endianess is applied to the fields of this structure.
       # Valid values are :little and :big.
       def endian(endian = nil)
         @endian ||= nil
