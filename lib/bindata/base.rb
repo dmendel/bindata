@@ -33,7 +33,7 @@ module BinData
             end
           end
         end
-        unless (args.empty?)
+        if not args.empty?
           args.each { |arg| @mandatory_parameters << arg.to_sym }
           @mandatory_parameters.uniq!
         end
@@ -53,7 +53,7 @@ module BinData
             end
           end
         end
-        unless (args.empty?)
+        if not args.empty?
           args.each { |arg| @optional_parameters << arg.to_sym }
           @optional_parameters.uniq!
         end
@@ -111,14 +111,14 @@ module BinData
     # environment that these callable objects are evaluated in.
     def initialize(params = {}, env = nil)
       # default :readwrite param to true if unspecified
-      unless params.has_key?(:readwrite)
+      if not params.has_key?(:readwrite)
         params = params.dup
         params[:readwrite] = true
       end
 
       # ensure mandatory parameters exist
       self.class.mandatory_parameters.each do |prm|
-        unless params.has_key?(prm)
+        if not params.has_key?(prm)
           raise ArgumentError, "parameter ':#{prm}' must be specified " +
                                "in #{self}"
         end
