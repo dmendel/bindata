@@ -3,8 +3,8 @@
 require File.expand_path(File.dirname(__FILE__)) + '/spec_common'
 require 'bindata/int'
 
-context "All signed integers" do
-  specify "should have a sensible value of zero" do
+describe "All signed integers" do
+  it "should have a sensible value of zero" do
     [BinData::Int8,
      BinData::Int16le,
      BinData::Int16be,
@@ -16,7 +16,7 @@ context "All signed integers" do
     end
   end
 
-  specify "should pass these tests" do
+  it "should pass these tests" do
     [
       [1, true,  BinData::Int8],
       [2, false, BinData::Int16le],
@@ -33,8 +33,8 @@ context "All signed integers" do
   end
 end
 
-context "All unsigned integers" do
-  specify "should have a sensible value of zero" do
+describe "All unsigned integers" do
+  it "should have a sensible value of zero" do
     [BinData::Uint8,
      BinData::Uint16le,
      BinData::Uint16be,
@@ -46,7 +46,7 @@ context "All unsigned integers" do
     end
   end
 
-  specify "should pass these tests" do
+  it "should pass these tests" do
     [
       [1, true,  BinData::Uint8],
       [2, false, BinData::Uint16le],

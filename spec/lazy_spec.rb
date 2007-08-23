@@ -22,35 +22,35 @@ class MockDataObject
   end
 end
 
-context "A single environment" do
-  setup do
+describe "A single environment" do
+  before(:each) do
     @do1 = MockDataObject.new('v1', :f1 => 'f1')
     @e1 = BinData::LazyEvalEnv.new
     @e1.data_object = @do1
     @e1.params = {:p1 => 'p1'}
   end
 
-  specify "should evaluate value" do
+  it "should evaluate value" do
     @e1.lazy_eval(lambda { value }).should eql('v1')
   end
 
-  specify "should evaluate index" do
+  it "should evaluate index" do
     @e1.index = 7
     @e1.lazy_eval(lambda { index }).should eql(7)
   end
 
-  specify "should evaluate offset" do
+  it "should evaluate offset" do
     @e1.offset = 9
     @e1.lazy_eval(lambda { offset }).should eql(9)
   end
 
-  specify "should not resolve any unknown fields" do
+  it "should not resolve any unknown fields" do
     lambda { @e1.lazy_eval(lambda { unknown }) }.should raise_error(NameError)
     lambda { @e1.lazy_eval(lambda { p1 }) }.should raise_error(NameError)
     lambda { @e1.lazy_eval(lambda { f1 }) }.should raise_error(NameError)
   end
 
-  specify "should accept symbols as a shortcut to lambda" do
+  it "should accept symbols as a shortcut to lambda" do
     @e1.index  = 7
     @e1.offset = 9
     @e1.lazy_eval(:value).should eql('v1')
@@ -59,8 +59,8 @@ context "A single environment" do
   end
 end
 
-context "An environment with one parent" do
-  setup do
+describe "An environment with one parent" do
+  before(:each) do
     @do2 = MockDataObject.new(nil, :f2 => 'f2', :common => 'field2')
     @do1 = MockDataObject.new
 
@@ -73,21 +73,21 @@ context "An environment with one parent" do
     @e2.params = {:p2 => 'p2', :l2 => lambda { 'l2' }, :common => 'param2'}
   end
 
-  specify "should evaluate parent parameter" do
+  it "should evaluate parent parameter" do
     @e1.lazy_eval(:p2).should eql('p2')
   end
 
-  specify "should evaluate parent field" do
+  it "should evaluate parent field" do
     @e1.lazy_eval(:f2).should eql('f2')
   end
 
-  specify "should prefer parent param over parent field" do
+  it "should prefer parent param over parent field" do
     @e1.lazy_eval(:common).should eql('param2')
   end
 end
 
-context "A nested environment" do
-  setup do
+describe "A nested environment" do
+  before(:each) do
     @do4 = MockDataObject.new(nil, :f4 => 'f4')
     @do3 = MockDataObject.new(nil, :f3 => 'f3')
     @do2 = MockDataObject.new(nil, :f2 => 'f2')
@@ -108,12 +108,12 @@ context "A nested environment" do
     @e2.params = {:p2 => 'p2', :s2 => :s3, :l2 => lambda { l3 }}
   end
 
-  specify "should access parent environments" do
+  it "should access parent environments" do
     @e1.lazy_eval(lambda { parent.p3 }).should eql('p3')
     @e1.lazy_eval(lambda { parent.parent.p4 }).should eql('p4')
   end
 
-  specify "should cascade lambdas" do
+  it "should cascade lambdas" do
     @e1.lazy_eval(lambda { l2 }).should eql('l4')
     @e1.lazy_eval(lambda { s2 }).should eql('s4')
   end

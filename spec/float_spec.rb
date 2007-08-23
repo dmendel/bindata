@@ -3,22 +3,22 @@
 require File.expand_path(File.dirname(__FILE__)) + '/spec_common'
 require 'bindata/float'
 
-context "A FloatLe" do
-  setup do
+describe "A FloatLe" do
+  before(:each) do
     @obj = BinData::FloatLe.new
     @obj.value = Math::PI
 
     @io = StringIO.new
   end
 
-  specify "should write the expected value" do
+  it "should write the expected value" do
     @obj.write(@io)
     @io.rewind
 
     @io.read.should == [Math::PI].pack('e')
   end
 
-  specify "should read the same value as written" do
+  it "should read the same value as written" do
     @obj.write(@io)
     @io.rewind
 
@@ -28,22 +28,22 @@ context "A FloatLe" do
   end
 end
 
-context "A FloatBe" do
-  setup do
+describe "A FloatBe" do
+  before(:each) do
     @obj = BinData::FloatBe.new
     @obj.value = Math::PI
 
     @io = StringIO.new
   end
 
-  specify "should write the expected value" do
+  it "should write the expected value" do
     @obj.write(@io)
     @io.rewind
 
     @io.read.should == [Math::PI].pack('g')
   end
 
-  specify "should read the same value as written" do
+  it "should read the same value as written" do
     @obj.write(@io)
     @io.rewind
 
@@ -53,22 +53,22 @@ context "A FloatBe" do
   end
 end
 
-context "A DoubleLe" do
-  setup do
+describe "A DoubleLe" do
+  before(:each) do
     @obj = BinData::DoubleLe.new
     @obj.value = Math::PI
 
     @io = StringIO.new
   end
 
-  specify "should write the expected value" do
+  it "should write the expected value" do
     @obj.write(@io)
     @io.rewind
 
     @io.read.should == [Math::PI].pack('E')
   end
 
-  specify "should read the same value as written" do
+  it "should read the same value as written" do
     @obj.write(@io)
     @io.rewind
 
@@ -79,22 +79,22 @@ context "A DoubleLe" do
 end
 
 
-context "A DoubleBe" do
-  setup do
+describe "A DoubleBe" do
+  before(:each) do
     @obj = BinData::DoubleBe.new
     @obj.value = Math::PI
 
     @io = StringIO.new
   end
 
-  specify "should write the expected value" do
+  it "should write the expected value" do
     @obj.write(@io)
     @io.rewind
 
     @io.read.should == [Math::PI].pack('G')
   end
 
-  specify "should read the same value as written" do
+  it "should read the same value as written" do
     @obj.write(@io)
     @io.rewind
 

@@ -1,5 +1,9 @@
 = BinData Changelog
 
+-== Version NEW_VERSION
+
+* Updated specs to new rspec syntax (0.9).
+
 == Version 0.6.0 (2007-03-28)
 
 * Added 64 bit integers.
