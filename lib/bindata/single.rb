@@ -20,9 +20,11 @@ module BinData
   #                           will return the value of the data read from the
   #                           IO, not the result of the <tt>:value</tt> param.
   # [<tt>:check_value</tt>]   Raise an error unless the value read in meets
-  #                           this criteria.  A boolean return indicates
-  #                           success or failure.  Any other return is compared
-  #                           to the value just read in.
+  #                           this criteria.  The variable +value+ is made
+  #                           available to any lambda assigned to this
+  #                           parameter.  A boolean return indicates success
+  #                           or failure.  Any other return is compared to
+  #                           the value just read in.
   class Single < Base
     # These are the parameters used by this class.
     optional_parameters :initial_value, :value, :check_value
@@ -56,11 +58,12 @@ module BinData
 
       # does the value meet expectations?
       if has_param?(:check_value)
-        expected = eval_param(:check_value)
+        current_value = self.value
+        expected = eval_param(:check_value, :value => current_value)
         if not expected
           raise ValidityError, "value not as expected"
-        elsif @value != expected and expected != true
-          raise ValidityError, "value is '#{@value}' but " +
+        elsif current_value != expected and expected != true
+          raise ValidityError, "value is '#{current_value}' but " +
                                "expected '#{expected}'"
         end
       end

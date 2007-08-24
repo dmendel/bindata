@@ -157,12 +157,16 @@ BinData::Int16le::  Signed 16 bit integer (little endian).
 BinData::Int16be::  Signed 16 bit integer (big endian).
 BinData::Int32le::  Signed 32 bit integer (little endian).
 BinData::Int32be::  Signed 32 bit integer (big endian).
+BinData::Int64le::  Signed 64 bit integer (little endian).
+BinData::Int64be::  Signed 64 bit integer (big endian).
 
 BinData::Uint8::    Unsigned  8 bit integer.
 BinData::Uint16le:: Unsigned 16 bit integer (little endian).
 BinData::Uint16be:: Unsigned 16 bit integer (big endian).
 BinData::Uint32le:: Unsigned 32 bit integer (little endian).
 BinData::Uint32be:: Unsigned 32 bit integer (big endian).
+BinData::Uint64le:: Unsigned 64 bit integer (little endian).
+BinData::Uint64be:: Unsigned 64 bit integer (big endian).
 
 BinData::FloatLe::  Single precision floating point number (little endian).
 BinData::FloatBe::  Single precision floating point number (big endian).

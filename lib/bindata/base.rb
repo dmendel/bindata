@@ -14,11 +14,13 @@ module BinData
   #
   # [<tt>:readwrite</tt>]     If false, calls to #read or #write will
   #                           not perform any I/O.  Default is true.
-  # [<tt>:check_offset</tt>]  Raise an error if the current IO offest doesn't
+  # [<tt>:check_offset</tt>]  Raise an error if the current IO offset doesn't
   #                           meet this criteria.  A boolean return indicates
   #                           success or failure.  Any other return is compared
-  #                           to the current offset.  This parameter is
-  #                           only checked before reading.
+  #                           to the current offset.  The variable +offset+
+  #                           is made available to any lambda assigned to
+  #                           this parameter.  This parameter is only checked
+  #                           before reading.
   class Base
     class << self
       # Returns the mandatory parameters used by this class.  Any given args
@@ -197,9 +199,10 @@ module BinData
 
     # Returns the value of the evaluated parameter.  +key+ references a
     # parameter from the +params+ hash used when creating the data object.
+    # +values+ contains data that may be accessed when evaluating +key+.
     # Returns nil if +key+ does not refer to any parameter.
-    def eval_param(key)
-      @env.lazy_eval(@params[key])
+    def eval_param(key, values = {})
+      @env.lazy_eval(@params[key], values)
     end
 
     # Returns the parameter from the +params+ hash referenced by +key+.
@@ -227,13 +230,13 @@ module BinData
     # be called from #do_read before performing the reading.
     def check_offset(io)
       if has_param?(:check_offset)
-        @env.offset = io.pos - io.mark
-        expected = eval_param(:check_offset)
+        actual_offset = io.pos - io.mark
+        expected = eval_param(:check_offset, :offset => actual_offset)
 
         if not expected
           raise ValidityError, "offset not as expected"
-        elsif @env.offset != expected and expected != true
-          raise ValidityError, "offset is '#{@env.offset}' but " +
+        elsif actual_offset != expected and expected != true
+          raise ValidityError, "offset is '#{actual_offset}' but " +
                                "expected '#{expected}'"
         end
       end

@@ -3,6 +3,7 @@
 -== Version NEW_VERSION
 
 * Updated specs to new rspec syntax (0.9).
+* Added scoped resolution of variables in lambdas.
 
 == Version 0.6.0 (2007-03-28)
 

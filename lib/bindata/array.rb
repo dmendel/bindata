@@ -21,6 +21,9 @@ module BinData
   #                            passed to it, then it should be provided as
   #                            <tt>[type_symbol, hash_params]</tt>.
   # <tt>:initial_length</tt>:: The initial length of the array.
+  #
+  # Each data object in an array has the variable +index+ made available
+  # to any lambda evaluated as a parameter of that data object.
   class Array < Base
     include Enumerable
 
@@ -150,7 +153,7 @@ module BinData
         # create the desired number of instances
         eval_param(:initial_length).times do |i|
           env = create_env
-          env.index = i
+          env.add_variable(:index, i)
           @element_list << @element_klass.new(@element_params, env)
         end
       end
