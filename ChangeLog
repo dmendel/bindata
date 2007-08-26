@@ -1,6 +1,6 @@
 = BinData Changelog
 
--== Version NEW_VERSION
+== Version 0.7.0 (2007-08-26)
 
 * Arrays now support terminating conditions as well as fixed length reads.
 * Updated specs to new rspec syntax (0.9).
