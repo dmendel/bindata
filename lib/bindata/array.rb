@@ -21,6 +21,12 @@ module BinData
   #                            passed to it, then it should be provided as
   #                            <tt>[type_symbol, hash_params]</tt>.
   # <tt>:initial_length</tt>:: The initial length of the array.
+  # <tt>:read_until</tt>::     While reading, elements are read until this
+  #                            condition is true.  This is typically used to
+  #                            read an array until a sentinel value is found.
+  #                            The variables +index+, +element+ and +array+
+  #                            are made available to any lambda assigned to
+  #                            this parameter.
   #
   # Each data object in an array has the variable +index+ made available
   # to any lambda evaluated as a parameter of that data object.
@@ -31,11 +37,13 @@ module BinData
     register(self.name, self)
 
     # These are the parameters used by this class.
-    mandatory_parameters :type, :initial_length
+    mandatory_parameter :type
+    optional_parameters :initial_length, :read_until
 
     # Creates a new Array
     def initialize(params = {}, env = nil)
-      super(params, env)
+      super(cleaned_params(params), env)
+      ensure_mutual_exclusion(:initial_length, :read_until)
 
       type, el_params = param(:type)
       klass = klass_lookup(type)
@@ -44,8 +52,6 @@ module BinData
       @element_list    = nil
       @element_klass   = klass
       @element_params  = el_params || {}
-
-      # TODO: how to increase the size of the array?
     end
 
     # Clears the element at position +index+.  If +index+ is not given, then
@@ -76,7 +82,19 @@ module BinData
 
     # Reads the values for all fields in this object from +io+.
     def _do_read(io)
-      elements.each { |f| f.do_read(io) }
+      if has_param?(:initial_length)
+        elements.each { |f| f.do_read(io) }
+      else # :read_until
+        @element_list = nil
+        loop do
+          element = append_new_element
+          element.do_read(io)
+          variables = { :index => self.length - 1, :element => self.last,
+                        :array => self }
+          finished = eval_param(:read_until, variables)
+          break if finished
+        end
+      end
     end
 
     # To be called after calling #do_read.
@@ -108,6 +126,46 @@ module BinData
     # An array has no fields.
     def field_names
       []
+    end
+
+    # Returns the first element, or the first +n+ elements, of the array.
+    # If the array is empty, the first form returns nil, and the second
+    # form returns an empty array.
+    def first(n = nil)
+      if n.nil?
+        self.length.zero? ? nil : self[0]
+      else
+        array = []
+        [n, self.length].min.times do |i|
+          array.push(self[i])
+        end
+        array
+      end
+    end
+
+    # Returns the last element, or the last +n+ elements, of the array.
+    # If the array is empty, the first form returns nil, and the second
+    # form returns an empty array.
+    def last(n = nil)
+      if n.nil?
+        self.length.zero? ? nil : self[self.length - 1]
+      else
+        array = []
+        start = self.length - [n, self.length].min
+        start.upto(self.length - 1) do |i|
+          array.push(self[i])
+        end
+        array
+      end
+    end
+
+    # Appends a new element to the end of the array.  If the array contains
+    # single_values then the +value+ may be provided to the call.
+    # Returns the appended object, or value in the case of single_values.
+    def append(value = nil)
+      append_new_element
+      self[self.length - 1] = value unless value.nil?
+      self.last
     end
 
     # Returns the element at +index+.  If the element is a single_value
@@ -149,15 +207,39 @@ module BinData
     def elements
       if @element_list.nil?
         @element_list = []
-
-        # create the desired number of instances
-        eval_param(:initial_length).times do |i|
-          env = create_env
-          env.add_variable(:index, i)
-          @element_list << @element_klass.new(@element_params, env)
+        if has_param?(:initial_length)
+          # create the desired number of instances
+          eval_param(:initial_length).times do
+            append_new_element
+          end
         end
       end
       @element_list
+    end
+
+    # Creates a new element and appends it to the end of @element_list.
+    # Returns the newly created element
+    def append_new_element
+      # ensure @element_list is initialised
+      elements()
+
+      env = create_env
+      env.add_variable(:index, @element_list.length)
+      element = @element_klass.new(@element_params, env)
+      @element_list << element
+      element
+    end
+
+    # Returns a hash of cleaned +params+.  Cleaning means that param
+    # values are converted to a desired format.
+    def cleaned_params(params)
+      unless params.has_key?(:initial_length) or params.has_key?(:read_until)
+        # ensure one of :initial_length and :read_until exists
+        new_params = params.dup
+        new_params[:initial_length] = 0
+        params = new_params
+      end
+      params
     end
   end
 end

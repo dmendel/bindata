@@ -1,8 +1,3 @@
-* Add a way to do something like: read a bunch of integers and stop reading
-  after reading an integer with a value of 0.
-
-* Add scoping so the value of a param doesn't need to call parent
-
 * Think how offset_of should work.
 
 * Need optional parameter for fields

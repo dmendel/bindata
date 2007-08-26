@@ -2,8 +2,10 @@
 
 -== Version NEW_VERSION
 
+* Arrays now support terminating conditions as well as fixed length reads.
 * Updated specs to new rspec syntax (0.9).
 * Added scoped resolution of variables in lambdas.
+* Added ability to append elements to arrays.
 
 == Version 0.6.0 (2007-03-28)
 
