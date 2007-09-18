@@ -159,8 +159,13 @@ module BinData
 
     # Reads data into this bin object by calling #do_read then #done_read.
     def read(io)
+      # remove previous method to prevent warnings
+      class << io
+        undef_method(:bindata_mark) if method_defined?(:bindata_mark)
+      end
+
       # remember the current position in the IO object
-      io.instance_eval "def mark; #{io.pos}; end"
+      io.instance_eval "def bindata_mark; #{io.pos}; end"
 
       do_read(io)
       done_read
@@ -230,7 +235,7 @@ module BinData
     # be called from #do_read before performing the reading.
     def check_offset(io)
       if has_param?(:check_offset)
-        actual_offset = io.pos - io.mark
+        actual_offset = io.pos - io.bindata_mark
         expected = eval_param(:check_offset, :offset => actual_offset)
 
         if not expected
