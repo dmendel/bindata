@@ -169,6 +169,7 @@ module BinData
 
       do_read(io)
       done_read
+      self
     end
 
     # Reads the value for this data from +io+.
