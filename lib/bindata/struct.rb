@@ -106,6 +106,12 @@ module BinData
                 "field '#{name}' shadows an existing method", caller
         end
 
+        # check that name isn't reserved
+        if Hash.instance_methods.include?(name)
+          raise NameError.new("", name),
+                "field '#{name}' is a reserved name", caller
+        end
+
         # remember this field.  These fields will be recalled upon creating
         # an instance of this class
         @fields.push([type, name, params])
@@ -125,12 +131,18 @@ module BinData
     def initialize(params = {}, env = nil)
       super(cleaned_params(params), env)
 
+      all_methods = methods
+      all_reserved_methods = Hash.instance_methods - all_methods
+
       # create instances of the fields
       @fields = param(:fields).collect do |type, name, params|
         klass = klass_lookup(type)
         raise TypeError, "unknown type '#{type}' for #{self}" if klass.nil?
-        if methods.include?(name)
+        if all_methods.include?(name)
           raise NameError.new("field '#{name}' shadows an existing method",name)
+        end
+        if all_reserved_methods.include?(name)
+          raise NameError.new("field '#{name}' is a reserved name",name)
         end
         [name, klass.new(params, create_env)]
       end
