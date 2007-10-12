@@ -195,6 +195,11 @@ module BinData
       respond_to? :value
     end
 
+    # Return a human readable representation of this object.
+    def inspect
+      snapshot.inspect
+    end
+
     #---------------
     private
 
