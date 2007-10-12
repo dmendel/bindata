@@ -212,7 +212,7 @@ module BinData
     # in the listing.
     def field_names(include_hidden = false)
       # single values don't have any fields
-      return [] if single_value?
+      return [] if single_value? and include_hidden == false
 
       names = []
       @fields.each do |name, obj|

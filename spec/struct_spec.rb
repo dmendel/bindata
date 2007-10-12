@@ -147,11 +147,11 @@ describe "A Struct with a value method" do
   before(:all) do
     eval <<-END
       class StructWithValue < BinData::Struct
-        int8 :a
-        int8 :b
+        int8 :a, :initial_value => 23
+        int8 :b, :value => :a
 
         def value
-          a
+          b
         end
       end
     END
@@ -167,7 +167,11 @@ describe "A Struct with a value method" do
   end
 
   it "should not respond to field accesses" do
-    @obj.should_not respond_to?(:a)
+    @obj.should_not respond_to?(:b)
+  end
+
+  it "should return expected value" do
+    @obj.value.should eql(23)
   end
 end
 
