@@ -33,6 +33,10 @@ describe "An Array with no elements" do
     @data.length.should be_zero
   end
 
+  it "should be empty" do
+    @data.should be_empty
+  end
+
   it "should return nil for the first element" do
     @data.first.should be_nil
   end
@@ -66,22 +70,30 @@ describe "An Array with several elements" do
     @data.snapshot.should eql([1, 2, 3, 4, 5])
   end
 
+  it "should coerce to ::Array if required" do
+    ((1..7).to_a - @data).should eql([6, 7])
+  end
+
   it "should return the first element" do
     @data.first.should eql(1)
   end
 
   it "should return the first n elements" do
+    @data[0...3].should eql([1, 2, 3])
     @data.first(3).should eql([1, 2, 3])
     @data.first(99).should eql([1, 2, 3, 4, 5])
   end
 
   it "should return the last element" do
     @data.last.should eql(5)
+    @data[-1].should eql(5)
   end
 
   it "should return the last n elements" do
     @data.last(3).should eql([3, 4, 5])
     @data.last(99).should eql([1, 2, 3, 4, 5])
+
+    @data[-3, 100].should eql([3, 4, 5])
   end
 
   it "should have correct num elements" do
@@ -104,6 +116,10 @@ describe "An Array with several elements" do
   it "should be able to directly access elements" do
     @data[1] = 8
     @data[1].should eql(8)
+  end
+
+  it "should not be empty" do
+    @data.should_not be_empty
   end
 
   it "should be able to use methods from Enumerable" do
@@ -168,6 +184,10 @@ describe "An Array containing structs" do
 
   it "should access elements, not values" do
     @data[3].a.should eql(3)
+  end
+
+  it "should access multiple elements with slice" do
+    @data.slice(2, 3).collect { |x| x.a }.should eql([2, 3, 4])
   end
 
   it "should not be able to modify elements" do

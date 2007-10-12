@@ -128,6 +128,45 @@ module BinData
       []
     end
 
+    # Appends a new element to the end of the array.  If the array contains
+    # single_values then the +value+ may be provided to the call.
+    # Returns the appended object, or value in the case of single_values.
+    def append(value = nil)
+      append_new_element
+      self[self.length - 1] = value unless value.nil?
+      self.last
+    end
+
+    # Returns the element at +index+.  If the element is a single_value
+    # then the value of the element is returned instead.
+    def [](*index)
+      data = elements[*index]
+      if data.respond_to?(:each)
+        data.collect { |el| el.single_value? ? el.value : el }
+      else
+        data.single_value? ? data.value : data
+      end
+    end
+    alias_method :slice, :[]
+
+    # Sets the element at +index+.  If the element is a single_value
+    # then the value of the element is set instead.
+    def []=(index, value)
+      obj = elements[index]
+      unless obj.single_value?
+        raise NoMethodError, "undefined method `[]=' for #{self}", caller
+      end
+      obj.value = value
+    end
+
+    # Iterate over each element in the array.  If the elements are
+    # single_values then the values of the elements are iterated instead.
+    def each
+      elements.each do |el|
+        yield(el.single_value? ? el.value : el)
+      end
+    end
+
     # Returns the first element, or the first +n+ elements, of the array.
     # If the array is empty, the first form returns nil, and the second
     # form returns an empty array.
@@ -159,45 +198,21 @@ module BinData
       end
     end
 
-    # Appends a new element to the end of the array.  If the array contains
-    # single_values then the +value+ may be provided to the call.
-    # Returns the appended object, or value in the case of single_values.
-    def append(value = nil)
-      append_new_element
-      self[self.length - 1] = value unless value.nil?
-      self.last
-    end
-
-    # Returns the element at +index+.  If the element is a single_value
-    # then the value of the element is returned instead.
-    def [](index)
-      obj = elements[index]
-      obj.single_value? ? obj.value : obj
-    end
-
-    # Sets the element at +index+.  If the element is a single_value
-    # then the value of the element is set instead.
-    def []=(index, value)
-      obj = elements[index]
-      unless obj.single_value?
-        raise NoMethodError, "undefined method `[]=' for #{self}", caller
-      end
-      obj.value = value
-    end
-
-    # Iterate over each element in the array.  If the elements are
-    # single_values then the values of the elements are iterated instead.
-    def each
-      elements.each do |el|
-        yield(el.single_value? ? el.value : el)
-      end
-    end
-
     # The number of elements in this array.
     def length
       elements.length
     end
     alias_method :size, :length
+
+    # Returns true if self array contains no elements.
+    def empty?
+      length.zero?
+    end
+
+    # Allow this object to be used in array context.
+    def to_ary
+      snapshot
+    end
 
     #---------------
     private
