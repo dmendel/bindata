@@ -9,8 +9,7 @@ module BinData
   # String objects accept all the params that BinData::Single
   # does, as well as the following:
   #
-  # <tt>:initial_length</tt>:: The initial length to use before a value is
-  #                            either read or set.
+  # <tt>:read_length</tt>::    The length to use when reading a value.
   # <tt>:length</tt>::         The fixed length of the string.  If a shorter
   #                            string is set, it will be padded to this length.
   # <tt>:pad_char</tt>::       The character to use when padding a string to a
@@ -23,17 +22,17 @@ module BinData
   class String < Single
     # These are the parameters used by this class.
     mandatory_parameters :pad_char
-    optional_parameters  :initial_length, :length, :trim_value
+    optional_parameters  :read_length, :length, :trim_value
 
     def initialize(params = {}, env = nil)
       super(cleaned_params(params), env)
 
       # the only valid param combinations of length and value are:
-      #   :initial_length and :value
+      #   :read_length and :value
+      #   :read_length and :initial_value
       #   :length and :initial_value
       ensure_mutual_exclusion(:initial_value, :value)
-      ensure_mutual_exclusion(:initial_length, :length)
-      ensure_mutual_exclusion(:initial_length, :initial_value)
+      ensure_mutual_exclusion(:read_length, :length)
       ensure_mutual_exclusion(:length, :value)
     end
 
@@ -51,7 +50,7 @@ module BinData
     # Returns +val+ ensuring that it is padded to the desired length.
     def val_to_str(val)
       # trim val if necessary
-      len = val_num_bytes(val)
+      len = eval_param(:length) || val.length
       str = val.slice(0, len)
 
       # then pad to length if str is short
@@ -60,7 +59,8 @@ module BinData
 
     # Read a number of bytes from +io+ and return the value they represent.
     def read_val(io)
-      readbytes(io, val_num_bytes(""))
+      len = eval_param(:read_length) || eval_param(:length) || 0
+      readbytes(io, len)
     end
 
     # Returns an empty string as default.
@@ -68,21 +68,16 @@ module BinData
       ""
     end
 
-    # Return the number of bytes that +val+ will occupy when written.
-    def val_num_bytes(val)
-      if clear? and (evaluated = eval_param(:initial_length))
-        evaluated
-      elsif (evaluated = eval_param(:length))
-        evaluated
-      else
-        val.length
-      end
-    end
-
     # Returns a hash of cleaned +params+.  Cleaning means that param
     # values are converted to a desired format.
     def cleaned_params(params)
       new_params = params.dup
+
+      # warn about deprecated param - remove before releasing 1.0
+      if params[:initial_length]
+        warn ":initial_length is deprecated. Replacing with :read_length"
+        new_params[:read_length] = params[:initial_length]
+      end
 
       # set :pad_char to be a single length character string
       ch = new_params[:pad_char] || 0

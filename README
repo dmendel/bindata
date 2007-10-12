@@ -17,7 +17,7 @@ There is a better way.
 
   class Rectangle < BinData::Struct
     uint16le :len
-    string   :name, :initial_length => :len
+    string   :name, :read_length => :len
     uint32le :width
     uint32le :height
   end
@@ -102,7 +102,7 @@ Here's how we'd implement the same example with BinData.
 
   class PascalString < BinData::Struct
     uint8  :len,  :value => lambda { data.length }
-    string :data, :initial_length => :len
+    string :data, :read_length => :len
   end
 
   # reading
@@ -122,15 +122,15 @@ writing separately.
 
   class PascalStringReader < BinData::Struct
     uint8  :len
-    string :data, :initial_length => :len
+    string :data, :read_length => :len
   end
 
 This states that when reading the string, the initial length of the string
 (and hence the number of bytes to read) is determined by the value of the
 +len+ field.
 
-Note that <tt>:initial_length => :len</tt> is syntactic sugar for
-<tt>:initial_length => lambda { len }</tt>, but more on that later.
+Note that <tt>:read_length => :len</tt> is syntactic sugar for
+<tt>:read_length => lambda { len }</tt>, but more on that later.
 
   class PascalStringWriter < BinData::Struct
     uint8  :len, :value => lambda { data.length }

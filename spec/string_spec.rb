@@ -9,13 +9,8 @@ describe "Test mutual exclusion of parameters" do
     lambda { BinData::String.new(params) }.should raise_error(ArgumentError)
   end
 
-  it ":length and :initial_length" do
-    params = {:length => 5, :initial_length => 5}
-    lambda { BinData::String.new(params) }.should raise_error(ArgumentError)
-  end
-
-  it ":initial_value and :initial_length" do
-    params = {:initial_value => "", :initial_length => 5}
+  it ":length and :read_length" do
+    params = {:length => 5, :read_length => 5}
     lambda { BinData::String.new(params) }.should raise_error(ArgumentError)
   end
 
@@ -25,35 +20,29 @@ describe "Test mutual exclusion of parameters" do
   end
 end
 
-describe "A String with :initial_length" do
+describe "A String with :read_length" do
   before(:each) do
-    @str = BinData::String.new(:initial_length => 5)
+    @str = BinData::String.new(:read_length => 5)
   end
 
-  it "should set num_bytes" do
-    @str.num_bytes.should eql(5)
+  it "should have default value" do
+    @str.num_bytes.should eql(0)
+    @str.value.should eql("")
   end
 
-  it "should fill value with pad_char" do
-    @str.value.should eql("\0\0\0\0\0")
-  end
-
-  it "should read :initial_length bytes" do
+  it "should read :read_length bytes" do
     io = StringIO.new("abcdefghij")
     @str.read(io)
     @str.value.should eql("abcde")
   end
 
-  it "should forget :initial_length after value is set" do
-    @str.value = "abc"
-    @str.num_bytes.should eql(3)
-  end
-
-  it "should remember :initial_length after value is cleared" do
+  it "should remember :read_length after value is cleared" do
     @str.value = "abc"
     @str.num_bytes.should eql(3)
     @str.clear
-    @str.num_bytes.should eql(5)
+    io = StringIO.new("abcdefghij")
+    @str.read(io)
+    @str.value.should eql("abcde")
   end
 end
 
@@ -97,23 +86,48 @@ describe "A String with :length" do
   end
 end
 
-describe "A String with :initial_length and :value" do
+describe "A String with :read_length and :initial_value" do
   before(:each) do
-    @str = BinData::String.new(:initial_length => 5, :value => "abcdefghij")
+    @str = BinData::String.new(:read_length => 5, :initial_value => "abcdefghij")
   end
 
-  it "should use :initial_length before value is read" do
-    @str.num_bytes.should eql(5)
-    @str.value.should eql("abcde")
+  it "should use :initial_value before value is read" do
+    @str.num_bytes.should eql(10)
+    @str.value.should eql("abcdefghij")
   end
 
-  it "should use :initial_length for reading" do
+  it "should use :read_length for reading" do
     io = StringIO.new("ABCDEFGHIJKLMNOPQRST")
     @str.read(io)
     io.pos.should eql(5)
    end
 
-  it "should forget :initial_length after reading" do
+  it "should forget :initial_value after reading" do
+    io = StringIO.new("ABCDEFGHIJKLMNOPQRST")
+    @str.read(io)
+    @str.num_bytes.should eql(5)
+    @str.value.should eql("ABCDE")
+  end
+
+end
+
+describe "A String with :read_length and :value" do
+  before(:each) do
+    @str = BinData::String.new(:read_length => 5, :value => "abcdefghij")
+  end
+
+  it "should not be affected by :read_length before value is read" do
+    @str.num_bytes.should eql(10)
+    @str.value.should eql("abcdefghij")
+  end
+
+  it "should use :read_length for reading" do
+    io = StringIO.new("ABCDEFGHIJKLMNOPQRST")
+    @str.read(io)
+    io.pos.should eql(5)
+   end
+
+  it "should not be affected by :read_length after reading" do
     io = StringIO.new("ABCDEFGHIJKLMNOPQRST")
     @str.read(io)
     @str.num_bytes.should eql(10)
