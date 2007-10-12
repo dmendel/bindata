@@ -197,7 +197,7 @@ module BinData
 
     # Returns a snapshot of this struct as a hash.
     def snapshot
-      # allow structs to fake single value
+      # allow structs to masquerade as single value
       return value if single_value?
 
       hash = Snapshot.new
