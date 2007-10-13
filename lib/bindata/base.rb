@@ -259,7 +259,6 @@ module BinData
       end
     end
 
-=begin
     # To be implemented by subclasses
 
     # Resets the internal state to that of a newly created object.
@@ -298,7 +297,10 @@ module BinData
       raise NotImplementedError
     end
 
-    # To be implemented by subclasses
-=end
+    # Set visibility requirements of methods to implement
+    public :clear, :done_read, :snapshot, :field_names
+    private :_do_read, :_write, :_num_bytes
+
+    # End To be implemented by subclasses
   end
 end

@@ -200,3 +200,24 @@ describe "A data object defining a value method" do
     obj.should be_a_single_value
   end
 end
+
+describe "A subclass of Base" do
+  before(:all) do
+    eval <<-END
+      class SubClassOfBase < BinData::Base
+        public :_do_read, :_write, :_num_bytes
+      end
+    END
+    @obj = SubClassOfBase.new
+  end
+
+  it "should raise errors on unimplemented methods" do
+    lambda { @obj.clear }.should raise_error(NotImplementedError)
+    lambda { @obj.done_read }.should raise_error(NotImplementedError)
+    lambda { @obj.snapshot }.should raise_error(NotImplementedError)
+    lambda { @obj.field_names }.should raise_error(NotImplementedError)
+    lambda { @obj._do_read(nil) }.should raise_error(NotImplementedError)
+    lambda { @obj._write(nil) }.should raise_error(NotImplementedError)
+    lambda { @obj._num_bytes }.should raise_error(NotImplementedError)
+  end
+end
