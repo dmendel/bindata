@@ -20,6 +20,15 @@ describe "Test mutual exclusion of parameters" do
   end
 end
 
+describe "A String with deprecated parameters" do
+  it "should substitude :read_length for :initial_length" do
+    obj = BinData::String.new(:initial_length => 3)
+    io = StringIO.new("abcdefghij")
+    obj.read(io)
+    obj.value.should eql("abc")
+  end
+end
+
 describe "A String with :read_length" do
   before(:each) do
     @str = BinData::String.new(:read_length => 5)
