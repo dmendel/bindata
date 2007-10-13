@@ -122,6 +122,10 @@ describe "An Array with several elements" do
     @data.should_not be_empty
   end
 
+  it "should return a nicely formatted array  for inspect" do
+    @data.inspect.should eql("[1, 2, 3, 4, 5]")
+  end
+
   it "should be able to use methods from Enumerable" do
     @data.select { |x| (x % 2) == 0 }.should eql([2, 4])
   end
