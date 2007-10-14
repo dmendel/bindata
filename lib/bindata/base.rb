@@ -142,8 +142,9 @@ module BinData
       end
 
       # set up the environment
-      store_env(env)
+      @env             = env || LazyEvalEnv.new
       @env.params      = extra
+      @env.data_object = self
     end
 
     # Returns the class matching a previously registered +name+.
@@ -211,18 +212,6 @@ module BinData
     # Creates a new LazyEvalEnv for use by a child data object.
     def create_env
       LazyEvalEnv.new(@env)
-    end
-
-    # Ensures that the instance variable @env has a value.  This method is
-    # exposed so that subclasses can be ensured that @env has a value
-    # before they call +super+ in their <tt>#initialize</tt> method.  For
-    # example, a subclass may need to call +klass_lookup+ (which requires
-    # @env to be set) before calling +super+.
-    def store_env(env = nil)
-      unless defined? @env
-        @env = env || LazyEvalEnv.new
-        @env.data_object = self
-      end
     end
 
     # Returns the value of the evaluated parameter.  +key+ references a
