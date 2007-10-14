@@ -26,8 +26,8 @@ module BinData
   #    class PascalString < BinData::Struct
   #      delegate :data
   #
-  #      int32le :len, :value => lambda { data.length }
-  #      string  :data, :read_length => :len
+  #      uint8  :len, :value => lambda { data.length }
+  #      string :data, :read_length => :len
   #    end
   #
   #    str = PascalString.new
