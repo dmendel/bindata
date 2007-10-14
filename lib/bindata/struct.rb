@@ -22,22 +22,38 @@ module BinData
   #    obj = SomeStruct.new
   #    obj.field_names   =># ["b", "x", "y", "z"]
   #
+  #
+  #    class PascalString < BinData::Struct
+  #      delegate :data
+  #
+  #      int32le :len, :value => lambda { data.length }
+  #      string  :data, :read_length => :len
+  #    end
+  #
+  #    str = PascalString.new
+  #    str.value = "a test string"
+  #    str.single_value?   =># true
+  #    str.len         =># 13
+  #    str.num_bytes   =># 17
+  #
   # == Parameters
   #
   # Parameters may be provided at initialisation to control the behaviour of
   # an object.  These params are:
   #
-  # <tt>:fields</tt>:: An array specifying the fields for this struct.  Each
-  #                    element of the array is of the form
-  #                    [type, name, params].  Type is a symbol representing
-  #                    a registered type.  Name is the name of this field.
-  #                    Name may be nil as in the example above.  Params is an
-  #                    optional hash of parameters to pass to this field when
-  #                    instantiating it.
-  # <tt>:hide</tt>::   A list of the names of fields that are to be hidden
-  #                    from the outside world.  Hidden fields don't appear
-  #                    in #snapshot or #field_names but are still accessible
-  #                    by name.
+  # <tt>:fields</tt>::   An array specifying the fields for this struct.
+  #                      Each element of the array is of the form [type, name,
+  #                      params].  Type is a symbol representing a registered
+  #                      type.  Name is the name of this field.  Name may be
+  #                      nil as in the example above.  Params is an optional
+  #                      hash of parameters to pass to this field when
+  #                      instantiating it.
+  # <tt>:hide</tt>::     A list of the names of fields that are to be hidden
+  #                      from the outside world.  Hidden fields don't appear
+  #                      in #snapshot or #field_names but are still accessible
+  #                      by name.
+  # <tt>:delegate</tt>:: Forwards unknown methods calls and unknown params
+  #                      to this field.
   class Struct < Base
     # A hash that can be accessed via attributes.
     class Snapshot < Hash #:nodoc:
@@ -66,6 +82,16 @@ module BinData
           raise ArgumentError, "unknown value for endian '#{endian}'"
         end
         @endian
+      end
+
+      # Returns the name of the delegate field for this struct.  The delegate
+      # is set to +name+ if given.
+      def delegate(name=nil)
+        @delegate ||= nil
+        if name != nil
+          @delegate = name.to_s
+        end
+        @delegate
       end
 
       # Returns the names of any hidden fields in this struct.  Any given args
@@ -107,7 +133,7 @@ module BinData
         end
 
         # check that name isn't reserved
-        if Hash.instance_methods.include?(name)
+        if Hash.instance_methods.include?(name) and delegate.nil?
           raise NameError.new("", name),
                 "field '#{name}' is a reserved name", caller
         end
@@ -125,14 +151,40 @@ module BinData
 
     # These are the parameters used by this class.
     mandatory_parameter :fields
-    optional_parameter :endian, :hide
+    optional_parameters :endian, :hide, :delegate
 
     # Creates a new Struct.
     def initialize(params = {}, env = nil)
       super(cleaned_params(params), env)
 
       all_methods = methods
-      all_reserved_methods = Hash.instance_methods - all_methods
+      all_reserved_methods = nil
+      delegate_name = param(:delegate)
+
+      # get all reserved field names
+      res = param(:fields).find { |type, name, params| name == delegate_name }
+      if res
+        # all methods and field_names of the delegate are reserved.
+        delegate_klass = klass_lookup(res[0])
+        if delegate_klass.nil?
+          raise TypeError, "unknown type '#{type}' for #{self}"
+        end
+
+        delegate_params = res[2]
+        delegate = delegate_klass.new(delegate_params, create_env)
+        all_reserved_methods = delegate.methods + delegate.field_names -
+                                 all_methods
+
+        # move unsupplied params from this object to the delegate object
+        delegate.unsupplied_parameters.each do |p|
+          if (v = @env.params.delete(p))
+            delegate_params[p] = v
+          end
+        end
+      else
+        # no delegate so all instance methods of Hash are reserved
+        all_reserved_methods = Hash.instance_methods - all_methods
+      end
 
       # create instances of the fields
       @fields = param(:fields).collect do |type, name, params|
@@ -145,6 +197,15 @@ module BinData
           raise NameError.new("field '#{name}' is a reserved name",name)
         end
         [name, klass.new(params, create_env)]
+      end
+    end
+
+    # Returns a list of parameters that *weren't* provided to this object.
+    def unsupplied_parameters
+      if delegate_object != nil
+        delegate_object.unsupplied_parameters
+      else
+        super
       end
     end
 
@@ -197,32 +258,39 @@ module BinData
 
     # Returns a snapshot of this struct as a hash.
     def snapshot
-      # allow structs to masquerade as single value
-      return value if single_value?
-
-      hash = Snapshot.new
-      field_names.each do |name|
-        hash[name] = find_obj_for_name(name).snapshot
+      if delegate_object != nil
+        delegate_object.snapshot
+      else
+        hash = Snapshot.new
+        field_names.each do |name|
+          hash[name] = find_obj_for_name(name).snapshot
+        end
+        hash
       end
-      hash
     end
 
     # Returns a list of the names of all fields accessible through this
     # object.  +include_hidden+ specifies whether to include hidden names
     # in the listing.
     def field_names(include_hidden = false)
-      # single values don't have any fields
-      return [] if single_value? and include_hidden == false
-
-      names = []
-      @fields.each do |name, obj|
-        if name != ""
-          names << name unless (param(:hide).include?(name) and !include_hidden)
-        else
-          names.concat(obj.field_names)
+      if delegate_object != nil and !include_hidden
+        # delegate if possible
+        delegate_object.field_names
+      else
+        # collect field names
+        names = []
+        hidden = param(:hide)
+        @fields.each do |name, obj|
+          if name != ""
+            if include_hidden or not hidden.include?(name)
+              names << name
+            end
+          else
+            names.concat(obj.field_names)
+          end
         end
+        names
       end
-      names
     end
 
     # Returns the data object that stores values for +name+.
@@ -252,18 +320,18 @@ module BinData
       offset
     end
 
-    # Override to include field names.
+    # Override to include field names and delegate methods.
     alias_method :orig_respond_to?, :respond_to?
     def respond_to?(symbol, include_private = false)
       orig_respond_to?(symbol, include_private) ||
-        field_names(true).include?(symbol.id2name.chomp("="))
+        field_names(true).include?(symbol.id2name.chomp("=")) ||
+          delegate_object.respond_to?(symbol, include_private)
     end
 
     # Returns whether this data object contains a single value.  Single
     # value data objects respond to <tt>#value</tt> and <tt>#value=</tt>.
     def single_value?
-      # need to use original respond_to? to prevent infinite recursion
-      orig_respond_to?(:value)
+      delegate_object ? delegate_object.single_value? : false
     end
 
     def method_missing(symbol, *args)
@@ -282,6 +350,8 @@ module BinData
         else
           obj
         end
+      elsif delegate_object.respond_to?(symbol)
+        delegate_object.__send__(symbol, *args)
       else
         super
       end
@@ -289,6 +359,15 @@ module BinData
 
     #---------------
     private
+
+    # Returns the delegate object if any.
+    def delegate_object
+      if (name = param(:delegate))
+        find_obj_for_name(name)
+      else
+        nil
+      end
+    end
 
     # Returns a list of all the bindata objects for this struct.
     def bindata_objects
@@ -319,6 +398,12 @@ module BinData
         hide << h if field_names.include?(h)
       end
       new_params[:hide] = hide
+
+      # collect delegate name if it corresponds to a field name
+      if (delegate = (new_params[:delegate] || self.class.delegate))
+        delegate = delegate.to_s
+        new_params[:delegate] = delegate if field_names.include?(delegate)
+      end
 
       new_params
     end
