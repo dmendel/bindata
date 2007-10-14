@@ -1,5 +1,13 @@
 = BinData Changelog
 
+-== Version 0.8.0 (2007-10-14)
+
+* Add reserved field names to Struct.
+* Prevent warnings about method redefinition.
+* Allow Struct to masquerade as one of its fields.
+* Renamed String param :initial_length to :read_length.
+* BinData::Array now behaves more like the internal ruby array.
+
 == Version 0.7.0 (2007-08-26)
 
 * Arrays now support terminating conditions as well as fixed length reads.
