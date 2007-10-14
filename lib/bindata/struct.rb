@@ -165,9 +165,10 @@ module BinData
       res = param(:fields).find { |type, name, params| name == delegate_name }
       if res
         # all methods and field_names of the delegate are reserved.
-        delegate_klass = klass_lookup(res[0])
+        klass_name = res[0]
+        delegate_klass = klass_lookup(klass_name)
         if delegate_klass.nil?
-          raise TypeError, "unknown type '#{type}' for #{self}"
+          raise TypeError, "unknown type '#{klass_name} for #{self}"
         end
 
         delegate_params = res[2]
