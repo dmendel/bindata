@@ -11,11 +11,11 @@ class Gzip
 
   class Extra < BinData::Struct
     uint16le :len,  :length => lambda { data.length }
-    string   :data, :initial_length => :len
+    string   :data, :read_length => :len
   end
 
   class Header < BinData::Struct
-    uint16le :id,         :value => 0x8b1f, :check_value => 0x8b1f
+    uint16le :ident,      :value => 0x8b1f, :check_value => 0x8b1f
     uint8    :compression_method, :initial_value => DEFLATE
     uint8    :flags,      :value => :calculate_flags_val,
                           # Upper 3 bits must be zero
