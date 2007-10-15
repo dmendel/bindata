@@ -40,6 +40,9 @@ module BinData
     mandatory_parameter :type
     optional_parameters :initial_length, :read_until
 
+    # An empty hash shared by all instances
+    @@empty_hash = Hash.new.freeze
+
     # Creates a new Array
     def initialize(params = {}, env = nil)
       super(cleaned_params(params), env)
@@ -51,7 +54,7 @@ module BinData
 
       @element_list    = nil
       @element_klass   = klass
-      @element_params  = el_params || {}
+      @element_params  = el_params || @@empty_hash
     end
 
     # Clears the element at position +index+.  If +index+ is not given, then
@@ -133,7 +136,7 @@ module BinData
     # Returns the appended object, or value in the case of single_values.
     def append(value = nil)
       append_new_element
-      self[self.length - 1] = value unless value.nil?
+      self[-1] = value unless value.nil?
       self.last
     end
 
@@ -142,9 +145,9 @@ module BinData
     def [](*index)
       data = elements[*index]
       if data.respond_to?(:each)
-        data.collect { |el| el.single_value? ? el.value : el }
+        data.collect { |el| (el && el.single_value?) ? el.value : el }
       else
-        data.single_value? ? data.value : data
+        (data && data.single_value?) ? data.value : data
       end
     end
     alias_method :slice, :[]
@@ -172,13 +175,9 @@ module BinData
     # form returns an empty array.
     def first(n = nil)
       if n.nil?
-        self.length.zero? ? nil : self[0]
+        self[0]
       else
-        array = []
-        [n, self.length].min.times do |i|
-          array.push(self[i])
-        end
-        array
+        self[0, n]
       end
     end
 
@@ -187,14 +186,10 @@ module BinData
     # form returns an empty array.
     def last(n = nil)
       if n.nil?
-        self.length.zero? ? nil : self[self.length - 1]
+        self[-1]
       else
-        array = []
-        start = self.length - [n, self.length].min
-        start.upto(self.length - 1) do |i|
-          array.push(self[i])
-        end
-        array
+        n = length if n > length
+        self[-n, n]
       end
     end
 
