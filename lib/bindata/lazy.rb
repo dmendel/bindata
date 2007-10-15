@@ -13,23 +13,33 @@ module BinData
   # parent data object.  This makes the lambda easier to read as we just write
   # <tt>field</tt> instead of <tt>obj.field</tt>.
   class LazyEvalEnv
+    # An empty hash shared by all instances
+    @@empty_hash = Hash.new.freeze
+
     # Creates a new environment.  +parent+ is the environment of the
     # parent data object.
     def initialize(parent = nil)
       @parent = parent
-      @variables = {}
-      @overrides = {}
+      @variables = @@empty_hash
+      @overrides = @@empty_hash
     end
-    attr_reader :parent
-    attr_accessor :data_object, :params
+    attr_reader :parent, :params
+    attr_accessor :data_object
 
     # only accessible by another LazyEvalEnv
     protected :data_object
+
+    def params=(p)
+      @params = p.empty? ? @@empty_hash : p
+    end
 
     # Add a variable with a pre-assigned value to this environment.  +sym+
     # will be accessible as a variable for any lambda evaluated
     # with #lazy_eval.
     def add_variable(sym, value)
+      if @variables.equal?(@@empty_hash)
+        @variables = {}
+      end
       @variables[sym.to_sym] = value
     end
 
@@ -47,15 +57,16 @@ module BinData
 
     # Evaluates +obj+ in the context of this environment.  Evaluation
     # recurses until it yields a value that is not a symbol or lambda.
-    def lazy_eval(obj, overrides = {})
-      @overrides = overrides
+    # +overrides+ is an optional +params+ like hash
+    def lazy_eval(obj, overrides = nil)
+      @overrides = overrides if overrides
       if obj.is_a? Symbol
         # treat :foo as lambda { foo }
         obj = __send__(obj)
       elsif obj.respond_to? :arity
         obj = instance_eval(&obj)
       end
-      @overrides = {}
+      @overrides = @@empty_hash
       obj
     end
 
