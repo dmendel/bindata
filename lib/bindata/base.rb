@@ -65,6 +65,8 @@ module BinData
 
       # Returns both the mandatory and optional parameters used by this class.
       def parameters
+        # warn about deprecated method - remove before releasing 1.0
+        warn "warning: #parameters is deprecated."
         (mandatory_parameters + optional_parameters).uniq
       end
 
