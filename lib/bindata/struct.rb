@@ -177,25 +177,36 @@ module BinData
                                  all_methods
 
         # move unsupplied params from this object to the delegate object
+        env_params = @env.params.dup
         delegate.unsupplied_parameters.each do |p|
-          if (v = @env.params.delete(p))
+          if (v = env_params.delete(p))
             delegate_params[p] = v
           end
         end
+        @env.params = env_params
       else
         # no delegate so all instance methods of Hash are reserved
         all_reserved_methods = Hash.instance_methods - all_methods
       end
 
+      # check if field names conflict with any reserved names
+      field_names = param(:fields).collect { |f| f[1] }
+      field_names_okay = (all_methods & field_names).empty? &&
+                           (all_reserved_methods & field_names).empty?
+
       # create instances of the fields
       @fields = param(:fields).collect do |type, name, params|
         klass = klass_lookup(type)
         raise TypeError, "unknown type '#{type}' for #{self}" if klass.nil?
-        if all_methods.include?(name)
-          raise NameError.new("field '#{name}' shadows an existing method",name)
-        end
-        if all_reserved_methods.include?(name)
-          raise NameError.new("field '#{name}' is a reserved name",name)
+        if not field_names_okay
+          # at least one field names conflicts so test them all.
+          # rationale - #include? is expensive so we avoid it if possible.
+          if all_methods.include?(name)
+            raise NameError.new("field '#{name}' shadows an existing method",name)
+          end
+          if all_reserved_methods.include?(name)
+            raise NameError.new("field '#{name}' is a reserved name",name)
+          end
         end
         [name, klass.new(params, create_env)]
       end

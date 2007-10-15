@@ -112,6 +112,10 @@ module BinData
     # reference callable objects (methods or procs).  +env+ is the
     # environment that these callable objects are evaluated in.
     def initialize(params = {}, env = nil)
+      # all known parameters
+      mandatory = self.class.mandatory_parameters
+      optional = self.class.optional_parameters
+
       # default :readwrite param to true if unspecified
       if not params.has_key?(:readwrite)
         params = params.dup
@@ -119,14 +123,12 @@ module BinData
       end
 
       # ensure mandatory parameters exist
-      self.class.mandatory_parameters.each do |prm|
+      mandatory.each do |prm|
         if not params.has_key?(prm)
           raise ArgumentError, "parameter ':#{prm}' must be specified " +
                                "in #{self}"
         end
       end
-
-      known_params = self.class.parameters
 
       # partition parameters into known and extra parameters
       @params = {}
@@ -134,7 +136,7 @@ module BinData
       params.each do |k,v|
         k = k.to_sym
         raise ArgumentError, "parameter :#{k} is nil in #{self}" if v.nil?
-        if known_params.include?(k)
+        if mandatory.include?(k) or optional.include?(k)
           @params[k] = v.freeze
         else
           extra[k] = v.freeze
@@ -149,10 +151,15 @@ module BinData
 
     # Returns the class matching a previously registered +name+.
     def klass_lookup(name)
-      klass = self.class.lookup(name)
-      if klass.nil? and @env.parent_data_object != nil
-        # lookup failed so retry in the context of the parent data object
-        klass = @env.parent_data_object.klass_lookup(name)
+      @cache ||= {}
+      klass = @cache[name]
+      if klass.nil?
+        klass = self.class.lookup(name)
+        if klass.nil? and @env.parent_data_object != nil
+          # lookup failed so retry in the context of the parent data object
+          klass = @env.parent_data_object.klass_lookup(name)
+        end
+        @cache[name] = klass
       end
       klass
     end
@@ -218,7 +225,7 @@ module BinData
     # parameter from the +params+ hash used when creating the data object.
     # +values+ contains data that may be accessed when evaluating +key+.
     # Returns nil if +key+ does not refer to any parameter.
-    def eval_param(key, values = {})
+    def eval_param(key, values = nil)
       @env.lazy_eval(@params[key], values)
     end
 
