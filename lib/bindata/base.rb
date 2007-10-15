@@ -164,10 +164,9 @@ module BinData
       klass
     end
 
-    # Returns a list of parameters that *weren't* provided to this object.
-    def unsupplied_parameters
-      supplied = @params.keys + @env.params.keys
-      self.class.parameters - supplied
+    # Returns a list of parameters that are accepted by this object
+    def accepted_parameters
+      (self.class.mandatory_parameters + self.class.optional_parameters).uniq
     end
 
     # Reads data into this bin object by calling #do_read then #done_read.

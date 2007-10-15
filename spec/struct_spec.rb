@@ -41,7 +41,7 @@ describe "A Struct that delegates" do
       class DelegateStruct < BinData::Struct
         delegate :b
         int8 :a, :initial_value => :num
-        int8 'b'
+        int8 'b', :initial_value => 7
         int8 :c, :value => :b
       end
     END
@@ -50,6 +50,7 @@ describe "A Struct that delegates" do
 
   it "should access custom parameters" do
     @obj.a.should eql(5)
+    @obj.b.should eql(7)
   end
 
   it "should have correct num_bytes" do
@@ -67,15 +68,15 @@ describe "A Struct that delegates" do
 
   it "should delegate methods" do
     @obj.should respond_to?(:value)
-    @obj.value = 7
-    @obj.c.should eql(7)
+    @obj.value = 9
+    @obj.c.should eql(9)
   end
 
-  it "should identify unsupplied parameters" do
-    @obj.unsupplied_parameters.should include(:check_value)
-    @obj.unsupplied_parameters.should include(:initial_value)
-    @obj.unsupplied_parameters.should include(:value)
-    @obj.unsupplied_parameters.should_not include(:endian)
+  it "should identify accepted parameters" do
+    @obj.accepted_parameters.should include(:check_value)
+    @obj.accepted_parameters.should include(:initial_value)
+    @obj.accepted_parameters.should include(:value)
+    @obj.accepted_parameters.should_not include(:endian)
   end
 
   it "should pass params when creating" do
@@ -108,9 +109,10 @@ describe "A Struct with nested delegation" do
     @obj.value.should eql(7)
   end
 
-  it "should identify unsupplied parameters" do
-    @obj.unsupplied_parameters.should include(:check_value)
-    @obj.unsupplied_parameters.should include(:value)
+  it "should identify accepted parameters" do
+    @obj.accepted_parameters.should include(:check_value)
+    @obj.accepted_parameters.should include(:initial_value)
+    @obj.accepted_parameters.should include(:value)
   end
 end
 
@@ -211,9 +213,9 @@ describe "A Struct with multiple fields" do
     @obj.num_bytes.should     eql(2)
   end
 
-  it "should identify unsupplied parameters" do
-    @obj.unsupplied_parameters.should include(:delegate)
-    @obj.unsupplied_parameters.should include(:endian)
+  it "should identify accepted parameters" do
+    @obj.accepted_parameters.should include(:delegate)
+    @obj.accepted_parameters.should include(:endian)
   end
 
   it "should clear" do

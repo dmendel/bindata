@@ -176,9 +176,9 @@ module BinData
         all_reserved_methods = delegate.methods + delegate.field_names -
                                  all_methods
 
-        # move unsupplied params from this object to the delegate object
+        # move accepted params from this object to the delegate object
         env_params = @env.params.dup
-        delegate.unsupplied_parameters.each do |p|
+        delegate.accepted_parameters.each do |p|
           if (v = env_params.delete(p))
             delegate_params[p] = v
           end
@@ -212,10 +212,10 @@ module BinData
       end
     end
 
-    # Returns a list of parameters that *weren't* provided to this object.
-    def unsupplied_parameters
+    # Returns a list of parameters that are accepted by this object
+    def accepted_parameters
       if delegate_object != nil
-        delegate_object.unsupplied_parameters
+        delegate_object.accepted_parameters
       else
         super
       end

@@ -94,12 +94,12 @@ describe "A data object with parameters" do
     obj.param(:p3).should respond_to(:arity)
   end
 
-  it "should identify unsupplied parameters" do
+  it "should identify accepted parameters" do
     obj = WithParam.new(:p1 => 1, :p3 => 3, :p4 => 4, :p5 => 5)
-    obj.unsupplied_parameters.should include(:p2)
-    obj.unsupplied_parameters.should_not include(:p1)
-    obj.unsupplied_parameters.should_not include(:p3)
-    obj.unsupplied_parameters.should_not include(:p4)
+    obj.accepted_parameters.should include(:p1)
+    obj.accepted_parameters.should include(:p2)
+    obj.accepted_parameters.should include(:p3)
+    obj.accepted_parameters.should_not include(:p4)
   end
 end
 
