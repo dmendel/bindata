@@ -22,6 +22,7 @@ module BinData
       @parent = parent
       @variables = @@empty_hash
       @overrides = @@empty_hash
+      @params    = @@empty_hash
     end
     attr_reader :parent, :params
     attr_accessor :data_object
@@ -29,8 +30,9 @@ module BinData
     # only accessible by another LazyEvalEnv
     protected :data_object
 
+    # Set the parameters for this environment.
     def params=(p)
-      @params = p.empty? ? @@empty_hash : p
+      @params = (p.nil? or p.empty?) ? @@empty_hash : p
     end
 
     # Add a variable with a pre-assigned value to this environment.  +sym+
