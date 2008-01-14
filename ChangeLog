@@ -1,5 +1,12 @@
 = BinData Changelog
 
+-== Version 0.8.1 (2008-01-14)
+
+* Reduced memory consumption.
+* Increased execution speed.
+* Deprecated BinData::Base.parameters
+* Fixed spec syntax (thanks to David Goodlad)
+
 -== Version 0.8.0 (2007-10-14)
 
 * Add reserved field names to Struct.

@@ -1,5 +1,5 @@
 # BinData -- Binary data manipulator.
-# Copyright (c) 2007 Dion Mendel.
+# Copyright (c) 2007,2008 Dion Mendel.
 
 require 'bindata/array'
 require 'bindata/choice'
@@ -10,5 +10,5 @@ require 'bindata/stringz'
 require 'bindata/struct'
 
 module BinData
-  VERSION = "0.8.0"
+  VERSION = "0.8.1"
 end
