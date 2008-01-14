@@ -346,7 +346,7 @@ module BinData
       delegate_object ? delegate_object.single_value? : false
     end
 
-    def method_missing(symbol, *args)
+    def method_missing(symbol, *args, &block)
       name = symbol.id2name
 
       is_writer = (name[-1, 1] == "=")
@@ -363,7 +363,7 @@ module BinData
           obj
         end
       elsif delegate_object.respond_to?(symbol)
-        delegate_object.__send__(symbol, *args)
+        delegate_object.__send__(symbol, *args, &block)
       else
         super
       end

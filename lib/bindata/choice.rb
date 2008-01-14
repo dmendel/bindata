@@ -97,9 +97,9 @@ module BinData
       super || the_choice.respond_to?(symbol, include_private)
     end
 
-    def method_missing(symbol, *args)
+    def method_missing(symbol, *args, &block)
       if the_choice.respond_to?(symbol)
-        the_choice.__send__(symbol, *args)
+        the_choice.__send__(symbol, *args, &block)
       else
         super
       end
