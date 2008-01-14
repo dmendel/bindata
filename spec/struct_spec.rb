@@ -26,7 +26,7 @@ describe "A Struct with hidden fields" do
     @obj.c = 15
     @obj.c.should eql(15)
 
-    @obj.should respond_to?(:b=)
+    @obj.should respond_to(:b=)
   end
 
   it "should not include hidden fields in snapshot" do
@@ -67,7 +67,7 @@ describe "A Struct that delegates" do
   end
 
   it "should delegate methods" do
-    @obj.should respond_to?(:value)
+    @obj.should respond_to(:value)
     @obj.value = 9
     @obj.c.should eql(9)
   end
@@ -105,7 +105,7 @@ describe "A Struct with nested delegation" do
   end
 
   it "should forward parameters" do
-    @obj.should respond_to?(:value)
+    @obj.should respond_to(:value)
     @obj.value.should eql(7)
   end
 
