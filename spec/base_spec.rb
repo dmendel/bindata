@@ -148,6 +148,51 @@ describe "A data object with :check_offset" do
   end
 end
 
+describe "A data object with :adjust_offset" do
+  before(:all) do
+    eval <<-END
+      class TenByteAdjustingOffset < BinData::Base
+        def do_read(io)
+          # advance the io position before checking offset
+          io.seek(10, IO::SEEK_CUR)
+          super(io)
+        end
+        def _do_read(io) end
+        def done_read; end
+        def clear; end
+      end
+    END
+  end
+
+  it "should be mutually exclusive with :check_offset" do
+    params = { :check_offset => 8, :adjust_offset => 8 }
+    lambda { TenByteAdjustingOffset.new(params) }.should raise_error(ArgumentError)
+  end
+
+  it "should adjust if offset is incorrect" do
+    io = StringIO.new("12345678901234567890")
+    io.seek(2)
+    obj = TenByteAdjustingOffset.new(:adjust_offset => 13)
+    obj.read(io)
+    io.pos.should equal(2 + 13)
+  end
+
+  it "should succeed if offset is correct" do
+    io = StringIO.new("12345678901234567890")
+    io.seek(3)
+    obj = TenByteAdjustingOffset.new(:adjust_offset => 10)
+    lambda { obj.read(io) }.should_not raise_error
+    io.pos.should equal(3 + 10)
+  end
+
+  it "should fail if cannot adjust offset" do
+    io = StringIO.new("12345678901234567890")
+    io.seek(3)
+    obj = TenByteAdjustingOffset.new(:adjust_offset => -4)
+    lambda { obj.read(io) }.should raise_error(BinData::ValidityError)
+  end
+end
+
 describe "A data object with :readwrite => false" do
   before(:all) do
     eval <<-END

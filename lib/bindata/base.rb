@@ -21,6 +21,10 @@ module BinData
   #                           is made available to any lambda assigned to
   #                           this parameter.  This parameter is only checked
   #                           before reading.
+  # [<tt>:adjust_offset</tt>] Ensures that the current IO offset is at this
+  #                           position before reading.  This is like
+  #                           <tt>:check_offset</tt>, except that it will
+  #                           adjust the IO offset instead of raising an error.
   class Base
     class << self
       # Returns the mandatory parameters used by this class.  Any given args
@@ -106,7 +110,7 @@ module BinData
     end
 
     # Define the parameters we use in this class.
-    optional_parameters :check_offset, :readwrite
+    optional_parameters :check_offset, :adjust_offset, :readwrite
 
     # Creates a new data object.
     #
@@ -144,6 +148,9 @@ module BinData
           extra[k] = v.freeze
         end
       end
+
+      # ensure mutual exclusion of parameters
+      ensure_mutual_exclusion(:check_offset, :adjust_offset)
 
       # set up the environment
       @env             = env || LazyEvalEnv.new
@@ -263,6 +270,20 @@ module BinData
         elsif actual_offset != expected and expected != true
           raise ValidityError, "offset is '#{actual_offset}' but " +
                                "expected '#{expected}'"
+        end
+      elsif has_param?(:adjust_offset)
+        actual_offset = io.pos - io.bindata_mark
+        expected = eval_param(:adjust_offset)
+        if actual_offset != expected
+          begin
+            seek = expected - actual_offset
+            io.seek(seek, IO::SEEK_CUR)
+            warn "adjusting stream position by #{seek} bytes" if $VERBOSE
+          rescue
+            # could not seek so raise an error
+            raise ValidityError, "offset is '#{actual_offset}' but " +
+                                 "couldn't seek to expected '#{expected}'"
+          end
         end
       end
     end
