@@ -5,7 +5,6 @@ module BinData
   # at any particular time.
   #
   #   require 'bindata'
-  #   require 'stringio'
   #
   #   choices = [ [:int8, {:value => 3}], [:int8, {:value => 5}] ]
   #   a = BinData::Choice.new(:choices => choices, :selection => 1)

@@ -1,5 +1,6 @@
 require 'bindata/lazy'
 require 'bindata/registry'
+require 'stringio'
 
 module BinData
   # Error raised when unexpected results occur when reading data from IO.
@@ -180,6 +181,9 @@ module BinData
 
     # Reads data into this bin object by calling #do_read then #done_read.
     def read(io)
+      # wrap strings in a StringIO
+      io = StringIO.new(io) if io.respond_to?(:to_str)
+
       # remove previous method to prevent warnings
       class << io
         remove_method(:bindata_mark) if method_defined?(:bindata_mark)
