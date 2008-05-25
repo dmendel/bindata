@@ -1,4 +1,4 @@
-require 'bindata/base'
+require 'bindata/multi'
 
 module BinData
   # An Array is a list of data objects of the same type.
@@ -30,11 +30,8 @@ module BinData
   #
   # Each data object in an array has the variable +index+ made available
   # to any lambda evaluated as a parameter of that data object.
-  class Array < Base
+  class Array < Multi
     include Enumerable
-
-    # Register this class
-    register(self.name, self)
 
     # These are the parameters used by this class.
     mandatory_parameter :type

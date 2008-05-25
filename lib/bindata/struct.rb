@@ -1,4 +1,4 @@
-require 'bindata/base'
+require 'bindata/multi'
 
 module BinData
   # A Struct is an ordered collection of named data objects.
@@ -54,16 +54,13 @@ module BinData
   #                      by name.
   # <tt>:delegate</tt>:: Forwards unknown methods calls and unknown params
   #                      to this field.
-  class Struct < Base
+  class Struct < Multi
     # A hash that can be accessed via attributes.
     class Snapshot < Hash #:nodoc:
       def method_missing(symbol, *args)
         self[symbol.id2name] || super
       end
     end
-
-    # Register this class
-    register(self.name, self)
 
     class << self
       # Register the names of all subclasses of this class.

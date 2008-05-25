@@ -1,4 +1,4 @@
-require 'bindata/base'
+require 'bindata/multi'
 
 module BinData
   # A Choice is a collection of data objects of which only one is active
@@ -23,10 +23,7 @@ module BinData
   #                       provided as [type_symbol, hash_params].
   # <tt>:selection</tt>:: An index into the :choices array which specifies
   #                       the currently active choice.
-  class Choice < Base
-
-    # Register this class
-    register(self.name, self)
+  class Choice < Multi
 
     # These are the parameters used by this class.
     mandatory_parameters :choices, :selection
