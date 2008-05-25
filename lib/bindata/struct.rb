@@ -103,6 +103,25 @@ module BinData
         @hide
       end
 
+      # Returns the class matching a previously registered +name+.
+      def lookup(name)
+        klass = Registry.instance.lookup(name)
+        if klass.nil?
+          # lookup failed so attempt endian lookup
+          if self.respond_to?(:endian) and self.endian != nil
+            name = name.to_s
+            if /^u?int\d\d?$/ =~ name
+              new_name = name + ((self.endian == :little) ? "le" : "be")
+              klass = Registry.instance.lookup(new_name)
+            elsif ["float", "double"].include?(name)
+              new_name = name + ((self.endian == :little) ? "_le" : "_be")
+              klass = Registry.instance.lookup(new_name)
+            end
+          end
+        end
+        klass
+      end
+
       # Used to define fields for this structure.
       def method_missing(symbol, *args)
         name, params = args
