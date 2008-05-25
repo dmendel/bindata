@@ -182,7 +182,7 @@ module BinData
     def read(io)
       # remove previous method to prevent warnings
       class << io
-        undef_method(:bindata_mark) if method_defined?(:bindata_mark)
+        remove_method(:bindata_mark) if method_defined?(:bindata_mark)
       end
 
       # remember the current position in the IO object
