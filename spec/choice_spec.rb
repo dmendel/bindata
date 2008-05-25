@@ -25,17 +25,17 @@ end
 describe "A Choice with several choices" do
   before(:each) do
     # allow specifications to select the choice
-    @env = BinData::LazyEvalEnv.new
-    @env.class.class_eval { attr_accessor :choose }
+    BinData::LazyEvalEnv.class_eval { attr_accessor :choose }
+    BinData::Choice.class_eval { attr_reader :env }
 
-    @data = BinData::Choice.new({:choices => [[:int8, {:initial_value => 3}],
-                                              [:int16le, {:initial_value => 5}],
-                                              :int8,
-                                              [:struct,
-                                               {:fields =>[[:int8, :a]]}],
-                                              [:int8, {:initial_value => 7}]],
-                                 :selection => :choose},
-                                @env)
+    @data = BinData::Choice.new(:choices => [[:int8, {:initial_value => 3}],
+                                             [:int16le, {:initial_value => 5}],
+                                             :int8,
+                                             [:struct,
+                                              {:fields =>[[:int8, :a]]}],
+                                             [:int8, {:initial_value => 7}]],
+                                :selection => :choose)
+    @env = @data.env
   end
 
   it "should be able to select the choice" do
