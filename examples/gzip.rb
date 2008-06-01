@@ -9,12 +9,12 @@ class Gzip
   # Known compression methods
   DEFLATE = 8
 
-  class Extra < BinData::Struct
+  class Extra < BinData::MultiValue
     uint16le :len,  :length => lambda { data.length }
     string   :data, :read_length => :len
   end
 
-  class Header < BinData::Struct
+  class Header < BinData::MultiValue
     uint16le :ident,      :value => 0x8b1f, :check_value => 0x8b1f
     uint8    :compression_method, :initial_value => DEFLATE
     uint8    :flags,      :value => :calculate_flags_val,
@@ -60,7 +60,7 @@ class Gzip
     end
   end
 
-  class Footer < BinData::Struct
+  class Footer < BinData::MultiValue
     uint32le :crc32
     uint32le :uncompressed_size
   end
