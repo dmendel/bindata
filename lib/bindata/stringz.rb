@@ -7,6 +7,17 @@ module BinData
   # For convenience, the zero terminator is not necessary when setting the
   # value.  Likewise, the returned value will not be zero terminated.
   #
+  #   require 'bindata'
+  #
+  #   data = "abcd\x00efgh"
+  #
+  #   obj = BinData::Stringz.new
+  #   obj.read(data)
+  #   obj.snapshot #=> "abcd"
+  #   obj.value #=> "abcd"
+  #   obj.num_bytes #=> 5
+  #   obj.to_s #=> "abcd\000"
+  #
   # == Parameters
   #
   # Stringz objects accept all the params that BinData::Single
@@ -15,6 +26,10 @@ module BinData
   # <tt>:max_length</tt>:: The maximum length of the string including the zero
   #                        byte.
   class Stringz < Single
+
+    # Register this class
+    register(self.name, self)
+
     # These are the parameters used by this class.
     optional_parameters :max_length
 

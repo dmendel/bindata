@@ -15,7 +15,7 @@ Do you ever find yourself writing code like this?
 It's ugly, violates DRY and feels like you're writing Perl, not Ruby.
 There is a better way.
 
-  class Rectangle < BinData::Struct
+  class Rectangle < BinData::MultiValue
     uint16le :len
     string   :name, :read_length => :len
     uint32le :width
@@ -36,7 +36,7 @@ download[http://rubyforge.org/frs/?group_id=3252] page.
 
 BinData declarations are easy to read.  Here's an example.
 
-  class MyFancyFormat < BinData::Struct
+  class MyFancyFormat < BinData::MultiValue
     stringz :comment
     uint8   :count, :check_value => lambda { (value % 2) == 0 }
     array   :some_ints, :type => :int32be, :initial_length => :count
@@ -62,7 +62,7 @@ the writing code, have a go at the reading code.
 The general format of a BinData declaration is a class containing one or more
 fields.
 
-  class MyName < BinData::Struct
+  class MyName < BinData::MultiValue
     type field_name, :param1 => "foo", :param2 => bar, ...
     ...
   end
@@ -100,7 +100,7 @@ the string contains the string's length.
 
 Here's how we'd implement the same example with BinData.
 
-  class PascalString < BinData::Struct
+  class PascalString < BinData::MultiValue
     uint8  :len,  :value => lambda { data.length }
     string :data, :read_length => :len
   end
@@ -120,7 +120,7 @@ Here's how we'd implement the same example with BinData.
 This syntax needs explaining.  Let's simplify by examining reading and
 writing separately.
 
-  class PascalStringReader < BinData::Struct
+  class PascalStringReader < BinData::MultiValue
     uint8  :len
     string :data, :read_length => :len
   end
@@ -132,7 +132,7 @@ This states that when reading the string, the initial length of the string
 Note that <tt>:read_length => :len</tt> is syntactic sugar for
 <tt>:read_length => lambda { len }</tt>, but more on that later.
 
-  class PascalStringWriter < BinData::Struct
+  class PascalStringWriter < BinData::MultiValue
     uint8  :len, :value => lambda { data.length }
     string :data
   end
@@ -151,6 +151,13 @@ length afterwards.
 
 These are the predefined types.  Custom types can be created by composing
 these types.
+
+BinData::String::   A sequence of bytes.
+BinData::Stringz::  A zero terminated sequence of bytes.
+
+BinData::Array::    A list of objects of the same type.
+BinData::Choice::   A choice between several objects.
+BinData::Struct::   An ordered collection of named objects.
 
 BinData::Int8::     Signed  8 bit integer.
 BinData::Int16le::  Signed 16 bit integer (little endian).
@@ -173,16 +180,9 @@ BinData::FloatBe::  Single precision floating point number (big endian).
 BinData::DoubleLe:: Double precision floating point number (little endian).
 BinData::DoubleBe:: Double precision floating point number (big endian).
 
-BinData::String::   A sequence of bytes.
-BinData::Stringz::  A zero terminated sequence of bytes.
-
-BinData::Array::    A list of objects of the same type.
-BinData::Choice::   A choice between several objects.
-BinData::Struct::   An ordered collection of named objects.
-
 == Parameters
 
-  class PascalStringWriter < BinData::Struct
+  class PascalStringWriter < BinData::MultiValue
     uint8  :len, :value => lambda { data.length }
     string :data
   end
@@ -217,7 +217,7 @@ produced is independent of architecture.  Explicitly specifying the
 endianess of each numeric type can become tedious, so the following
 shortcut is provided.
 
-  class A < BinData::Struct
+  class A < BinData::MultiValue
     endian :little
 
     uint16   :a
@@ -229,7 +229,7 @@ shortcut is provided.
 
 is equivalent to:
 
-  class A < BinData::Struct
+  class A < BinData::MultiValue
     uint16le  :a
     uint32le  :b
     double_le :c
@@ -243,13 +243,14 @@ cascade to nested types, as illustrated with the array in the above example.
 
 == Creating custom types
 
-Custom types should be created by subclassing BinData::Struct.
-Ocassionally it may be useful to subclass BinData::Single.  Subclassing
-other classes may have unexpected results and is unsupported.
+Custom types should be created by subclassing BinData::MultiValue or
+BinData::SingleValue.  Ocassionally it may be useful to subclass
+BinData::Single.  Subclassing other classes may have unexpected results
+and is unsupported.
 
 
 == License
 
 BinData is released under the same license as Ruby.
 
-Copyright (c) 2007 Dion Mendel
+Copyright (c) 2007, 2008 Dion Mendel

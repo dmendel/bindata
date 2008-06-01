@@ -3,7 +3,7 @@
 require File.expand_path(File.dirname(__FILE__)) + '/spec_common'
 require 'bindata/string'
 
-describe "Test mutual exclusion of parameters" do
+describe BinData::String, "with mutually exclusive parameters" do
   it ":value and :initial_value" do
     params = {:value => "", :initial_value => ""}
     lambda { BinData::String.new(params) }.should raise_error(ArgumentError)
@@ -20,170 +20,170 @@ describe "Test mutual exclusion of parameters" do
   end
 end
 
-describe "A String with deprecated parameters" do
+describe BinData::String, "with deprecated parameters" do
   it "should substitude :read_length for :initial_length" do
     obj = BinData::String.new(:initial_length => 3)
     io = StringIO.new("abcdefghij")
     obj.read(io)
-    obj.value.should eql("abc")
+    obj.value.should == "abc"
   end
 end
 
-describe "A String with :read_length" do
+describe BinData::String, "with :read_length" do
   before(:each) do
     @str = BinData::String.new(:read_length => 5)
   end
 
   it "should have default value" do
-    @str.num_bytes.should eql(0)
-    @str.value.should eql("")
+    @str.num_bytes.should == 0
+    @str.value.should == ""
   end
 
   it "should read :read_length bytes" do
     io = StringIO.new("abcdefghij")
     @str.read(io)
-    @str.value.should eql("abcde")
+    @str.value.should == "abcde"
   end
 
   it "should remember :read_length after value is cleared" do
     @str.value = "abc"
-    @str.num_bytes.should eql(3)
+    @str.num_bytes.should == 3
     @str.clear
     io = StringIO.new("abcdefghij")
     @str.read(io)
-    @str.value.should eql("abcde")
+    @str.value.should == "abcde"
   end
 end
 
-describe "A String with :length" do
+describe BinData::String, "with :length" do
   before(:each) do
     @str = BinData::String.new(:length => 5)
   end
 
   it "should set num_bytes" do
-    @str.num_bytes.should eql(5)
+    @str.num_bytes.should == 5
   end
 
   it "should fill value with pad_char" do
-    @str.value.should eql("\0\0\0\0\0")
+    @str.value.should == "\0\0\0\0\0"
   end
 
   it "should retain :length after value is set" do
     @str.value = "abcdefghij"
-    @str.num_bytes.should eql(5)
+    @str.num_bytes.should == 5
   end
 
   it "should read :length bytes" do
     io = StringIO.new("abcdefghij")
     @str.read(io)
-    @str.value.should eql("abcde")
+    @str.value.should == "abcde"
   end
 
   it "should pad values less than :length" do
     @str.value = "abc"
-    @str.value.should eql("abc\0\0")
+    @str.value.should == "abc\0\0"
   end
 
   it "should accept values exactly :length" do
     @str.value = "abcde"
-    @str.value.should eql("abcde")
+    @str.value.should == "abcde"
   end
 
   it "should truncate values greater than :length" do
     @str.value = "abcdefg"
-    @str.value.should eql("abcde")
+    @str.value.should == "abcde"
   end
 end
 
-describe "A String with :read_length and :initial_value" do
+describe BinData::String, "with :read_length and :initial_value" do
   before(:each) do
     @str = BinData::String.new(:read_length => 5, :initial_value => "abcdefghij")
   end
 
   it "should use :initial_value before value is read" do
-    @str.num_bytes.should eql(10)
-    @str.value.should eql("abcdefghij")
+    @str.num_bytes.should == 10
+    @str.value.should == "abcdefghij"
   end
 
   it "should use :read_length for reading" do
     io = StringIO.new("ABCDEFGHIJKLMNOPQRST")
     @str.read(io)
-    io.pos.should eql(5)
+    io.pos.should == 5
    end
 
   it "should forget :initial_value after reading" do
     io = StringIO.new("ABCDEFGHIJKLMNOPQRST")
     @str.read(io)
-    @str.num_bytes.should eql(5)
-    @str.value.should eql("ABCDE")
+    @str.num_bytes.should == 5
+    @str.value.should == "ABCDE"
   end
 
 end
 
-describe "A String with :read_length and :value" do
+describe BinData::String, "with :read_length and :value" do
   before(:each) do
     @str = BinData::String.new(:read_length => 5, :value => "abcdefghij")
   end
 
   it "should not be affected by :read_length before value is read" do
-    @str.num_bytes.should eql(10)
-    @str.value.should eql("abcdefghij")
+    @str.num_bytes.should == 10
+    @str.value.should == "abcdefghij"
   end
 
   it "should use :read_length for reading" do
     io = StringIO.new("ABCDEFGHIJKLMNOPQRST")
     @str.read(io)
-    io.pos.should eql(5)
+    io.pos.should == 5
    end
 
   it "should not be affected by :read_length after reading" do
     io = StringIO.new("ABCDEFGHIJKLMNOPQRST")
     @str.read(io)
-    @str.num_bytes.should eql(10)
-    @str.value.should eql("abcdefghij")
+    @str.num_bytes.should == 10
+    @str.value.should == "abcdefghij"
   end
 
   it "should return read value before calling done_read" do
     io = StringIO.new("ABCDEFGHIJKLMNOPQRST")
 
     @str.do_read(io)
-    @str.value.should eql("ABCDE")
+    @str.value.should == "ABCDE"
 
     @str.done_read
-    @str.value.should eql("abcdefghij")
+    @str.value.should == "abcdefghij"
   end
 end
 
-describe "A String with :length and :initial_value" do
+describe BinData::String, "with :length and :initial_value" do
   before(:each) do
     @str = BinData::String.new(:length => 5, :initial_value => "abcdefghij")
   end
 
   it "should apply :length to :initial_value" do
-    @str.num_bytes.should eql(5)
-    @str.value.should eql("abcde")
+    @str.num_bytes.should == 5
+    @str.value.should == "abcde"
   end
 
   it "should forget :initial_value after reading" do
     io = StringIO.new("ABCDEFGHIJKLMNOPQRST")
     @str.read(io)
-    io.pos.should eql(5)
-    @str.num_bytes.should eql(5)
-    @str.value.should eql("ABCDE")
+    io.pos.should == 5
+    @str.num_bytes.should == 5
+    @str.value.should == "ABCDE"
   end
 end
 
-describe "A String with :pad_char" do
+describe BinData::String, "with :pad_char" do
   it "should accept a numeric value for :pad_char" do
     @str = BinData::String.new(:length => 5, :pad_char => 6)
     @str.value = "abc"
-    @str.value.should eql("abc\x06\x06")
+    @str.value.should == "abc\x06\x06"
   end
 
   it "should accept a character for :pad_char" do
     @str = BinData::String.new(:length => 5, :pad_char => "R")
     @str.value = "abc"
-    @str.value.should eql("abcRR")
+    @str.value.should == "abcRR"
   end
 
   it "should not accept a string for :pad_char" do
@@ -192,37 +192,37 @@ describe "A String with :pad_char" do
   end
 end
 
-describe "A String with :trim_value" do
+describe BinData::String, "with :trim_value" do
   it "set false is the default" do
     str1 = BinData::String.new(:length => 5)
     str2 = BinData::String.new(:length => 5, :trim_value => false)
     str1.value = "abc"
     str2.value = "abc"
-    str1.value.should eql("abc\0\0")
-    str2.value.should eql("abc\0\0")
+    str1.value.should == "abc\0\0"
+    str2.value.should == "abc\0\0"
   end
 
   it "should trim the value" do
     str = BinData::String.new(:pad_char => 'R', :trim_value => true)
     str.value = "abcRR"
-    str.value.should eql("abc")
+    str.value.should == "abc"
   end
 
   it "should not affect num_bytes" do
     str = BinData::String.new(:pad_char => 'R', :trim_value => true)
     str.value = "abcRR"
-    str.num_bytes.should eql(5)
+    str.num_bytes.should == 5
   end
 
   it "should trim if last char is :pad_char" do
     str = BinData::String.new(:pad_char => 'R', :trim_value => true)
     str.value = "abcRR"
-    str.value.should eql("abc")
+    str.value.should == "abc"
   end
 
   it "should not trim if value contains :pad_char not at the end" do
     str = BinData::String.new(:pad_char => 'R', :trim_value => true)
     str.value = "abcRRde"
-    str.value.should eql("abcRRde")
+    str.value.should == "abcRRde"
   end
 end

@@ -1,13 +1,31 @@
-require 'bindata/multi'
+require 'bindata/base'
+require 'bindata/sanitize'
 
 module BinData
   # An Array is a list of data objects of the same type.
   #
   #   require 'bindata'
   #
-  #   a = BinData::Array.new(:type => :int8, :initial_length => 5)
-  #   a.read("\x03\x04\x05\x06\x07")
-  #   a.snapshot #=> [3, 4, 5, 6, 7]
+  #   data = "\x03\x04\x05\x06\x07\x08\x09"
+  #
+  #   obj = BinData::Array.new(:type => :int8, :initial_length => 6)
+  #   obj.read(data)
+  #   obj.snapshot #=> [3, 4, 5, 6, 7, 8]
+  #
+  #   obj = BinData::Array.new(:type => :int8,
+  #                            :read_until => lambda { index == 1 })
+  #   obj.read(data)
+  #   obj.snapshot #=> [3, 4]
+  #
+  #   obj = BinData::Array.new(:type => :int8,
+  #                            :read_until => lambda { element >= 6 })
+  #   obj.read(data)
+  #   obj.snapshot #=> [3, 4, 5, 6]
+  #
+  #   obj = BinData::Array.new(:type => :int8,
+  #           :read_until => lambda { array[index] + array[index - 1] == 13 })
+  #   obj.read(data)
+  #   obj.snapshot #=> [3, 4, 5, 6, 7]
   #
   # == Parameters
   #
@@ -28,28 +46,51 @@ module BinData
   #
   # Each data object in an array has the variable +index+ made available
   # to any lambda evaluated as a parameter of that data object.
-  class Array < Multi
+  class Array < BinData::Base
     include Enumerable
+
+    # Register this class
+    register(self.name, self)
 
     # These are the parameters used by this class.
     mandatory_parameter :type
     optional_parameters :initial_length, :read_until
+    mutually_exclusive_parameters :initial_length, :read_until
 
-    # An empty hash shared by all instances
-    @@empty_hash = Hash.new.freeze
+    class << self
+      def sanitize_parameters(params, endian = nil)
+        params = params.dup
+
+        unless params.has_key?(:initial_length) or params.has_key?(:read_until)
+          # ensure one of :initial_length and :read_until exists
+          params[:initial_length] = 0
+        end
+
+        if params.has_key?(:type)
+          type, el_params = params[:type]
+          klass = lookup(type, endian)
+          raise TypeError, "unknown type '#{type}' for #{self}" if klass.nil?
+          params[:type] = [klass, SanitizedParameters.new(klass, el_params, endian)]
+        end
+
+        super(params, endian)
+      end
+
+      # An array has no fields.
+      def all_possible_field_names(sanitized_params)
+        []
+      end
+    end
 
     # Creates a new Array
     def initialize(params = {}, env = nil)
-      super(cleaned_params(params), env)
-      ensure_mutual_exclusion(:initial_length, :read_until)
+      super(params, env)
 
-      type, el_params = param(:type)
-      klass = klass_lookup(type)
-      raise TypeError, "unknown type '#{type}' for #{self}" if klass.nil?
+      klass, el_params = param(:type)
 
       @element_list    = nil
       @element_klass   = klass
-      @element_params  = el_params || @@empty_hash
+      @element_params  = el_params
     end
 
     # Clears the element at position +index+.  If +index+ is not given, then
@@ -119,6 +160,12 @@ module BinData
     # Returns a snapshot of the data in this array.
     def snapshot
       elements.collect { |e| e.snapshot }
+    end
+
+    # Returns whether this data object contains a single value.  Single
+    # value data objects respond to <tt>#value</tt> and <tt>#value=</tt>.
+    def single_value?
+      return false
     end
 
     # An array has no fields.
@@ -233,18 +280,6 @@ module BinData
       element = @element_klass.new(@element_params, env)
       @element_list << element
       element
-    end
-
-    # Returns a hash of cleaned +params+.  Cleaning means that param
-    # values are converted to a desired format.
-    def cleaned_params(params)
-      unless params.has_key?(:initial_length) or params.has_key?(:read_until)
-        # ensure one of :initial_length and :read_until exists
-        new_params = params.dup
-        new_params[:initial_length] = 0
-        params = new_params
-      end
-      params
     end
   end
 end

@@ -1,4 +1,5 @@
-require 'bindata/multi'
+require 'bindata/base'
+require 'bindata/sanitize'
 
 module BinData
   # A Choice is a collection of data objects of which only one is active
@@ -22,23 +23,50 @@ module BinData
   #                       provided as [type_symbol, hash_params].
   # <tt>:selection</tt>:: An index into the :choices array which specifies
   #                       the currently active choice.
-  class Choice < Multi
+  class Choice < BinData::Base
+
+    # Register this class
+    register(self.name, self)
 
     # These are the parameters used by this class.
     mandatory_parameters :choices, :selection
+
+    class << self
+      def sanitize_parameters(params, endian = nil)
+        params = params.dup
+
+        if params.has_key?(:choices)
+          params[:choices].collect! do |type, param|
+            klass = lookup(type, endian)
+            raise TypeError, "unknown type '#{type}' for #{self}" if klass.nil?
+            [klass, SanitizedParameters.new(klass, param, endian)]
+          end
+        end
+
+        super(params, endian)
+      end
+
+      # Returns all the possible field names a :choice may have.
+      def all_possible_field_names(sanitized_params)
+        unless SanitizedParameters === sanitized_params
+          raise ArgumentError, "parameters aren't sanitized"
+        end
+
+        names = []
+        sanitized_params[:choices].each do |cklass, cparams|
+          names << cklass.all_possible_field_names(cparams)
+        end
+        names
+      end
+    end
 
     def initialize(params = {}, env = nil)
       super(params, env)
 
       # instantiate all choices
       @choices = []
-      param(:choices).each do |choice_type, choice_params|
-        choice_params ||= {}
-        klass = klass_lookup(choice_type)
-        if klass.nil?
-          raise TypeError, "unknown type '#{choice_type.id2name}' for #{self}"
-        end
-        @choices << klass.new(choice_params, create_env)
+      param(:choices).each do |choice_klass, choice_params|
+        @choices << choice_klass.new(choice_params, create_env)
       end
     end
 
@@ -76,6 +104,11 @@ module BinData
     # Returns a snapshot of the selected data object.
     def snapshot
       the_choice.snapshot
+    end
+
+    # Returns whether the selected data object is as single value.
+    def single_value?
+      the_choice.single_value?
     end
 
     # Returns a list of the names of all fields of the selected data object.

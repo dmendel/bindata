@@ -1,40 +1,23 @@
-require 'bindata/multi'
+require 'bindata/base'
+require 'bindata/sanitize'
 
 module BinData
   # A Struct is an ordered collection of named data objects.
   #
   #    require 'bindata'
   #
-  #    class Tuple < BinData::Struct
+  #    class Tuple < BinData::MultiValue
   #      int8  :x
   #      int8  :y
   #      int8  :z
   #    end
   #
-  #    class SomeStruct < BinData::Struct
-  #      hide 'a'
-  #
-  #      int32le :a
-  #      int16le :b
-  #      tuple   nil
-  #    end
-  #
-  #    obj = SomeStruct.new
+  #    obj = Struct.new(:hide => :a,
+  #                     :fields => [ [:int32le, :a],
+  #                                  [:int16le, :b],
+  #                                  [:tuple, :nil] ])
   #    obj.field_names   =># ["b", "x", "y", "z"]
   #
-  #
-  #    class PascalString < BinData::Struct
-  #      delegate :data
-  #
-  #      uint8  :len, :value => lambda { data.length }
-  #      string :data, :read_length => :len
-  #    end
-  #
-  #    str = PascalString.new
-  #    str.value = "a test string"
-  #    str.single_value?   =># true
-  #    str.len         =># 13
-  #    str.num_bytes   =># 17
   #
   # == Parameters
   #
@@ -52,9 +35,14 @@ module BinData
   #                      from the outside world.  Hidden fields don't appear
   #                      in #snapshot or #field_names but are still accessible
   #                      by name.
-  # <tt>:delegate</tt>:: Forwards unknown methods calls and unknown params
-  #                      to this field.
-  class Struct < Multi
+  # <tt>:endian</tt>::   Either :little or :big.  This specifies the default
+  #                      endian of any numerics in this struct, or in any
+  #                      nested data objects.
+  class Struct < BinData::Base
+
+    # Register this class
+    register(self.name, self)
+
     # A hash that can be accessed via attributes.
     class Snapshot < Hash #:nodoc:
       def method_missing(symbol, *args)
@@ -63,14 +51,16 @@ module BinData
     end
 
     class << self
-      # Register the names of all subclasses of this class.
+      #### DEPRECATION HACK to allow inheriting from BinData::Struct
+      #
       def inherited(subclass) #:nodoc:
-        register(subclass.name, subclass)
-      end
+        if subclass != MultiValue
+          # warn about deprecated method - remove before releasing 1.0
+          warn "warning: inheriting from BinData::Struct in deprecated. Inherit from BinData::MultiValue instead."
 
-      # Returns or sets the endianess of numerics used in this stucture.
-      # Endianess is applied to the fields of this structure.
-      # Valid values are :little and :big.
+          register(subclass.name, subclass)
+        end
+      end
       def endian(endian = nil)
         @endian ||= nil
         if [:little, :big].include?(endian)
@@ -80,19 +70,6 @@ module BinData
         end
         @endian
       end
-
-      # Returns the name of the delegate field for this struct.  The delegate
-      # is set to +name+ if given.
-      def delegate(name=nil)
-        @delegate ||= nil
-        if name != nil
-          @delegate = name.to_s
-        end
-        @delegate
-      end
-
-      # Returns the names of any hidden fields in this struct.  Any given args
-      # are appended to the hidden list.
       def hide(*args)
         # note that fields are stored in an instance variable not a class var
         @hide ||= []
@@ -102,138 +79,185 @@ module BinData
         end
         @hide
       end
-
-      # Returns the class matching a previously registered +name+.
-      def lookup(name)
-        klass = Registry.instance.lookup(name)
-        if klass.nil?
-          # lookup failed so attempt endian lookup
-          if self.respond_to?(:endian) and self.endian != nil
-            name = name.to_s
-            if /^u?int\d\d?$/ =~ name
-              new_name = name + ((self.endian == :little) ? "le" : "be")
-              klass = Registry.instance.lookup(new_name)
-            elsif ["float", "double"].include?(name)
-              new_name = name + ((self.endian == :little) ? "_le" : "_be")
-              klass = Registry.instance.lookup(new_name)
-            end
-          end
-        end
-        klass
+      def fields
+        @fields || []
       end
-
-      # Used to define fields for this structure.
       def method_missing(symbol, *args)
         name, params = args
 
         type = symbol
-        name = name.to_s unless name.nil?
+        name = (name.nil? or name == "") ? nil : name.to_s
         params ||= {}
 
-        if lookup(type).nil?
+        # note that fields are stored in an instance variable not a class var
+        @fields ||= []
+
+        # check that type is known
+        if lookup(type, endian).nil?
           raise TypeError, "unknown type '#{type}' for #{self}", caller
         end
 
-        # note that fields are stored in an instance variable not a class var
+        # check that name is okay
+        if name != nil
+          # check for duplicate names
+          @fields.each do |t, n, p|
+            if n == name
+              raise SyntaxError, "duplicate field '#{name}' in #{self}", caller
+            end
+          end
 
-        # check for duplicate names
-        @fields ||= []
-        if @fields.detect { |t, n, p| n == name and n != nil }
-          raise SyntaxError, "duplicate field '#{name}' in #{self}", caller
-        end
+          # check that name doesn't shadow an existing method
+          if self.instance_methods.include?(name)
+            raise NameError.new("", name),
+                  "field '#{name}' shadows an existing method", caller
+          end
 
-        # check that name doesn't shadow an existing method
-        if self.instance_methods.include?(name)
-          raise NameError.new("", name),
-                "field '#{name}' shadows an existing method", caller
-        end
-
-        # check that name isn't reserved
-        if Hash.instance_methods.include?(name) and delegate.nil?
-          raise NameError.new("", name),
-                "field '#{name}' is a reserved name", caller
+          # check that name isn't reserved
+          if ::Hash.instance_methods.include?(name)
+            raise NameError.new("", name),
+                  "field '#{name}' is a reserved name", caller
+          end
         end
 
         # remember this field.  These fields will be recalled upon creating
         # an instance of this class
         @fields.push([type, name, params])
       end
+      def deprecated_hack(params, endian = nil)
+        params = params.dup
 
-      # Returns all stored fields.  Should only be called by #cleaned_params.
-      def fields
-        @fields || []
+        # possibly override endian
+        endian = params[:endian] || self.endian || endian
+        unless endian.nil?
+          params[:endian] = endian
+        end
+
+        params[:fields] = params[:fields] || self.fields
+        params[:hide] = params[:hide] || self.hide
+
+        [params, endian]
+      end
+      #
+      #### DEPRECATION HACK to allow inheriting from BinData::Struct
+
+
+      # Returns a hash of cleaned +params+.  Cleaning means that param
+      # values are converted to a desired format.
+      def sanitize_parameters(params, endian = nil)
+        #### DEPRECATION HACK to allow inheriting from BinData::Struct
+        #
+        params, endian = deprecated_hack(params, endian)
+        #
+        #### DEPRECATION HACK to allow inheriting from BinData::Struct
+
+        params = params.dup
+
+        # possibly override endian
+        endian = params[:endian] || endian
+        if endian != nil
+          unless [:little, :big].include?(endian)
+            raise ArgumentError, "unknown value for endian '#{endian}'"
+          end
+
+          params[:endian] = endian
+        end
+
+        if params.has_key?(:fields)
+          # ensure the names of fields are strings and that params is sanitized
+          all_fields = params[:fields].collect do |ftype, fname, fparams|
+            fname = fname.nil? ? "" : fname.to_s
+            klass = lookup(ftype, endian)
+            raise TypeError, "unknown type '#{ftype}' for #{self}" if klass.nil?
+            [klass, fname, SanitizedParameters.new(klass, fparams, endian)]
+          end
+          params[:fields] = all_fields
+
+          # collect all hidden names that correspond to a field name
+          hide = []
+          if params.has_key?(:hide)
+            hidden = params[:hide] || []
+            hidden.each do |h|
+              next if h.nil? or h == ""
+              h = h.to_s
+              hide << h if all_fields.find { |k,n,p| n == h }
+            end
+          end
+          params[:hide] = hide
+        end
+
+        # obtain SanitizedParameters
+        params = super(params, endian)
+
+        # now params are sanitized, check that parameter names are okay
+
+        field_names = []
+        instance_methods = self.instance_methods
+        reserved_names = ::Hash.instance_methods
+
+        params[:fields].each do |fklass, fname, fparams|
+
+          # check that name doesn't shadow an existing method
+          if instance_methods.include?(fname)
+            raise NameError.new("field '#{fname}' shadows an existing method in #{self}. Rename it.", fname)
+          end
+
+          # check that name isn't reserved
+          if reserved_names.include?(fname)
+            raise NameError.new("field '#{fname}' is a reserved name in #{self}. Rename it.", fname)
+          end
+
+          if fname == ""
+            fklass.all_possible_field_names(fparams).each do |name|
+              if field_names.include?(name)
+                raise NameError.new("field '#{name}' is defined multiple times in #{self}.", name)
+              end
+              field_names << name
+            end
+          else
+            if field_names.include?(fname)
+              raise NameError.new("field '#{fname}' is defined multiple times in #{self}.", fname)
+            end
+            field_names << fname
+          end
+        end
+
+        params
+      end
+
+      # Returns a list of the names of all possible field names for a Struct
+      # created with +sanitized_params+.  Hidden names will not be included
+      # in the returned list.
+      def all_possible_field_names(sanitized_params)
+        unless SanitizedParameters === sanitized_params
+          raise ArgumentError, "parameters aren't sanitized"
+        end
+
+        hidden_names = sanitized_params[:hide]
+
+        names = []
+        sanitized_params[:fields].each do |fklass, fname, fparams|
+          if fname == ""
+            names.concat(fklass.all_possible_field_names(fparams))
+          else
+            names << fname unless hidden_names.include?(fname)
+          end
+        end
+
+        names
       end
     end
 
     # These are the parameters used by this class.
     mandatory_parameter :fields
-    optional_parameters :endian, :hide, :delegate
+    optional_parameters :endian, :hide
 
     # Creates a new Struct.
     def initialize(params = {}, env = nil)
-      super(cleaned_params(params), env)
-
-      all_methods = methods
-      all_reserved_methods = nil
-      delegate_name = param(:delegate)
-
-      # get all reserved field names
-      res = param(:fields).find { |type, name, params| name == delegate_name }
-      if res
-        # all methods and field_names of the delegate are reserved.
-        klass_name = res[0]
-        delegate_klass = klass_lookup(klass_name)
-        if delegate_klass.nil?
-          raise TypeError, "unknown type '#{klass_name} for #{self}"
-        end
-
-        delegate_params = res[2]
-        delegate = delegate_klass.new(delegate_params, create_env)
-        all_reserved_methods = delegate.methods + delegate.field_names -
-                                 all_methods
-
-        # move accepted params from this object to the delegate object
-        env_params = @env.params.dup
-        delegate.accepted_parameters.each do |p|
-          if (v = env_params.delete(p))
-            delegate_params[p] = v
-          end
-        end
-        @env.params = env_params
-      else
-        # no delegate so all instance methods of Hash are reserved
-        all_reserved_methods = Hash.instance_methods - all_methods
-      end
-
-      # check if field names conflict with any reserved names
-      field_names = param(:fields).collect { |f| f[1] }
-      field_names_okay = (all_methods & field_names).empty? &&
-                           (all_reserved_methods & field_names).empty?
+      super(params, env)
 
       # create instances of the fields
-      @fields = param(:fields).collect do |type, name, params|
-        klass = klass_lookup(type)
-        raise TypeError, "unknown type '#{type}' for #{self}" if klass.nil?
-        if not field_names_okay
-          # at least one field names conflicts so test them all.
-          # rationale - #include? is expensive so we avoid it if possible.
-          if all_methods.include?(name)
-            raise NameError.new("field '#{name}' shadows an existing method",name)
-          end
-          if all_reserved_methods.include?(name)
-            raise NameError.new("field '#{name}' is a reserved name",name)
-          end
-        end
-        [name, klass.new(params, create_env)]
-      end
-    end
-
-    # Returns a list of parameters that are accepted by this object
-    def accepted_parameters
-      if delegate_object != nil
-        delegate_object.accepted_parameters
-      else
-        super
+      @fields = param(:fields).collect do |fklass, fname, fparams|
+        [fname, fklass.new(fparams, create_env)]
       end
     end
 
@@ -286,39 +310,36 @@ module BinData
 
     # Returns a snapshot of this struct as a hash.
     def snapshot
-      if delegate_object != nil
-        delegate_object.snapshot
-      else
-        hash = Snapshot.new
-        field_names.each do |name|
-          hash[name] = find_obj_for_name(name).snapshot
-        end
-        hash
+      hash = Snapshot.new
+      field_names.each do |name|
+        hash[name] = find_obj_for_name(name).snapshot
       end
+      hash
+    end
+
+    # Returns whether this data object contains a single value.  Single
+    # value data objects respond to <tt>#value</tt> and <tt>#value=</tt>.
+    def single_value?
+      return false
     end
 
     # Returns a list of the names of all fields accessible through this
     # object.  +include_hidden+ specifies whether to include hidden names
     # in the listing.
     def field_names(include_hidden = false)
-      if delegate_object != nil and !include_hidden
-        # delegate if possible
-        delegate_object.field_names
-      else
-        # collect field names
-        names = []
-        hidden = param(:hide)
-        @fields.each do |name, obj|
-          if name != ""
-            if include_hidden or not hidden.include?(name)
-              names << name
-            end
-          else
-            names.concat(obj.field_names)
+      # collect field names
+      names = []
+      hidden = param(:hide)
+      @fields.each do |name, obj|
+        if name != ""
+          if include_hidden or not hidden.include?(name)
+            names << name
           end
+        else
+          names.concat(obj.field_names)
         end
-        names
       end
+      names
     end
 
     # Returns the data object that stores values for +name+.
@@ -348,18 +369,11 @@ module BinData
       offset
     end
 
-    # Override to include field names and delegate methods.
+    # Override to include field names
     alias_method :orig_respond_to?, :respond_to?
     def respond_to?(symbol, include_private = false)
       orig_respond_to?(symbol, include_private) ||
-        field_names(true).include?(symbol.id2name.chomp("=")) ||
-          delegate_object.respond_to?(symbol, include_private)
-    end
-
-    # Returns whether this data object contains a single value.  Single
-    # value data objects respond to <tt>#value</tt> and <tt>#value=</tt>.
-    def single_value?
-      delegate_object ? delegate_object.single_value? : false
+        field_names(true).include?(symbol.id2name.chomp("="))
     end
 
     def method_missing(symbol, *args, &block)
@@ -378,8 +392,6 @@ module BinData
         else
           obj
         end
-      elsif delegate_object.respond_to?(symbol)
-        delegate_object.__send__(symbol, *args, &block)
       else
         super
       end
@@ -388,52 +400,9 @@ module BinData
     #---------------
     private
 
-    # Returns the delegate object if any.
-    def delegate_object
-      if (name = param(:delegate))
-        find_obj_for_name(name)
-      else
-        nil
-      end
-    end
-
     # Returns a list of all the bindata objects for this struct.
     def bindata_objects
       @fields.collect { |f| f[1] }
-    end
-
-    # Returns a hash of cleaned +params+.  Cleaning means that param
-    # values are converted to a desired format.
-    def cleaned_params(params)
-      new_params = params.dup
-
-      # use fields defined in this class if no fields are passed as params
-      fields = new_params[:fields] || self.class.fields
-
-      # ensure the names of fields are strings and that params is a hash
-      new_params[:fields] = fields.collect do |t, n, p|
-        [t, n.to_s, (p || {}).dup]
-      end
-
-      # collect all non blank field names
-      field_names = new_params[:fields].collect { |f| f[1] }
-      field_names = field_names.delete_if { |n| n == "" }
-
-      # collect all hidden names that correspond to a field name
-      hide = []
-      (new_params[:hide] || self.class.hide).each do |h|
-        h = h.to_s
-        hide << h if field_names.include?(h)
-      end
-      new_params[:hide] = hide
-
-      # collect delegate name if it corresponds to a field name
-      if (delegate = (new_params[:delegate] || self.class.delegate))
-        delegate = delegate.to_s
-        new_params[:delegate] = delegate if field_names.include?(delegate)
-      end
-
-      new_params
     end
   end
 end

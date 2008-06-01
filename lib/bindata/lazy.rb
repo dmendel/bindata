@@ -16,6 +16,8 @@ module BinData
     # An empty hash shared by all instances
     @@empty_hash = Hash.new.freeze
 
+    @@variables_cache = {}
+
     # Creates a new environment.  +parent+ is the environment of the
     # parent data object.
     def initialize(parent = nil)
@@ -39,10 +41,25 @@ module BinData
     # will be accessible as a variable for any lambda evaluated
     # with #lazy_eval.
     def add_variable(sym, value)
+      sym = sym.to_sym
       if @variables.equal?(@@empty_hash)
-        @variables = {}
+        # optimise the case where only 1 variable is added as this
+        # is the most common occurance (BinData::Arrays adding index)
+        key = [sym, value]
+        @variables = @@variables_cache[key]
+        if @variables.nil?
+          # cache this variable and value so it can be shared with
+          # other LazyEvalEnvs to keep memory usage down
+          @variables = {sym => value}.freeze
+          @@variables_cache[key] = @variables
+        end
+      else
+        if @variables.length == 1
+          key = @variables.keys[0]
+          @variables = {key => @variables[key]}
+        end
+        @variables[sym] = value
       end
-      @variables[sym.to_sym] = value
     end
 
     # TODO: offset_of needs to be better thought out

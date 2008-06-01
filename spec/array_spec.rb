@@ -5,7 +5,7 @@ require 'bindata/array'
 require 'bindata/int'
 require 'bindata/struct'
 
-describe "Instantiating an Array" do
+describe BinData::Array, "when instantiating" do
   it "should ensure mandatory parameters are supplied" do
     args = {}
     lambda { BinData::Array.new(args) }.should raise_error(ArgumentError)
@@ -24,9 +24,17 @@ describe "Instantiating an Array" do
   end
 end
 
-describe "An Array with no elements" do
+describe BinData::Array, "with no elements" do
   before(:each) do
     @data = BinData::Array.new(:type => :int8)
+  end
+
+  it "should not be a single_value" do
+    @data.should_not be_single_value
+  end
+
+  it "should have no field names" do
+    @data.field_names.should be_empty
   end
 
   it "should return correct length" do
@@ -42,7 +50,7 @@ describe "An Array with no elements" do
   end
 
   it "should return [] for the first n elements" do
-    @data.first(3).should eql([])
+    @data.first(3).should == []
   end
 
   it "should return nil for the last element" do
@@ -50,63 +58,71 @@ describe "An Array with no elements" do
   end
 
   it "should return [] for the last n elements" do
-    @data.last(3).should eql([])
+    @data.last(3).should == []
   end
 
   it "should append an element" do
     @data.append(99)
-    @data.length.should eql(1)
-    @data.last.should eql(99)
+    @data.length.should == 1
+    @data.last.should == 99
   end
 end
 
-describe "An Array with several elements" do
+describe BinData::Array, "with several elements" do
   before(:each) do
     type = [:int16le, {:initial_value => lambda { index + 1 }}]
     @data = BinData::Array.new(:type => type, :initial_length => 5)
   end
 
+  it "should not be a single_value" do
+    @data.should_not be_single_value
+  end
+
+  it "should have no field names" do
+    @data.field_names.should be_empty
+  end
+
   it "should return a correct snapshot" do
-    @data.snapshot.should eql([1, 2, 3, 4, 5])
+    @data.snapshot.should == [1, 2, 3, 4, 5]
   end
 
   it "should coerce to ::Array if required" do
-    ((1..7).to_a - @data).should eql([6, 7])
+    ((1..7).to_a - @data).should == [6, 7]
   end
 
   it "should return the first element" do
-    @data.first.should eql(1)
+    @data.first.should == 1
   end
 
   it "should return the first n elements" do
-    @data[0...3].should eql([1, 2, 3])
-    @data.first(3).should eql([1, 2, 3])
-    @data.first(99).should eql([1, 2, 3, 4, 5])
+    @data[0...3].should == [1, 2, 3]
+    @data.first(3).should == [1, 2, 3]
+    @data.first(99).should == [1, 2, 3, 4, 5]
   end
 
   it "should return the last element" do
-    @data.last.should eql(5)
-    @data[-1].should eql(5)
+    @data.last.should == 5
+    @data[-1].should == 5
   end
 
   it "should return the last n elements" do
-    @data.last(3).should eql([3, 4, 5])
-    @data.last(99).should eql([1, 2, 3, 4, 5])
+    @data.last(3).should == [3, 4, 5]
+    @data.last(99).should == [1, 2, 3, 4, 5]
 
-    @data[-3, 100].should eql([3, 4, 5])
+    @data[-3, 100].should == [3, 4, 5]
   end
 
   it "should have correct num elements" do
-    @data.length.should eql(5)
-    @data.size.should eql(5)
+    @data.length.should == 5
+    @data.size.should == 5
   end
 
   it "should have correct num_bytes" do
-    @data.num_bytes.should eql(10)
+    @data.num_bytes.should == 10
   end
 
   it "should have correct num_bytes for individual elements" do
-    @data.num_bytes(0).should eql(2)
+    @data.num_bytes(0).should == 2
   end
 
   it "should have no field_names" do
@@ -115,7 +131,7 @@ describe "An Array with several elements" do
 
   it "should be able to directly access elements" do
     @data[1] = 8
-    @data[1].should eql(8)
+    @data[1].should == 8
   end
 
   it "should not be empty" do
@@ -123,23 +139,23 @@ describe "An Array with several elements" do
   end
 
   it "should return a nicely formatted array  for inspect" do
-    @data.inspect.should eql("[1, 2, 3, 4, 5]")
+    @data.inspect.should == "[1, 2, 3, 4, 5]"
   end
 
   it "should be able to use methods from Enumerable" do
-    @data.select { |x| (x % 2) == 0 }.should eql([2, 4])
+    @data.select { |x| (x % 2) == 0 }.should == [2, 4]
   end
 
   it "should clear" do
     @data[1] = 8
     @data.clear
-    @data.collect.should eql([1, 2, 3, 4, 5])
+    @data.collect.should == [1, 2, 3, 4, 5]
   end
 
   it "should clear a single element" do
     @data[1] = 8
     @data.clear(1)
-    @data[1].should eql(2)
+    @data[1].should == 2
   end
 
   it "should be clear upon creation" do
@@ -165,20 +181,20 @@ describe "An Array with several elements" do
 
     @data.clear
     io.rewind
-    @data[1].should eql(2)
+    @data[1].should == 2
 
     @data.read(io)
-    @data[1].should eql(8)
+    @data[1].should == 8
   end
 
   it "should append an element" do
     @data.append(99)
-    @data.length.should eql(6)
-    @data.last.should eql(99)
+    @data.length.should == 6
+    @data.last.should == 99
   end
 end
 
-describe "An Array containing structs" do
+describe BinData::Array, "containing structs" do
   before(:each) do
     type = [:struct, {:fields => [[:int8, :a,
                                    {:initial_value => lambda { parent.index }}],
@@ -187,11 +203,11 @@ describe "An Array containing structs" do
   end
 
   it "should access elements, not values" do
-    @data[3].a.should eql(3)
+    @data[3].a.should == 3
   end
 
   it "should access multiple elements with slice" do
-    @data.slice(2, 3).collect { |x| x.a }.should eql([2, 3, 4])
+    @data.slice(2, 3).collect { |x| x.a }.should == [2, 3, 4]
   end
 
   it "should not be able to modify elements" do
@@ -199,7 +215,7 @@ describe "An Array containing structs" do
   end
 
   it "should interate over each element" do
-    @data.collect { |s| s.a }.should eql([0, 1, 2, 3, 4])
+    @data.collect { |s| s.a }.should == [0, 1, 2, 3, 4]
   end
 
   it "should be able to append elements" do
@@ -207,12 +223,12 @@ describe "An Array containing structs" do
     obj.a = 3
     obj.b = 5
 
-    @data.last.a.should eql(3)
-    @data.last.b.should eql(5)
+    @data.last.a.should == 3
+    @data.last.b.should == 5
   end
 end
 
-describe "An Array with :read_until containing +element+" do
+describe BinData::Array, "with :read_until containing +element+" do
   before(:each) do
     read_until = lambda { element == 5 }
     @data = BinData::Array.new(:type => :int8, :read_until => read_until)
@@ -220,17 +236,17 @@ describe "An Array with :read_until containing +element+" do
 
   it "should append to an empty array" do
     @data.append(3)
-    @data.first.should eql(3)
+    @data.first.should == 3
   end
 
   it "should read until the sentinel is reached" do
     io = StringIO.new("\x01\x02\x03\x04\x05\x06\x07")
     @data.read(io)
-    @data.length.should eql(5)
+    @data.length.should == 5
   end
 end
 
-describe "An Array with :read_until containing +array+ and +index+" do
+describe BinData::Array, "with :read_until containing +array+ and +index+" do
   before(:each) do
     read_until = lambda { index >=2 and array[index - 2] == 5 }
     @data = BinData::Array.new(:type => :int8, :read_until => read_until)
@@ -239,6 +255,6 @@ describe "An Array with :read_until containing +array+ and +index+" do
   it "should read until the sentinel is reached" do
     io = StringIO.new("\x01\x02\x03\x04\x05\x06\x07\x08")
     @data.read(io)
-    @data.length.should eql(7)
+    @data.length.should == 7
   end
 end

@@ -6,6 +6,26 @@ module BinData
   # as integer, float or string.  Only one value can be contained by this
   # object.  This value can be read from or written to an IO stream.
   #
+  #   require 'bindata'
+  #
+  #   obj = BinData::Uint8.new(:initial_value => 42)
+  #   obj.value #=> 42
+  #   obj.value = 5
+  #   obj.value #=> 5
+  #   obj.clear
+  #   obj.value #=> 42
+  #
+  #   obj = BinData::Uint8.new(:value => 42)
+  #   obj.value #=> 42
+  #   obj.value = 5
+  #   obj.value #=> 42
+  #
+  #   obj = BinData::Uint8.new(:check_value => 3)
+  #   obj.read("\005") #=> BinData::ValidityError: value is '5' but expected '3'
+  #
+  #   obj = BinData::Uint8.new(:check_value => lambda { value < 5 })
+  #   obj.read("\007") #=> BinData::ValidityError: value not as expected
+  #
   # == Parameters
   #
   # Parameters may be provided at initialisation to control the behaviour of
@@ -28,15 +48,15 @@ module BinData
   class Single < Base
     # These are the parameters used by this class.
     optional_parameters :initial_value, :value, :check_value
+    mutually_exclusive_parameters :initial_value, :value
 
-    # Register the names of all subclasses of this class.
-    def self.inherited(subclass) #:nodoc:
-      register(subclass.name, subclass)
+    # Single objects don't contain fields so this returns an empty list.
+    def self.all_possible_field_names(sanitized_params)
+      []
     end
 
     def initialize(params = {}, env = nil)
       super(params, env)
-      ensure_mutual_exclusion(:initial_value, :value)
       clear
     end
 
@@ -88,6 +108,11 @@ module BinData
     # Returns a snapshot of this data object.
     def snapshot
       value
+    end
+
+    # Single objects are single_values
+    def single_value?
+      true
     end
 
     # Single objects don't contain fields so this returns an empty list.
@@ -149,7 +174,7 @@ module BinData
       str
     end
 
-=begin
+    ###########################################################################
     # To be implemented by subclasses
 
     # Return the string representation that +val+ will take when written.
@@ -168,6 +193,6 @@ module BinData
     end
 
     # To be implemented by subclasses
-=end
+    ###########################################################################
   end
 end

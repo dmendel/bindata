@@ -4,6 +4,32 @@ module BinData
   # A String is a sequence of bytes.  This is the same as strings in Ruby.
   # The issue of character encoding is ignored by this class.
   #
+  #   require 'bindata'
+  #
+  #   data = "abcdefghij"
+  #
+  #   obj = BinData::String.new(:read_length => 5)
+  #   obj.read(data)
+  #   obj.value #=> "abcde"
+  #
+  #   obj = BinData::String.new(:length => 6)
+  #   obj.read(data)
+  #   obj.value #=> "abcdef"
+  #   obj.value = "abcdefghij"
+  #   obj.value #=> "abcdef"
+  #   obj.value = "abcd"
+  #   obj.value #=> "abcd\000\000"
+  #
+  #   obj = BinData::String.new(:length => 6, :trim_value => true)
+  #   obj.value = "abcd"
+  #   obj.value #=> "abcd"
+  #   obj.to_s #=> "abcd\000\000"
+  #
+  #   obj = BinData::String.new(:length => 6, :pad_char => 'A')
+  #   obj.value = "abcd"
+  #   obj.value #=> "abcdAA"
+  #   obj.to_s #=> "abcdAA"
+  #
   # == Parameters
   #
   # String objects accept all the params that BinData::Single
@@ -20,20 +46,38 @@ module BinData
   #                            from the end of the string.  The value will
   #                            not be trimmed when writing.
   class String < Single
+
+    # Register this class
+    register(self.name, self)
+
     # These are the parameters used by this class.
-    mandatory_parameters :pad_char
     optional_parameters  :read_length, :length, :trim_value
+    default_parameters   :pad_char => "\0"
+    mutually_exclusive_parameters :read_length, :length
+    mutually_exclusive_parameters :length, :value
 
-    def initialize(params = {}, env = nil)
-      super(cleaned_params(params), env)
+    class << self
+      def sanitize_parameters(params, *args)
+        params = params.dup
 
-      # the only valid param combinations of length and value are:
-      #   :read_length and :value
-      #   :read_length and :initial_value
-      #   :length and :initial_value
-      ensure_mutual_exclusion(:initial_value, :value)
-      ensure_mutual_exclusion(:read_length, :length)
-      ensure_mutual_exclusion(:length, :value)
+        # warn about deprecated param - remove before releasing 1.0
+        if params[:initial_length]
+          warn ":initial_length is deprecated. Replacing with :read_length"
+          params[:read_length] = params.delete(:initial_length)
+        end
+
+        # set :pad_char to be a single length character string
+        if params.has_key?(:pad_char)
+          ch = params[:pad_char]
+          ch = ch.respond_to?(:chr) ? ch.chr : ch.to_s
+          if ch.length > 1
+            raise ArgumentError, ":pad_char must not contain more than 1 char"
+          end
+          params[:pad_char] = ch
+        end
+
+        super(params, *args)
+      end
     end
 
     # Overrides value to return the value padded to the desired length or
@@ -66,28 +110,6 @@ module BinData
     # Returns an empty string as default.
     def sensible_default
       ""
-    end
-
-    # Returns a hash of cleaned +params+.  Cleaning means that param
-    # values are converted to a desired format.
-    def cleaned_params(params)
-      new_params = params.dup
-
-      # warn about deprecated param - remove before releasing 1.0
-      if params[:initial_length]
-        warn ":initial_length is deprecated. Replacing with :read_length"
-        new_params[:read_length] = params[:initial_length]
-      end
-
-      # set :pad_char to be a single length character string
-      ch = new_params[:pad_char] || 0
-      ch = ch.respond_to?(:chr) ? ch.chr : ch.to_s
-      if ch.length > 1
-        raise ArgumentError, ":pad_char must not contain more than 1 char"
-      end
-      new_params[:pad_char] = ch
-
-      new_params
     end
   end
 end

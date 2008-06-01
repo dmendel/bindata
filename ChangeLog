@@ -1,13 +1,19 @@
 = BinData Changelog
 
--== Version 0.8.1 (2008-01-14)
+== Version NEW_VERSION
+
+* Added :adjust_offset option to automatically seek to a given offset.
+* Modified #read to accept strings as well as IO streams.
+* Major internal restructuring.
+
+== Version 0.8.1 (2008-01-14)
 
 * Reduced memory consumption.
 * Increased execution speed.
 * Deprecated BinData::Base.parameters
 * Fixed spec syntax (thanks to David Goodlad)
 
--== Version 0.8.0 (2007-10-14)
+== Version 0.8.0 (2007-10-14)
 
 * Add reserved field names to Struct.
 * Prevent warnings about method redefinition.

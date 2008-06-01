@@ -3,18 +3,20 @@
 require File.expand_path(File.dirname(__FILE__)) + '/spec_common'
 require 'bindata'
 
-describe "A Struct with hidden fields" do
+describe BinData::Struct, "with hidden fields" do
   before(:all) do
-    eval <<-END
-      class HiddenStruct < BinData::Struct
-        hide :b, 'c'
-        int8 :a
-        int8 'b', :initial_value => 10
-        int8 :c
-        int8 :d, :value => :b
-      end
-    END
-    @obj = HiddenStruct.new
+    @params = { :hide => [:b, 'c'],
+                :fields => [
+                   [:int8, :a],
+                   [:int8, 'b', {:initial_value => 10}],
+                   [:int8, :c],
+                   [:int8, :d, {:value => :b}]] }
+    @obj = BinData::Struct.new(@params)
+  end
+
+  it "should not include hidden names in all_possible_field_names" do
+    params = BinData::SanitizedParameters.new(BinData::Struct, @params)
+    BinData::Struct.all_possible_field_names(params).should == ["a", "d"]
   end
 
   it "should only show fields that aren't hidden" do
@@ -22,9 +24,9 @@ describe "A Struct with hidden fields" do
   end
 
   it "should be able to access hidden fields directly" do
-    @obj.b.should eql(10)
+    @obj.b.should == 10
     @obj.c = 15
-    @obj.c.should eql(15)
+    @obj.c.should == 15
 
     @obj.should respond_to(:b=)
   end
@@ -35,187 +37,96 @@ describe "A Struct with hidden fields" do
   end
 end
 
-describe "A Struct that delegates" do
-  before(:all) do
-    eval <<-END
-      class DelegateStruct < BinData::Struct
-        delegate :b
-        int8 :a, :initial_value => :num
-        int8 'b', :initial_value => 7
-        int8 :c, :value => :b
-      end
-    END
-    @obj = DelegateStruct.new(:num => 5)
-  end
-
-  it "should access custom parameters" do
-    @obj.a.should eql(5)
-    @obj.b.should eql(7)
-  end
-
-  it "should have correct num_bytes" do
-    @obj.num_bytes.should eql(3)
-  end
-
-  it "should delegate snapshot" do
-    @obj.value = 6
-    @obj.snapshot.should eql(6)
-  end
-
-  it "should delegate single_value?" do
-    @obj.should be_a_single_value
-  end
-
-  it "should delegate methods" do
-    @obj.should respond_to(:value)
-    @obj.value = 9
-    @obj.c.should eql(9)
-  end
-
-  it "should identify accepted parameters" do
-    @obj.accepted_parameters.should include(:check_value)
-    @obj.accepted_parameters.should include(:initial_value)
-    @obj.accepted_parameters.should include(:value)
-    @obj.accepted_parameters.should_not include(:endian)
-  end
-
-  it "should pass params when creating" do
-    obj = DelegateStruct.new(:initial_value => :val, :val => 14)
-    obj.value.should eql(14)
-  end
-end
-
-describe "A Struct with nested delegation" do
-  before(:all) do
-    eval <<-END
-      class DelegateOuterStruct < BinData::Struct
-        endian :little
-        delegate :b
-        int8 :a
-        struct :b, :delegate => :y,
-                   :fields => [[:int8, :x], [:int32, :y], [:int8, :z]]
-      end
-    END
-    @obj = DelegateOuterStruct.new(:initial_value => 7)
-  end
-
-  it "should followed nested delegation" do
-    @obj.should be_a_single_value
-    @obj.field_names.should eql([])
-  end
-
-  it "should forward parameters" do
-    @obj.should respond_to(:value)
-    @obj.value.should eql(7)
-  end
-
-  it "should identify accepted parameters" do
-    @obj.accepted_parameters.should include(:check_value)
-    @obj.accepted_parameters.should include(:initial_value)
-    @obj.accepted_parameters.should include(:value)
-  end
-end
-
-describe "Defining a Struct" do
-  before(:all) do
-  end
+describe BinData::Struct do
   it "should fail on non registered types" do
+    params = {:fields => [[:non_registered_type, :a]]}
     lambda {
-      eval <<-END
-        class BadType < BinData::Struct
-          non_registerd_type :a
-        end
-      END
+      BinData::Struct.new(params)
     }.should raise_error(TypeError)
+  end
 
+  it "should fail on all_possible_field_names with unsanitized parameters" do
+    params = {:fields => [[:int8, :a], [:int8, :b]]}
     lambda {
-      BinData::Struct.new(:fields => [[:non_registered_type, :a]])
-    }.should raise_error(TypeError)
-
-    lambda {
-      BinData::Struct.new(:delegate => :a,
-                          :fields => [[:non_registered_type, :a]])
-    }.should raise_error(TypeError)
+      BinData::Struct.all_possible_field_names(params)
+    }.should raise_error(ArgumentError)
   end
 
   it "should fail on duplicate names" do
+    params = {:fields => [[:int8, :a], [:int8, :b], [:int8, :a]]}
     lambda {
-      eval <<-END
-        class DuplicateName < BinData::Struct
-          int8 :a
-          int8 :b
-          int8 :a
-        end
-      END
-    }.should raise_error(SyntaxError)
+      BinData::Struct.new(params)
+    }.should raise_error(NameError)
+  end
+
+  it "should fail on duplicate names in nested structs" do
+    params = {:fields => [[:int8, :a],
+                          [:struct, nil, {:fields => [[:int8, :a]]}]]}
+    lambda {
+      BinData::Struct.new(params)
+    }.should raise_error(NameError)
+  end
+
+  it "should fail on duplicate names in triple nested structs" do
+    params = {:fields => [[:int8, :a],
+                          [:struct, nil, {:fields => [
+                            [:struct, nil, {:fields => [[:int8, :a]]}]]}]]}
+    lambda {
+      BinData::Struct.new(params)
+    }.should raise_error(NameError)
   end
 
   it "should fail on reserved names" do
+    # note that #invert is from Hash.instance_methods
+    params = {:fields => [[:int8, :a], [:int8, :invert]]}
     lambda {
-      eval <<-END
-        class ReservedName < BinData::Struct
-          int8 :a
-          int8 :invert # from Hash.instance_methods
-        end
-      END
-    }.should raise_error(NameError)
-
-    lambda {
-      # :invert is from Hash.instance_methods
-      BinData::Struct.new(:fields => [[:int8, :a], [:int8, :invert]])
-    }.should raise_error(NameError)
-  end
-
-  it "should fail on reserved names of delegated fields" do
-    lambda {
-      # :value is from Int8.instance_methods
-      BinData::Struct.new(:delegate => :a,
-                          :fields => [[:int8, :a], [:int8, :value]])
+      BinData::Struct.new(params)
     }.should raise_error(NameError)
   end
 
   it "should fail when field name shadows an existing method" do
+    # note that #invert is from Hash.instance_methods
+    params = {:fields => [[:int8, :object_id]]}
     lambda {
-      eval <<-END
-        class ExistingName < BinData::Struct
-          int8 :object_id
-        end
-      END
-    }.should raise_error(NameError)
-
-    lambda {
-      BinData::Struct.new(:fields => [[:int8, :object_id]])
+      BinData::Struct.new(params)
     }.should raise_error(NameError)
   end
 
   it "should fail on unknown endian" do
+    params = {:endian => 'bad value', :fields => []}
     lambda {
-      eval <<-END
-        class BadEndian < BinData::Struct
-          endian 'a bad value'
-        end
-      END
+      BinData::Struct.new(params)
     }.should raise_error(ArgumentError)
   end
 end
 
-describe "A Struct with multiple fields" do
+describe BinData::Struct, "with multiple fields" do
   before(:each) do
-    fields = [ [:int8, :a], [:int8, :b] ]
-    @obj = BinData::Struct.new(:fields => fields) 
+    @params = { :fields => [ [:int8, :a], [:int8, :b] ] }
+    @obj = BinData::Struct.new(@params)
     @obj.a = 1
     @obj.b = 2
   end
 
   it "should return num_bytes" do
-    @obj.num_bytes(:a).should eql(1)
-    @obj.num_bytes(:b).should eql(1)
-    @obj.num_bytes.should     eql(2)
+    @obj.num_bytes(:a).should == 1
+    @obj.num_bytes(:b).should == 1
+    @obj.num_bytes.should     == 2
   end
 
   it "should identify accepted parameters" do
-    @obj.accepted_parameters.should include(:delegate)
-    @obj.accepted_parameters.should include(:endian)
+    BinData::Struct.accepted_parameters.should include(:fields)
+    BinData::Struct.accepted_parameters.should include(:hide)
+    BinData::Struct.accepted_parameters.should include(:endian)
+  end
+
+  it "should return all possible field names" do
+    params = BinData::SanitizedParameters.new(BinData::Struct, @params)
+    BinData::Struct.all_possible_field_names(params).should == ["a", "b"]
+  end
+
+  it "should return field names" do
+    @obj.field_names.should == ["a", "b"]
   end
 
   it "should clear" do
@@ -237,21 +148,21 @@ describe "A Struct with multiple fields" do
     @obj.write(io)
 
     io.rewind
-    io.read.should eql("\x01\x02")
+    io.read.should == "\x01\x02"
   end
 
   it "should read ordered" do
     io = StringIO.new "\x03\x04"
     @obj.read(io)
 
-    @obj.a.should eql(3)
-    @obj.b.should eql(4)
+    @obj.a.should == 3
+    @obj.b.should == 4
   end
 
   it "should return a snapshot" do
     snap = @obj.snapshot
-    snap.a.should eql(1)
-    snap.b.should eql(2)
+    snap.a.should == 1
+    snap.b.should == 2
     snap.should == { "a" => 1, "b" => 2 }
   end
 
@@ -264,61 +175,64 @@ describe "A Struct with multiple fields" do
   end
 end
 
-describe "A Struct with nested structs" do
+describe BinData::Struct, "with nested structs" do
   before(:all) do
-    eval <<-END
-      class StructInner1 < BinData::Struct
-        int8 :w, :initial_value => 3
-        int8 :x, :value => :the_val
-      end
+    inner1 = [ [:int8, :w, {:initial_value => 3}],
+               [:int8, :x, {:value => :the_val}] ]
 
-      class StructInner2 < BinData::Struct
-        int8 :y, :value => lambda { parent.b.w }
-        int8 :z
-      end
+    inner2 = [ [:int8, :y, {:value => lambda { parent.b.w }}],
+               [:int8, :z] ]
 
-      class StructOuter < BinData::Struct
-        int8          :a, :initial_value => 6
-        struct_inner1 :b, :the_val => :a
-        struct_inner2 nil
-      end
-    END
-    @obj = StructOuter.new
+    @params = { :fields => [
+                  [:int8, :a, {:initial_value => 6}],
+                  [:struct, :b, {:fields => inner1, :the_val => :a}],
+                  [:struct, nil, {:fields => inner2}]] }
+    @obj = BinData::Struct.new(@params)
   end
 
   it "should included nested field names" do
     @obj.field_names.should == ["a", "b", "y", "z"]
   end
 
+  it "should return all possible field names" do
+    params = BinData::SanitizedParameters.new(BinData::Struct, @params)
+    all_params = BinData::Struct.all_possible_field_names(params)
+    all_params.should == ["a", "b", "y", "z"]
+  end
+
   it "should access nested fields" do
-    @obj.a.should   eql(6)
-    @obj.b.w.should eql(3)
-    @obj.b.x.should eql(6)
-    @obj.y.should   eql(3)
+    @obj.a.should   == 6
+    @obj.b.w.should == 3
+    @obj.b.x.should == 6
+    @obj.y.should   == 3
   end
 
   it "should return correct offset of" do
-    @obj.offset_of("b").should eql(1)
-    @obj.offset_of("y").should eql(3)
-    @obj.offset_of("z").should eql(4)
+    @obj.offset_of("b").should == 1
+    @obj.offset_of("y").should == 3
+    @obj.offset_of("z").should == 4
   end
 end
 
-describe "A Struct with an endian defined" do
+describe BinData::Struct, "with an endian defined" do
   before(:all) do
-    eval <<-END
-      class StructWithEndian < BinData::Struct
-        endian :little
+    @obj = BinData::Struct.new(:endian => :little,
+                               :fields => [
+                                 [:uint16, :a],
+                                 [:float, :b],
+                                 [:array, :c,
+                                   {:type => :int8, :initial_length => 2}],
+                                 [:choice, :d,
+                                   {:choices => [[:uint16], [:uint32]],
+                                    :selection => 1}],
+                                 [:struct, :e,
+                                   {:fields => [[:uint16, :f],
+                                                [:uint32be, :g]]}],
+                                 [:struct, :h,
+                                   {:fields => [
+                                     [:struct, :i,
+                                       {:fields => [[:uint16, :j]]}]]}]])
 
-        uint16 :a
-        float  :b
-        array  :c, :type => :int8, :initial_length => 2
-        choice :d, :choices => [ [:uint16], [:uint32] ], :selection => 1
-        struct :e, :fields => [ [:uint16, :f], [:uint32be, :g] ]
-        struct :h, :fields => [ [:struct, :i, {:fields => [[:uint16, :j]]}] ]
-      end
-    END
-    @obj = StructWithEndian.new
   end
 
   it "should use correct endian" do

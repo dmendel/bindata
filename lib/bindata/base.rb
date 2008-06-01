@@ -1,4 +1,5 @@
 require 'bindata/lazy'
+require 'bindata/sanitize'
 require 'bindata/registry'
 require 'stringio'
 
@@ -68,11 +69,73 @@ module BinData
       end
       alias_method :optional_parameter, :optional_parameters
 
-      # Returns both the mandatory and optional parameters used by this class.
-      def parameters
-        # warn about deprecated method - remove before releasing 1.0
-        warn "warning: #parameters is deprecated."
-        (mandatory_parameters + optional_parameters).uniq
+      # Returns the default parameters used by this class.  Any given args
+      # are appended to the parameters list.  The parameters for a class will
+      # include the parameters of its ancestors.
+      def default_parameters(params = {})
+        unless defined? @default_parameters
+          @default_parameters = {}
+          ancestors[1..-1].each do |parent|
+            if parent.respond_to?(:default_parameters)
+              @default_parameters = @default_parameters.merge(parent.default_parameters)
+            end
+          end
+        end
+        if not params.empty?
+          @default_parameters = @default_parameters.merge(params)
+        end
+        @default_parameters
+      end
+      alias_method :default_parameter, :default_parameters
+
+      # Returns the pairs of mutually exclusive parameters used by this class.
+      # Any given args are appended to the parameters list.  The parameters for
+      # a class will include the parameters of its ancestors.
+      def mutually_exclusive_parameters(*args)
+        unless defined? @mutually_exclusive_parameters
+          @mutually_exclusive_parameters = []
+          ancestors[1..-1].each do |parent|
+            if parent.respond_to?(:mutually_exclusive_parameters)
+              @mutually_exclusive_parameters.concat(parent.mutually_exclusive_parameters)
+            end
+          end
+        end
+        if not args.empty?
+          @mutually_exclusive_parameters << [args[0].to_sym, args[1].to_sym]
+        end
+        @mutually_exclusive_parameters
+      end
+
+      # Returns a list of parameters that are accepted by this object
+      def accepted_parameters
+        (mandatory_parameters + optional_parameters + default_parameters.keys).uniq
+      end
+
+      def sanitize_parameters(params, *args)
+        params = params.dup
+
+        # add default parameters
+        default_parameters.each do |k,v|
+          params[k] = v unless params.has_key?(k)
+        end
+
+        # ensure mandatory parameters exist
+        mandatory_parameters.each do |prm|
+          if not params.has_key?(prm)
+            raise ArgumentError, "parameter ':#{prm}' must be specified " +
+                                 "in #{self}"
+          end
+        end
+
+        # ensure mutual exclusion
+        mutually_exclusive_parameters.each do |param1, param2|
+          if params.has_key?(param1) and params.has_key?(param2)
+            raise ArgumentError, "params #{param1} and #{param2} " +
+                                 "are mutually exclusive"
+          end
+        end
+
+        params
       end
 
       # Instantiates this class and reads from +io+.  For single value objects
@@ -91,13 +154,27 @@ module BinData
       private :register
 
       # Returns the class matching a previously registered +name+.
-      def lookup(name)
-        Registry.instance.lookup(name)
+      def lookup(name, endian = nil)
+        name = name.to_s
+        klass = Registry.instance.lookup(name)
+        if klass.nil? and endian != nil
+          # lookup failed so attempt endian lookup
+          if /^u?int\d{1,3}$/ =~ name
+            new_name = name + ((endian == :little) ? "le" : "be")
+            klass = Registry.instance.lookup(new_name)
+          elsif ["float", "double"].include?(name)
+            new_name = name + ((endian == :little) ? "_le" : "_be")
+            klass = Registry.instance.lookup(new_name)
+          end
+        end
+        klass
       end
     end
 
     # Define the parameters we use in this class.
-    optional_parameters :check_offset, :adjust_offset, :readwrite
+    optional_parameters :check_offset, :adjust_offset
+    default_parameters :readwrite => true
+    mutually_exclusive_parameters :check_offset, :adjust_offset
 
     # Creates a new data object.
     #
@@ -105,52 +182,19 @@ module BinData
     # reference callable objects (methods or procs).  +env+ is the
     # environment that these callable objects are evaluated in.
     def initialize(params = {}, env = nil)
-      # all known parameters
-      mandatory = self.class.mandatory_parameters
-      optional = self.class.optional_parameters
-
-      # default :readwrite param to true if unspecified
-      if not params.has_key?(:readwrite)
-        params = params.dup
-        params[:readwrite] = true
+      unless SanitizedParameters === params
+        params = SanitizedParameters.new(self.class, params)
       end
 
-      # ensure mandatory parameters exist
-      mandatory.each do |prm|
-        if not params.has_key?(prm)
-          raise ArgumentError, "parameter ':#{prm}' must be specified " +
-                               "in #{self}"
-        end
-      end
-
-      # partition parameters into known and extra parameters
-      @params = {}
-      extra   = {}
-      params.each do |k,v|
-        k = k.to_sym
-        raise ArgumentError, "parameter :#{k} is nil in #{self}" if v.nil?
-        if mandatory.include?(k) or optional.include?(k)
-          @params[k] = v.freeze
-        else
-          extra[k] = v.freeze
-        end
-      end
-
-      # ensure mutual exclusion of parameters
-      ensure_mutual_exclusion(:check_offset, :adjust_offset)
+      @params = params.accepted_parameters
 
       # set up the environment
       @env             = env || LazyEvalEnv.new
-      @env.params      = extra
+      @env.params      = params.extra_parameters
       @env.data_object = self
     end
 
-    # Returns a list of parameters that are accepted by this object
-    def accepted_parameters
-      (self.class.mandatory_parameters + self.class.optional_parameters).uniq
-    end
-
-    # Reads data into this bin object by calling #do_read then #done_read.
+    # Reads data into this data object by calling #do_read then #done_read.
     def read(io)
       # wrap strings in a StringIO
       io = StringIO.new(io) if io.respond_to?(:to_str)
@@ -180,15 +224,17 @@ module BinData
       _write(io) if eval_param(:readwrite) != false
     end
 
+    # Returns the string representation of this data object.
+    def to_s
+      io = StringIO.new
+      write(io)
+      io.rewind
+      io.read
+    end
+
     # Returns the number of bytes it will take to write this data.
     def num_bytes(what = nil)
       (eval_param(:readwrite) != false) ? _num_bytes(what) : 0
-    end
-
-    # Returns whether this data object contains a single value.  Single
-    # value data objects respond to <tt>#value</tt> and <tt>#value=</tt>.
-    def single_value?
-      respond_to? :value
     end
 
     # Return a human readable representation of this object.
@@ -198,6 +244,11 @@ module BinData
 
     #---------------
     private
+
+    # Creates a new LazyEvalEnv for use by a child data object.
+    def create_env
+      LazyEvalEnv.new(@env)
+    end
 
     # Returns the value of the evaluated parameter.  +key+ references a
     # parameter from the +params+ hash used when creating the data object.
@@ -218,14 +269,6 @@ module BinData
     # this data object.
     def has_param?(key)
       @params.has_key?(key.to_sym)
-    end
-
-    # Raise an error if +param1+ and +param2+ are both given as params.
-    def ensure_mutual_exclusion(param1, param2)
-      if has_param?(param1) and has_param?(param2)
-        raise ArgumentError, "params #{param1} and #{param2} " +
-                             "are mutually exclusive"
-      end
     end
 
     # Checks that the current offset of +io+ is as expected.  This should
@@ -258,7 +301,14 @@ module BinData
       end
     end
 
+    ###########################################################################
     # To be implemented by subclasses
+
+    # Returns a list of the names of all possible field names for an object
+    # created with +sanitized_params+.
+    def self.all_possible_field_names(sanitized_params)
+      raise NotImplementedError
+    end
 
     # Resets the internal state to that of a newly created object.
     def clear
@@ -290,6 +340,12 @@ module BinData
       raise NotImplementedError
     end
 
+    # Returns whether this data object contains a single value.  Single
+    # value data objects respond to <tt>#value</tt> and <tt>#value=</tt>.
+    def single_value?
+      raise NotImplementedError
+    end
+
     # Returns a list of the names of all fields accessible through this
     # object.
     def field_names
@@ -297,9 +353,10 @@ module BinData
     end
 
     # Set visibility requirements of methods to implement
-    public :clear, :done_read, :snapshot, :field_names
+    public :clear, :done_read, :snapshot, :single_value?, :field_names
     private :_do_read, :_write, :_num_bytes
 
     # End To be implemented by subclasses
+    ###########################################################################
   end
 end
