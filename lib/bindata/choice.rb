@@ -1,3 +1,4 @@
+require 'forwardable'
 require 'bindata/base'
 require 'bindata/sanitize'
 
@@ -7,23 +8,47 @@ module BinData
   #
   #   require 'bindata'
   #
-  #   choices = [ [:int8, {:value => 3}], [:int8, {:value => 5}] ]
+  #   type1 = [:string, {:value => "Type1"}]
+  #   type2 = [:string, {:value => "Type2"}]
+  #
+  #   choices = [ type1, type2 ]
   #   a = BinData::Choice.new(:choices => choices, :selection => 1)
-  #   a.value # => 5
+  #   a.value # => "Type2"
+  #
+  #   choices = [ nil, nil, nil, type1, nil, type2 ]
+  #   a = BinData::Choice.new(:choices => choices, :selection => 3)
+  #   a.value # => "Type1"
+  #
+  #   choices = {5 => type1, 17 => type2}
+  #   a = BinData::Choice.new(:choices => choices, :selection => 5)
+  #   a.value # => "Type1"
+  #
+  #   mychoice = 'big'
+  #   choices = {'big' => :uint16be, 'little' => :uint16le}
+  #   a = BinData::Choice.new(:choices => choices,
+  #                           :selection => lambda { mychoice })
+  #   a.value  = 256
+  #   a.to_s #=> "\001\000"
+  #   mychoice[0..-1] = 'little'
+  #   a.to_s #=> "\000\001"
+  #
   #
   # == Parameters
   #
   # Parameters may be provided at initialisation to control the behaviour of
   # an object.  These params are:
   #
-  # <tt>:choices</tt>::   An array specifying the possible data objects.
-  #                       The format of the array is a list of symbols
-  #                       representing the data object type.  If a choice
-  #                       is to have params passed to it, then it should be
-  #                       provided as [type_symbol, hash_params].
-  # <tt>:selection</tt>:: An index into the :choices array which specifies
-  #                       the currently active choice.
+  # <tt>:choices</tt>::   Either an array or a hash specifying the possible
+  #                       data objects.  The format of the array/hash.values is
+  #                       a list of symbols representing the data object type.
+  #                       If a choice is to have params passed to it, then it
+  #                       should be provided as [type_symbol, hash_params].
+  #                       An implementation gotcha is that the hash may not
+  #                       contain symbols as keys.
+  # <tt>:selection</tt>:: An index/key into the :choices array/hash which
+  #                       specifies the currently active choice.
   class Choice < BinData::Base
+    extend Forwardable
 
     # Register this class
     register(self.name, self)
@@ -32,14 +57,53 @@ module BinData
     mandatory_parameters :choices, :selection
 
     class << self
+
+      # Returns a sanitized +params+ that is of the form expected
+      # by #initialize.
       def sanitize_parameters(params, endian = nil)
         params = params.dup
 
         if params.has_key?(:choices)
-          params[:choices].collect! do |type, param|
-            klass = lookup(type, endian)
-            raise TypeError, "unknown type '#{type}' for #{self}" if klass.nil?
-            [klass, SanitizedParameters.new(klass, param, endian)]
+          choices = params[:choices]
+
+          case choices
+          when ::Hash
+            new_choices = {}
+            choices.keys.each do |key|
+              # ensure valid hash keys
+              if Symbol === key
+                msg = ":choices hash may not have symbols for keys"
+                raise ArgumentError, msg
+              elsif key.nil?
+                raise ArgumentError, ":choices hash may not have nil key"
+              end
+
+              # collect sanitized choice values
+              type, param = choices[key]
+              klass = lookup(type, endian)
+              if klass.nil?
+                raise TypeError, "unknown type '#{type}' for #{self}"
+              end
+              val = [klass, SanitizedParameters.new(klass, param, endian)]
+              new_choices[key] = val
+            end
+            params[:choices] = new_choices
+          when ::Array
+            choices.collect! do |type, param|
+              if type.nil?
+                # allow sparse arrays
+                nil
+              else
+                klass = lookup(type, endian)
+                if klass.nil?
+                  raise TypeError, "unknown type '#{type}' for #{self}"
+                end
+                [klass, SanitizedParameters.new(klass, param, endian)]
+              end
+            end
+            params[:choices] = choices
+          else
+            raise ArgumentError, "unknown type for :choices (#{choices.class})"
           end
         end
 
@@ -52,9 +116,17 @@ module BinData
           raise ArgumentError, "parameters aren't sanitized"
         end
 
+        choices = sanitized_params[:choices]
+
         names = []
-        sanitized_params[:choices].each do |cklass, cparams|
-          names << cklass.all_possible_field_names(cparams)
+        if ::Array === choices
+          choices.each do |cklass, cparams|
+            names.concat(cklass.all_possible_field_names(cparams))
+          end
+        elsif ::Hash === choices
+          choices.values.each do |cklass, cparams|
+            names.concat(cklass.all_possible_field_names(cparams))
+          end
         end
         names
       end
@@ -63,58 +135,14 @@ module BinData
     def initialize(params = {}, env = nil)
       super(params, env)
 
-      # instantiate all choices
-      @choices = []
-      param(:choices).each do |choice_klass, choice_params|
-        @choices << choice_klass.new(choice_params, create_env)
-      end
+      # prepare collection of instantiated choice objects
+      @choices = (param(:choices) === ::Array) ? [] : {}
+      @last_key = nil
     end
 
-    # Resets the internal state to that of a newly created object.
-    def clear
-      the_choice.clear
-    end
-
-    # Returns if the selected data object is clear?.
-    def clear?
-      the_choice.clear?
-    end
-
-    # Reads the value of the selected data object from +io+.
-    def _do_read(io)
-      the_choice.do_read(io)
-    end
-
-    # To be called after calling #do_read.
-    def done_read
-      the_choice.done_read
-    end
-
-    # Writes the value of the selected data object to +io+.
-    def _write(io)
-      the_choice.write(io)
-    end
-
-    # Returns the number of bytes it will take to write the
-    # selected data object.
-    def _num_bytes(what)
-      the_choice.num_bytes(what)
-    end
-
-    # Returns a snapshot of the selected data object.
-    def snapshot
-      the_choice.snapshot
-    end
-
-    # Returns whether the selected data object is as single value.
-    def single_value?
-      the_choice.single_value?
-    end
-
-    # Returns a list of the names of all fields of the selected data object.
-    def field_names
-      the_choice.field_names
-    end
+    def_delegators :the_choice, :clear, :clear?, :_do_read, :done_read
+    def_delegators :the_choice, :_write, :_num_bytes, :snapshot
+    def_delegators :the_choice, :single_value?, :field_names
 
     # Returns the data object that stores values for +name+.
     def find_obj_for_name(name)
@@ -139,11 +167,35 @@ module BinData
 
     # Returns the selected data object.
     def the_choice
-      index = eval_param(:selection)
-      if index < 0 or index >= @choices.length
-        raise IndexError, "selection #{index} is out of range"
+      key = eval_param(:selection)
+
+      if key.nil?
+        raise IndexError, ":selection returned nil value"
       end
-      @choices[index]
+
+      obj = @choices[key]
+      if obj.nil?
+        # instantiate choice object
+        choice_klass, choice_params = param(:choices)[key]
+        if choice_klass.nil?
+          raise IndexError, "selection #{key} does not exist in :choices"
+        end
+        obj = choice_klass.new(choice_params, create_env)
+        @choices[key] = obj
+      end
+
+      # for single_values copy the value when the selected object changes
+      if key != @last_key
+        if @last_key != nil
+          prev = @choices[@last_key]
+          if prev != nil and prev.single_value? and obj.single_value?
+            obj.value = prev.value
+          end
+        end
+        @last_key = key
+      end
+
+      obj
     end
   end
 end
