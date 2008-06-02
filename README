@@ -180,6 +180,8 @@ BinData::FloatBe::  Single precision floating point number (big endian).
 BinData::DoubleLe:: Double precision floating point number (little endian).
 BinData::DoubleBe:: Double precision floating point number (big endian).
 
+BinData::Rest::     Consumes the rest of the input stream.
+
 == Parameters
 
   class PascalStringWriter < BinData::MultiValue
@@ -248,6 +250,39 @@ BinData::SingleValue.  Ocassionally it may be useful to subclass
 BinData::Single.  Subclassing other classes may have unexpected results
 and is unsupported.
 
+Let us revisit the Pascal String example.
+
+  class PascalString < BinData::MultiValue
+    uint8  :len,  :value => lambda { data.length }
+    string :data, :read_length => :len
+  end
+
+We'd like to make PascalString a custom type that behaves like a
+BinData::Single object so we can use :initial_value etc.  Here's an
+example usage of what we'd like:
+
+  class Favourites < BinData::MultiValue
+    pascal_string :language, :initial_value => "ruby"
+    pascal_string :os,       :initial_value => "unix"
+  end
+
+  f = Favourites.new
+  f.os = "freebsd"
+  f.to_s #=> "\004ruby\007freebsd"
+
+We create this type of custom string by inheriting from BinData::SingleValue
+and implementing the #get and #set methods.
+
+  class PascalString < BinData::SingleValue
+    uint8  :len,  :value => lambda { data.length }
+    string :data, :read_length => :len
+
+    def get;   self.data; end
+    def set(v) self.data = v; end
+  end
+
+If the type we are creating represents a single value then inherit from
+BinData::SingleValue, otherwise inherit from BinData::MultiValue.
 
 == License
 
