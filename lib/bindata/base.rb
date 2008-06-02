@@ -111,6 +111,8 @@ module BinData
         (mandatory_parameters + optional_parameters + default_parameters.keys).uniq
       end
 
+      # Returns a sanitized +params+ that is of the form expected
+      # by #initialize.
       def sanitize_parameters(params, *args)
         params = params.dup
 

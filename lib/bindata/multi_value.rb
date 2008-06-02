@@ -1,17 +1,17 @@
 require 'bindata/struct'
 
 module BinData
-  # A Struct is an ordered collection of named data objects.
+  # A MultiValue is a declarative wrapper around Struct.
   #
   #    require 'bindata'
   #
-  #    class Tuple < BinData::Struct
+  #    class Tuple < BinData::MultiValue
   #      int8  :x
   #      int8  :y
   #      int8  :z
   #    end
   #
-  #    class SomeStruct < BinData::Struct
+  #    class SomeDataType < BinData::MultiValue
   #      hide 'a'
   #
   #      int32le :a
@@ -19,7 +19,7 @@ module BinData
   #      tuple   nil
   #    end
   #
-  #    obj = SomeStruct.new
+  #    obj = SomeDataType.new
   #    obj.field_names   =># ["b", "x", "y", "z"]
   #
   #
@@ -39,6 +39,9 @@ module BinData
   #                      from the outside world.  Hidden fields don't appear
   #                      in #snapshot or #field_names but are still accessible
   #                      by name.
+  # <tt>:endian</tt>::   Either :little or :big.  This specifies the default
+  #                      endian of any numerics in this struct, or in any
+  #                      nested data objects.
   class MultiValue < Struct
 
     class << self
@@ -120,8 +123,8 @@ module BinData
         @fields.push([type, name, params])
       end
 
-      # Returns a hash of cleaned +params+.  Cleaning means that param
-      # values are converted to a desired format.
+      # Returns a sanitized +params+ that is of the form expected
+      # by #initialize.
       def sanitize_parameters(params, endian = nil)
         params = params.dup
 

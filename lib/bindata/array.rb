@@ -58,6 +58,8 @@ module BinData
     mutually_exclusive_parameters :initial_length, :read_until
 
     class << self
+      # Returns a sanitized +params+ that is of the form expected
+      # by #initialize.
       def sanitize_parameters(params, endian = nil)
         params = params.dup
 

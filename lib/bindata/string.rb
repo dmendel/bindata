@@ -57,6 +57,9 @@ module BinData
     mutually_exclusive_parameters :length, :value
 
     class << self
+
+      # Returns a sanitized +params+ that is of the form expected
+      # by #initialize.
       def sanitize_parameters(params, *args)
         params = params.dup
 

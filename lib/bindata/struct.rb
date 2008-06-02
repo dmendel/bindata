@@ -12,10 +12,10 @@ module BinData
   #      int8  :z
   #    end
   #
-  #    obj = Struct.new(:hide => :a,
-  #                     :fields => [ [:int32le, :a],
-  #                                  [:int16le, :b],
-  #                                  [:tuple, :nil] ])
+  #    obj = BinData::Struct.new(:hide => :a,
+  #                              :fields => [ [:int32le, :a],
+  #                                           [:int16le, :b],
+  #                                           [:tuple, :nil] ])
   #    obj.field_names   =># ["b", "x", "y", "z"]
   #
   #
@@ -141,8 +141,8 @@ module BinData
       #### DEPRECATION HACK to allow inheriting from BinData::Struct
 
 
-      # Returns a hash of cleaned +params+.  Cleaning means that param
-      # values are converted to a desired format.
+      # Returns a sanitized +params+ that is of the form expected
+      # by #initialize.
       def sanitize_parameters(params, endian = nil)
         #### DEPRECATION HACK to allow inheriting from BinData::Struct
         #

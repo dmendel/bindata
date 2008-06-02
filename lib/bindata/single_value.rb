@@ -2,47 +2,66 @@ require 'bindata/single'
 require 'bindata/struct'
 
 module BinData
-  # A Struct is an ordered collection of named data objects.
+  # A SingleValue is a declarative way to define a new BinData data type.
+  # The data type must contain a single value only.  For new data types
+  # that contain multiple values see BinData::MultiValue.
+  #
+  # To define a new data type, set fields as if for MultiValue and add a
+  # #get and #set method to extract / convert the data between the fields
+  # and the #value of the object.
   #
   #    require 'bindata'
   #
-  #    class Tuple < BinData::Struct
-  #      int8  :x
-  #      int8  :y
-  #      int8  :z
+  #    class PascalString < BinData::SingleValue
+  #      uint8  :len,  :value => lambda { data.length }
+  #      string :data, :read_length => :len
+  #    
+  #      def get
+  #        self.data
+  #      end
+  #    
+  #      def set(v)
+  #        self.data = v
+  #      end
   #    end
   #
-  #    class SomeStruct < BinData::Struct
-  #      hide 'a'
+  #    ps = PascalString.new(:initial_value => "hello")
+  #    ps.to_s #=> "\005hello"
+  #    ps.read("\003abcde")
+  #    ps.value #=> "abc"
   #
-  #      int32le :a
-  #      int16le :b
-  #      tuple   nil
+  #    # Unsigned 24 bit big endian integer
+  #    class Uint24be < BinData::SingleValue
+  #      uint8 :byte1
+  #      uint8 :byte2
+  #      uint8 :byte3
+  #
+  #      def get
+  #        (self.byte1 << 16) | (self.byte2 << 8) | self.byte3
+  #      end
+  #
+  #      def set(v)
+  #        v = 0 if v < 0
+  #        v = 0xffffff if v > 0xffffff
+  #
+  #        self.byte1 = (v >> 16) & 0xff
+  #        self.byte2 = (v >>  8) & 0xff
+  #        self.byte3 =  v        & 0xff
+  #      end
   #    end
   #
-  #    obj = SomeStruct.new
-  #    obj.field_names   =># ["b", "x", "y", "z"]
-  #
+  #    u24 = Uint24be.new
+  #    u24.read("\x12\x34\x56")
+  #    "0x%x" % u24.value #=> 0x123456
   #
   # == Parameters
   #
-  # Parameters may be provided at initialisation to control the behaviour of
-  # an object.  These params are:
+  # SingleValue objects accept all the parameters that BinData::Single do.
   #
-  # <tt>:fields</tt>::   An array specifying the fields for this struct.
-  #                      Each element of the array is of the form [type, name,
-  #                      params].  Type is a symbol representing a registered
-  #                      type.  Name is the name of this field.  Name may be
-  #                      nil as in the example above.  Params is an optional
-  #                      hash of parameters to pass to this field when
-  #                      instantiating it.
-  # <tt>:hide</tt>::     A list of the names of fields that are to be hidden
-  #                      from the outside world.  Hidden fields don't appear
-  #                      in #snapshot or #field_names but are still accessible
-  #                      by name.
   class SingleValue < Single
 
     class << self
+
       # Register the names of all subclasses of this class.
       def inherited(subclass) #:nodoc:
         register(subclass.name, subclass)
@@ -61,12 +80,13 @@ module BinData
         @endian
       end
 
-      # Returns all stored fields.  Should only be called by #sanitize_parameters
+      # Returns all stored fields.  Should only be called by
+      # #sanitize_parameters
       def fields
         @fields || []
       end
 
-      # Used to define fields for this structure.
+      # Used to define fields for the internal structure.
       def method_missing(symbol, *args)
         name, params = args
 
@@ -103,8 +123,8 @@ module BinData
         @fields.push([type, name, params])
       end
 
-      # Returns a hash of cleaned +params+.  Cleaning means that param
-      # values are converted to a desired format.
+      # Returns a sanitized +params+ that is of the form expected
+      # by #initialize.
       def sanitize_parameters(params, endian = nil)
         params = params.dup
 
@@ -133,6 +153,7 @@ module BinData
       @struct = BinData::Struct.new(param(:struct_params), create_env)
     end
 
+    # Forward method calls to the internal struct.
     def method_missing(symbol, *args, &block)
       if @struct.respond_to?(symbol)
         @struct.__send__(symbol, *args, &block)
@@ -144,15 +165,19 @@ module BinData
     #---------------
     private
 
+    # Retrieve a sensible default from the internal struct.
     def sensible_default
       get
     end
 
+    # Read data into the fields of the internal struct then return the value.
     def read_val(io)
       @struct.read(io)
       get
     end
 
+    # Sets +val+ into the fields of the internal struct then returns the
+    # string representation.
     def val_to_str(val)
       set(val)
       @struct.to_s
@@ -161,10 +186,13 @@ module BinData
     ###########################################################################
     # To be implemented by subclasses
 
+    # Extracts the value for this data object from the fields of the
+    # internal struct.
     def get
       raise NotImplementedError
     end
 
+    # Sets the fields of the internal struct to represent +v+.
     def set(v)
       raise NotImplementedError
     end
