@@ -3,3 +3,7 @@
 * Need optional parameter for fields
 
 * Should I add seek capability?
+
+* Add (Multi|Single)Value.custom_parameters
+
+* BitFields

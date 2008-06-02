@@ -12,6 +12,10 @@ require 'bindata/string'
 require 'bindata/stringz'
 require 'bindata/struct'
 
+# = BinData
+# 
+# A declarative way to read and write structured binary data.
+# 
 module BinData
-  VERSION = "0.8.1"
+  VERSION = "0.9.0"
 end

@@ -1,10 +1,13 @@
 = BinData Changelog
 
-== Version NEW_VERSION
+== Version 0.9.0 (2008-06-02)
 
 * Added :adjust_offset option to automatically seek to a given offset.
 * Modified #read to accept strings as well as IO streams.
-* Major internal restructuring.
+* Choice now accepts sparse arrays and hashes as :choice.
+* Added BinData::Rest to help with debugging.
+* Major internal restructuring - memory usage is much better.
+* Improved documentation
 
 == Version 0.8.1 (2008-01-14)
 
