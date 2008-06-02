@@ -4,7 +4,7 @@ require File.expand_path(File.dirname(__FILE__)) + '/spec_common'
 require 'bindata'
 
 describe BinData::Struct, "with hidden fields" do
-  before(:all) do
+  before(:each) do
     @params = { :hide => [:b, 'c'],
                 :fields => [
                    [:int8, :a],
@@ -176,7 +176,7 @@ describe BinData::Struct, "with multiple fields" do
 end
 
 describe BinData::Struct, "with nested structs" do
-  before(:all) do
+  before(:each) do
     inner1 = [ [:int8, :w, {:initial_value => 3}],
                [:int8, :x, {:value => :the_val}] ]
 
@@ -215,7 +215,7 @@ describe BinData::Struct, "with nested structs" do
 end
 
 describe BinData::Struct, "with an endian defined" do
-  before(:all) do
+  before(:each) do
     @obj = BinData::Struct.new(:endian => :little,
                                :fields => [
                                  [:uint16, :a],

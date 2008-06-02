@@ -29,6 +29,10 @@ describe BinData::Array, "with no elements" do
     @data = BinData::Array.new(:type => :int8)
   end
 
+  it "should not have any field_names" do
+    BinData::Array.all_possible_field_names(nil).should be_empty
+  end
+
   it "should not be a single_value" do
     @data.should_not be_single_value
   end
@@ -72,6 +76,10 @@ describe BinData::Array, "with several elements" do
   before(:each) do
     type = [:int16le, {:initial_value => lambda { index + 1 }}]
     @data = BinData::Array.new(:type => type, :initial_length => 5)
+  end
+
+  it "should not have any field_names" do
+    BinData::Array.all_possible_field_names(nil).should be_empty
   end
 
   it "should not be a single_value" do

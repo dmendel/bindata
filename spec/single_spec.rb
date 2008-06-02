@@ -12,29 +12,7 @@ class ConcreteSingle < BinData::Single
   def in_read?()         @in_read end
 end
 
-describe "The sample implementation of Single" do
-  it "should have symmetric IO" do
-    io = StringIO.new
-    data = ConcreteSingle.new
-    data.value = 42
-    data.write(io)
-
-    io.rewind
-    data = ConcreteSingle.new
-    data.read(io)
-    data.value.should == 42
-  end
-end
-
-describe "The class Single" do
-  it "should read and return a value" do
-    io = StringIO.new([123456].pack("V"))
-    ConcreteSingle.read(io).should == 123456
-    data = ConcreteSingle.new
-  end
-end
-
-describe "A Single object" do
+describe BinData::Single do
   it "should conform to rule 1 for returning a value" do
     data = ConcreteSingle.new(:value => 5)
     data.should_not be_in_read
@@ -92,6 +70,21 @@ describe BinData::Single, "after initialisation" do
 
   it "should have a sensible value" do
     @data.value.should == 0
+  end
+
+  it "should have symmetric IO" do
+    io = StringIO.new
+    @data.value = 42
+    @data.write(io)
+
+    io.rewind
+    @data = ConcreteSingle.new
+    @data.read(io)
+    @data.value.should == 42
+  end
+
+  it "should be a single_value" do
+    @data.should be_single_value
   end
 
   it "should allowing setting and retrieving value" do
@@ -216,6 +209,9 @@ describe BinData::Single, "when subclassing" do
         public :val_to_str, :read_val, :sensible_default
       end
     END
+  end
+
+  before(:each) do
     @obj = SubClassOfSingle.new
   end
 

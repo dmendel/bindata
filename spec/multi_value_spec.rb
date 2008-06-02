@@ -1,13 +1,12 @@
 #!/usr/bin/env ruby
 
-=begin
 require File.expand_path(File.dirname(__FILE__)) + '/spec_common'
 require 'bindata'
 
-describe "A Struct with hidden fields" do
+describe BinData::MultiValue, "with hidden fields" do
   before(:all) do
     eval <<-END
-      class HiddenStruct < BinData::Struct
+      class HiddenMultiValue < BinData::MultiValue
         hide :b, 'c'
         int8 :a
         int8 'b', :initial_value => 10
@@ -15,7 +14,10 @@ describe "A Struct with hidden fields" do
         int8 :d, :value => :b
       end
     END
-    @obj = HiddenStruct.new
+  end
+
+  before(:each) do
+    @obj = HiddenMultiValue.new
   end
 
   it "should only show fields that aren't hidden" do
@@ -23,9 +25,9 @@ describe "A Struct with hidden fields" do
   end
 
   it "should be able to access hidden fields directly" do
-    @obj.b.should eql(10)
+    @obj.b.should == 10
     @obj.c = 15
-    @obj.c.should eql(15)
+    @obj.c.should == 15
 
     @obj.should respond_to(:b=)
   end
@@ -36,27 +38,21 @@ describe "A Struct with hidden fields" do
   end
 end
 
-describe "Defining a Struct" do
-  before(:all) do
-  end
+describe BinData::MultiValue, "when defining" do
   it "should fail on non registered types" do
     lambda {
       eval <<-END
-        class BadType < BinData::Struct
+        class BadTypeMultiValue < BinData::MultiValue
           non_registerd_type :a
         end
       END
-    }.should raise_error(TypeError)
-
-    lambda {
-      BinData::Struct.new(:fields => [[:non_registered_type, :a]])
     }.should raise_error(TypeError)
   end
 
   it "should fail on duplicate names" do
     lambda {
       eval <<-END
-        class DuplicateName < BinData::Struct
+        class DuplicateNameMultiValue < BinData::MultiValue
           int8 :a
           int8 :b
           int8 :a
@@ -68,37 +64,28 @@ describe "Defining a Struct" do
   it "should fail on reserved names" do
     lambda {
       eval <<-END
-        class ReservedName < BinData::Struct
+        class ReservedNameMultiValue < BinData::MultiValue
           int8 :a
           int8 :invert # from Hash.instance_methods
         end
       END
-    }.should raise_error(NameError)
-
-    lambda {
-      # :invert is from Hash.instance_methods
-      BinData::Struct.new(:fields => [[:int8, :a], [:int8, :invert]])
     }.should raise_error(NameError)
   end
 
   it "should fail when field name shadows an existing method" do
     lambda {
       eval <<-END
-        class ExistingName < BinData::Struct
+        class ExistingNameMultiValue < BinData::MultiValue
           int8 :object_id
         end
       END
-    }.should raise_error(NameError)
-
-    lambda {
-      BinData::Struct.new(:fields => [[:int8, :object_id]])
     }.should raise_error(NameError)
   end
 
   it "should fail on unknown endian" do
     lambda {
       eval <<-END
-        class BadEndian < BinData::Struct
+        class BadEndianMultiValue < BinData::MultiValue
           endian 'a bad value'
         end
       END
@@ -106,23 +93,31 @@ describe "Defining a Struct" do
   end
 end
 
-describe "A Struct with multiple fields" do
+describe BinData::MultiValue, "with multiple fields" do
+  before(:all) do
+    eval <<-END
+      class MultiFieldMultiValue < BinData::MultiValue
+        int8 :a
+        int8 :b
+      end
+    END
+  end
+
   before(:each) do
-    fields = [ [:int8, :a], [:int8, :b] ]
-    @obj = BinData::Struct.new(:fields => fields) 
+    @obj = MultiFieldMultiValue.new
     @obj.a = 1
     @obj.b = 2
   end
 
   it "should return num_bytes" do
-    @obj.num_bytes(:a).should eql(1)
-    @obj.num_bytes(:b).should eql(1)
-    @obj.num_bytes.should     eql(2)
+    @obj.num_bytes(:a).should == 1
+    @obj.num_bytes(:b).should == 1
+    @obj.num_bytes.should     == 2
   end
 
   it "should identify accepted parameters" do
-    BinData::Struct.accepted_parameters.should include(:hide)
-    BinData::Struct.accepted_parameters.should include(:endian)
+    BinData::MultiValue.accepted_parameters.should include(:hide)
+    BinData::MultiValue.accepted_parameters.should include(:endian)
   end
 
   it "should clear" do
@@ -144,21 +139,21 @@ describe "A Struct with multiple fields" do
     @obj.write(io)
 
     io.rewind
-    io.read.should eql("\x01\x02")
+    io.read.should == "\x01\x02"
   end
 
   it "should read ordered" do
     io = StringIO.new "\x03\x04"
     @obj.read(io)
 
-    @obj.a.should eql(3)
-    @obj.b.should eql(4)
+    @obj.a.should == 3
+    @obj.b.should == 4
   end
 
   it "should return a snapshot" do
     snap = @obj.snapshot
-    snap.a.should eql(1)
-    snap.b.should eql(2)
+    snap.a.should == 1
+    snap.b.should == 2
     snap.should == { "a" => 1, "b" => 2 }
   end
 
@@ -171,26 +166,29 @@ describe "A Struct with multiple fields" do
   end
 end
 
-describe "A Struct with nested structs" do
+describe BinData::MultiValue, "with nested structs" do
   before(:all) do
     eval <<-END
-      class StructInner1 < BinData::Struct
+      class MultiValueInner1 < BinData::MultiValue
         int8 :w, :initial_value => 3
         int8 :x, :value => :the_val
       end
 
-      class StructInner2 < BinData::Struct
+      class MultiValueInner2 < BinData::MultiValue
         int8 :y, :value => lambda { parent.b.w }
         int8 :z
       end
 
-      class StructOuter < BinData::Struct
-        int8          :a, :initial_value => 6
-        struct_inner1 :b, :the_val => :a
-        struct_inner2 nil
+      class MultiValueOuter < BinData::MultiValue
+        int8               :a, :initial_value => 6
+        multi_value_inner1 :b, :the_val => :a
+        multi_value_inner2 nil
       end
     END
-    @obj = StructOuter.new
+  end
+
+  before(:each) do
+    @obj = MultiValueOuter.new
   end
 
   it "should included nested field names" do
@@ -198,23 +196,23 @@ describe "A Struct with nested structs" do
   end
 
   it "should access nested fields" do
-    @obj.a.should   eql(6)
-    @obj.b.w.should eql(3)
-    @obj.b.x.should eql(6)
-    @obj.y.should   eql(3)
+    @obj.a.should   == 6
+    @obj.b.w.should == 3
+    @obj.b.x.should == 6
+    @obj.y.should   == 3
   end
 
   it "should return correct offset of" do
-    @obj.offset_of("b").should eql(1)
-    @obj.offset_of("y").should eql(3)
-    @obj.offset_of("z").should eql(4)
+    @obj.offset_of("b").should == 1
+    @obj.offset_of("y").should == 3
+    @obj.offset_of("z").should == 4
   end
 end
 
-describe "A Struct with an endian defined" do
+describe BinData::MultiValue, "with an endian defined" do
   before(:all) do
     eval <<-END
-      class StructWithEndian < BinData::Struct
+      class MultiValueWithEndian < BinData::MultiValue
         endian :little
 
         uint16 :a
@@ -225,7 +223,10 @@ describe "A Struct with an endian defined" do
         struct :h, :fields => [ [:struct, :i, {:fields => [[:uint16, :j]]}] ]
       end
     END
-    @obj = StructWithEndian.new
+  end
+
+  before(:each) do
+    @obj = MultiValueWithEndian.new
   end
 
   it "should use correct endian" do
@@ -247,4 +248,3 @@ describe "A Struct with an endian defined" do
     io.read.should == expected
   end
 end
-=end
