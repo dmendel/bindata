@@ -142,7 +142,7 @@ describe BinData::Base, "with :check_offset" do
       class TenByteOffsetBase < BaseStub
         def do_read(io)
           # advance the io position before checking offset
-          io.seek(10, IO::SEEK_CUR)
+          io.seekbytes(10)
           super(io)
         end
       end
@@ -184,7 +184,7 @@ describe BinData::Base, "with :adjust_offset" do
       class TenByteAdjustingOffsetBase < BaseStub
         def do_read(io)
           # advance the io position before checking offset
-          io.seek(10, IO::SEEK_CUR)
+          io.seekbytes(10)
           super(io)
         end
       end

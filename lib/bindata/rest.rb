@@ -30,7 +30,7 @@ module BinData
 
     # Read a number of bytes from +io+ and return the value they represent.
     def read_val(io)
-      io.read
+      io.raw_io.read
     end
 
     # Returns an empty string as default.

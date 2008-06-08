@@ -159,21 +159,6 @@ module BinData
       end
     end
 
-    # Usuable by subclasses
-
-    # Reads exactly +n+ bytes from +io+.  This should be used by subclasses
-    # in preference to <tt>io.read(n)</tt>.
-    #
-    # If the data read is nil an EOFError is raised.
-    #
-    # If the data read is too short an IOError is raised.
-    def readbytes(io, n)
-      str = io.read(n)
-      raise EOFError, "End of file reached" if str == nil
-      raise IOError, "data truncated" if str.size < n
-      str
-    end
-
     ###########################################################################
     # To be implemented by subclasses
 

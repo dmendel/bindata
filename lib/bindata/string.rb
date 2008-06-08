@@ -107,7 +107,7 @@ module BinData
     # Read a number of bytes from +io+ and return the value they represent.
     def read_val(io)
       len = eval_param(:read_length) || eval_param(:length) || 0
-      readbytes(io, len)
+      io.readbytes(len)
     end
 
     # Returns an empty string as default.

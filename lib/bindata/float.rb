@@ -21,7 +21,7 @@ module BinData
         nbytes = 8
       end
 
-      "readbytes(io,#{nbytes}).unpack('#{unpack}').at(0)"
+      "io.readbytes(#{nbytes}).unpack('#{unpack}').at(0)"
     end
 
     def self.create_to_s_code(single_precision, endian)

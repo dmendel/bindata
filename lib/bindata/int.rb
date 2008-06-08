@@ -38,10 +38,10 @@ module BinData
       b2  = (endian == :little) ? 1 : 0
 
       case nbits
-      when  8; "readbytes(io,1)[0]"
-      when 16; "readbytes(io,2).unpack('#{c16}').at(0)"
-      when 32; "readbytes(io,4).unpack('#{c32}').at(0)"
-      when 64; "(a = readbytes(io,8).unpack('#{c32 * 2}'); " +
+      when  8; "io.readbytes(1)[0]"
+      when 16; "io.readbytes(2).unpack('#{c16}').at(0)"
+      when 32; "io.readbytes(4).unpack('#{c32}').at(0)"
+      when 64; "(a = io.readbytes(8).unpack('#{c32 * 2}'); " +
                      "(a.at(#{b2}) << 32) + a.at(#{b1}))"
       else
         raise "unknown nbits '#{nbits}'"

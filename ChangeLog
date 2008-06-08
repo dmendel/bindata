@@ -1,5 +1,9 @@
 = BinData Changelog
 
+== Version NEW_VERSION
+
+* Fixed IO offset bug with SingleValues
+
 == Version 0.9.0 (2008-06-02)
 
 * Added :adjust_offset option to automatically seek to a given offset.

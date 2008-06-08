@@ -1,3 +1,4 @@
+require 'bindata/io'
 require 'bindata/lazy'
 require 'bindata/sanitize'
 require 'bindata/registry'
@@ -198,16 +199,7 @@ module BinData
 
     # Reads data into this data object by calling #do_read then #done_read.
     def read(io)
-      # wrap strings in a StringIO
-      io = StringIO.new(io) if io.respond_to?(:to_str)
-
-      # remove previous method to prevent warnings
-      class << io
-        remove_method(:bindata_mark) if method_defined?(:bindata_mark)
-      end
-
-      # remember the current position in the IO object
-      io.instance_eval "def bindata_mark; #{io.pos}; end"
+      io = BinData::IO.new(io) unless BinData::IO === io
 
       do_read(io)
       done_read
@@ -216,6 +208,8 @@ module BinData
 
     # Reads the value for this data from +io+.
     def do_read(io)
+      raise ArgumentError, "io must be a BinData::IO" unless BinData::IO === io
+
       clear
       check_offset(io)
       _do_read(io) if eval_param(:readwrite) != false
@@ -223,6 +217,8 @@ module BinData
 
     # Writes the value for this data to +io+.
     def write(io)
+      io = BinData::IO.new(io) unless BinData::IO === io
+
       _write(io) if eval_param(:readwrite) != false
     end
 
@@ -277,7 +273,7 @@ module BinData
     # be called from #do_read before performing the reading.
     def check_offset(io)
       if has_param?(:check_offset)
-        actual_offset = io.pos - io.bindata_mark
+        actual_offset = io.offset
         expected = eval_param(:check_offset, :offset => actual_offset)
 
         if not expected
@@ -287,12 +283,12 @@ module BinData
                                "expected '#{expected}'"
         end
       elsif has_param?(:adjust_offset)
-        actual_offset = io.pos - io.bindata_mark
+        actual_offset = io.offset
         expected = eval_param(:adjust_offset)
         if actual_offset != expected
           begin
             seek = expected - actual_offset
-            io.seek(seek, IO::SEEK_CUR)
+            io.seekbytes(seek)
             warn "adjusting stream position by #{seek} bytes" if $VERBOSE
           rescue
             # could not seek so raise an error

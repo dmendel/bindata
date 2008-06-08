@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 
 require File.expand_path(File.dirname(__FILE__)) + '/spec_common'
+require 'bindata/io'
 require 'bindata/string'
 
 describe BinData::String, "with mutually exclusive parameters" do
@@ -146,7 +147,7 @@ describe BinData::String, "with :read_length and :value" do
   it "should return read value before calling done_read" do
     io = StringIO.new("ABCDEFGHIJKLMNOPQRST")
 
-    @str.do_read(io)
+    @str.do_read(BinData::IO.new(io))
     @str.value.should == "ABCDE"
 
     @str.done_read

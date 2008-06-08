@@ -1,12 +1,13 @@
 #!/usr/bin/env ruby
 
 require File.expand_path(File.dirname(__FILE__)) + '/spec_common'
+require 'bindata/io'
 require 'bindata/single'
 
 # An implementation of a unsigned 4 byte integer.
 class ConcreteSingle < BinData::Single
   def val_to_str(val)    [val].pack("V") end
-  def read_val(io)       readbytes(io, 4).unpack("V")[0] end
+  def read_val(io)       io.readbytes(4).unpack("V")[0] end
   def sensible_default() 0 end
 
   def in_read?()         @in_read end
@@ -22,7 +23,7 @@ describe BinData::Single do
   it "should conform to rule 2 for returning a value" do
     io = StringIO.new([42].pack("V"))
     data = ConcreteSingle.new(:value => 5)
-    data.do_read(io)
+    data.do_read(BinData::IO.new(io))
     data.should be_in_read
     data.value.should == 42
   end
@@ -159,7 +160,7 @@ describe BinData::Single, "with :value" do
 
   it "should change during reading" do
     io = StringIO.new([56].pack("V"))
-    @data.do_read(io)
+    @data.do_read(BinData::IO.new(io))
     @data.value.should == 56
     @data.done_read
   end
