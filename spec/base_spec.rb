@@ -7,7 +7,7 @@ class BaseStub < BinData::Base
   def clear; end
   def _do_read(io) end
   def done_read; end
-  def _write(io) end
+  def _do_write(io) end
   def _num_bytes; end
   def snapshot; end
   def single_value?; end
@@ -226,7 +226,7 @@ describe BinData::Base, "with :readwrite => false" do
       class NoIOBase < BaseStub
         attr_accessor :mock
         def _do_read(io) mock._do_read(io); end
-        def _write(io) mock._write(io); end
+        def _do_write(io) mock._do_write(io); end
         def _num_bytes; mock._num_bytes; end
       end
     END
@@ -259,7 +259,7 @@ describe BinData::Base, "when subclassing" do
   before(:all) do
     eval <<-END
       class SubClassOfBase < BinData::Base
-        public :_do_read, :_write, :_num_bytes
+        public :_do_read, :_do_write, :_num_bytes
       end
     END
   end
@@ -275,7 +275,7 @@ describe BinData::Base, "when subclassing" do
     lambda { @obj.clear }.should raise_error(NotImplementedError)
     lambda { @obj._do_read(nil) }.should raise_error(NotImplementedError)
     lambda { @obj.done_read }.should raise_error(NotImplementedError)
-    lambda { @obj._write(nil) }.should raise_error(NotImplementedError)
+    lambda { @obj._do_write(nil) }.should raise_error(NotImplementedError)
     lambda { @obj._num_bytes }.should raise_error(NotImplementedError)
     lambda { @obj.snapshot }.should raise_error(NotImplementedError)
     lambda { @obj.single_value? }.should raise_error(NotImplementedError)
@@ -323,7 +323,7 @@ describe BinData::Base do
     eval <<-END
       class InstanceOfBase < BaseStub
         def snapshot; 123; end
-        def _write(io); io.writebytes('456'); end
+        def _do_write(io); io.writebytes('456'); end
       end
     END
   end

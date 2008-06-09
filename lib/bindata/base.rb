@@ -215,11 +215,21 @@ module BinData
       _do_read(io) if eval_param(:readwrite) != false
     end
 
-    # Writes the value for this data to +io+.
+    # Writes the value for this data to +io+ by calling #do_write.
     def write(io)
       io = BinData::IO.new(io) unless BinData::IO === io
 
-      _write(io) if eval_param(:readwrite) != false
+      do_write(io)
+      io.flush
+      self
+    end
+
+
+    # Writes the value for this data to +io+.
+    def do_write(io)
+      raise ArgumentError, "io must be a BinData::IO" unless BinData::IO === io
+
+      _do_write(io) if eval_param(:readwrite) != false
     end
 
     # Returns the string representation of this data object.
@@ -324,7 +334,7 @@ module BinData
     end
 
     # Writes the value for this data to +io+.
-    def _write(io)
+    def _do_write(io)
       raise NotImplementedError
     end
 
@@ -352,7 +362,7 @@ module BinData
 
     # Set visibility requirements of methods to implement
     public :clear, :done_read, :snapshot, :single_value?, :field_names
-    private :_do_read, :_write, :_num_bytes
+    private :_do_read, :_do_write, :_num_bytes
 
     # End To be implemented by subclasses
     ###########################################################################

@@ -141,7 +141,7 @@ module BinData
     end
 
     def_delegators :the_choice, :clear, :clear?, :_do_read, :done_read
-    def_delegators :the_choice, :_write, :_num_bytes, :snapshot
+    def_delegators :the_choice, :_do_write, :_num_bytes, :snapshot
     def_delegators :the_choice, :single_value?, :field_names
 
     # Returns the data object that stores values for +name+.

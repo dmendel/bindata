@@ -144,8 +144,8 @@ module BinData
     end
 
     # Writes the values for all fields in this object to +io+.
-    def _write(io)
-      elements.each { |f| f.write(io) }
+    def _do_write(io)
+      elements.each { |f| f.do_write(io) }
     end
 
     # Returns the number of bytes it will take to write the element at

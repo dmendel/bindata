@@ -176,5 +176,7 @@ module BinData
         # do nothing
       end
     end
+    alias_method :flush, :flushbits
+
   end
 end
