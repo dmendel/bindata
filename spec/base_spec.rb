@@ -255,6 +255,23 @@ describe BinData::Base, "with :readwrite => false" do
   end
 end
 
+describe BinData::Base, "with :onlyif" do
+  before(:all) do
+    eval <<-END
+      class OnlyIfBase < BinData::Base
+        public :has_param?, :param
+      end
+    END
+  end
+
+  it "should alias to :readwrite" do
+    obj = OnlyIfBase.new(:onlyif => "a")
+    obj.should_not have_param(:onlyif)
+    obj.should have_param(:readwrite)
+    obj.param(:readwrite).should == "a"
+  end
+end
+
 describe BinData::Base, "when subclassing" do
   before(:all) do
     eval <<-END

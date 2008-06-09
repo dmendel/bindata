@@ -17,6 +17,9 @@ module BinData
   #
   # [<tt>:readwrite</tt>]     If false, calls to #read or #write will
   #                           not perform any I/O.  Default is true.
+  # [<tt>:onlyif</tt>]        This is an alias for :readwrite.  It is generally
+  #                           used to indicate a data object is optional.
+  #                           not perform any I/O.  Default is true.
   # [<tt>:check_offset</tt>]  Raise an error if the current IO offset doesn't
   #                           meet this criteria.  A boolean return indicates
   #                           success or failure.  Any other return is compared
@@ -116,6 +119,11 @@ module BinData
       # by #initialize.
       def sanitize_parameters(params, *args)
         params = params.dup
+
+        # replace :onlyif with :readwrite
+        if params.has_key?(:onlyif)
+          params[:readwrite] = params.delete(:onlyif)
+        end
 
         # add default parameters
         default_parameters.each do |k,v|
