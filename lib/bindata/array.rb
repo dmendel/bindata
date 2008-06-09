@@ -95,19 +95,6 @@ module BinData
       @element_params  = el_params
     end
 
-    # Clears the element at position +index+.  If +index+ is not given, then
-    # the internal state of the array is reset to that of a newly created
-    # object.
-    def clear(index = nil)
-      if @element_list.nil?
-        # do nothing as the array is already clear
-      elsif index.nil?
-        @element_list = nil
-      else
-        elements[index].clear
-      end
-    end
-
     # Returns if the element at position +index+ is clear?.  If +index+
     # is not given, then returns whether all fields are clear.
     def clear?(index = nil)
@@ -121,47 +108,17 @@ module BinData
       end
     end
 
-    # Reads the values for all fields in this object from +io+.
-    def _do_read(io)
-      if has_param?(:initial_length)
-        elements.each { |f| f.do_read(io) }
-      else # :read_until
+    # Clears the element at position +index+.  If +index+ is not given, then
+    # the internal state of the array is reset to that of a newly created
+    # object.
+    def clear(index = nil)
+      if @element_list.nil?
+        # do nothing as the array is already clear
+      elsif index.nil?
         @element_list = nil
-        loop do
-          element = append_new_element
-          element.do_read(io)
-          variables = { :index => self.length - 1, :element => self.last,
-                        :array => self }
-          finished = eval_param(:read_until, variables)
-          break if finished
-        end
-      end
-    end
-
-    # To be called after calling #do_read.
-    def done_read
-      elements.each { |f| f.done_read }
-    end
-
-    # Writes the values for all fields in this object to +io+.
-    def _do_write(io)
-      elements.each { |f| f.do_write(io) }
-    end
-
-    # Returns the number of bytes it will take to write the element at
-    # +index+.  If +index+, then returns the number of bytes required
-    # to write all fields.
-    def _num_bytes(index)
-      if index.nil?
-        elements.inject(0) { |sum, f| sum + f.num_bytes }
       else
-        elements[index].num_bytes
+        elements[index].clear
       end
-    end
-
-    # Returns a snapshot of the data in this array.
-    def snapshot
-      elements.collect { |e| e.snapshot }
     end
 
     # Returns whether this data object contains a single value.  Single
@@ -173,6 +130,16 @@ module BinData
     # An array has no fields.
     def field_names
       []
+    end
+
+    # Returns a snapshot of the data in this array.
+    def snapshot
+      elements.collect { |e| e.snapshot }
+    end
+
+    # To be called after calling #do_read.
+    def done_read
+      elements.each { |f| f.done_read }
     end
 
     # Appends a new element to the end of the array.  If the array contains
@@ -255,6 +222,39 @@ module BinData
 
     #---------------
     private
+
+    # Reads the values for all fields in this object from +io+.
+    def _do_read(io)
+      if has_param?(:initial_length)
+        elements.each { |f| f.do_read(io) }
+      else # :read_until
+        @element_list = nil
+        loop do
+          element = append_new_element
+          element.do_read(io)
+          variables = { :index => self.length - 1, :element => self.last,
+                        :array => self }
+          finished = eval_param(:read_until, variables)
+          break if finished
+        end
+      end
+    end
+
+    # Writes the values for all fields in this object to +io+.
+    def _do_write(io)
+      elements.each { |f| f.do_write(io) }
+    end
+
+    # Returns the number of bytes it will take to write the element at
+    # +index+.  If +index+, then returns the number of bytes required
+    # to write all fields.
+    def _num_bytes(index)
+      if index.nil?
+        elements.inject(0) { |sum, f| sum + f.num_bytes }
+      else
+        elements[index].num_bytes
+      end
+    end
 
     # Returns the list of all elements in the array.  The elements
     # will be instantiated on the first call to this method.

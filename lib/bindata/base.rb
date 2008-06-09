@@ -323,13 +323,30 @@ module BinData
       raise NotImplementedError
     end
 
-    # Reads the data for this data object from +io+.
-    def _do_read(io)
+    # Returns whether this data object contains a single value.  Single
+    # value data objects respond to <tt>#value</tt> and <tt>#value=</tt>.
+    def single_value?
+      raise NotImplementedError
+    end
+
+    # Returns a list of the names of all fields accessible through this
+    # object.
+    def field_names
+      raise NotImplementedError
+    end
+
+    # Returns a snapshot of this data object.
+    def snapshot
       raise NotImplementedError
     end
 
     # To be called after calling #do_read.
     def done_read
+      raise NotImplementedError
+    end
+
+    # Reads the data for this data object from +io+.
+    def _do_read(io)
       raise NotImplementedError
     end
 
@@ -343,25 +360,8 @@ module BinData
       raise NotImplementedError
     end
 
-    # Returns a snapshot of this data object.
-    def snapshot
-      raise NotImplementedError
-    end
-
-    # Returns whether this data object contains a single value.  Single
-    # value data objects respond to <tt>#value</tt> and <tt>#value=</tt>.
-    def single_value?
-      raise NotImplementedError
-    end
-
-    # Returns a list of the names of all fields accessible through this
-    # object.
-    def field_names
-      raise NotImplementedError
-    end
-
     # Set visibility requirements of methods to implement
-    public :clear, :done_read, :snapshot, :single_value?, :field_names
+    public :clear, :single_value?, :field_names, :snapshot, :done_read
     private :_do_read, :_do_write, :_num_bytes
 
     # End To be implemented by subclasses

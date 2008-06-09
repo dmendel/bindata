@@ -282,41 +282,6 @@ module BinData
       end
     end
 
-    # Reads the values for all fields in this object from +io+.
-    def _do_read(io)
-      bindata_objects.each { |f| f.do_read(io) }
-    end
-
-    # To be called after calling #read.
-    def done_read
-      bindata_objects.each { |f| f.done_read }
-    end
-
-    # Writes the values for all fields in this object to +io+.
-    def _do_write(io)
-      bindata_objects.each { |f| f.do_write(io) }
-    end
-
-    # Returns the number of bytes it will take to write the field represented
-    # by +name+.  If +name+ is nil then returns the number of bytes required
-    # to write all fields.
-    def _num_bytes(name)
-      if name.nil?
-        bindata_objects.inject(0) { |sum, f| sum + f.num_bytes }
-      else
-        find_obj_for_name(name.to_s).num_bytes
-      end
-    end
-
-    # Returns a snapshot of this struct as a hash.
-    def snapshot
-      hash = Snapshot.new
-      field_names.each do |name|
-        hash[name] = find_obj_for_name(name).snapshot
-      end
-      hash
-    end
-
     # Returns whether this data object contains a single value.  Single
     # value data objects respond to <tt>#value</tt> and <tt>#value=</tt>.
     def single_value?
@@ -340,6 +305,20 @@ module BinData
         end
       end
       names
+    end
+
+    # Returns a snapshot of this struct as a hash.
+    def snapshot
+      hash = Snapshot.new
+      field_names.each do |name|
+        hash[name] = find_obj_for_name(name).snapshot
+      end
+      hash
+    end
+
+    # To be called after calling #read.
+    def done_read
+      bindata_objects.each { |f| f.done_read }
     end
 
     # Returns the data object that stores values for +name+.
@@ -399,6 +378,27 @@ module BinData
 
     #---------------
     private
+
+    # Reads the values for all fields in this object from +io+.
+    def _do_read(io)
+      bindata_objects.each { |f| f.do_read(io) }
+    end
+
+    # Writes the values for all fields in this object to +io+.
+    def _do_write(io)
+      bindata_objects.each { |f| f.do_write(io) }
+    end
+
+    # Returns the number of bytes it will take to write the field represented
+    # by +name+.  If +name+ is nil then returns the number of bytes required
+    # to write all fields.
+    def _num_bytes(name)
+      if name.nil?
+        bindata_objects.inject(0) { |sum, f| sum + f.num_bytes }
+      else
+        find_obj_for_name(name.to_s).num_bytes
+      end
+    end
 
     # Returns a list of all the bindata objects for this struct.
     def bindata_objects

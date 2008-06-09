@@ -140,9 +140,10 @@ module BinData
       @last_key = nil
     end
 
-    def_delegators :the_choice, :clear, :clear?, :_do_read, :done_read
-    def_delegators :the_choice, :_do_write, :_num_bytes, :snapshot
-    def_delegators :the_choice, :single_value?, :field_names
+    def_delegators :the_choice, :clear, :clear?, :single_value?, :field_names
+    def_delegators :the_choice, :snapshot, :done_read
+    def_delegators :the_choice, :_do_read, :_do_write, :_num_bytes
+    def_delegators :the_choice, :find_obj_for_name
 
     # Returns the data object that stores values for +name+.
     def find_obj_for_name(name)

@@ -71,45 +71,6 @@ module BinData
       @value.nil?
     end
 
-    # Reads the value for this data from +io+.
-    def _do_read(io)
-      @in_read = true
-      @value   = read_val(io)
-
-      # does the value meet expectations?
-      if has_param?(:check_value)
-        current_value = self.value
-        expected = eval_param(:check_value, :value => current_value)
-        if not expected
-          raise ValidityError, "value not as expected"
-        elsif current_value != expected and expected != true
-          raise ValidityError, "value is '#{current_value}' but " +
-                               "expected '#{expected}'"
-        end
-      end
-    end
-
-    # To be called after calling #do_read.
-    def done_read
-      @in_read = false
-    end
-
-    # Writes the value for this data to +io+.
-    def _do_write(io)
-      raise "can't write whilst reading" if @in_read
-      io.writebytes(val_to_str(_value))
-    end
-
-    # Returns the number of bytes it will take to write this data.
-    def _num_bytes(ignored)
-      val_to_str(_value).length
-    end
-
-    # Returns a snapshot of this data object.
-    def snapshot
-      value
-    end
-
     # Single objects are single_values
     def single_value?
       true
@@ -118,6 +79,16 @@ module BinData
     # Single objects don't contain fields so this returns an empty list.
     def field_names
       []
+    end
+
+    # Returns a snapshot of this data object.
+    def snapshot
+      value
+    end
+
+    # To be called after calling #do_read.
+    def done_read
+      @in_read = false
     end
 
     # Returns the current value of this data.
@@ -136,6 +107,35 @@ module BinData
 
     #---------------
     private
+
+    # Reads the value for this data from +io+.
+    def _do_read(io)
+      @in_read = true
+      @value   = read_val(io)
+
+      # does the value meet expectations?
+      if has_param?(:check_value)
+        current_value = self.value
+        expected = eval_param(:check_value, :value => current_value)
+        if not expected
+          raise ValidityError, "value not as expected"
+        elsif current_value != expected and expected != true
+          raise ValidityError, "value is '#{current_value}' but " +
+                               "expected '#{expected}'"
+        end
+      end
+    end
+
+    # Writes the value for this data to +io+.
+    def _do_write(io)
+      raise "can't write whilst reading" if @in_read
+      io.writebytes(val_to_str(_value))
+    end
+
+    # Returns the number of bytes it will take to write this data.
+    def _num_bytes(ignored)
+      val_to_str(_value).length
+    end
 
     # The unmodified value of this data object.  Note that #value calls this
     # method.  This is so that #value can be overridden in subclasses to 
