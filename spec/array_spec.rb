@@ -2,6 +2,7 @@
 
 require File.expand_path(File.dirname(__FILE__)) + '/spec_common'
 require 'bindata/array'
+require 'bindata/bits'
 require 'bindata/int'
 require 'bindata/struct'
 
@@ -266,3 +267,39 @@ describe BinData::Array, "with :read_until containing +array+ and +index+" do
     @data.length.should == 7
   end
 end
+
+describe BinData::Array, "of bits" do
+  before(:each) do
+    @data = BinData::Array.new(:type => :bit1, :initial_length => 15)
+  end
+
+  it "should read" do
+    str = [0b0001_0100, 0b1000_1000].pack("CC")
+    @data.read(str)
+    @data[0].should  == 0
+    @data[1].should  == 0
+    @data[2].should  == 0
+    @data[3].should  == 1
+    @data[4].should  == 0
+    @data[5].should  == 1
+    @data[6].should  == 0
+    @data[7].should  == 0
+    @data[8].should  == 1
+    @data[9].should  == 0
+    @data[10].should == 0
+    @data[11].should == 0
+    @data[12].should == 1
+    @data[13].should == 0
+    @data[14].should == 0
+  end
+
+  it "should write" do
+    @data[3] = 1
+    @data.to_s.should == [0b0001_0000, 0b0000_0000].pack("CC")
+  end
+
+  it "should return num_bytes" do
+    @data.num_bytes.should == 2
+  end
+end
+

@@ -254,3 +254,28 @@ describe BinData::Struct, "with an endian defined" do
     io.read.should == expected
   end
 end
+
+describe BinData::Struct, "with bit fields" do
+  before(:each) do
+    @params = { :fields => [ [:bit1le, :a], [:bit2le, :b] ] }
+    @obj = BinData::Struct.new(@params)
+    @obj.a = 1
+    @obj.b = 2
+  end
+
+  it "should return num_bytes" do
+    @obj.num_bytes.should == 1
+  end
+
+  it "should write" do
+    @obj.to_s.should == [0b0000_0101].pack("C")
+  end
+
+  it "should read" do
+    str = [0b0000_0110].pack("C")
+    @obj.read(str)
+    @obj.a.should == 0
+    @obj.b.should == 3
+  end
+end
+

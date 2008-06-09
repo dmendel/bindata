@@ -339,9 +339,17 @@ module BinData
       @fields.each do |name, obj|
         if name != ""
           break if name == field_name
-          offset += obj.num_bytes
+          this_offset = obj.do_num_bytes
+          if ::Float === offset and ::Integer === this_offset
+            offset = offset.ceil
+          end
+          offset += this_offset
         elsif obj.field_names.include?(field_name)
-          offset += obj.offset_of(field)
+          this_offset = obj.offset_of(field)
+          if ::Float === offset and ::Integer === this_offset
+            offset = offset.ceil
+          end
+          offset += this_offset
           break
         end
       end
@@ -394,7 +402,7 @@ module BinData
     # to write all fields.
     def _do_num_bytes(name)
       if name.nil?
-        bindata_objects.inject(0) { |sum, f| sum + f.do_num_bytes }
+        (bindata_objects.inject(0) { |sum, f| sum + f.do_num_bytes }).ceil
       else
         find_obj_for_name(name.to_s).do_num_bytes
       end

@@ -250,7 +250,7 @@ module BinData
     # to write all fields.
     def _do_num_bytes(index)
       if index.nil?
-        elements.inject(0) { |sum, f| sum + f.do_num_bytes }
+        (elements.inject(0) { |sum, f| sum + f.do_num_bytes }).ceil
       else
         elements[index].do_num_bytes
       end

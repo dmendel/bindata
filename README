@@ -175,6 +175,16 @@ BinData::Uint32be:: Unsigned 32 bit integer (big endian).
 BinData::Uint64le:: Unsigned 64 bit integer (little endian).
 BinData::Uint64be:: Unsigned 64 bit integer (big endian).
 
+BinData::Bit1::     1 bit unsigned integer (big endian).
+BinData::Bit2::     2 bit unsigned integer (big endian).
+...
+BinData::Bit63::    63 bit unsigned integer (big endian).
+
+BinData::Bit1le::   1 bit unsigned integer (little endian).
+BinData::Bit2le::   2 bit unsigned integer (little endian).
+...
+BinData::Bit63le::  63 bit unsigned integer (little endian).
+
 BinData::FloatLe::  Single precision floating point number (little endian).
 BinData::FloatBe::  Single precision floating point number (big endian).
 BinData::DoubleLe:: Double precision floating point number (little endian).
