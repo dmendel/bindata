@@ -323,7 +323,7 @@ describe BinData::Base do
     eval <<-END
       class InstanceOfBase < BaseStub
         def snapshot; 123; end
-        def _write(io); io.write('456'); end
+        def _write(io); io.writebytes('456'); end
       end
     END
   end

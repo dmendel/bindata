@@ -97,7 +97,7 @@ module BinData
     # Writes the value for this data to +io+.
     def _write(io)
       raise "can't write whilst reading" if @in_read
-      io.write(val_to_str(_value))
+      io.writebytes(val_to_str(_value))
     end
 
     # Returns the number of bytes it will take to write this data.
