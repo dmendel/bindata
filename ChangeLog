@@ -3,6 +3,8 @@
 == Version NEW_VERSION
 
 * Fixed IO offset bug with SingleValues
+* Implemented bit fields
+* Added :onlyif parameter to Base for specifying optional fields.
 
 == Version 0.9.0 (2008-06-02)
 
