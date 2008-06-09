@@ -133,7 +133,7 @@ module BinData
     end
 
     # Returns the number of bytes it will take to write this data.
-    def _num_bytes(ignored)
+    def _do_num_bytes(ignored)
       val_to_str(_value).length
     end
 

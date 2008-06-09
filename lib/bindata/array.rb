@@ -248,11 +248,11 @@ module BinData
     # Returns the number of bytes it will take to write the element at
     # +index+.  If +index+, then returns the number of bytes required
     # to write all fields.
-    def _num_bytes(index)
+    def _do_num_bytes(index)
       if index.nil?
-        elements.inject(0) { |sum, f| sum + f.num_bytes }
+        elements.inject(0) { |sum, f| sum + f.do_num_bytes }
       else
-        elements[index].num_bytes
+        elements[index].do_num_bytes
       end
     end
 

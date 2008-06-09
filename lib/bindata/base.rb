@@ -212,7 +212,10 @@ module BinData
 
       clear
       check_offset(io)
-      _do_read(io) if eval_param(:readwrite) != false
+
+      if eval_param(:readwrite) != false
+        _do_read(io)
+      end
     end
 
     # Writes the value for this data to +io+ by calling #do_write.
@@ -229,7 +232,25 @@ module BinData
     def do_write(io)
       raise ArgumentError, "io must be a BinData::IO" unless BinData::IO === io
 
-      _do_write(io) if eval_param(:readwrite) != false
+      if eval_param(:readwrite) != false
+        _do_write(io)
+      end
+    end
+
+    # Returns the number of bytes it will take to write this data by calling
+    # #do_num_bytes.
+    def num_bytes(what = nil)
+      num = do_num_bytes(what)
+      num.ceil
+    end
+
+    # Returns the number of bytes it will take to write this data.
+    def do_num_bytes(what = nil)
+      if eval_param(:readwrite) != false
+        _do_num_bytes(what)
+      else
+        0
+      end
     end
 
     # Returns the string representation of this data object.
@@ -238,11 +259,6 @@ module BinData
       write(io)
       io.rewind
       io.read
-    end
-
-    # Returns the number of bytes it will take to write this data.
-    def num_bytes(what = nil)
-      (eval_param(:readwrite) != false) ? _num_bytes(what) : 0
     end
 
     # Return a human readable representation of this object.
@@ -356,13 +372,13 @@ module BinData
     end
 
     # Returns the number of bytes it will take to write this data.
-    def _num_bytes
+    def _do_num_bytes
       raise NotImplementedError
     end
 
     # Set visibility requirements of methods to implement
     public :clear, :single_value?, :field_names, :snapshot, :done_read
-    private :_do_read, :_do_write, :_num_bytes
+    private :_do_read, :_do_write, :_do_num_bytes
 
     # End To be implemented by subclasses
     ###########################################################################

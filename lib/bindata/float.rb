@@ -39,7 +39,7 @@ module BinData
 
       # define methods in the given class
       klass.module_eval <<-END
-        def _num_bytes(ignored)
+        def _do_num_bytes(ignored)
           #{nbytes}
         end
 

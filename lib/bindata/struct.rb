@@ -392,11 +392,11 @@ module BinData
     # Returns the number of bytes it will take to write the field represented
     # by +name+.  If +name+ is nil then returns the number of bytes required
     # to write all fields.
-    def _num_bytes(name)
+    def _do_num_bytes(name)
       if name.nil?
-        bindata_objects.inject(0) { |sum, f| sum + f.num_bytes }
+        bindata_objects.inject(0) { |sum, f| sum + f.do_num_bytes }
       else
-        find_obj_for_name(name.to_s).num_bytes
+        find_obj_for_name(name.to_s).do_num_bytes
       end
     end
 

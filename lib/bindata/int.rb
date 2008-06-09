@@ -73,7 +73,7 @@ module BinData
           super(val)
         end
 
-        def _num_bytes(ignored)
+        def _do_num_bytes(ignored)
           #{nbytes}
         end
 
