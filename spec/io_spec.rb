@@ -266,3 +266,23 @@ describe BinData::IO, "writing bits in little endian" do
     @io.value.should == [0b0000_0101, 0b1011_1111, 0b0000_0001].pack("CCC")
   end
 end
+
+describe BinData::IO, "with changing endian" do
+  it "should not mix different endianess when reading" do
+    b1 = 0b0110_1010
+    b2 = 0b1110_0010
+    str = [b1, b2].pack("CC")
+    io = BinData::IO.new(str)
+
+    io.readbits(3, :big).should == 0b011
+    io.readbits(4, :little).should == 0b0010
+  end
+
+  it "should not mix different endianess when writing" do
+    io = BitWriterHelper.new
+    io.writebits(0b110, 3, :big)
+    io.writebits(0b010, 3, :little)
+    io.value.should == [0b1100_0000, 0b0000_0010].pack("CC")
+  end
+end
+

@@ -34,15 +34,14 @@ module BinData
       @initial_pos = io.respond_to?(:pos) ? io.pos : 0
 
       # bits when reading
-      @rnbits = 0
-      @rval   = 0
+      @rnbits  = 0
+      @rval    = 0
+      @rendian = nil
 
       # bits when writing
-      @wnbits = 0
-      @wval   = 0
-
-      # used for flushing bits
-      @endian = nil
+      @wnbits  = 0
+      @wval    = 0
+      @wendian = nil
     end
 
     # Access to the underlying raw io.
@@ -83,6 +82,13 @@ module BinData
     # Reads exactly +nbits+ bits from +io+. +endian+ specifies whether
     # the bits are stored in :big or :little endian format.
     def readbits(nbits, endian = :big)
+      if @rendian != endian
+        # don't mix bits of differing endian
+        @rnbits  = 0
+        @rval    = 0
+        @rendian = endian
+      end
+
       while nbits > @rnbits
         byte = @raw_io.read(1)
         raise EOFError, "End of file reached" if byte.nil?
@@ -122,8 +128,12 @@ module BinData
       # clamp val to range
       val = val & ((1 << nbits) - 1)
 
-      # store endian so we can flush bits
-      @endian = endian
+      if @wendian != endian
+        # don't mix bits of differing endian
+        flushbits if @wnbits > 0
+
+        @wendian = endian
+      end
 
       if endian == :big
         while nbits > 0
@@ -171,7 +181,7 @@ module BinData
       if @wnbits > 8
         raise "Internal state error nbits = #{@wnbits}" if @wnbits > 8
       elsif @wnbits > 0
-        writebits(0, 8 - @wnbits, @endian)
+        writebits(0, 8 - @wnbits, @wendian)
       else
         # do nothing
       end
