@@ -10,8 +10,10 @@ module BinData
       max = (1 << nbits) - 1
       clamp = "val = (val < #{min}) ? #{min} : (val > #{max}) ? #{max} : val"
 
-      read  = "io.readbits(#{nbits}, #{endian.inspect})"
-      write = "io.writebits(val, #{nbits}, #{endian.inspect})"
+      # allow single bits to be used as booleans
+      if nbits == 1
+        clamp = "val = (val == true) ? 1 : (not val) ? 0 : #{clamp}"
+      end
 
       define_methods(klass, nbits, endian.inspect, clamp)
     end

@@ -3,7 +3,39 @@
 require File.expand_path(File.dirname(__FILE__)) + '/spec_common'
 require 'bindata/bits'
 
-describe "All unsigned integers" do
+describe "Bits of size 1" do
+  it "should accept true as value" do
+    obj = BinData::Bit1.new
+    obj.value = true
+    obj.value.should == 1
+
+    obj = BinData::Bit1le.new
+    obj.value = true
+    obj.value.should == 1
+  end
+
+  it "should accept false as value" do
+    obj = BinData::Bit1.new
+    obj.value = false
+    obj.value.should == 0
+
+    obj = BinData::Bit1le.new
+    obj.value = false
+    obj.value.should == 0
+  end
+
+  it "should accept nil as value" do
+    obj = BinData::Bit1.new
+    obj.value = nil
+    obj.value.should == 0
+
+    obj = BinData::Bit1le.new
+    obj.value = nil
+    obj.value.should == 0
+  end
+end
+
+describe "All bitfields" do
   it "should have a sensible value of zero" do
     begin
       nbits = 1
