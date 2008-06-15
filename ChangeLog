@@ -1,10 +1,10 @@
 = BinData Changelog
 
-== Version NEW_VERSION
+== Version 0.9.1 (2008-06-15)
 
-* Fixed IO offset bug with SingleValues
-* Implemented bit fields
+* Implemented bit fields.
 * Added :onlyif parameter to Base for specifying optional fields.
+* Fixed IO offset bug with SingleValues.
 
 == Version 0.9.0 (2008-06-02)
 
@@ -13,14 +13,14 @@
 * Choice now accepts sparse arrays and hashes as :choice.
 * Added BinData::Rest to help with debugging.
 * Major internal restructuring - memory usage is much better.
-* Improved documentation
+* Improved documentation.
 
 == Version 0.8.1 (2008-01-14)
 
 * Reduced memory consumption.
 * Increased execution speed.
-* Deprecated BinData::Base.parameters
-* Fixed spec syntax (thanks to David Goodlad)
+* Deprecated BinData::Base.parameters.
+* Fixed spec syntax (thanks to David Goodlad).
 
 == Version 0.8.0 (2007-10-14)
 

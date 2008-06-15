@@ -18,5 +18,5 @@ require 'bindata/struct'
 # A declarative way to read and write structured binary data.
 # 
 module BinData
-  VERSION = "0.9.0"
+  VERSION = "0.9.1"
 end
