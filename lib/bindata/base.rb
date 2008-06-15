@@ -221,7 +221,7 @@ module BinData
       clear
       check_offset(io)
 
-      if eval_param(:readwrite) != false
+      if eval_param(:readwrite)
         _do_read(io)
       end
     end
@@ -240,7 +240,7 @@ module BinData
     def do_write(io)
       raise ArgumentError, "io must be a BinData::IO" unless BinData::IO === io
 
-      if eval_param(:readwrite) != false
+      if eval_param(:readwrite)
         _do_write(io)
       end
     end
@@ -254,7 +254,7 @@ module BinData
 
     # Returns the number of bytes it will take to write this data.
     def do_num_bytes(what = nil)
-      if eval_param(:readwrite) != false
+      if eval_param(:readwrite)
         _do_num_bytes(what)
       else
         0
