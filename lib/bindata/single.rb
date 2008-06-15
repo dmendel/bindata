@@ -102,6 +102,10 @@ module BinData
       unless has_param?(:value)
         raise ArgumentError, "can't set a nil value" if v.nil?
         @value = v
+
+        # Note that this doesn't do anything in ruby 1.8.x so ignore for now
+        # # explicitly return the output of #value as v may be different
+        # self.value
       end
     end
 
