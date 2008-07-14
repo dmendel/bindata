@@ -25,7 +25,7 @@ module BinData
   #
   # <tt>:max_length</tt>:: The maximum length of the string including the zero
   #                        byte.
-  class Stringz < Single
+  class Stringz < BinData::Single
 
     # Register this class
     register(self.name, self)

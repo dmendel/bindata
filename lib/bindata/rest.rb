@@ -15,7 +15,7 @@ module BinData
   #   obj.a #=> "abcde"
   #   obj.rest #=" "fghij"
   #
-  class Rest < Single
+  class Rest < BinData::Single
 
     # Register this class
     register(self.name, self)
