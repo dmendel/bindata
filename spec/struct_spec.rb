@@ -14,11 +14,6 @@ describe BinData::Struct, "with hidden fields" do
     @obj = BinData::Struct.new(@params)
   end
 
-  it "should not include hidden names in all_possible_field_names" do
-    params = BinData::SanitizedParameters.new(BinData::Struct, @params)
-    BinData::Struct.all_possible_field_names(params).should == ["a", "d"]
-  end
-
   it "should only show fields that aren't hidden" do
     @obj.field_names.should == ["a", "d"]
   end
@@ -45,32 +40,8 @@ describe BinData::Struct do
     }.should raise_error(TypeError)
   end
 
-  it "should fail on all_possible_field_names with unsanitized parameters" do
-    params = {:fields => [[:int8, :a], [:int8, :b]]}
-    lambda {
-      BinData::Struct.all_possible_field_names(params)
-    }.should raise_error(ArgumentError)
-  end
-
   it "should fail on duplicate names" do
     params = {:fields => [[:int8, :a], [:int8, :b], [:int8, :a]]}
-    lambda {
-      BinData::Struct.new(params)
-    }.should raise_error(NameError)
-  end
-
-  it "should fail on duplicate names in nested structs" do
-    params = {:fields => [[:int8, :a],
-                          [:struct, nil, {:fields => [[:int8, :a]]}]]}
-    lambda {
-      BinData::Struct.new(params)
-    }.should raise_error(NameError)
-  end
-
-  it "should fail on duplicate names in triple nested structs" do
-    params = {:fields => [[:int8, :a],
-                          [:struct, nil, {:fields => [
-                            [:struct, nil, {:fields => [[:int8, :a]]}]]}]]}
     lambda {
       BinData::Struct.new(params)
     }.should raise_error(NameError)
@@ -118,11 +89,6 @@ describe BinData::Struct, "with multiple fields" do
     BinData::Struct.accepted_parameters.should include(:fields)
     BinData::Struct.accepted_parameters.should include(:hide)
     BinData::Struct.accepted_parameters.should include(:endian)
-  end
-
-  it "should return all possible field names" do
-    params = BinData::SanitizedParameters.new(BinData::Struct, @params)
-    BinData::Struct.all_possible_field_names(params).should == ["a", "b"]
   end
 
   it "should return field names" do
@@ -186,31 +152,33 @@ describe BinData::Struct, "with nested structs" do
     @params = { :fields => [
                   [:int8, :a, {:initial_value => 6}],
                   [:struct, :b, {:fields => inner1, :the_val => :a}],
-                  [:struct, nil, {:fields => inner2}]] }
+                  [:struct, :c, {:fields => inner2}]] }
     @obj = BinData::Struct.new(@params)
   end
 
   it "should included nested field names" do
-    @obj.field_names.should == ["a", "b", "y", "z"]
+    @obj.field_names.should == ["a", "b", "c"]
   end
 
-  it "should return all possible field names" do
-    params = BinData::SanitizedParameters.new(BinData::Struct, @params)
-    all_params = BinData::Struct.all_possible_field_names(params)
-    all_params.should == ["a", "b", "y", "z"]
+  it "should return num_bytes" do
+    @obj.num_bytes(:b).should == 2
+    @obj.num_bytes(:c).should == 2
+    @obj.num_bytes.should == 5
   end
 
   it "should access nested fields" do
     @obj.a.should   == 6
     @obj.b.w.should == 3
     @obj.b.x.should == 6
-    @obj.y.should   == 3
+    @obj.c.y.should == 3
+    @obj.c.z.should == 0
   end
 
   it "should return correct offset of" do
     @obj.offset_of("b").should == 1
-    @obj.offset_of("y").should == 3
-    @obj.offset_of("z").should == 4
+    @obj.offset_of("b").should == 1
+    @obj.offset_of("c").should == 3
+    @obj.offset_of("y").should be_nil
   end
 end
 
@@ -279,3 +247,21 @@ describe BinData::Struct, "with bit fields" do
   end
 end
 
+describe BinData::Struct, "with nested endian" do
+  it "should use correct endian" do
+    nested_params = { :endian => :little,
+                      :fields => [[:int16, :b], [:int16, :c]] }
+    params = { :endian => :big, 
+               :fields => [[:int16, :a],
+                           [:struct, :s, nested_params],
+                           [:int16, :d]] }
+    obj = BinData::Struct.new(params)
+    str = "\x00\x01\x02\x00\x03\x00\x00\x04"
+    obj.read(str)
+
+    obj.a.should   == 1
+    obj.s.b.should == 2
+    obj.s.c.should == 3
+    obj.d.should   == 4
+  end
+end

@@ -44,28 +44,6 @@ describe BinData::Choice, "when instantiating" do
     args = {:choices => {nil => :int8}, :selection => 0}
     lambda { BinData::Choice.new(args) }.should raise_error(ArgumentError)
   end
-
-  it "should fail on all_possible_field_names with unsanitized parameters" do
-    lambda {
-      BinData::Choice.all_possible_field_names({})
-    }.should raise_error(ArgumentError)
-  end
-
-  it "should return all possible field names for :choices Hash" do
-    choices = {0 => [:struct, {:fields => [[:int8, :a], [:int8, :b]]}],
-               1 => [:struct, {:fields => [[:int8, :c]]}]}
-    args = {:choices => choices, :selection => 0}
-    params = BinData::SanitizedParameters.new(BinData::Choice, args)
-    BinData::Choice.all_possible_field_names(params).should == ["a", "b", "c"]
-  end
-
-  it "should return all possible field names for :choices Array" do
-    choices = [[:struct, {:fields => [[:int8, :a], [:int8, :b]]}],
-               [:struct, {:fields => [[:int8, :c]]}]]
-    args = {:choices => choices, :selection => 0}
-    params = BinData::SanitizedParameters.new(BinData::Choice, args)
-    BinData::Choice.all_possible_field_names(params).should == ["a", "b", "c"]
-  end
 end
 
 describe BinData::Choice, "with choices array" do
@@ -108,9 +86,7 @@ describe BinData::Choice, "with choices array" do
   it "should delegate methods to the selected single choice" do
     @chooser.choice = 1
 
-    @data.find_obj_for_name("does_not_exist").should be_nil
     @data.num_bytes.should == 2
-    @data.field_names.should be_empty
   end
 end
 

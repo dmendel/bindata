@@ -60,7 +60,7 @@ module BinData
     class << self
       # Returns a sanitized +params+ that is of the form expected
       # by #initialize.
-      def sanitize_parameters(params, endian = nil)
+      def sanitize_parameters(sanitizer, params, endian = nil)
         params = params.dup
 
         unless params.has_key?(:initial_length) or params.has_key?(:read_until)
@@ -72,15 +72,10 @@ module BinData
           type, el_params = params[:type]
           klass = lookup(type, endian)
           raise TypeError, "unknown type '#{type}' for #{self}" if klass.nil?
-          params[:type] = [klass, SanitizedParameters.new(klass, el_params, endian)]
+          params[:type] = [klass, sanitizer.sanitize(klass, el_params, endian)]
         end
 
-        super(params, endian)
-      end
-
-      # An array has no fields.
-      def all_possible_field_names(sanitized_params)
-        []
+        super(sanitizer, params, endian)
       end
     end
 
@@ -104,7 +99,7 @@ module BinData
         elements.each { |f| return false if not f.clear? }
         true
       else
-        elements[index].clear?
+        (index < elements.length) ? elements[index].clear? : true
       end
     end
 
@@ -116,7 +111,7 @@ module BinData
         # do nothing as the array is already clear
       elsif index.nil?
         @element_list = nil
-      else
+      elsif index < elements.length
         elements[index].clear
       end
     end
@@ -125,16 +120,6 @@ module BinData
     # value data objects respond to <tt>#value</tt> and <tt>#value=</tt>.
     def single_value?
       return false
-    end
-
-    # An array has no fields.
-    def field_names
-      []
-    end
-
-    # Returns a snapshot of the data in this array.
-    def snapshot
-      elements.collect { |e| e.snapshot }
     end
 
     # To be called after calling #do_read.
@@ -153,8 +138,15 @@ module BinData
 
     # Returns the element at +index+.  If the element is a single_value
     # then the value of the element is returned instead.
-    def [](*index)
-      data = elements[*index]
+    def [](*args)
+      if args.length == 1 and ::Integer === args[0]
+        # extend array automatically
+        while args[0] >= elements.length
+          append_new_element
+        end
+      end
+
+      data = elements[*args]
       if data.respond_to?(:each)
         data.collect { |el| (el && el.single_value?) ? el.value : el }
       else
@@ -166,6 +158,11 @@ module BinData
     # Sets the element at +index+.  If the element is a single_value
     # then the value of the element is set instead.
     def []=(index, value)
+      # extend array automatically
+      while index >= elements.length
+        append_new_element
+      end
+
       obj = elements[index]
       unless obj.single_value?
         raise NoMethodError, "undefined method `[]=' for #{self}", caller
@@ -186,7 +183,12 @@ module BinData
     # form returns an empty array.
     def first(n = nil)
       if n.nil?
-        self[0]
+        if elements.empty?
+          # explicitly return nil as arrays grow automatically
+          nil
+        else
+          self[0]
+        end
       else
         self[0, n]
       end
@@ -254,6 +256,11 @@ module BinData
       else
         elements[index].do_num_bytes
       end
+    end
+
+    # Returns a snapshot of the data in this array.
+    def _snapshot
+      elements.collect { |e| e.snapshot }
     end
 
     # Returns the list of all elements in the array.  The elements

@@ -15,8 +15,8 @@ module BinData
   #    obj = BinData::Struct.new(:hide => :a,
   #                              :fields => [ [:int32le, :a],
   #                                           [:int16le, :b],
-  #                                           [:tuple, :nil] ])
-  #    obj.field_names   =># ["b", "x", "y", "z"]
+  #                                           [:tuple, :s] ])
+  #    obj.field_names   =># ["b", "s"]
   #
   #
   # == Parameters
@@ -27,10 +27,9 @@ module BinData
   # <tt>:fields</tt>::   An array specifying the fields for this struct.
   #                      Each element of the array is of the form [type, name,
   #                      params].  Type is a symbol representing a registered
-  #                      type.  Name is the name of this field.  Name may be
-  #                      nil as in the example above.  Params is an optional
-  #                      hash of parameters to pass to this field when
-  #                      instantiating it.
+  #                      type.  Name is the name of this field.  Params is an
+  #                      optional hash of parameters to pass to this field
+  #                      when instantiating it.
   # <tt>:hide</tt>::     A list of the names of fields that are to be hidden
   #                      from the outside world.  Hidden fields don't appear
   #                      in #snapshot or #field_names but are still accessible
@@ -74,7 +73,6 @@ module BinData
         # note that fields are stored in an instance variable not a class var
         @hide ||= []
         args.each do |name|
-          next if name.nil?
           @hide << name.to_s
         end
         @hide
@@ -86,7 +84,7 @@ module BinData
         name, params = args
 
         type = symbol
-        name = (name.nil? or name == "") ? nil : name.to_s
+        name = name.to_s
         params ||= {}
 
         # note that fields are stored in an instance variable not a class var
@@ -97,26 +95,23 @@ module BinData
           raise TypeError, "unknown type '#{type}' for #{self}", caller
         end
 
-        # check that name is okay
-        if name != nil
-          # check for duplicate names
-          @fields.each do |t, n, p|
-            if n == name
-              raise SyntaxError, "duplicate field '#{name}' in #{self}", caller
-            end
+        # check for duplicate names
+        @fields.each do |t, n, p|
+          if n == name
+            raise SyntaxError, "duplicate field '#{name}' in #{self}", caller
           end
+        end
 
-          # check that name doesn't shadow an existing method
-          if self.instance_methods.include?(name)
-            raise NameError.new("", name),
-                  "field '#{name}' shadows an existing method", caller
-          end
+        # check that name doesn't shadow an existing method
+        if self.instance_methods.include?(name)
+          raise NameError.new("", name),
+                "field '#{name}' shadows an existing method", caller
+        end
 
-          # check that name isn't reserved
-          if ::Hash.instance_methods.include?(name)
-            raise NameError.new("", name),
-                  "field '#{name}' is a reserved name", caller
-          end
+        # check that name isn't reserved
+        if ::Hash.instance_methods.include?(name)
+          raise NameError.new("", name),
+                "field '#{name}' is a reserved name", caller
         end
 
         # remember this field.  These fields will be recalled upon creating
@@ -143,7 +138,7 @@ module BinData
 
       # Returns a sanitized +params+ that is of the form expected
       # by #initialize.
-      def sanitize_parameters(params, endian = nil)
+      def sanitize_parameters(sanitizer, params, endian = nil)
         #### DEPRECATION HACK to allow inheriting from BinData::Struct
         #
         params, endian = deprecated_hack(params, endian)
@@ -165,10 +160,10 @@ module BinData
         if params.has_key?(:fields)
           # ensure the names of fields are strings and that params is sanitized
           all_fields = params[:fields].collect do |ftype, fname, fparams|
-            fname = fname.nil? ? "" : fname.to_s
+            fname = fname.to_s
             klass = lookup(ftype, endian)
             raise TypeError, "unknown type '#{ftype}' for #{self}" if klass.nil?
-            [klass, fname, SanitizedParameters.new(klass, fparams, endian)]
+            [klass, fname, sanitizer.sanitize(klass, fparams, endian)]
           end
           params[:fields] = all_fields
 
@@ -177,7 +172,6 @@ module BinData
           if params.has_key?(:hide)
             hidden = params[:hide] || []
             hidden.each do |h|
-              next if h.nil? or h == ""
               h = h.to_s
               hide << h if all_fields.find { |k,n,p| n == h }
             end
@@ -186,7 +180,7 @@ module BinData
         end
 
         # obtain SanitizedParameters
-        params = super(params, endian)
+        params = super(sanitizer, params, endian)
 
         # now params are sanitized, check that parameter names are okay
 
@@ -198,52 +192,23 @@ module BinData
 
           # check that name doesn't shadow an existing method
           if instance_methods.include?(fname)
-            raise NameError.new("field '#{fname}' shadows an existing method in #{self}. Rename it.", fname)
+            raise NameError.new("Rename field '#{fname}' in #{self}, as it shadows an existing method.", fname)
           end
 
           # check that name isn't reserved
           if reserved_names.include?(fname)
-            raise NameError.new("field '#{fname}' is a reserved name in #{self}. Rename it.", fname)
+            raise NameError.new("Rename field '#{fname}' in #{self}, as it is a reserved name.", fname)
           end
 
-          if fname == ""
-            fklass.all_possible_field_names(fparams).each do |name|
-              if field_names.include?(name)
-                raise NameError.new("field '#{name}' is defined multiple times in #{self}.", name)
-              end
-              field_names << name
-            end
-          else
-            if field_names.include?(fname)
-              raise NameError.new("field '#{fname}' is defined multiple times in #{self}.", fname)
-            end
-            field_names << fname
+          # check for multiple definitions
+          if field_names.include?(fname)
+            raise NameError.new("field '#{fname}' in #{self}, is defined multiple times.", fname)
           end
+
+          field_names << fname
         end
 
         params
-      end
-
-      # Returns a list of the names of all possible field names for a Struct
-      # created with +sanitized_params+.  Hidden names will not be included
-      # in the returned list.
-      def all_possible_field_names(sanitized_params)
-        unless SanitizedParameters === sanitized_params
-          raise ArgumentError, "parameters aren't sanitized"
-        end
-
-        hidden_names = sanitized_params[:hide]
-
-        names = []
-        sanitized_params[:fields].each do |fklass, fname, fparams|
-          if fname == ""
-            names.concat(fklass.all_possible_field_names(fparams))
-          else
-            names << fname unless hidden_names.include?(fname)
-          end
-        end
-
-        names
       end
     end
 
@@ -255,19 +220,19 @@ module BinData
     def initialize(params = {}, env = nil)
       super(params, env)
 
-      # create instances of the fields
-      @fields = param(:fields).collect do |fklass, fname, fparams|
-        [fname, fklass.new(fparams, create_env)]
-      end
+      # extract field names but don't instantiate the fields
+      @field_names = param(:fields).collect { |k, n, p| n }
+      @field_objs  = []
     end
 
     # Clears the field represented by +name+.  If no +name+
     # is given, clears all fields in the struct.
     def clear(name = nil)
       if name.nil?
-        bindata_objects.each { |f| f.clear }
+        @field_objs.each { |f| f.clear unless f.nil? }
       else
-        find_obj_for_name(name.to_s).clear
+        obj = find_obj_for_name(name.to_s)
+        obj.clear unless obj.nil?
       end
     end
 
@@ -275,10 +240,13 @@ module BinData
     # is given, returns whether all fields are clear.
     def clear?(name = nil)
       if name.nil?
-        bindata_objects.each { |f| return false if not f.clear? }
+        @field_objs.each do |f|
+          return false unless f.nil? or f.clear?
+        end
         true
       else
-        find_obj_for_name(name.to_s).clear?
+        obj = find_obj_for_name(name.to_s)
+        obj.nil? ? true : obj.clear?
       end
     end
 
@@ -295,65 +263,47 @@ module BinData
       # collect field names
       names = []
       hidden = param(:hide)
-      @fields.each do |name, obj|
-        if name != ""
-          if include_hidden or not hidden.include?(name)
-            names << name
-          end
-        else
-          names.concat(obj.field_names)
+      @field_names.each do |name|
+        if include_hidden or not hidden.include?(name)
+          names << name
         end
       end
       names
     end
 
-    # Returns a snapshot of this struct as a hash.
-    def snapshot
-      hash = Snapshot.new
-      field_names.each do |name|
-        hash[name] = find_obj_for_name(name).snapshot
-      end
-      hash
-    end
-
     # To be called after calling #read.
     def done_read
-      bindata_objects.each { |f| f.done_read }
+      @field_objs.each { |f| f.done_read unless f.nil? }
     end
 
     # Returns the data object that stores values for +name+.
     def find_obj_for_name(name)
-      @fields.each do |n, o|
-        if n == name
-          return o
-        elsif n == "" and o.field_names.include?(name)
-          return o.find_obj_for_name(name)
-        end
+      idx = @field_names.index(name)
+      if idx
+        instantiate_obj(idx)
+        @field_objs[idx]
+      else
+        nil
       end
-      nil
     end
 
     def offset_of(field)
-      field_name = field.to_s
-      offset = 0
-      @fields.each do |name, obj|
-        if name != ""
-          break if name == field_name
-          this_offset = obj.do_num_bytes
+      idx = @field_names.index(field.to_s)
+      if idx
+        instantiate_all
+
+        offset = 0
+        (0...idx).each do |i|
+          this_offset = @field_objs[i].do_num_bytes
           if ::Float === offset and ::Integer === this_offset
             offset = offset.ceil
           end
           offset += this_offset
-        elsif obj.field_names.include?(field_name)
-          this_offset = obj.offset_of(field)
-          if ::Float === offset and ::Integer === this_offset
-            offset = offset.ceil
-          end
-          offset += this_offset
-          break
         end
+        offset
+      else
+        nil
       end
-      offset
     end
 
     # Override to include field names
@@ -387,14 +337,29 @@ module BinData
     #---------------
     private
 
+    # Instantiates all fields.
+    def instantiate_all
+      (0...@field_names.length).each { |idx| instantiate_obj(idx) }
+    end
+
+    # Instantiates the field object at position +idx+.
+    def instantiate_obj(idx)
+      if @field_objs[idx].nil?
+        fklass, fname, fparams = param(:fields)[idx]
+        @field_objs[idx] = fklass.new(fparams, create_env)
+      end
+    end
+
     # Reads the values for all fields in this object from +io+.
     def _do_read(io)
-      bindata_objects.each { |f| f.do_read(io) }
+      instantiate_all
+      @field_objs.each { |f| f.do_read(io) }
     end
 
     # Writes the values for all fields in this object to +io+.
     def _do_write(io)
-      bindata_objects.each { |f| f.do_write(io) }
+      instantiate_all
+      @field_objs.each { |f| f.do_write(io) }
     end
 
     # Returns the number of bytes it will take to write the field represented
@@ -402,15 +367,22 @@ module BinData
     # to write all fields.
     def _do_num_bytes(name)
       if name.nil?
-        (bindata_objects.inject(0) { |sum, f| sum + f.do_num_bytes }).ceil
+        instantiate_all
+        (@field_objs.inject(0) { |sum, f| sum + f.do_num_bytes }).ceil
       else
-        find_obj_for_name(name.to_s).do_num_bytes
+        obj = find_obj_for_name(name.to_s)
+        obj.nil? ? 0 : obj.do_num_bytes
       end
     end
 
-    # Returns a list of all the bindata objects for this struct.
-    def bindata_objects
-      @fields.collect { |f| f[1] }
+    # Returns a snapshot of this struct as a hash.
+    def _snapshot
+      hash = Snapshot.new
+      field_names.each do |name|
+        ss = find_obj_for_name(name).snapshot
+        hash[name] = ss unless ss.nil?
+      end
+      hash
     end
   end
 end

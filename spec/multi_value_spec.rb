@@ -182,7 +182,7 @@ describe BinData::MultiValue, "with nested structs" do
       class MultiValueOuter < BinData::MultiValue
         int8               :a, :initial_value => 6
         multi_value_inner1 :b, :the_val => :a
-        multi_value_inner2 nil
+        multi_value_inner2 :c
       end
     END
   end
@@ -192,20 +192,19 @@ describe BinData::MultiValue, "with nested structs" do
   end
 
   it "should included nested field names" do
-    @obj.field_names.should == ["a", "b", "y", "z"]
+    @obj.field_names.should == ["a", "b", "c"]
   end
 
   it "should access nested fields" do
     @obj.a.should   == 6
     @obj.b.w.should == 3
     @obj.b.x.should == 6
-    @obj.y.should   == 3
+    @obj.c.y.should == 3
   end
 
   it "should return correct offset of" do
     @obj.offset_of("b").should == 1
-    @obj.offset_of("y").should == 3
-    @obj.offset_of("z").should == 4
+    @obj.offset_of("c").should == 3
   end
 end
 
@@ -248,3 +247,45 @@ describe BinData::MultiValue, "with an endian defined" do
     io.read.should == expected
   end
 end
+
+describe BinData::MultiValue, "defined recursively" do
+  before(:all) do
+    eval <<-END
+      class RecursiveMultiValue < BinData::MultiValue
+        endian  :big
+        uint16  :val
+        uint8   :has_nxt, :value => lambda { nxt.clear? ? 0 : 1 }
+        recursive_multi_value :nxt, :onlyif => lambda { has_nxt > 0 }
+      end
+    END
+  end
+
+  it "should be able to be created" do
+    obj = RecursiveMultiValue.new
+  end
+
+  it "should read" do
+    str = "\x00\x01\x01\x00\x02\x01\x00\x03\x00"
+    obj = RecursiveMultiValue.read(str)
+    obj.val.should == 1
+    obj.nxt.val.should == 2
+    obj.nxt.nxt.val.should == 3
+  end
+
+  it "should be assignable on demand" do
+    obj = RecursiveMultiValue.new
+    obj.val = 13
+    obj.nxt.val = 14
+    obj.nxt.nxt.val = 15
+  end
+
+  it "should write" do
+    obj = RecursiveMultiValue.new
+    obj.val = 5
+    obj.nxt.val = 6
+    obj.nxt.nxt.val = 7
+    obj.to_s.should == "\x00\x05\x01\x00\x06\x01\x00\x07\x00"
+  end
+
+end
+

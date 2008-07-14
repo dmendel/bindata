@@ -45,7 +45,7 @@ module BinData
   #                            return the value with all pad_chars trimmed
   #                            from the end of the string.  The value will
   #                            not be trimmed when writing.
-  class String < Single
+  class String < BinData::Single
 
     # Register this class
     register(self.name, self)
@@ -60,7 +60,7 @@ module BinData
 
       # Returns a sanitized +params+ that is of the form expected
       # by #initialize.
-      def sanitize_parameters(params, *args)
+      def sanitize_parameters(sanitizer, params, *args)
         params = params.dup
 
         # warn about deprecated param - remove before releasing 1.0
@@ -79,7 +79,7 @@ module BinData
           params[:pad_char] = ch
         end
 
-        super(params, *args)
+        super(sanitizer, params, *args)
       end
     end
 

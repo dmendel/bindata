@@ -1,5 +1,12 @@
 = BinData Changelog
 
+== Version 0.9.x
+
+* Added lazy instantiation to allow recursive definitions.
+* Array elements can be appended at any position.
+* Deprecated the :readwrite parameter.
+* Removed feature where Struct fields names could be nil.
+
 == Version 0.9.1 (2008-06-15)
 
 * Implemented bit fields.

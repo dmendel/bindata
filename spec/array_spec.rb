@@ -30,16 +30,8 @@ describe BinData::Array, "with no elements" do
     @data = BinData::Array.new(:type => :int8)
   end
 
-  it "should not have any field_names" do
-    BinData::Array.all_possible_field_names(nil).should be_empty
-  end
-
   it "should not be a single_value" do
     @data.should_not be_single_value
-  end
-
-  it "should have no field names" do
-    @data.field_names.should be_empty
   end
 
   it "should return correct length" do
@@ -79,16 +71,8 @@ describe BinData::Array, "with several elements" do
     @data = BinData::Array.new(:type => type, :initial_length => 5)
   end
 
-  it "should not have any field_names" do
-    BinData::Array.all_possible_field_names(nil).should be_empty
-  end
-
   it "should not be a single_value" do
     @data.should_not be_single_value
-  end
-
-  it "should have no field names" do
-    @data.field_names.should be_empty
   end
 
   it "should return a correct snapshot" do
@@ -134,10 +118,6 @@ describe BinData::Array, "with several elements" do
     @data.num_bytes(0).should == 2
   end
 
-  it "should have no field_names" do
-    @data.field_names.should be_empty
-  end
-
   it "should be able to directly access elements" do
     @data[1] = 8
     @data[1].should == 8
@@ -155,6 +135,12 @@ describe BinData::Array, "with several elements" do
     @data.select { |x| (x % 2) == 0 }.should == [2, 4]
   end
 
+  it "should automatically extend" do
+    @data[9] = 3
+    @data[8].should == 9
+    @data.length.should == 10
+  end
+
   it "should clear" do
     @data[1] = 8
     @data.clear
@@ -165,6 +151,11 @@ describe BinData::Array, "with several elements" do
     @data[1] = 8
     @data.clear(1)
     @data[1].should == 2
+  end
+
+  it "should clear a single element out of range without extending" do
+    @data.clear(9)
+    @data.length.should == 5
   end
 
   it "should be clear upon creation" do
@@ -181,6 +172,11 @@ describe BinData::Array, "with several elements" do
     @data[1] = 8
     @data.clear?(0).should be_true
     @data.clear?(1).should be_false
+  end
+
+  it "should test clear status of out of range elements without extending" do
+    @data.clear?(9).should be_true
+    @data.length.should == 5
   end
 
   it "should read and write correctly" do

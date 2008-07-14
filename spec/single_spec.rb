@@ -65,10 +65,6 @@ describe BinData::Single, "after initialisation" do
     lambda { ConcreteSingle.new(params) }.should raise_error(ArgumentError)
   end
 
-  it "should not have any field_names" do
-    BinData::Single.all_possible_field_names(nil).should be_empty
-  end
-
   it "should have a sensible value" do
     @data.value.should == 0
   end
@@ -110,10 +106,6 @@ describe BinData::Single, "after initialisation" do
 
   it "should return num_bytes" do
     @data.num_bytes.should == 4
-  end
-
-  it "should not contain any field names" do
-    @data.field_names.should be_empty
   end
 
   it "should return a snapshot" do

@@ -15,11 +15,11 @@ module BinData
   # Parameters may be provided at initialisation to control the behaviour of
   # an object.  These params are:
   #
-  # [<tt>:readwrite</tt>]     If false, calls to #read or #write will
-  #                           not perform any I/O.  Default is true.
-  # [<tt>:onlyif</tt>]        This is an alias for :readwrite.  It is generally
-  #                           used to indicate a data object is optional.
-  #                           not perform any I/O.  Default is true.
+  # [<tt>:readwrite</tt>]     Deprecated. An alias for :onlyif.
+  # [<tt>:onlyif</tt>]        Used to indicate a data object is optional.
+  #                           if false, calls to #read or #write will not
+  #                           perform any I/O, #num_bytes will return 0 and
+  #                           #snapshot will return nil.  Default is true.
   # [<tt>:check_offset</tt>]  Raise an error if the current IO offset doesn't
   #                           meet this criteria.  A boolean return indicates
   #                           success or failure.  Any other return is compared
@@ -117,12 +117,13 @@ module BinData
 
       # Returns a sanitized +params+ that is of the form expected
       # by #initialize.
-      def sanitize_parameters(params, *args)
+      def sanitize_parameters(sanitizer, params, *args)
         params = params.dup
 
-        # replace :onlyif with :readwrite
-        if params.has_key?(:onlyif)
-          params[:readwrite] = params.delete(:onlyif)
+        # replace :readwrite with :onlyif
+        if params.has_key?(:readwrite)
+          warn ":readwrite is deprecated. Replacing with :onlyif"
+          params[:onlyif] = params.delete(:readwrite)
         end
 
         # add default parameters
@@ -184,7 +185,7 @@ module BinData
 
     # Define the parameters we use in this class.
     optional_parameters :check_offset, :adjust_offset
-    default_parameters :readwrite => true
+    default_parameters :onlyif => true
     mutually_exclusive_parameters :check_offset, :adjust_offset
 
     # Creates a new data object.
@@ -194,7 +195,7 @@ module BinData
     # environment that these callable objects are evaluated in.
     def initialize(params = {}, env = nil)
       unless SanitizedParameters === params
-        params = SanitizedParameters.new(self.class, params)
+        params = Sanitizer.new.sanitize(self.class, params)
       end
 
       @params = params.accepted_parameters
@@ -221,7 +222,7 @@ module BinData
       clear
       check_offset(io)
 
-      if eval_param(:readwrite)
+      if eval_param(:onlyif)
         _do_read(io)
       end
     end
@@ -240,7 +241,7 @@ module BinData
     def do_write(io)
       raise ArgumentError, "io must be a BinData::IO" unless BinData::IO === io
 
-      if eval_param(:readwrite)
+      if eval_param(:onlyif)
         _do_write(io)
       end
     end
@@ -254,10 +255,20 @@ module BinData
 
     # Returns the number of bytes it will take to write this data.
     def do_num_bytes(what = nil)
-      if eval_param(:readwrite)
+      if eval_param(:onlyif)
         _do_num_bytes(what)
       else
         0
+      end
+    end
+
+    # Returns a snapshot of this data object.
+    # Returns nil if :onlyif is false
+    def snapshot
+      if eval_param(:onlyif)
+        _snapshot
+      else
+        nil
       end
     end
 
@@ -336,31 +347,19 @@ module BinData
     ###########################################################################
     # To be implemented by subclasses
 
-    # Returns a list of the names of all possible field names for an object
-    # created with +sanitized_params+.
-    def self.all_possible_field_names(sanitized_params)
+    # Resets the internal state to that of a newly created object.
+    def clear
       raise NotImplementedError
     end
 
-    # Resets the internal state to that of a newly created object.
-    def clear
+    # Returns true if the object has not been changed since creation.
+    def clear?(*args)
       raise NotImplementedError
     end
 
     # Returns whether this data object contains a single value.  Single
     # value data objects respond to <tt>#value</tt> and <tt>#value=</tt>.
     def single_value?
-      raise NotImplementedError
-    end
-
-    # Returns a list of the names of all fields accessible through this
-    # object.
-    def field_names
-      raise NotImplementedError
-    end
-
-    # Returns a snapshot of this data object.
-    def snapshot
       raise NotImplementedError
     end
 
@@ -384,9 +383,14 @@ module BinData
       raise NotImplementedError
     end
 
+    # Returns a snapshot of this data object.
+    def _snapshot
+      raise NotImplementedError
+    end
+
     # Set visibility requirements of methods to implement
-    public :clear, :single_value?, :field_names, :snapshot, :done_read
-    private :_do_read, :_do_write, :_do_num_bytes
+    public :clear, :clear?, :single_value?, :done_read
+    private :_do_read, :_do_write, :_do_num_bytes, :_snapshot
 
     # End To be implemented by subclasses
     ###########################################################################

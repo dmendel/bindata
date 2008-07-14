@@ -45,15 +45,10 @@ module BinData
   #                           parameter.  A boolean return indicates success
   #                           or failure.  Any other return is compared to
   #                           the value just read in.
-  class Single < Base
+  class Single < BinData::Base
     # These are the parameters used by this class.
     optional_parameters :initial_value, :value, :check_value
     mutually_exclusive_parameters :initial_value, :value
-
-    # Single objects don't contain fields so this returns an empty list.
-    def self.all_possible_field_names(sanitized_params)
-      []
-    end
 
     def initialize(params = {}, env = nil)
       super(params, env)
@@ -74,16 +69,6 @@ module BinData
     # Single objects are single_values
     def single_value?
       true
-    end
-
-    # Single objects don't contain fields so this returns an empty list.
-    def field_names
-      []
-    end
-
-    # Returns a snapshot of this data object.
-    def snapshot
-      value
     end
 
     # To be called after calling #do_read.
@@ -122,7 +107,7 @@ module BinData
         current_value = self.value
         expected = eval_param(:check_value, :value => current_value)
         if not expected
-          raise ValidityError, "value not as expected"
+          raise ValidityError, "value '#{current_value}' not as expected"
         elsif current_value != expected and expected != true
           raise ValidityError, "value is '#{current_value}' but " +
                                "expected '#{expected}'"
@@ -139,6 +124,11 @@ module BinData
     # Returns the number of bytes it will take to write this data.
     def _do_num_bytes(ignored)
       val_to_str(_value).length
+    end
+
+    # Returns a snapshot of this data object.
+    def _snapshot
+      value
     end
 
     # The unmodified value of this data object.  Note that #value calls this

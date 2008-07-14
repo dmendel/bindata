@@ -16,11 +16,11 @@ module BinData
   #
   #      int32le :a
   #      int16le :b
-  #      tuple   nil
+  #      tuple   :s
   #    end
   #
   #    obj = SomeDataType.new
-  #    obj.field_names   =># ["b", "x", "y", "z"]
+  #    obj.field_names   =># ["b", "s"]
   #
   #
   # == Parameters
@@ -31,10 +31,9 @@ module BinData
   # <tt>:fields</tt>::   An array specifying the fields for this struct.
   #                      Each element of the array is of the form [type, name,
   #                      params].  Type is a symbol representing a registered
-  #                      type.  Name is the name of this field.  Name may be
-  #                      nil as in the example above.  Params is an optional
-  #                      hash of parameters to pass to this field when
-  #                      instantiating it.
+  #                      type.  Name is the name of this field.  Params is an
+  #                      optional hash of parameters to pass to this field
+  #                      when instantiating it.
   # <tt>:hide</tt>::     A list of the names of fields that are to be hidden
   #                      from the outside world.  Hidden fields don't appear
   #                      in #snapshot or #field_names but are still accessible
@@ -42,7 +41,7 @@ module BinData
   # <tt>:endian</tt>::   Either :little or :big.  This specifies the default
   #                      endian of any numerics in this struct, or in any
   #                      nested data objects.
-  class MultiValue < Struct
+  class MultiValue < BinData::Struct
 
     class << self
       # Register the names of all subclasses of this class.
@@ -68,16 +67,13 @@ module BinData
       def hide(*args)
         # note that fields are stored in an instance variable not a class var
         @hide ||= []
-        args.each do |name|
-          next if name.nil?
-          @hide << name.to_s
-        end
+        @hide.concat(args.collect { |name| name.to_s })
         @hide
       end
 
       # Returns all stored fields.  Should only be called by #sanitize_parameters
       def fields
-        @fields || []
+        @fields ||= []
       end
 
       # Used to define fields for this structure.
@@ -85,7 +81,7 @@ module BinData
         name, params = args
 
         type = symbol
-        name = (name.nil? or name == "") ? nil : name.to_s
+        name = name.to_s
         params ||= {}
 
         # note that fields are stored in an instance variable not a class var
@@ -96,26 +92,23 @@ module BinData
           raise TypeError, "unknown type '#{type}' for #{self}", caller
         end
 
-        # check that name is okay
-        if name != nil
-          # check for duplicate names
-          @fields.each do |t, n, p|
-            if n == name
-              raise SyntaxError, "duplicate field '#{name}' in #{self}", caller
-            end
+        # check for duplicate names
+        @fields.each do |t, n, p|
+          if n == name
+            raise SyntaxError, "duplicate field '#{name}' in #{self}", caller
           end
+        end
 
-          # check that name doesn't shadow an existing method
-          if self.instance_methods.include?(name)
-            raise NameError.new("", name),
-                  "field '#{name}' shadows an existing method", caller
-          end
+        # check that name doesn't shadow an existing method
+        if self.instance_methods.include?(name)
+          raise NameError.new("", name),
+                "field '#{name}' shadows an existing method", caller
+        end
 
-          # check that name isn't reserved
-          if ::Hash.instance_methods.include?(name)
-            raise NameError.new("", name),
-                  "field '#{name}' is a reserved name", caller
-          end
+        # check that name isn't reserved
+        if ::Hash.instance_methods.include?(name)
+          raise NameError.new("", name),
+                "field '#{name}' is a reserved name", caller
         end
 
         # remember this field.  These fields will be recalled upon creating
@@ -125,19 +118,20 @@ module BinData
 
       # Returns a sanitized +params+ that is of the form expected
       # by #initialize.
-      def sanitize_parameters(params, endian = nil)
+      def sanitize_parameters(sanitizer, params, endian = nil)
         params = params.dup
 
         # possibly override endian
         endian = params[:endian] || self.endian || endian
-        unless endian.nil?
-          params[:endian] = endian
-        end
 
-        params[:fields] = params[:fields] || self.fields
-        params[:hide] = params[:hide] || self.hide
+        fields = params[:fields] || self.fields
+        hide   = params[:hide]   || self.hide
 
-        super(params, endian)
+        params[:endian] = endian unless endian.nil?
+        params[:fields] = fields
+        params[:hide]   = hide
+
+        super(sanitizer, params, endian)
       end
     end
   end

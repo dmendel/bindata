@@ -5,13 +5,13 @@ require 'bindata/base'
 
 class BaseStub < BinData::Base
   def clear; end
+  def clear?; end
   def single_value?; end
-  def field_names; end
-  def snapshot; end
   def done_read; end
   def _do_read(io) end
   def _do_write(io) end
   def _do_num_bytes; end
+  def _snapshot; end
 end
 
 describe BinData::Base, "with mandatory parameters" do
@@ -220,20 +220,21 @@ describe BinData::Base, "with :adjust_offset" do
   end
 end
 
-describe BinData::Base, "with :readwrite => false" do
+describe BinData::Base, "with :onlyif => false" do
   before(:all) do
     eval <<-END
-      class NoIOBase < BaseStub
+      class OnlyIfBase < BaseStub
         attr_accessor :mock
         def _do_read(io) mock._do_read(io); end
         def _do_write(io) mock._do_write(io); end
         def _do_num_bytes; mock._do_num_bytes; end
+        def _snapshot; mock._snapshot; end
       end
     END
   end
 
   before(:each) do
-    @obj = NoIOBase.new :readwrite => false
+    @obj = OnlyIfBase.new :onlyif => false
     @obj.mock = mock('mock')
   end
 
@@ -253,22 +254,27 @@ describe BinData::Base, "with :readwrite => false" do
     @obj.mock.should_not_receive(:_do_num_bytes)
     @obj.num_bytes.should be_zero
   end
+
+  it "should have nil snapshot" do
+    @obj.mock.should_not_receive(:_snapshot)
+    @obj.snapshot.should be_nil
+  end
 end
 
-describe BinData::Base, "with :onlyif" do
+describe BinData::Base, "with :readwrite" do
   before(:all) do
     eval <<-END
-      class OnlyIfBase < BinData::Base
+      class NoIOBase < BinData::Base
         public :has_param?, :param
       end
     END
   end
 
-  it "should alias to :readwrite" do
-    obj = OnlyIfBase.new(:onlyif => "a")
-    obj.should_not have_param(:onlyif)
-    obj.should have_param(:readwrite)
-    obj.param(:readwrite).should == "a"
+  it "should alias to :onlyif" do
+    obj = NoIOBase.new(:readwrite => "a")
+    obj.should_not have_param(:readwrite)
+    obj.should have_param(:onlyif)
+    obj.param(:onlyif).should == "a"
   end
 end
 
@@ -276,7 +282,7 @@ describe BinData::Base, "when subclassing" do
   before(:all) do
     eval <<-END
       class SubClassOfBase < BinData::Base
-        public :_do_read, :_do_write, :_do_num_bytes
+        public :_do_read, :_do_write, :_do_num_bytes, :_snapshot
       end
     END
   end
@@ -286,17 +292,14 @@ describe BinData::Base, "when subclassing" do
   end
 
   it "should raise errors on unimplemented methods" do
-    lambda {
-      SubClassOfBase.all_possible_field_names(nil)
-    }.should raise_error(NotImplementedError)
     lambda { @obj.clear }.should raise_error(NotImplementedError)
+    lambda { @obj.clear? }.should raise_error(NotImplementedError)
     lambda { @obj.single_value? }.should raise_error(NotImplementedError)
-    lambda { @obj.field_names }.should raise_error(NotImplementedError)
-    lambda { @obj.snapshot }.should raise_error(NotImplementedError)
     lambda { @obj.done_read }.should raise_error(NotImplementedError)
     lambda { @obj._do_read(nil) }.should raise_error(NotImplementedError)
     lambda { @obj._do_write(nil) }.should raise_error(NotImplementedError)
     lambda { @obj._do_num_bytes }.should raise_error(NotImplementedError)
+    lambda { @obj._snapshot }.should raise_error(NotImplementedError)
   end
 end
 

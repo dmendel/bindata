@@ -125,7 +125,7 @@ module BinData
 
       # Returns a sanitized +params+ that is of the form expected
       # by #initialize.
-      def sanitize_parameters(params, endian = nil)
+      def sanitize_parameters(sanitizer, params, endian = nil)
         params = params.dup
 
         # possibly override endian
@@ -140,7 +140,7 @@ module BinData
         
         params[:struct_params] = hash
 
-        super(params, endian)
+        super(sanitizer, params, endian)
       end
     end
 

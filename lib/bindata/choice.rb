@@ -60,7 +60,7 @@ module BinData
 
       # Returns a sanitized +params+ that is of the form expected
       # by #initialize.
-      def sanitize_parameters(params, endian = nil)
+      def sanitize_parameters(sanitizer, params, endian = nil)
         params = params.dup
 
         if params.has_key?(:choices)
@@ -84,7 +84,7 @@ module BinData
               if klass.nil?
                 raise TypeError, "unknown type '#{type}' for #{self}"
               end
-              val = [klass, SanitizedParameters.new(klass, param, endian)]
+              val = [klass, sanitizer.sanitize(klass, param, endian)]
               new_choices[key] = val
             end
             params[:choices] = new_choices
@@ -98,7 +98,7 @@ module BinData
                 if klass.nil?
                   raise TypeError, "unknown type '#{type}' for #{self}"
                 end
-                [klass, SanitizedParameters.new(klass, param, endian)]
+                [klass, sanitizer.sanitize(klass, param, endian)]
               end
             end
             params[:choices] = choices
@@ -107,28 +107,7 @@ module BinData
           end
         end
 
-        super(params, endian)
-      end
-
-      # Returns all the possible field names a :choice may have.
-      def all_possible_field_names(sanitized_params)
-        unless SanitizedParameters === sanitized_params
-          raise ArgumentError, "parameters aren't sanitized"
-        end
-
-        choices = sanitized_params[:choices]
-
-        names = []
-        if ::Array === choices
-          choices.each do |cklass, cparams|
-            names.concat(cklass.all_possible_field_names(cparams))
-          end
-        elsif ::Hash === choices
-          choices.values.each do |cklass, cparams|
-            names.concat(cklass.all_possible_field_names(cparams))
-          end
-        end
-        names
+        super(sanitizer, params, endian)
       end
     end
 
@@ -140,14 +119,9 @@ module BinData
       @last_key = nil
     end
 
-    def_delegators :the_choice, :clear, :clear?, :single_value?, :field_names
-    def_delegators :the_choice, :snapshot, :done_read
+    def_delegators :the_choice, :clear, :clear?, :single_value?
+    def_delegators :the_choice, :done_read, :_snapshot
     def_delegators :the_choice, :_do_read, :_do_write, :_do_num_bytes
-
-    # Returns the data object that stores values for +name+.
-    def find_obj_for_name(name)
-      field_names.include?(name) ? the_choice.find_obj_for_name(name) : nil
-    end
 
     # Override to include selected data object.
     def respond_to?(symbol, include_private = false)
