@@ -100,85 +100,85 @@ module BinData
 
 
   # Unsigned 1 byte integer.
-  class Uint8 < Single
+  class Uint8 < BinData::Single
     register(self.name, self)
     Integer.create_uint_methods(self, 8, :little)
   end
 
   # Unsigned 2 byte little endian integer.
-  class Uint16le < Single
+  class Uint16le < BinData::Single
     register(self.name, self)
     Integer.create_uint_methods(self, 16, :little)
   end
 
   # Unsigned 2 byte big endian integer.
-  class Uint16be < Single
+  class Uint16be < BinData::Single
     register(self.name, self)
     Integer.create_uint_methods(self, 16, :big)
   end
 
   # Unsigned 4 byte little endian integer.
-  class Uint32le < Single
+  class Uint32le < BinData::Single
     register(self.name, self)
     Integer.create_uint_methods(self, 32, :little)
   end
 
   # Unsigned 4 byte big endian integer.
-  class Uint32be < Single
+  class Uint32be < BinData::Single
     register(self.name, self)
     Integer.create_uint_methods(self, 32, :big)
   end
 
   # Unsigned 8 byte little endian integer.
-  class Uint64le < Single
+  class Uint64le < BinData::Single
     register(self.name, self)
     Integer.create_uint_methods(self, 64, :little)
   end
 
   # Unsigned 8 byte big endian integer.
-  class Uint64be < Single
+  class Uint64be < BinData::Single
     register(self.name, self)
     Integer.create_uint_methods(self, 64, :big)
   end
 
   # Signed 1 byte integer.
-  class Int8 < Single
+  class Int8 < BinData::Single
     register(self.name, self)
     Integer.create_int_methods(self, 8, :little)
   end
 
   # Signed 2 byte little endian integer.
-  class Int16le < Single
+  class Int16le < BinData::Single
     register(self.name, self)
     Integer.create_int_methods(self, 16, :little)
   end
 
   # Signed 2 byte big endian integer.
-  class Int16be < Single
+  class Int16be < BinData::Single
     register(self.name, self)
     Integer.create_int_methods(self, 16, :big)
   end
 
   # Signed 4 byte little endian integer.
-  class Int32le < Single
+  class Int32le < BinData::Single
     register(self.name, self)
     Integer.create_int_methods(self, 32, :little)
   end
 
   # Signed 4 byte big endian integer.
-  class Int32be < Single
+  class Int32be < BinData::Single
     register(self.name, self)
     Integer.create_int_methods(self, 32, :big)
   end
 
   # Signed 8 byte little endian integer.
-  class Int64le < Single
+  class Int64le < BinData::Single
     register(self.name, self)
     Integer.create_int_methods(self, 64, :little)
   end
 
   # Signed 8 byte big endian integer.
-  class Int64be < Single
+  class Int64be < BinData::Single
     register(self.name, self)
     Integer.create_int_methods(self, 64, :big)
   end
