@@ -133,9 +133,26 @@ module BinData
     # single_values then the +value+ may be provided to the call.
     # Returns the appended object, or value in the case of single_values.
     def append(value = nil)
+      # TODO: deprecate #append as it can be replaced with #push
       append_new_element
       self[-1] = value unless value.nil?
       self.last
+    end
+
+    # Pushes the given object(s) on to the end of this array. 
+    # This expression returns the array itself, so several appends may 
+    # be chained together.
+    def push(*args)
+      args.each do |arg|
+        if @element_klass == arg.class
+          # TODO: need to modify arg.env to add_variable(:index) and
+          # to link arg.env to self.env
+          elements.push(arg)
+        else
+          append(arg)
+        end
+      end
+      self
     end
 
     # Returns the element at +index+.  If the element is a single_value
@@ -167,6 +184,7 @@ module BinData
 
       obj = elements[index]
       unless obj.single_value?
+        # TODO: allow setting objects, not just values
         raise NoMethodError, "undefined method `[]=' for #{self}", caller
       end
       obj.value = value
