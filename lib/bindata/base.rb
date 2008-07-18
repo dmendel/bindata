@@ -1,7 +1,7 @@
 require 'bindata/io'
 require 'bindata/lazy'
-require 'bindata/sanitize'
 require 'bindata/registry'
+require 'bindata/sanitize'
 require 'stringio'
 
 module BinData
@@ -41,7 +41,8 @@ module BinData
           @mandatory_parameters = []
           ancestors[1..-1].each do |parent|
             if parent.respond_to?(:mandatory_parameters)
-              @mandatory_parameters.concat(parent.mandatory_parameters)
+              pmp = parent.mandatory_parameters
+              @mandatory_parameters.concat(pmp)
             end
           end
         end
@@ -61,7 +62,8 @@ module BinData
           @optional_parameters = []
           ancestors[1..-1].each do |parent|
             if parent.respond_to?(:optional_parameters)
-              @optional_parameters.concat(parent.optional_parameters)
+              pop = parent.optional_parameters
+              @optional_parameters.concat(pop)
             end
           end
         end
@@ -81,7 +83,8 @@ module BinData
           @default_parameters = {}
           ancestors[1..-1].each do |parent|
             if parent.respond_to?(:default_parameters)
-              @default_parameters = @default_parameters.merge(parent.default_parameters)
+              pdp = parent.default_parameters
+              @default_parameters = @default_parameters.merge(pdp)
             end
           end
         end
@@ -100,7 +103,8 @@ module BinData
           @mutually_exclusive_parameters = []
           ancestors[1..-1].each do |parent|
             if parent.respond_to?(:mutually_exclusive_parameters)
-              @mutually_exclusive_parameters.concat(parent.mutually_exclusive_parameters)
+              pmep = parent.mutually_exclusive_parameters
+              @mutually_exclusive_parameters.concat(pmep)
             end
           end
         end
@@ -164,23 +168,6 @@ module BinData
         Registry.instance.register(name, klass)
       end
       private :register
-
-      # Returns the class matching a previously registered +name+.
-      def lookup(name, endian = nil)
-        name = name.to_s
-        klass = Registry.instance.lookup(name)
-        if klass.nil? and endian != nil
-          # lookup failed so attempt endian lookup
-          if /^u?int\d{1,3}$/ =~ name
-            new_name = name + ((endian == :little) ? "le" : "be")
-            klass = Registry.instance.lookup(new_name)
-          elsif ["float", "double"].include?(name)
-            new_name = name + ((endian == :little) ? "_le" : "_be")
-            klass = Registry.instance.lookup(new_name)
-          end
-        end
-        klass
-      end
     end
 
     # Define the parameters we use in this class.
@@ -195,7 +182,7 @@ module BinData
     # environment that these callable objects are evaluated in.
     def initialize(params = {}, env = nil)
       unless SanitizedParameters === params
-        params = Sanitizer.new.sanitize(self.class, params)
+        params = Sanitizer.sanitize(self, params)
       end
 
       @params = params.accepted_parameters

@@ -60,7 +60,7 @@ module BinData
     class << self
       # Returns a sanitized +params+ that is of the form expected
       # by #initialize.
-      def sanitize_parameters(sanitizer, params, endian = nil)
+      def sanitize_parameters(sanitizer, params)
         params = params.dup
 
         unless params.has_key?(:initial_length) or params.has_key?(:read_until)
@@ -68,14 +68,16 @@ module BinData
           params[:initial_length] = 0
         end
 
-        if params.has_key?(:type)
-          type, el_params = params[:type]
-          klass = lookup(type, endian)
-          raise TypeError, "unknown type '#{type}' for #{self}" if klass.nil?
-          params[:type] = [klass, sanitizer.sanitize(klass, el_params, endian)]
+        if params.has_key?(:read_length)
+          warn ":read_length is not used with arrays.  You probably want to change this to :initial_length"
         end
 
-        super(sanitizer, params, endian)
+        if params.has_key?(:type)
+          type, el_params = params[:type]
+          params[:type] = sanitizer.sanitize(type, el_params)
+        end
+
+        super(sanitizer, params)
       end
     end
 

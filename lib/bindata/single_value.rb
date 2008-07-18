@@ -98,7 +98,7 @@ module BinData
         @fields ||= []
 
         # check that type is known
-        if lookup(type, endian).nil?
+        unless Sanitizer.type_exists?(type, endian)
           raise TypeError, "unknown type '#{type}' for #{self}", caller
         end
 
@@ -125,22 +125,16 @@ module BinData
 
       # Returns a sanitized +params+ that is of the form expected
       # by #initialize.
-      def sanitize_parameters(sanitizer, params, endian = nil)
+      def sanitize_parameters(sanitizer, params)
         params = params.dup
-
-        # possibly override endian
-        endian = self.endian || endian
 
         hash = {}
         hash[:fields] = self.fields
-
-        unless endian.nil?
-          hash[:endian] = endian
-        end
+        hash[:endian] = self.endian unless self.endian.nil?
         
         params[:struct_params] = hash
 
-        super(sanitizer, params, endian)
+        super(sanitizer, params)
       end
     end
 

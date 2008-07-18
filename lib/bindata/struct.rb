@@ -39,6 +39,13 @@ module BinData
   #                      nested data objects.
   class Struct < BinData::Base
 
+    # These reserved words may not be used as field names
+    RESERVED = (::Hash.instance_methods + 
+                %w{alias and begin break case class def defined do else elsif
+                   end ensure false for if in module next nil not or redo
+                   rescue retry return self super then true undef unless until
+                   when while yield }).uniq
+
     # Register this class
     register(self.name, self)
 
@@ -91,7 +98,7 @@ module BinData
         @fields ||= []
 
         # check that type is known
-        if lookup(type, endian).nil?
+        unless Sanitizer.type_exists?(type, endian)
           raise TypeError, "unknown type '#{type}' for #{self}", caller
         end
 
@@ -109,7 +116,7 @@ module BinData
         end
 
         # check that name isn't reserved
-        if ::Hash.instance_methods.include?(name)
+        if self::RESERVED.include?(name)
           raise NameError.new("", name),
                 "field '#{name}' is a reserved name", caller
         end
@@ -118,19 +125,17 @@ module BinData
         # an instance of this class
         @fields.push([type, name, params])
       end
-      def deprecated_hack(params, endian = nil)
+      def deprecated_hack(params)
         params = params.dup
 
         # possibly override endian
-        endian = params[:endian] || self.endian || endian
-        unless endian.nil?
-          params[:endian] = endian
-        end
+        endian = params[:endian] || self.endian
+        params[:endian] = endian unless endian.nil?
 
         params[:fields] = params[:fields] || self.fields
         params[:hide] = params[:hide] || self.hide
 
-        [params, endian]
+        params
       end
       #
       #### DEPRECATION HACK to allow inheriting from BinData::Struct
@@ -138,17 +143,17 @@ module BinData
 
       # Returns a sanitized +params+ that is of the form expected
       # by #initialize.
-      def sanitize_parameters(sanitizer, params, endian = nil)
+      def sanitize_parameters(sanitizer, params)
         #### DEPRECATION HACK to allow inheriting from BinData::Struct
         #
-        params, endian = deprecated_hack(params, endian)
+        params = deprecated_hack(params)
         #
         #### DEPRECATION HACK to allow inheriting from BinData::Struct
 
         params = params.dup
 
         # possibly override endian
-        endian = params[:endian] || endian
+        endian = params[:endian]
         if endian != nil
           unless [:little, :big].include?(endian)
             raise ArgumentError, "unknown value for endian '#{endian}'"
@@ -158,51 +163,53 @@ module BinData
         end
 
         if params.has_key?(:fields)
-          # ensure the names of fields are strings and that params is sanitized
-          all_fields = params[:fields].collect do |ftype, fname, fparams|
-            fname = fname.to_s
-            klass = lookup(ftype, endian)
-            raise TypeError, "unknown type '#{ftype}' for #{self}" if klass.nil?
-            [klass, fname, sanitizer.sanitize(klass, fparams, endian)]
+          sanitizer.with_endian(endian) do
+            # ensure names of fields are strings and that params is sanitized
+            all_fields = params[:fields].collect do |ftype, fname, fparams|
+              fname = fname.to_s
+              klass, new_params = sanitizer.sanitize(ftype, fparams)
+              [klass, fname, new_params]
+            end
+            params[:fields] = all_fields
           end
-          params[:fields] = all_fields
 
           # collect all hidden names that correspond to a field name
           hide = []
           if params.has_key?(:hide)
-            hidden = params[:hide] || []
-            hidden.each do |h|
-              h = h.to_s
-              hide << h if all_fields.find { |k,n,p| n == h }
-            end
+            hidden = (params[:hide] || []).collect { |h| h.to_s }
+            all_field_names = params[:fields].collect { |k,n,p| n }
+            hide = hidden & all_field_names
           end
           params[:hide] = hide
         end
 
         # obtain SanitizedParameters
-        params = super(sanitizer, params, endian)
+        params = super(sanitizer, params)
 
         # now params are sanitized, check that parameter names are okay
 
         field_names = []
         instance_methods = self.instance_methods
-        reserved_names = ::Hash.instance_methods
+        reserved_names = RESERVED
 
         params[:fields].each do |fklass, fname, fparams|
 
           # check that name doesn't shadow an existing method
           if instance_methods.include?(fname)
-            raise NameError.new("Rename field '#{fname}' in #{self}, as it shadows an existing method.", fname)
+            raise NameError.new("Rename field '#{fname}' in #{self}, " +
+                                "as it shadows an existing method.", fname)
           end
 
           # check that name isn't reserved
           if reserved_names.include?(fname)
-            raise NameError.new("Rename field '#{fname}' in #{self}, as it is a reserved name.", fname)
+            raise NameError.new("Rename field '#{fname}' in #{self}, " +
+                                "as it is a reserved name.", fname)
           end
 
           # check for multiple definitions
           if field_names.include?(fname)
-            raise NameError.new("field '#{fname}' in #{self}, is defined multiple times.", fname)
+            raise NameError.new("field '#{fname}' in #{self}, " +
+                                "is defined multiple times.", fname)
           end
 
           field_names << fname

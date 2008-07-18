@@ -71,7 +71,8 @@ module BinData
         @hide
       end
 
-      # Returns all stored fields.  Should only be called by #sanitize_parameters
+      # Returns all stored fields.
+      # Should only be called by #sanitize_parameters
       def fields
         @fields ||= []
       end
@@ -88,7 +89,7 @@ module BinData
         @fields ||= []
 
         # check that type is known
-        if lookup(type, endian).nil?
+        unless Sanitizer.type_exists?(type, endian)
           raise TypeError, "unknown type '#{type}' for #{self}", caller
         end
 
@@ -106,7 +107,7 @@ module BinData
         end
 
         # check that name isn't reserved
-        if ::Hash.instance_methods.include?(name)
+        if self::RESERVED.include?(name)
           raise NameError.new("", name),
                 "field '#{name}' is a reserved name", caller
         end
@@ -118,12 +119,10 @@ module BinData
 
       # Returns a sanitized +params+ that is of the form expected
       # by #initialize.
-      def sanitize_parameters(sanitizer, params, endian = nil)
+      def sanitize_parameters(sanitizer, params)
         params = params.dup
 
-        # possibly override endian
-        endian = params[:endian] || self.endian || endian
-
+        endian = params[:endian] || self.endian
         fields = params[:fields] || self.fields
         hide   = params[:hide]   || self.hide
 
@@ -131,7 +130,7 @@ module BinData
         params[:fields] = fields
         params[:hide]   = hide
 
-        super(sanitizer, params, endian)
+        super(sanitizer, params)
       end
     end
   end

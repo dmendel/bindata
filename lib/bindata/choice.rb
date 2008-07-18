@@ -60,7 +60,7 @@ module BinData
 
       # Returns a sanitized +params+ that is of the form expected
       # by #initialize.
-      def sanitize_parameters(sanitizer, params, endian = nil)
+      def sanitize_parameters(sanitizer, params)
         params = params.dup
 
         if params.has_key?(:choices)
@@ -80,12 +80,7 @@ module BinData
 
               # collect sanitized choice values
               type, param = choices[key]
-              klass = lookup(type, endian)
-              if klass.nil?
-                raise TypeError, "unknown type '#{type}' for #{self}"
-              end
-              val = [klass, sanitizer.sanitize(klass, param, endian)]
-              new_choices[key] = val
+              new_choices[key] = sanitizer.sanitize(type, param)
             end
             params[:choices] = new_choices
           when ::Array
@@ -94,11 +89,7 @@ module BinData
                 # allow sparse arrays
                 nil
               else
-                klass = lookup(type, endian)
-                if klass.nil?
-                  raise TypeError, "unknown type '#{type}' for #{self}"
-                end
-                [klass, sanitizer.sanitize(klass, param, endian)]
+                sanitizer.sanitize(type, param)
               end
             end
             params[:choices] = choices
@@ -107,7 +98,7 @@ module BinData
           end
         end
 
-        super(sanitizer, params, endian)
+        super(sanitizer, params)
       end
     end
 
