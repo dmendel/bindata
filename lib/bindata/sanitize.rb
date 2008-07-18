@@ -3,14 +3,17 @@ require 'forwardable'
 module BinData
   class Sanitizer
     class << self
+      # Sanitize +params+ for +obj+.
+      # Returns sanitized parameters.
       def sanitize(obj, params)
         sanitizer = self.new
         klass, new_params = sanitizer.sanitize(obj.class, params)
         new_params
       end
 
+      # Returns true if +type+ is registered.
       def type_exists?(type, endian = nil)
-        lookup(type, endian)
+        lookup(type, endian) != nil
       end
 
       # Returns the class matching a previously registered +name+.
@@ -31,6 +34,7 @@ module BinData
       end
     end
 
+    # Create a new Sanitizer.
     def initialize
       @seen   = []
       @endian = nil
@@ -48,6 +52,8 @@ module BinData
       end
     end
 
+    # Sanitizes +params+ for +type+.
+    # Returns [klass, sanitized_params]
     def sanitize(type, params)
       if Class === type
         klass = type
@@ -78,7 +84,6 @@ module BinData
 
       [klass, params]
     end
-
   end
 
   # A BinData object accepts arbitrary parameters.  This class ensures that
@@ -88,7 +93,7 @@ module BinData
     extend Forwardable
 
     # Sanitize the given parameters.
-    def initialize(klass, params, *args)
+    def initialize(klass, params)
       @hash = params
       @accepted_parameters = {}
       @extra_parameters = {}
