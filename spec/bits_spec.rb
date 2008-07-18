@@ -115,14 +115,14 @@ describe "All bitfields" do
 
           min = 0
           max = (1 << nbits) - 1
-          range = [min .. max]
+          range = (min .. max)
 
           values = []
           values << (min + 1) if range.include?(min + 1)
           values << (min + 3) if range.include?(min + 3)
           values << (max - 1) if range.include?(max - 1)
 
-          value.each do |val|
+          values.each do |val|
             obj = klass.new
             obj.value = val
             str = obj.to_s
