@@ -27,6 +27,10 @@ module BinData
   #   obj.read(data)
   #   obj.snapshot #=> [3, 4, 5, 6, 7]
   #
+  #   obj = BinData::Array.new(:type => :int8, :read_until => :eof)
+  #   obj.read(data)
+  #   obj.snapshot #=> [3, 4, 5, 6, 7, 8, 9]
+  #
   # == Parameters
   #
   # Parameters may be provided at initialisation to control the behaviour of
@@ -42,7 +46,9 @@ module BinData
   #                            read an array until a sentinel value is found.
   #                            The variables +index+, +element+ and +array+
   #                            are made available to any lambda assigned to
-  #                            this parameter.
+  #                            this parameter.  If the value of this parameter
+  #                            is the symbol :eof, then the array will read
+  #                            as much data from the stream as possible.
   #
   # Each data object in an array has the variable +index+ made available
   # to any lambda evaluated as a parameter of that data object.
@@ -249,15 +255,28 @@ module BinData
     def _do_read(io)
       if has_param?(:initial_length)
         elements.each { |f| f.do_read(io) }
-      else # :read_until
-        @element_list = nil
-        loop do
-          element = append_new_element
-          element.do_read(io)
-          variables = { :index => self.length - 1, :element => self.last,
-                        :array => self }
-          finished = eval_param(:read_until, variables)
-          break if finished
+      elsif has_param?(:read_until)
+        if param(:read_until) == :eof
+          @element_list = nil
+          loop do
+            element = append_new_element
+            begin
+              element.do_read(io)
+            rescue
+              @element_list.pop
+              break
+            end
+          end
+        else
+          @element_list = nil
+          loop do
+            element = append_new_element
+            element.do_read(io)
+            variables = { :index => self.length - 1, :element => self.last,
+                          :array => self }
+            finished = eval_param(:read_until, variables)
+            break if finished
+          end
         end
       end
     end

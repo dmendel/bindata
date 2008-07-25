@@ -1,5 +1,9 @@
 = BinData Changelog
 
+== Version
+
+* Arrays can now :read_until => :eof
+
 == Version 0.9.2 (2008-07-18)
 
 * Added lazy instantiation to allow recursive definitions.

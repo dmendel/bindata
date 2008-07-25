@@ -264,6 +264,22 @@ describe BinData::Array, "with :read_until containing +array+ and +index+" do
   end
 end
 
+describe BinData::Array, "with :read_until => :eof" do
+  it "should read records until eof" do
+    obj = BinData::Array.new(:type => :int8, :read_until => :eof)
+    data = "\x01\x02\x03"
+    obj.read(data)
+    obj.snapshot.should == [1, 2, 3]
+  end
+
+  it "should read records until eof, ignoring partial records" do
+    obj = BinData::Array.new(:type => :int16be, :read_until => :eof)
+    data = "\x00\x01\x00\x02\x03"
+    obj.read(data)
+    obj.snapshot.should == [1, 2]
+  end
+end
+
 describe BinData::Array, "of bits" do
   before(:each) do
     @data = BinData::Array.new(:type => :bit1, :initial_length => 15)
