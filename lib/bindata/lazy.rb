@@ -78,15 +78,16 @@ module BinData
     # recurses until it yields a value that is not a symbol or lambda.
     # +overrides+ is an optional +params+ like hash
     def lazy_eval(obj, overrides = nil)
+      result = obj
       @overrides = overrides if overrides
       if obj.is_a? Symbol
         # treat :foo as lambda { foo }
-        obj = __send__(obj)
+        result = __send__(obj)
       elsif obj.respond_to? :arity
-        obj = instance_eval(&obj)
+        result = instance_eval(&obj)
       end
       @overrides = @@empty_hash
-      obj
+      result
     end
 
     def method_missing(symbol, *args)

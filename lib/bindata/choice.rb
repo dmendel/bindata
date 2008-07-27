@@ -61,10 +61,10 @@ module BinData
       # Returns a sanitized +params+ that is of the form expected
       # by #initialize.
       def sanitize_parameters(sanitizer, params)
-        params = params.dup
+        new_params = params.dup
 
-        if params.has_key?(:choices)
-          choices = params[:choices]
+        if new_params.has_key?(:choices)
+          choices = new_params[:choices]
 
           case choices
           when ::Hash
@@ -82,7 +82,7 @@ module BinData
               type, param = choices[key]
               new_choices[key] = sanitizer.sanitize(type, param)
             end
-            params[:choices] = new_choices
+            new_params[:choices] = new_choices
           when ::Array
             choices.collect! do |type, param|
               if type.nil?
@@ -92,13 +92,13 @@ module BinData
                 sanitizer.sanitize(type, param)
               end
             end
-            params[:choices] = choices
+            new_params[:choices] = choices
           else
             raise ArgumentError, "unknown type for :choices (#{choices.class})"
           end
         end
 
-        super(sanitizer, params)
+        super(sanitizer, new_params)
       end
     end
 

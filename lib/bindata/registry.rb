@@ -23,15 +23,15 @@ module BinData
     # Returns the converted name
     def register(name, klass)
       # convert camelCase name to underscore style
-      name = underscore_name(name)
+      key = underscore_name(name)
 
       # warn if replacing an existing class
-      if $VERBOSE and (existing = @registry[name])
+      if $VERBOSE and (existing = @registry[key])
         warn "warning: replacing registered class #{existing} with #{klass}"
       end
 
-      @registry[name] = klass
-      name.dup
+      @registry[key] = klass
+      key.dup
     end
 
     # Returns the class matching a previously registered +name+.

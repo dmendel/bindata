@@ -67,23 +67,23 @@ module BinData
       # Returns a sanitized +params+ that is of the form expected
       # by #initialize.
       def sanitize_parameters(sanitizer, params)
-        params = params.dup
+        new_params = params.dup
 
-        unless params.has_key?(:initial_length) or params.has_key?(:read_until)
+        unless new_params.has_key?(:initial_length) or new_params.has_key?(:read_until)
           # ensure one of :initial_length and :read_until exists
-          params[:initial_length] = 0
+          new_params[:initial_length] = 0
         end
 
-        if params.has_key?(:read_length)
+        if new_params.has_key?(:read_length)
           warn ":read_length is not used with arrays.  You probably want to change this to :initial_length"
         end
 
-        if params.has_key?(:type)
-          type, el_params = params[:type]
-          params[:type] = sanitizer.sanitize(type, el_params)
+        if new_params.has_key?(:type)
+          type, el_params = new_params[:type]
+          new_params[:type] = sanitizer.sanitize(type, el_params)
         end
 
-        super(sanitizer, params)
+        super(sanitizer, new_params)
       end
     end
 

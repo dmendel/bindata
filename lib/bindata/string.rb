@@ -60,26 +60,26 @@ module BinData
 
       # Returns a sanitized +params+ that is of the form expected
       # by #initialize.
-      def sanitize_parameters(sanitizer, params, *args)
-        params = params.dup
+      def sanitize_parameters(sanitizer, params)
+        new_params = params.dup
 
         # warn about deprecated param - remove before releasing 1.0
-        if params[:initial_length]
+        if new_params[:initial_length]
           warn ":initial_length is deprecated. Replacing with :read_length"
-          params[:read_length] = params.delete(:initial_length)
+          new_params[:read_length] = new_params.delete(:initial_length)
         end
 
         # set :pad_char to be a single length character string
-        if params.has_key?(:pad_char)
-          ch = params[:pad_char]
+        if new_params.has_key?(:pad_char)
+          ch = new_params[:pad_char]
           ch = ch.respond_to?(:chr) ? ch.chr : ch.to_s
           if ch.length > 1
             raise ArgumentError, ":pad_char must not contain more than 1 char"
           end
-          params[:pad_char] = ch
+          new_params[:pad_char] = ch
         end
 
-        super(sanitizer, params, *args)
+        super(sanitizer, new_params)
       end
     end
 

@@ -120,17 +120,17 @@ module BinData
       # Returns a sanitized +params+ that is of the form expected
       # by #initialize.
       def sanitize_parameters(sanitizer, params)
-        params = params.dup
+        new_params = params.dup
 
-        endian = params[:endian] || self.endian
-        fields = params[:fields] || self.fields
-        hide   = params[:hide]   || self.hide
+        endian = new_params[:endian] || self.endian
+        fields = new_params[:fields] || self.fields
+        hide   = new_params[:hide]   || self.hide
 
-        params[:endian] = endian unless endian.nil?
-        params[:fields] = fields
-        params[:hide]   = hide
+        new_params[:endian] = endian unless endian.nil?
+        new_params[:fields] = fields
+        new_params[:hide]   = hide
 
-        super(sanitizer, params)
+        super(sanitizer, new_params)
       end
     end
   end

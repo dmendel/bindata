@@ -150,41 +150,41 @@ module BinData
         #
         #### DEPRECATION HACK to allow inheriting from BinData::Struct
 
-        params = params.dup
+        new_params = params.dup
 
         # possibly override endian
-        endian = params[:endian]
+        endian = new_params[:endian]
         if endian != nil
           unless [:little, :big].include?(endian)
             raise ArgumentError, "unknown value for endian '#{endian}'"
           end
 
-          params[:endian] = endian
+          new_params[:endian] = endian
         end
 
-        if params.has_key?(:fields)
+        if new_params.has_key?(:fields)
           sanitizer.with_endian(endian) do
             # ensure names of fields are strings and that params is sanitized
-            all_fields = params[:fields].collect do |ftype, fname, fparams|
+            all_fields = new_params[:fields].collect do |ftype, fname, fparams|
               fname = fname.to_s
-              klass, new_params = sanitizer.sanitize(ftype, fparams)
-              [klass, fname, new_params]
+              klass, sanitized_fparams = sanitizer.sanitize(ftype, fparams)
+              [klass, fname, sanitized_fparams]
             end
-            params[:fields] = all_fields
+            new_params[:fields] = all_fields
           end
 
           # collect all hidden names that correspond to a field name
           hide = []
-          if params.has_key?(:hide)
-            hidden = (params[:hide] || []).collect { |h| h.to_s }
-            all_field_names = params[:fields].collect { |k,n,p| n }
+          if new_params.has_key?(:hide)
+            hidden = (new_params[:hide] || []).collect { |h| h.to_s }
+            all_field_names = new_params[:fields].collect { |k,n,p| n }
             hide = hidden & all_field_names
           end
-          params[:hide] = hide
+          new_params[:hide] = hide
         end
 
         # obtain SanitizedParameters
-        params = super(sanitizer, params)
+        sanitized_params = super(sanitizer, new_params)
 
         # now params are sanitized, check that parameter names are okay
 
@@ -192,7 +192,7 @@ module BinData
         instance_methods = self.instance_methods
         reserved_names = RESERVED
 
-        params[:fields].each do |fklass, fname, fparams|
+        sanitized_params[:fields].each do |fklass, fname, fparams|
 
           # check that name doesn't shadow an existing method
           if instance_methods.include?(fname)
@@ -215,7 +215,7 @@ module BinData
           field_names << fname
         end
 
-        params
+        sanitized_params
       end
     end
 

@@ -75,24 +75,24 @@ module BinData
     # will not be longer than +max_length+.
     def zero_terminate(str, max_length = nil)
       # str must not be empty
-      str = "\0" if str == ""
+      result = (str == "") ? "\0" : str
 
       # remove anything after the first \0
-      str = str.sub(/([^\0]*\0).*/, '\1')
+      result = result.sub(/([^\0]*\0).*/, '\1')
 
       # trim string to be no longer than max_length including zero byte
       if max_length
         max_length = 1 if max_length < 1
-        str = str[0, max_length]
-        if str.length == max_length and str[-1, 1] != "\0"
-          str[-1, 1] = "\0"
+        result = result[0, max_length]
+        if result.length == max_length and result[-1, 1] != "\0"
+          result[-1, 1] = "\0"
         end
       end
 
       # ensure last byte in the string is a zero byte
-      str << "\0" if str[-1, 1] != "\0"
+      result << "\0" if result[-1, 1] != "\0"
 
-      str
+      result
     end
   end
 end
