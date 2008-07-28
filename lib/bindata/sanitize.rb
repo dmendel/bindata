@@ -62,13 +62,13 @@ module BinData
         raise TypeError, "unknown type '#{type}'" if klass.nil?
       end
 
-      new_params = params || {}
+      new_params = params.nil? ? {} : params.dup
+
       if @seen.include?(klass)
         # This klass is defined recursively.  Remember the current endian
         # and delay sanitizing the parameters until later.
         if @endian != nil and klass.accepted_parameters.include?(:endian) and
             not new_params.has_key?(:endian)
-          new_params = new_params.dup
           new_params[:endian] = @endian
         end
       else
@@ -78,8 +78,8 @@ module BinData
                               klass.ancestors.include?(BinData.const_get(:MultiValue)))
         @seen.push(klass) if possibly_recursive
 
-        sanitized_params = klass.sanitize_parameters(self, new_params)
-        new_params = SanitizedParameters.new(klass, sanitized_params)
+        klass.sanitize_parameters!(self, new_params)
+        new_params = SanitizedParameters.new(klass, new_params)
       end
 
       [klass, new_params]

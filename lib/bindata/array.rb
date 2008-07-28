@@ -64,26 +64,23 @@ module BinData
     mutually_exclusive_parameters :initial_length, :read_until
 
     class << self
-      # Returns a sanitized +params+ that is of the form expected
-      # by #initialize.
-      def sanitize_parameters(sanitizer, params)
-        new_params = params.dup
-
-        unless new_params.has_key?(:initial_length) or new_params.has_key?(:read_until)
+      # Ensures that +params+ is of the form expected by #initialize.
+      def sanitize_parameters!(sanitizer, params)
+        unless params.has_key?(:initial_length) or params.has_key?(:read_until)
           # ensure one of :initial_length and :read_until exists
-          new_params[:initial_length] = 0
+          params[:initial_length] = 0
         end
 
-        if new_params.has_key?(:read_length)
+        if params.has_key?(:read_length)
           warn ":read_length is not used with arrays.  You probably want to change this to :initial_length"
         end
 
-        if new_params.has_key?(:type)
-          type, el_params = new_params[:type]
-          new_params[:type] = sanitizer.sanitize(type, el_params)
+        if params.has_key?(:type)
+          type, el_params = params[:type]
+          params[:type] = sanitizer.sanitize(type, el_params)
         end
 
-        super(sanitizer, new_params)
+        super(sanitizer, params)
       end
     end
 

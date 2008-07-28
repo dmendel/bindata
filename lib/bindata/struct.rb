@@ -125,97 +125,85 @@ module BinData
         # an instance of this class
         @fields.push([type, name, params])
       end
-      def deprecated_hack(params)
-        params = params.dup
-
+      def deprecated_hack!(params)
         # possibly override endian
         endian = params[:endian] || self.endian
         params[:endian] = endian unless endian.nil?
-
         params[:fields] = params[:fields] || self.fields
         params[:hide] = params[:hide] || self.hide
-
-        params
       end
       #
       #### DEPRECATION HACK to allow inheriting from BinData::Struct
 
 
-      # Returns a sanitized +params+ that is of the form expected
-      # by #initialize.
-      def sanitize_parameters(sanitizer, params)
+      # Ensures that +params+ is of the form expected by #initialize.
+      def sanitize_parameters!(sanitizer, params)
         #### DEPRECATION HACK to allow inheriting from BinData::Struct
         #
-        params = deprecated_hack(params)
+        deprecated_hack!(params)
         #
         #### DEPRECATION HACK to allow inheriting from BinData::Struct
-
-        new_params = params.dup
 
         # possibly override endian
-        endian = new_params[:endian]
+        endian = params[:endian]
         if endian != nil
           unless [:little, :big].include?(endian)
             raise ArgumentError, "unknown value for endian '#{endian}'"
           end
 
-          new_params[:endian] = endian
+          params[:endian] = endian
         end
 
-        if new_params.has_key?(:fields)
+        if params.has_key?(:fields)
           sanitizer.with_endian(endian) do
             # ensure names of fields are strings and that params is sanitized
-            all_fields = new_params[:fields].collect do |ftype, fname, fparams|
+            all_fields = params[:fields].collect do |ftype, fname, fparams|
               fname = fname.to_s
               klass, sanitized_fparams = sanitizer.sanitize(ftype, fparams)
               [klass, fname, sanitized_fparams]
             end
-            new_params[:fields] = all_fields
+            params[:fields] = all_fields
+          end
+
+          # now params are sanitized, check that parameter names are okay
+          field_names = []
+          instance_methods = self.instance_methods
+          reserved_names = RESERVED
+
+          params[:fields].each do |fklass, fname, fparams|
+
+            # check that name doesn't shadow an existing method
+            if instance_methods.include?(fname)
+              raise NameError.new("Rename field '#{fname}' in #{self}, " +
+                                  "as it shadows an existing method.", fname)
+            end
+
+            # check that name isn't reserved
+            if reserved_names.include?(fname)
+              raise NameError.new("Rename field '#{fname}' in #{self}, " +
+                                  "as it is a reserved name.", fname)
+            end
+
+            # check for multiple definitions
+            if field_names.include?(fname)
+              raise NameError.new("field '#{fname}' in #{self}, " +
+                                  "is defined multiple times.", fname)
+            end
+
+            field_names << fname
           end
 
           # collect all hidden names that correspond to a field name
           hide = []
-          if new_params.has_key?(:hide)
-            hidden = (new_params[:hide] || []).collect { |h| h.to_s }
-            all_field_names = new_params[:fields].collect { |k,n,p| n }
+          if params.has_key?(:hide)
+            hidden = (params[:hide] || []).collect { |h| h.to_s }
+            all_field_names = params[:fields].collect { |k,n,p| n }
             hide = hidden & all_field_names
           end
-          new_params[:hide] = hide
+          params[:hide] = hide
         end
 
-        # obtain SanitizedParameters
-        sanitized_params = super(sanitizer, new_params)
-
-        # now params are sanitized, check that parameter names are okay
-
-        field_names = []
-        instance_methods = self.instance_methods
-        reserved_names = RESERVED
-
-        sanitized_params[:fields].each do |fklass, fname, fparams|
-
-          # check that name doesn't shadow an existing method
-          if instance_methods.include?(fname)
-            raise NameError.new("Rename field '#{fname}' in #{self}, " +
-                                "as it shadows an existing method.", fname)
-          end
-
-          # check that name isn't reserved
-          if reserved_names.include?(fname)
-            raise NameError.new("Rename field '#{fname}' in #{self}, " +
-                                "as it is a reserved name.", fname)
-          end
-
-          # check for multiple definitions
-          if field_names.include?(fname)
-            raise NameError.new("field '#{fname}' in #{self}, " +
-                                "is defined multiple times.", fname)
-          end
-
-          field_names << fname
-        end
-
-        sanitized_params
+        super(sanitizer, params)
       end
     end
 

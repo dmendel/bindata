@@ -119,25 +119,22 @@ module BinData
         (mandatory_parameters + optional_parameters + default_parameters.keys).uniq
       end
 
-      # Returns a sanitized +params+ that is of the form expected
-      # by #initialize.
-      def sanitize_parameters(sanitizer, params, *args)
-        new_params = params.dup
-
+      # Ensures that +params+ is of the form expected by #initialize.
+      def sanitize_parameters!(sanitizer, params)
         # replace :readwrite with :onlyif
-        if new_params.has_key?(:readwrite)
+        if params.has_key?(:readwrite)
           warn ":readwrite is deprecated. Replacing with :onlyif"
-          new_params[:onlyif] = new_params.delete(:readwrite)
+          params[:onlyif] = params.delete(:readwrite)
         end
 
         # add default parameters
         default_parameters.each do |k,v|
-          new_params[k] = v unless new_params.has_key?(k)
+          params[k] = v unless params.has_key?(k)
         end
 
         # ensure mandatory parameters exist
         mandatory_parameters.each do |prm|
-          if not new_params.has_key?(prm)
+          if not params.has_key?(prm)
             raise ArgumentError, "parameter ':#{prm}' must be specified " +
                                  "in #{self}"
           end
@@ -145,13 +142,11 @@ module BinData
 
         # ensure mutual exclusion
         mutually_exclusive_parameters.each do |param1, param2|
-          if new_params.has_key?(param1) and new_params.has_key?(param2)
+          if params.has_key?(param1) and params.has_key?(param2)
             raise ArgumentError, "params #{param1} and #{param2} " +
                                  "are mutually exclusive"
           end
         end
-
-        new_params
       end
 
       # Instantiates this class and reads from +io+.  For single value objects

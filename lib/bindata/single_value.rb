@@ -123,18 +123,15 @@ module BinData
         @fields.push([type, name, params])
       end
 
-      # Returns a sanitized +params+ that is of the form expected
-      # by #initialize.
-      def sanitize_parameters(sanitizer, params)
-        new_params = params.dup
-
-        hash = {}
-        hash[:fields] = self.fields
-        hash[:endian] = self.endian unless self.endian.nil?
+      # Ensures that +params+ is of the form expected by #initialize.
+      def sanitize_parameters!(sanitizer, params)
+        struct_params = {}
+        struct_params[:fields] = self.fields
+        struct_params[:endian] = self.endian unless self.endian.nil?
         
-        new_params[:struct_params] = hash
+        params[:struct_params] = struct_params
 
-        super(sanitizer, new_params)
+        super(sanitizer, params)
       end
     end
 
