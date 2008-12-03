@@ -34,7 +34,7 @@ describe BinData::Array, "with no elements" do
     @data.should_not be_single_value
   end
 
-  it "should return correct length" do
+  it "should return zero length" do
     @data.length.should be_zero
   end
 
@@ -127,7 +127,7 @@ describe BinData::Array, "with several elements" do
     @data.should_not be_empty
   end
 
-  it "should return a nicely formatted array  for inspect" do
+  it "should return a nicely formatted array for inspect" do
     @data.inspect.should == "[1, 2, 3, 4, 5]"
   end
 
@@ -312,6 +312,25 @@ describe BinData::Array, "of bits" do
 
   it "should return num_bytes" do
     @data.num_bytes.should == 2
+  end
+end
+
+describe BinData::Array, "nested within an Array" do
+  before(:each) do
+    nested_array_params = { :type => [:int8, { :initial_value => :index }],
+                            :initial_length => lambda { index + 1 } }
+    @data = BinData::Array.new(:type => [:array, nested_array_params],
+                               :initial_length => 3)
+  end
+
+  it "should use correct index" do
+    @data.snapshot.should == [ [0], [0, 1], [0, 1, 2] ]
+  end
+
+  it "should maintain structure when reading" do
+    str = "\x04\x05\x06\x07\x08\x09"
+    @data.read(str)
+    @data.snapshot.should == [ [4], [5, 6], [7, 8, 9] ]
   end
 end
 

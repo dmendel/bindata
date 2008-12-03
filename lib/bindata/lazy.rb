@@ -1,90 +1,57 @@
 module BinData
-  # The enviroment in which a lazily evaluated lamba is called.  These lambdas
-  # are those that are passed to data objects as parameters.  Each lambda
-  # has access to the following:
+  # A LazyEvaluator is bound to a data object.  The evaluator will evaluate
+  # lambdas in the context of this data object.  These lambdas
+  # are those that are passed to data objects as parameters, e.g.:
   #
-  # parent:: the environment of the parent data object
-  # params:: any extra parameters that have been passed to the data object.
-  #          The value of a parameter is either a lambda, a symbol or a
-  #          literal value (such as a Fixnum).
+  #    BinData::String.new(:value => lambda { %w{a test message}.join(" ") })
   #
-  # Unknown methods are resolved in the context of the parent environment,
-  # first as keys in the extra parameters, and secondly as methods in the
-  # parent data object.  This makes the lambda easier to read as we just write
+  # When evaluating lambdas, unknown methods are resolved in the context of
+  # the parent of the bound data object, first as keys in #parameters, and
+  # secondly as methods in this parent.  This resolution propagates up the
+  # chain of parent data objects.
+  #
+  # This resolution process makes the lambda easier to read as we just write
   # <tt>field</tt> instead of <tt>obj.field</tt>.
-  class LazyEvalEnv
-    # An empty hash shared by all instances
-    @@empty_hash = Hash.new.freeze
-
-    @@variables_cache = {}
-
-    # Creates a new environment.  +parent+ is the environment of the
-    # parent data object.
-    def initialize(parent = nil)
-      @parent = parent
-      @variables = @@empty_hash
-      @overrides = @@empty_hash
-      @params    = @@empty_hash
-    end
-    attr_reader :parent, :params
-    attr_accessor :data_object
-
-    # only accessible by another LazyEvalEnv
-    protected :data_object
-
-    # Set the parameters for this environment.
-    def params=(p)
-      @params = (p.nil? or p.empty?) ? @@empty_hash : p
-    end
-
-    # Add a variable with a pre-assigned value to this environment.  +sym+
-    # will be accessible as a variable for any lambda evaluated
-    # with #lazy_eval.
-    def add_variable(sym, value)
-      sym = sym.to_sym
-      if @variables.equal?(@@empty_hash)
-        # optimise the case where only 1 variable is added as this
-        # is the most common occurance (BinData::Arrays adding index)
-        key = [sym, value]
-        @variables = @@variables_cache[key]
-        if @variables.nil?
-          # cache this variable and value so it can be shared with
-          # other LazyEvalEnvs to keep memory usage down
-          @variables = {sym => value}.freeze
-          @@variables_cache[key] = @variables
-        end
-      else
-        if @variables.length == 1
-          key = @variables.keys[0]
-          @variables = {key => @variables[key]}
-        end
-        @variables[sym] = value
+  class LazyEvaluator
+    class << self
+      # Lazily evaluates +val+ in the context of +obj+, with possibility of
+      # +overrides+.
+      def eval(val, obj, overrides = nil)
+        env = self.new(obj)
+        env.lazy_eval(val, overrides)
       end
     end
 
-    # TODO: offset_of needs to be better thought out
-    def offset_of(sym)
-      @parent.data_object.offset_of(sym)
-    rescue
-      nil
+    # An empty hash shared by all instances
+    @@empty_hash = Hash.new.freeze
+
+    # Creates a new evaluator.  All lazy evaluation is performed in the
+    # context of +obj+.
+    def initialize(obj)
+      @obj = obj
+      @overrides = @@empty_hash
     end
 
-    # Returns the data_object for the parent environment.
-    def parent_data_object
-      @parent.nil? ? nil : @parent.data_object
+    # Returns a LazyEvaluator for the parent of this data object.
+    def parent
+      if @obj.parent
+        LazyEvaluator.new(@obj.parent)
+      else
+        nil
+      end
     end
 
-    # Evaluates +obj+ in the context of this environment.  Evaluation
+    # Evaluates +val+ in the context of this data object.  Evaluation
     # recurses until it yields a value that is not a symbol or lambda.
-    # +overrides+ is an optional +params+ like hash
-    def lazy_eval(obj, overrides = nil)
-      result = obj
+    # +overrides+ is an optional +obj.parameters+ like hash.
+    def lazy_eval(val, overrides = nil)
+      result = val
       @overrides = overrides if overrides
-      if obj.is_a? Symbol
+      if val.is_a? Symbol
         # treat :foo as lambda { foo }
-        result = __send__(obj)
-      elsif obj.respond_to? :arity
-        result = instance_eval(&obj)
+        result = __send__(val)
+      elsif val.respond_to? :arity
+        result = instance_eval(&val)
       end
       @overrides = @@empty_hash
       result
@@ -93,19 +60,39 @@ module BinData
     def method_missing(symbol, *args)
       if @overrides.include?(symbol)
         @overrides[symbol]
-      elsif @variables.include?(symbol)
-        @variables[symbol]
-      elsif @parent
-        obj = symbol
-        if @parent.params and @parent.params.has_key?(symbol)
-          obj = @parent.params[symbol]
-        elsif @parent.data_object and @parent.data_object.respond_to?(symbol)
-          obj = @parent.data_object.__send__(symbol, *args)
+      elsif symbol == :index
+        array_index
+      elsif @obj.parent
+        val = symbol
+        if @obj.parent.parameters and @obj.parent.parameters.has_key?(symbol)
+          val = @obj.parent.parameters[symbol]
+        elsif @obj.parent and @obj.parent.respond_to?(symbol)
+          val = @obj.parent.__send__(symbol, *args)
         end
-        @parent.lazy_eval(obj)
+        LazyEvaluator.eval(val, @obj.parent)
       else
         super
       end
     end
+
+    #---------------
+    private
+
+    # Returns the index in the closest ancestor array of this data object.
+    def array_index
+      bindata_array_klass = BinData.const_defined?("Array") ? 
+                              BinData.const_get("Array") : nil
+      child = @obj
+      parent = @obj.parent
+      while parent
+        if parent.class == bindata_array_klass
+          return parent.index(child)
+        end
+        child = parent
+        parent = parent.parent
+      end
+      raise NoMethodError, "no index found"
+    end
+
   end
 end

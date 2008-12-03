@@ -11,20 +11,24 @@ describe "All signed integers" do
      BinData::Int32le,
      BinData::Int32be,
      BinData::Int64le,
-     BinData::Int64be].each do |klass|
+     BinData::Int64be,
+     BinData::Int128le,
+     BinData::Int128be].each do |klass|
       klass.new.value.should be_zero
     end
   end
 
   it "should pass these tests" do
     [
-      [1, true,  BinData::Int8],
-      [2, false, BinData::Int16le],
-      [2, true,  BinData::Int16be],
-      [4, false, BinData::Int32le],
-      [4, true,  BinData::Int32be],
-      [8, false, BinData::Int64le],
-      [8, true,  BinData::Int64be],
+      [ 1, true,  BinData::Int8],
+      [ 2, false, BinData::Int16le],
+      [ 2, true,  BinData::Int16be],
+      [ 4, false, BinData::Int32le],
+      [ 4, true,  BinData::Int32be],
+      [ 8, false, BinData::Int64le],
+      [ 8, true,  BinData::Int64be],
+      [16, false, BinData::Int128le],
+      [16, true,  BinData::Int128be],
     ].each do |nbytes, big_endian, klass|
       gen_int_test_data(nbytes, big_endian).each do |val, clamped_val, str|
         test_read_write(klass, val, clamped_val, str)
@@ -41,20 +45,24 @@ describe "All unsigned integers" do
      BinData::Uint32le,
      BinData::Uint32be,
      BinData::Uint64le,
-     BinData::Uint64be].each do |klass|
+     BinData::Uint64be,
+     BinData::Uint128le,
+     BinData::Uint128be].each do |klass|
       klass.new.value.should be_zero
     end
   end
 
   it "should pass these tests" do
     [
-      [1, true,  BinData::Uint8],
-      [2, false, BinData::Uint16le],
-      [2, true,  BinData::Uint16be],
-      [4, false, BinData::Uint32le],
-      [4, true,  BinData::Uint32be],
-      [8, false, BinData::Uint64le],
-      [8, true,  BinData::Uint64be],
+      [ 1, true,  BinData::Uint8],
+      [ 2, false, BinData::Uint16le],
+      [ 2, true,  BinData::Uint16be],
+      [ 4, false, BinData::Uint32le],
+      [ 4, true,  BinData::Uint32be],
+      [ 8, false, BinData::Uint64le],
+      [ 8, true,  BinData::Uint64be],
+      [16, false, BinData::Uint128le],
+      [16, true,  BinData::Uint128be],
     ].each do |nbytes, big_endian, klass|
       gen_uint_test_data(nbytes, big_endian).each do |val, clamped_val, str|
         test_read_write(klass, val, clamped_val, str)
@@ -87,11 +95,14 @@ end
 
 # return test data for testing unsigned ints
 def gen_uint_test_data(nbytes, big_endian)
-  raise "nbytes too big" if nbytes > 8
+  raise "nbytes too large" if nbytes > 16
   tests = []
 
+  max_value = (1 << (nbytes * 8)) - 1
+  min_value = 0
+
   # test the minimum value
-  v = 0
+  v = min_value
   s = "\x00" * nbytes
   tests.push [v, v, big_endian ? s : s.reverse]
 
@@ -99,12 +110,12 @@ def gen_uint_test_data(nbytes, big_endian)
   tests.push [v-1, v, big_endian ? s : s.reverse]
 
   # test a value within range
-  v = 0x123456789abcdef0 >> ((8-nbytes) * 8)
-  s = "\x12\x34\x56\x78\x9a\xbc\xde\xf0".slice(0, nbytes)
+  v = 0x123456789abcdef0123456789abcdef0 >> ((16-nbytes) * 8)
+  s = "\x12\x34\x56\x78\x9a\xbc\xde\xf0\x12\x34\x56\x78\x9a\xbc\xde\xf0".slice(0, nbytes)
   tests.push [v, v, big_endian ? s : s.reverse]
 
   # test the maximum value
-  v = (1 << (nbytes * 8)) - 1
+  v = max_value
   s = "\xff" * nbytes
   tests.push [v, v, big_endian ? s : s.reverse]
 
@@ -116,12 +127,15 @@ end
 
 # return test data for testing signed ints
 def gen_int_test_data(nbytes, big_endian)
-  raise "nbytes too big" if nbytes > 8
+  raise "nbytes too large" if nbytes > 16
   tests = []
 
+  max_value = (1 << (nbytes * 8 - 1)) - 1
+  min_value = -max_value - 1
+
   # test the minimum value
-  v = -((1 << (nbytes * 8 - 1)) - 1) -1
-  s = "\x80\x00\x00\x00\x00\x00\x00\x00".slice(0, nbytes)
+  v = min_value
+  s = "\x80" + "\x00" * (nbytes - 1)
   tests.push [v, v, big_endian ? s : s.reverse]
 
   # values below minimum should be clamped to minimum
@@ -133,12 +147,12 @@ def gen_int_test_data(nbytes, big_endian)
   tests.push [v, v, big_endian ? s : s.reverse]
 
   # test a +ve value within range
-  v = 0x123456789abcdef0 >> ((8-nbytes) * 8)
-  s = "\x12\x34\x56\x78\x9a\xbc\xde\xf0".slice(0, nbytes)
+  v = 0x123456789abcdef0123456789abcdef0 >> ((16-nbytes) * 8)
+  s = "\x12\x34\x56\x78\x9a\xbc\xde\xf0\x12\x34\x56\x78\x9a\xbc\xde\xf0".slice(0, nbytes)
   tests.push [v, v, big_endian ? s : s.reverse]
 
   # test the maximum value
-  v = (1 << (nbytes * 8 - 1)) - 1
+  v = max_value
   s = "\x7f" + "\xff" * (nbytes - 1)
   tests.push [v, v, big_endian ? s : s.reverse]
 

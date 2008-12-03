@@ -49,6 +49,11 @@ module BinData
         register(subclass.name, subclass)
       end
 
+      # Can this data object self reference itself?
+      def recursive?
+        true
+      end
+
       # Returns or sets the endianess of numerics used in this stucture.
       # Endianess is applied to the fields of this structure.
       # Valid values are :little and :big.

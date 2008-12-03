@@ -44,7 +44,8 @@ module BinData
                 %w{alias and begin break case class def defined do else elsif
                    end ensure false for if in module next nil not or redo
                    rescue retry return self super then true undef unless until
-                   when while yield }).uniq
+                   when while yield} +
+                %w{array element index offset value} ).uniq
 
     # Register this class
     register(self.name, self)
@@ -159,7 +160,8 @@ module BinData
             # ensure names of fields are strings and that params is sanitized
             all_fields = params[:fields].collect do |ftype, fname, fparams|
               fname = fname.to_s
-              klass, sanitized_fparams = sanitizer.sanitize(ftype, fparams)
+              klass = sanitizer.lookup_klass(ftype)
+              sanitized_fparams = sanitizer.sanitize_params(klass, fparams)
               [klass, fname, sanitized_fparams]
             end
             params[:fields] = all_fields
@@ -212,11 +214,11 @@ module BinData
     optional_parameters :endian, :hide
 
     # Creates a new Struct.
-    def initialize(params = {}, env = nil)
-      super(params, env)
+    def initialize(params = {}, parent = nil)
+      super(params, parent)
 
       # extract field names but don't instantiate the fields
-      @field_names = param(:fields).collect { |k, n, p| n }
+      @field_names = no_eval_param(:fields).collect { |k, n, p| n }
       @field_objs  = []
     end
 
@@ -257,7 +259,7 @@ module BinData
     def field_names(include_hidden = false)
       # collect field names
       names = []
-      hidden = param(:hide)
+      hidden = no_eval_param(:hide)
       @field_names.each do |name|
         if include_hidden or not hidden.include?(name)
           names << name
@@ -269,17 +271,6 @@ module BinData
     # To be called after calling #read.
     def done_read
       @field_objs.each { |f| f.done_read unless f.nil? }
-    end
-
-    # Returns the data object that stores values for +name+.
-    def find_obj_for_name(name)
-      idx = @field_names.index(name)
-      if idx
-        instantiate_obj(idx)
-        @field_objs[idx]
-      else
-        nil
-      end
     end
 
     def offset_of(field)
@@ -332,16 +323,27 @@ module BinData
     #---------------
     private
 
+    # Returns the data object that stores values for +name+.
+    def find_obj_for_name(name)
+      idx = @field_names.index(name)
+      if idx
+        instantiate_obj(idx)
+        @field_objs[idx].obj
+      else
+        nil
+      end
+    end
+
     # Instantiates all fields.
     def instantiate_all
-      (0...@field_names.length).each { |idx| instantiate_obj(idx) }
+      @field_names.each_with_index { |name, i| instantiate_obj(i) }
     end
 
     # Instantiates the field object at position +idx+.
     def instantiate_obj(idx)
       if @field_objs[idx].nil?
-        fklass, fname, fparams = param(:fields)[idx]
-        @field_objs[idx] = fklass.new(fparams, create_env)
+        fklass, fname, fparams = no_eval_param(:fields)[idx]
+        @field_objs[idx] = fklass.new(fparams, self)
       end
     end
 

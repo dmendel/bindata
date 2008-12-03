@@ -67,6 +67,11 @@ module BinData
         register(subclass.name, subclass)
       end
 
+      # Can this data object self reference itself?
+      def recursive?
+        true
+      end
+
       # Returns or sets the endianess of numerics used in this stucture.
       # Endianess is applied to the fields of this structure.
       # Valid values are :little and :big.
@@ -138,10 +143,10 @@ module BinData
     # These are the parameters used by this class.
     mandatory_parameter :struct_params
 
-    def initialize(params = {}, env = nil)
-      super(params, env)
+    def initialize(params = {}, parent = nil)
+      super(params, parent)
 
-      @struct = BinData::Struct.new(param(:struct_params), create_env)
+      @struct = BinData::Struct.new(no_eval_param(:struct_params), self)
     end
 
     # Forward method calls to the internal struct.

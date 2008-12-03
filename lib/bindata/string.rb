@@ -84,7 +84,9 @@ module BinData
     # trimmed as required.
     def value
       v = val_to_str(_value)
-      v.sub!(/#{eval_param(:pad_char)}*$/, "") if param(:trim_value) == true
+      if no_eval_param(:trim_value) == true
+        v.sub!(/#{eval_param(:pad_char)}*$/, "")
+      end
       v
     end
 

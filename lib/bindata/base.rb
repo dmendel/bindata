@@ -114,8 +114,8 @@ module BinData
         @mutually_exclusive_parameters
       end
 
-      # Returns a list of parameters that are accepted by this object
-      def accepted_parameters
+      # Returns a list of internal parameters that are accepted by this object
+      def internal_parameters
         (mandatory_parameters + optional_parameters + default_parameters.keys).uniq
       end
 
@@ -149,6 +149,11 @@ module BinData
         end
       end
 
+      # Can this data object self reference itself?
+      def recursive?
+        false
+      end
+
       # Instantiates this class and reads from +io+.  For single value objects
       # just the value is returned, otherwise the newly created data object is
       # returned.
@@ -173,19 +178,19 @@ module BinData
     # Creates a new data object.
     #
     # +params+ is a hash containing symbol keys.  Some params may
-    # reference callable objects (methods or procs).  +env+ is the
-    # environment that these callable objects are evaluated in.
-    def initialize(params = {}, env = nil)
-      unless SanitizedParameters === params
-        params = Sanitizer.sanitize(self, params)
-      end
+    # reference callable objects (methods or procs).  +parent+ is the
+    # parent data object (e.g. struct, array, choice) this object resides
+    # under.
+    def initialize(params = {}, parent = nil)
+      @params = Sanitizer.sanitize(self.class, params)
+      @parent = parent
+    end
 
-      @params = params.accepted_parameters
+    # The parent data object.
+    attr_accessor :parent
 
-      # set up the environment
-      @env             = env || LazyEvalEnv.new
-      @env.params      = params.extra_parameters
-      @env.data_object = self
+    def parameters
+      @params.extra_parameters
     end
 
     # Reads data into this data object by calling #do_read then #done_read.
@@ -267,33 +272,33 @@ module BinData
       snapshot.inspect
     end
 
+    # Returns the object this object represents.
+    def obj
+      self
+    end
+
     #---------------
     private
-
-    # Creates a new LazyEvalEnv for use by a child data object.
-    def create_env
-      LazyEvalEnv.new(@env)
-    end
 
     # Returns the value of the evaluated parameter.  +key+ references a
     # parameter from the +params+ hash used when creating the data object.
     # +values+ contains data that may be accessed when evaluating +key+.
     # Returns nil if +key+ does not refer to any parameter.
     def eval_param(key, values = nil)
-      @env.lazy_eval(@params[key], values)
+      LazyEvaluator.eval(no_eval_param(key), self, values)
     end
 
     # Returns the parameter from the +params+ hash referenced by +key+.
     # Use this method if you are sure the parameter is not to be evaluated.
     # You most likely want #eval_param.
-    def param(key)
-      @params[key]
+    def no_eval_param(key)
+      @params.internal_parameters[key]
     end
 
     # Returns whether +key+ exists in the +params+ hash used when creating
     # this data object.
     def has_param?(key)
-      @params.has_key?(key.to_sym)
+      @params.internal_parameters.has_key?(key)
     end
 
     # Checks that the current offset of +io+ is as expected.  This should

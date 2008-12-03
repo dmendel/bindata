@@ -30,35 +30,34 @@ describe BinData::Sanitizer do
 
   it "should raise error on unknown types" do
     lambda {
-      @sanitizer.sanitize(:does_not_exist, {})
+      @sanitizer.lookup_klass(:does_not_exist)
     }.should raise_error(TypeError)
   end
 
   it "should lookup when endian is set" do
     @sanitizer.with_endian(:little) do
-      klass, params = @sanitizer.sanitize(:int16, {})
+      klass = @sanitizer.lookup_klass(:int16)
       klass.should == BinData::Int16le
     end
   end
 
   it "should nest with_endian calls" do
     @sanitizer.with_endian(:little) do
-      klass, params = @sanitizer.sanitize(:int16, {})
+      klass = @sanitizer.lookup_klass(:int16)
       klass.should == BinData::Int16le
 
       @sanitizer.with_endian(:big) do
-        klass, params = @sanitizer.sanitize(:int16, {})
+        klass = @sanitizer.lookup_klass(:int16)
         klass.should == BinData::Int16be
       end
 
-      klass, params = @sanitizer.sanitize(:int16, {})
+      klass = @sanitizer.lookup_klass(:int16)
       klass.should == BinData::Int16le
     end
   end
 
   it "should sanitize parameters" do
-    klass, params = @sanitizer.sanitize(:int8, {:value => 3})
-    klass.should == BinData::Int8
+    params = @sanitizer.sanitize_params(BinData::Int8, {:value => 3})
     params.should have_key(:value)
   end
 end
@@ -66,14 +65,14 @@ end
 describe BinData::SanitizedParameters, "with bad input" do
   before(:each) do
     @mock = mock("dummy class")
-    @mock.stub!(:accepted_parameters).and_return([:a, :b, :c])
+    @mock.stub!(:internal_parameters).and_return([:a, :b, :c])
     @params = {:a => 1, :b => 2, :c => 3, :d => 4, :e => 5}
   end
 
   it "should convert keys to symbols" do
     the_params = {'a' => 1, 'b' => 2, 'e' => 5}
     sanitized = BinData::SanitizedParameters.new(@mock, the_params)
-    sanitized.accepted_parameters.should == ({:a => 1, :b => 2})
+    sanitized.internal_parameters.should == ({:a => 1, :b => 2})
     sanitized.extra_parameters.should == ({:e => 5})
   end
 
@@ -88,13 +87,13 @@ end
 describe BinData::SanitizedParameters do
   before(:each) do
     @mock = mock("dummy class")
-    @mock.stub!(:accepted_parameters).and_return([:a, :b, :c])
+    @mock.stub!(:internal_parameters).and_return([:a, :b, :c])
     @params = {:a => 1, :b => 2, :c => 3, :d => 4, :e => 5}
   end
 
   it "should partition" do
     sanitized = BinData::SanitizedParameters.new(@mock, @params)
-    sanitized.accepted_parameters.should == ({:a => 1, :b => 2, :c => 3})
+    sanitized.internal_parameters.should == ({:a => 1, :b => 2, :c => 3})
     sanitized.extra_parameters.should == ({:d => 4, :e => 5})
   end
 

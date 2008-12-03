@@ -37,7 +37,7 @@ describe BinData::Base, "with default parameters" do
     eval <<-END
       class DefaultBase < BinData::Base
         default_parameter :p1 => "a"
-        public :has_param?, :param
+        public :has_param?, :no_eval_param
       end
     END
   end
@@ -45,13 +45,13 @@ describe BinData::Base, "with default parameters" do
   it "should set default parameters if they are not specified" do
     obj = DefaultBase.new
     obj.should have_param(:p1)
-    obj.param(:p1).should == "a"
+    obj.no_eval_param(:p1).should == "a"
   end
 
   it "should be able to override default parameters" do
     obj = DefaultBase.new(:p1 => "b")
     obj.should have_param(:p1)
-    obj.param(:p1).should == "b"
+    obj.no_eval_param(:p1).should == "b"
   end
 end
 
@@ -86,7 +86,7 @@ describe BinData::Base, "with multiple parameters" do
         mandatory_parameter :p1
         optional_parameter  :p2
         default_parameter   :p3 => '3'
-        public :has_param?, :eval_param, :param
+        public :has_param?, :eval_param, :no_eval_param
       end
     END
   end
@@ -96,10 +96,8 @@ describe BinData::Base, "with multiple parameters" do
   end
 
   it "should identify extra parameters" do
-    env = mock("env")
-    env.should_receive(:params=).with(:p4 => 4, :p5 => 5)
-    env.should_receive(:data_object=)
-    obj = WithParamBase.new({:p1 => 1, :p3 => 3, :p4 => 4, :p5 => 5}, env)
+    obj = WithParamBase.new({:p1 => 1, :p3 => 3, :p4 => 4, :p5 => 5})
+    obj.parameters.should == {:p4 => 4, :p5 => 5}
   end
 
   it "should only recall mandatory, default and optional parameters" do
@@ -122,17 +120,17 @@ describe BinData::Base, "with multiple parameters" do
 
   it "should be able to access without evaluating" do
     obj = WithParamBase.new(:p1 => :asym, :p3 => lambda {1 + 2})
-    obj.param(:p1).should == :asym
-    obj.param(:p2).should be_nil
-    obj.param(:p3).should respond_to(:arity)
+    obj.no_eval_param(:p1).should == :asym
+    obj.no_eval_param(:p2).should be_nil
+    obj.no_eval_param(:p3).should respond_to(:arity)
   end
 
   it "should identify accepted parameters" do
-    accepted_parameters = WithParamBase.accepted_parameters
-    accepted_parameters.should include(:p1)
-    accepted_parameters.should include(:p2)
-    accepted_parameters.should include(:p3)
-    accepted_parameters.should_not include(:p4)
+    internal_parameters = WithParamBase.internal_parameters
+    internal_parameters.should include(:p1)
+    internal_parameters.should include(:p2)
+    internal_parameters.should include(:p3)
+    internal_parameters.should_not include(:p4)
   end
 end
 
@@ -265,7 +263,7 @@ describe BinData::Base, "with :readwrite" do
   before(:all) do
     eval <<-END
       class NoIOBase < BinData::Base
-        public :has_param?, :param
+        public :has_param?, :no_eval_param
       end
     END
   end
@@ -274,7 +272,7 @@ describe BinData::Base, "with :readwrite" do
     obj = NoIOBase.new(:readwrite => "a")
     obj.should_not have_param(:readwrite)
     obj.should have_param(:onlyif)
-    obj.param(:onlyif).should == "a"
+    obj.no_eval_param(:onlyif).should == "a"
   end
 end
 

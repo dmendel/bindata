@@ -4,12 +4,17 @@ require 'bindata/sanitize'
 
 module BinData
   # A Choice is a collection of data objects of which only one is active
-  # at any particular time.
+  # at any particular time.  Method calls will be delegated to the active
+  # choice.
   #
   #   require 'bindata'
   #
   #   type1 = [:string, {:value => "Type1"}]
   #   type2 = [:string, {:value => "Type2"}]
+  #
+  #   choices = {5 => type1, 17 => type2}
+  #   a = BinData::Choice.new(:choices => choices, :selection => 5)
+  #   a.value # => "Type1"
   #
   #   choices = [ type1, type2 ]
   #   a = BinData::Choice.new(:choices => choices, :selection => 1)
@@ -19,17 +24,14 @@ module BinData
   #   a = BinData::Choice.new(:choices => choices, :selection => 3)
   #   a.value # => "Type1"
   #
-  #   choices = {5 => type1, 17 => type2}
-  #   a = BinData::Choice.new(:choices => choices, :selection => 5)
-  #   a.value # => "Type1"
-  #
   #   mychoice = 'big'
   #   choices = {'big' => :uint16be, 'little' => :uint16le}
   #   a = BinData::Choice.new(:choices => choices,
   #                           :selection => lambda { mychoice })
   #   a.value  = 256
   #   a.to_s #=> "\001\000"
-  #   mychoice[0..-1] = 'little'
+  #   mychoice.replace 'little'
+  #   a.selection #=> 'little'
   #   a.to_s #=> "\000\001"
   #
   #
@@ -63,48 +65,80 @@ module BinData
         if params.has_key?(:choices)
           choices = params[:choices]
 
-          case choices
-          when ::Hash
-            new_choices = {}
-            choices.keys.each do |key|
-              # ensure valid hash keys
-              if Symbol === key
-                msg = ":choices hash may not have symbols for keys"
-                raise ArgumentError, msg
-              elsif key.nil?
-                raise ArgumentError, ":choices hash may not have nil key"
-              end
-
-              # collect sanitized choice values
-              type, param = choices[key]
-              new_choices[key] = sanitizer.sanitize(type, param)
+          # convert array to hash keyed by index
+          if ::Array === choices
+            tmp = {}
+            choices.each_with_index do |el, i|
+              tmp[i] = el unless el.nil?
             end
-            params[:choices] = new_choices
-          when ::Array
-            choices.collect! do |type, param|
-              if type.nil?
-                # allow sparse arrays
-                nil
-              else
-                sanitizer.sanitize(type, param)
-              end
-            end
-            params[:choices] = choices
-          else
-            raise ArgumentError, "unknown type for :choices (#{choices.class})"
+            choices = tmp
           end
+
+          # ensure valid hash keys
+          if choices.has_key?(nil)
+            raise ArgumentError, ":choices hash may not have nil key"
+          end
+          if choices.keys.detect { |k| Symbol === k }
+            raise ArgumentError, ":choices hash may not have symbols for keys"
+          end
+
+          # sanitize each choice
+          new_choices = {}
+          choices.each_pair do |key, val|
+            type, param = val
+            klass = sanitizer.lookup_klass(type)
+            sanitized_params = sanitizer.sanitize_params(klass, param)
+            new_choices[key] = [klass, sanitized_params]
+          end
+          params[:choices] = new_choices
         end
 
         super(sanitizer, params)
       end
     end
 
-    def initialize(params = {}, env = nil)
-      super(params, env)
+    def initialize(params = {}, parent = nil)
+      super(params, parent)
 
-      # prepare collection of instantiated choice objects
-      @choices = (param(:choices) === ::Array) ? [] : {}
+      @choices  = {}
       @last_key = nil
+    end
+
+    # A convenience method that returns the current selection.
+    def selection
+      eval_param(:selection)
+    end
+
+    # This method does not exist. This stub only exists to document why.
+    # There is no #selection= method to complement the #selection method.
+    # This is deliberate to promote the declarative nature of BinData.
+    #
+    # If you really *must* be able to programmatically adjust the selection
+    # then try something like the following.
+    #
+    #   class ProgrammaticChoice < BinData::MultiValue
+    #     choice :data, :choices => :choices, :selection => :selection
+    #     attrib_accessor :selection
+    #   end
+    #
+    #   type1 = [:string, {:value => "Type1"}]
+    #   type2 = [:string, {:value => "Type2"}]
+    #
+    #   choices = {5 => type1, 17 => type2}
+    #   pc = ProgrammaticChoice.new(:choices => choices)
+    #
+    #   pc.selection = 5
+    #   pc.data #=> "Type1"
+    #
+    #   pc.selection = 17
+    #   pc.data #=> "Type2"
+    def selection=(v)
+      raise NoMethodError
+    end
+
+    # A choice represents a specific object.
+    def obj
+      the_choice
     end
 
     def_delegators :the_choice, :clear, :clear?, :single_value?
@@ -138,11 +172,11 @@ module BinData
       obj = @choices[key]
       if obj.nil?
         # instantiate choice object
-        choice_klass, choice_params = param(:choices)[key]
+        choice_klass, choice_params = no_eval_param(:choices)[key]
         if choice_klass.nil?
           raise IndexError, "selection #{key} does not exist in :choices"
         end
-        obj = choice_klass.new(choice_params, create_env)
+        obj = choice_klass.new(choice_params, self)
         @choices[key] = obj
       end
 

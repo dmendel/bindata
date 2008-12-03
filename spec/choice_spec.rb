@@ -30,11 +30,6 @@ describe BinData::Choice, "when instantiating" do
     lambda { BinData::Choice.new(args) }.should raise_error(TypeError)
   end
 
-  it "should fail if :choices isn't an Array or Hash" do
-    args = {:choices => :does_not_exist, :selection => 0}
-    lambda { BinData::Choice.new(args) }.should raise_error(ArgumentError)
-  end
-
   it "should fail if :choices Hash has a symbol as key" do
     args = {:choices => {:a => :int8}, :selection => 0}
     lambda { BinData::Choice.new(args) }.should raise_error(ArgumentError)
@@ -58,10 +53,15 @@ describe BinData::Choice, "with choices array" do
 
   it "should be able to select the choice" do
     @chooser.choice = 0
+    @data.selection.should == 0
     @data.value.should == 3
+
     @chooser.choice = 1
+    @data.selection.should == 1
     @data.value.should == 5
+
     @chooser.choice = 2
+    @data.selection.should == 2
     @data.value.should == 7
   end
 
@@ -105,8 +105,11 @@ describe BinData::Choice, "with sparse choices array" do
 
   it "should be able to select the choice" do
     @chooser.choice = 3
+    @data.selection.should == 3
     @data.value.should == 3
+
     @chooser.choice = 7
+    @data.selection.should == 7
     @data.value.should == 7
   end
 
@@ -134,8 +137,11 @@ describe BinData::Choice, "with choices hash" do
   it "should be able to select the choice" do
     @chooser.choice = 3
     @data.value.should == 3
+    @data.selection.should == 3
+
     @chooser.choice = 7
     @data.value.should == 7
+    @data.selection.should == 7
   end
 
   it "should not be able to select an invalid choice" do

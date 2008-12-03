@@ -77,7 +77,9 @@ module BinData
 
         if params.has_key?(:type)
           type, el_params = params[:type]
-          params[:type] = sanitizer.sanitize(type, el_params)
+          klass = sanitizer.lookup_klass(type)
+          sanitized_params = sanitizer.sanitize_params(klass, el_params)
+          params[:type] = [klass, sanitized_params]
         end
 
         super(sanitizer, params)
@@ -85,10 +87,10 @@ module BinData
     end
 
     # Creates a new Array
-    def initialize(params = {}, env = nil)
-      super(params, env)
+    def initialize(params = {}, parent = nil)
+      super(params, parent)
 
-      klass, el_params = param(:type)
+      klass, el_params = no_eval_param(:type)
 
       @element_list    = nil
       @element_klass   = klass
@@ -142,6 +144,11 @@ module BinData
       self.last
     end
 
+    def index(obj)
+      # TODO handle single values
+      elements.index(obj)
+    end
+
     # Pushes the given object(s) on to the end of this array. 
     # This expression returns the array itself, so several appends may 
     # be chained together.
@@ -169,7 +176,7 @@ module BinData
       end
 
       data = elements[*args]
-      if data.respond_to?(:each)
+      if args.length > 1 or ::Range === args[0]
         data.collect { |el| (el && el.single_value?) ? el.value : el }
       else
         (data && data.single_value?) ? data.value : data
@@ -205,13 +212,11 @@ module BinData
     # If the array is empty, the first form returns nil, and the second
     # form returns an empty array.
     def first(n = nil)
-      if n.nil?
-        if elements.empty?
-          # explicitly return nil as arrays grow automatically
-          nil
-        else
-          self[0]
-        end
+      if n.nil? and elements.empty?
+        # explicitly return nil as arrays grow automatically
+        nil
+      elsif n.nil?
+        self[0]
       else
         self[0, n]
       end
@@ -253,7 +258,7 @@ module BinData
       if has_param?(:initial_length)
         elements.each { |f| f.do_read(io) }
       elsif has_param?(:read_until)
-        if param(:read_until) == :eof
+        if no_eval_param(:read_until) == :eof
           @element_list = nil
           loop do
             element = append_new_element
@@ -320,9 +325,7 @@ module BinData
       # ensure @element_list is initialised
       elements()
 
-      env = create_env
-      env.add_variable(:index, @element_list.length)
-      element = @element_klass.new(@element_params, env)
+      element = @element_klass.new(@element_params, self)
       @element_list << element
       element
     end

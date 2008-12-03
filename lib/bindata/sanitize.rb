@@ -1,14 +1,56 @@
 require 'forwardable'
 
 module BinData
+
+  # A BinData object accepts arbitrary parameters.  This class only contains
+  # parameters that have been sanitized, and categorizes them according to
+  # whether they are BinData::Base.internal_parameters or are extra.
+  class SanitizedParameters
+    extend Forwardable
+
+    # Sanitize the given parameters.
+    def initialize(klass, params)
+      @hash = params
+      @internal_parameters = {}
+      @extra_parameters = {}
+
+      # partition parameters into known and extra parameters
+      @hash.each do |k,v|
+        k = k.to_sym
+        if v.nil?
+          raise ArgumentError, "parameter :#{k} has nil value in #{klass}"
+        end
+
+        if klass.internal_parameters.include?(k)
+          @internal_parameters[k] = v
+        else
+          @extra_parameters[k] = v
+        end
+      end
+    end
+
+    attr_reader :internal_parameters, :extra_parameters
+
+    def_delegators :@hash, :[], :has_key?, :include?, :keys
+  end
+
+  # The Sanitizer sanitizes the parameters that are passed when creating a
+  # BinData object.  Sanitizing consists of checking for mandatory, optional
+  # and default parameters and ensuring the values of known parameters are
+  # valid.
   class Sanitizer
+
     class << self
+
       # Sanitize +params+ for +obj+.
       # Returns sanitized parameters.
-      def sanitize(obj, params)
-        sanitizer = self.new
-        klass, new_params = sanitizer.sanitize(obj.class, params)
-        new_params
+      def sanitize(klass, params)
+        if SanitizedParameters === params
+          params
+        else
+          sanitizer = self.new
+          sanitizer.sanitize_params(klass, params)
+        end
       end
 
       # Returns true if +type+ is registered.
@@ -52,70 +94,44 @@ module BinData
       end
     end
 
-    # Sanitizes +params+ for +type+.
-    # Returns [klass, sanitized_params]
-    def sanitize(type, params)
-      if Class === type
-        klass = type
-      else
-        klass = self.class.lookup(type, @endian)
-        raise TypeError, "unknown type '#{type}'" if klass.nil?
-      end
+    # Converts +type+ into the appropriate class.
+    def lookup_klass(type)
+      klass = self.class.lookup(type, @endian)
+      raise TypeError, "unknown type '#{type}'" if klass.nil?
+      klass
+    end
 
+    # Sanitizes +params+ for +klass+.
+    # Returns +sanitized_params+.
+    def sanitize_params(klass, params)
       new_params = params.nil? ? {} : params.dup
 
-      if @seen.include?(klass)
+      if klass.recursive? and @seen.include?(klass)
         # This klass is defined recursively.  Remember the current endian
         # and delay sanitizing the parameters until later.
-        if @endian != nil and klass.accepted_parameters.include?(:endian) and
-            not new_params.has_key?(:endian)
-          new_params[:endian] = @endian
-        end
+        new_params[:endian] = @endian if can_store_endian?(klass, new_params)
+        ret_val = new_params
       else
-        # subclasses of MultiValue may be defined recursively
-        # TODO: define a class field instead
-        possibly_recursive = (BinData.const_defined?(:MultiValue) and 
-                              klass.ancestors.include?(BinData.const_get(:MultiValue)))
-        @seen.push(klass) if possibly_recursive
+        @seen.push(klass)
 
+        # Sanitize new_params.  This may recursively call this method again.
         klass.sanitize_parameters!(self, new_params)
-        new_params = SanitizedParameters.new(klass, new_params)
+        ret_val = SanitizedParameters.new(klass, new_params)
+
+        @seen.pop
       end
 
-      [klass, new_params]
-    end
-  end
-
-  # A BinData object accepts arbitrary parameters.  This class ensures that
-  # the parameters have been sanitized, and categorizes them according to
-  # whether they are BinData::Base.accepted_parameters or are extra.
-  class SanitizedParameters
-    extend Forwardable
-
-    # Sanitize the given parameters.
-    def initialize(klass, params)
-      @hash = params
-      @accepted_parameters = {}
-      @extra_parameters = {}
-
-      # partition parameters into known and extra parameters
-      @hash.each do |k,v|
-        k = k.to_sym
-        if v.nil?
-          raise ArgumentError, "parameter :#{k} has nil value in #{klass}"
-        end
-
-        if klass.accepted_parameters.include?(k)
-          @accepted_parameters[k] = v
-        else
-          @extra_parameters[k] = v
-        end
-      end
+      ret_val
     end
 
-    attr_reader :accepted_parameters, :extra_parameters
+    #---------------
+    private
 
-    def_delegators :@hash, :[], :has_key?, :include?, :keys
+    # Can we store the current endian for later?
+    def can_store_endian?(klass, params)
+      (@endian != nil and klass.internal_parameters.include?(:endian) and
+       not params.has_key?(:endian))
+    end
   end
 end
 

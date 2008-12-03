@@ -86,9 +86,9 @@ describe BinData::Struct, "with multiple fields" do
   end
 
   it "should identify accepted parameters" do
-    BinData::Struct.accepted_parameters.should include(:fields)
-    BinData::Struct.accepted_parameters.should include(:hide)
-    BinData::Struct.accepted_parameters.should include(:endian)
+    BinData::Struct.internal_parameters.should include(:fields)
+    BinData::Struct.internal_parameters.should include(:hide)
+    BinData::Struct.internal_parameters.should include(:endian)
   end
 
   it "should return field names" do
