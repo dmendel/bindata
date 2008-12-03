@@ -1,6 +1,6 @@
 = BinData Changelog
 
-== Version
+== Version 0.9.3 (2008-12-03)
 
 * Arrays can now :read_until => :eof
 * TCPSocket and UDPSocket can now be used as input streams (patch courtesy
