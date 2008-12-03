@@ -18,7 +18,7 @@ describe BinData::Base, "with mandatory parameters" do
   before(:all) do
     eval <<-END
       class MandatoryBase < BinData::Base
-        mandatory_parameter :p1
+        bindata_mandatory_parameter :p1
       end
     END
   end
@@ -36,7 +36,7 @@ describe BinData::Base, "with default parameters" do
   before(:all) do
     eval <<-END
       class DefaultBase < BinData::Base
-        default_parameter :p1 => "a"
+        bindata_default_parameter :p1 => "a"
         public :has_param?, :no_eval_param
       end
     END
@@ -59,8 +59,8 @@ describe BinData::Base, "with mutually exclusive parameters" do
   before(:all) do
     eval <<-END
       class MutexParamBase < BinData::Base
-        optional_parameters :p1, :p2
-        mutually_exclusive_parameters :p1, :p2
+        bindata_optional_parameters :p1, :p2
+        bindata_mutually_exclusive_parameters :p1, :p2
       end
     END
   end
@@ -83,9 +83,9 @@ describe BinData::Base, "with multiple parameters" do
   before(:all) do
     eval <<-END
       class WithParamBase < BinData::Base
-        mandatory_parameter :p1
-        optional_parameter  :p2
-        default_parameter   :p3 => '3'
+        bindata_mandatory_parameter :p1
+        bindata_optional_parameter  :p2
+        bindata_default_parameter   :p3 => '3'
         public :has_param?, :eval_param, :no_eval_param
       end
     END

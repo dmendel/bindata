@@ -141,7 +141,7 @@ module BinData
     end
 
     # These are the parameters used by this class.
-    mandatory_parameter :struct_params
+    bindata_mandatory_parameter :struct_params
 
     def initialize(params = {}, parent = nil)
       super(params, parent)

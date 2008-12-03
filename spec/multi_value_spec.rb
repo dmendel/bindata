@@ -286,6 +286,51 @@ describe BinData::MultiValue, "defined recursively" do
     obj.nxt.nxt.val = 7
     obj.to_s.should == "\x00\x05\x01\x00\x06\x01\x00\x07\x00"
   end
-
 end
 
+describe BinData::MultiValue, "with custom mandatory parameters" do
+  before(:all) do
+    eval <<-END
+      class MandatoryMultiValue < BinData::MultiValue
+        mandatory_parameter :arg1
+
+        uint8 :a, :value => :arg1
+      end
+    END
+  end
+
+  it "should raise error if mandatory parameter is not supplied" do
+    lambda { MandatoryMultiValue.new }.should raise_error(ArgumentError)
+  end
+
+  it "should use mandatory parameter" do
+    obj = MandatoryMultiValue.new(:arg1 => 5)
+    obj.a.should == 5
+  end
+end
+
+describe BinData::MultiValue, "with custom default parameters" do
+  before(:all) do
+    eval <<-END
+      class DefaultMultiValue < BinData::MultiValue
+        default_parameter :arg1 => 5
+
+        uint8 :a, :value => :arg1
+      end
+    END
+  end
+
+  it "should not raise error if default parameter is not supplied" do
+    lambda { DefaultMultiValue.new }.should_not raise_error(ArgumentError)
+  end
+
+  it "should use default parameter" do
+    obj = DefaultMultiValue.new
+    obj.a.should == 5
+  end
+
+  it "should be able to override default parameter" do
+    obj = DefaultMultiValue.new(:arg1 => 7)
+    obj.a.should == 7
+  end
+end

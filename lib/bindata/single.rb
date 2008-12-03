@@ -47,8 +47,8 @@ module BinData
   #                           the value just read in.
   class Single < BinData::Base
     # These are the parameters used by this class.
-    optional_parameters :initial_value, :value, :check_value
-    mutually_exclusive_parameters :initial_value, :value
+    bindata_optional_parameters :initial_value, :value, :check_value
+    bindata_mutually_exclusive_parameters :initial_value, :value
 
     def initialize(params = {}, parent = nil)
       super(params, parent)

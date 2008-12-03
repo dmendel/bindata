@@ -1,5 +1,6 @@
 require 'bindata/io'
 require 'bindata/lazy'
+require 'bindata/params'
 require 'bindata/registry'
 require 'bindata/sanitize'
 require 'stringio'
@@ -32,91 +33,39 @@ module BinData
   #                           <tt>:check_offset</tt>, except that it will
   #                           adjust the IO offset instead of raising an error.
   class Base
+
     class << self
-      # Returns the mandatory parameters used by this class.  Any given args
-      # are appended to the parameters list.  The parameters for a class will
-      # include the parameters of its ancestors.
-      def mandatory_parameters(*args)
-        unless defined? @mandatory_parameters
-          @mandatory_parameters = []
-          ancestors[1..-1].each do |parent|
-            if parent.respond_to?(:mandatory_parameters)
-              pmp = parent.mandatory_parameters
-              @mandatory_parameters.concat(pmp)
-            end
-          end
-        end
-        if not args.empty?
-          args.each { |arg| @mandatory_parameters << arg.to_sym }
-          @mandatory_parameters.uniq!
-        end
-        @mandatory_parameters
-      end
-      alias_method :mandatory_parameter, :mandatory_parameters
+      extend Parameters
 
-      # Returns the optional parameters used by this class.  Any given args
-      # are appended to the parameters list.  The parameters for a class will
-      # include the parameters of its ancestors.
-      def optional_parameters(*args)
-        unless defined? @optional_parameters
-          @optional_parameters = []
-          ancestors[1..-1].each do |parent|
-            if parent.respond_to?(:optional_parameters)
-              pop = parent.optional_parameters
-              @optional_parameters.concat(pop)
-            end
-          end
-        end
-        if not args.empty?
-          args.each { |arg| @optional_parameters << arg.to_sym }
-          @optional_parameters.uniq!
-        end
-        @optional_parameters
-      end
-      alias_method :optional_parameter, :optional_parameters
+      # Define methods for:
+      #   bindata_mandatory_parameters
+      #   bindata_optional_parameters
+      #   bindata_default_parameters
+      #   bindata_mutually_exclusive_parameters
 
-      # Returns the default parameters used by this class.  Any given args
-      # are appended to the parameters list.  The parameters for a class will
-      # include the parameters of its ancestors.
-      def default_parameters(params = {})
-        unless defined? @default_parameters
-          @default_parameters = {}
-          ancestors[1..-1].each do |parent|
-            if parent.respond_to?(:default_parameters)
-              pdp = parent.default_parameters
-              @default_parameters = @default_parameters.merge(pdp)
-            end
-          end
-        end
-        if not params.empty?
-          @default_parameters = @default_parameters.merge(params)
-        end
-        @default_parameters
+      define_x_parameters(:bindata_mandatory, []) do |array, args|
+        args.each { |arg| array << arg.to_sym }
+        array.uniq!
       end
-      alias_method :default_parameter, :default_parameters
 
-      # Returns the pairs of mutually exclusive parameters used by this class.
-      # Any given args are appended to the parameters list.  The parameters for
-      # a class will include the parameters of its ancestors.
-      def mutually_exclusive_parameters(*args)
-        unless defined? @mutually_exclusive_parameters
-          @mutually_exclusive_parameters = []
-          ancestors[1..-1].each do |parent|
-            if parent.respond_to?(:mutually_exclusive_parameters)
-              pmep = parent.mutually_exclusive_parameters
-              @mutually_exclusive_parameters.concat(pmep)
-            end
-          end
-        end
-        if not args.empty?
-          @mutually_exclusive_parameters << [args[0].to_sym, args[1].to_sym]
-        end
-        @mutually_exclusive_parameters
+      define_x_parameters(:bindata_optional, []) do |array, args|
+        args.each { |arg| array << arg.to_sym }
+        array.uniq!
+      end
+
+      define_x_parameters(:bindata_default, {}) do |hash, args|
+        params = args.length > 0 ? args[0] : {}
+        hash.merge!(params)
+      end
+
+      define_x_parameters(:bindata_mutually_exclusive, []) do |array, args|
+        array << [args[0].to_sym, args[1].to_sym]
       end
 
       # Returns a list of internal parameters that are accepted by this object
       def internal_parameters
-        (mandatory_parameters + optional_parameters + default_parameters.keys).uniq
+        (bindata_mandatory_parameters + bindata_optional_parameters +
+         bindata_default_parameters.keys).uniq
       end
 
       # Ensures that +params+ is of the form expected by #initialize.
@@ -128,12 +77,12 @@ module BinData
         end
 
         # add default parameters
-        default_parameters.each do |k,v|
+        bindata_default_parameters.each do |k,v|
           params[k] = v unless params.has_key?(k)
         end
 
         # ensure mandatory parameters exist
-        mandatory_parameters.each do |prm|
+        bindata_mandatory_parameters.each do |prm|
           if not params.has_key?(prm)
             raise ArgumentError, "parameter ':#{prm}' must be specified " +
                                  "in #{self}"
@@ -141,7 +90,7 @@ module BinData
         end
 
         # ensure mutual exclusion
-        mutually_exclusive_parameters.each do |param1, param2|
+        bindata_mutually_exclusive_parameters.each do |param1, param2|
           if params.has_key?(param1) and params.has_key?(param2)
             raise ArgumentError, "params #{param1} and #{param2} " +
                                  "are mutually exclusive"
@@ -171,9 +120,9 @@ module BinData
     end
 
     # Define the parameters we use in this class.
-    optional_parameters :check_offset, :adjust_offset
-    default_parameters :onlyif => true
-    mutually_exclusive_parameters :check_offset, :adjust_offset
+    bindata_optional_parameters :check_offset, :adjust_offset
+    bindata_default_parameters :onlyif => true
+    bindata_mutually_exclusive_parameters :check_offset, :adjust_offset
 
     # Creates a new data object.
     #
@@ -189,6 +138,7 @@ module BinData
     # The parent data object.
     attr_accessor :parent
 
+    # Returns all the custom parameters supplied to this data object.
     def parameters
       @params.extra_parameters
     end

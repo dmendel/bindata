@@ -59,9 +59,9 @@ module BinData
     register(self.name, self)
 
     # These are the parameters used by this class.
-    mandatory_parameter :type
-    optional_parameters :initial_length, :read_until
-    mutually_exclusive_parameters :initial_length, :read_until
+    bindata_mandatory_parameter :type
+    bindata_optional_parameters :initial_length, :read_until
+    bindata_mutually_exclusive_parameters :initial_length, :read_until
 
     class << self
       # Ensures that +params+ is of the form expected by #initialize.

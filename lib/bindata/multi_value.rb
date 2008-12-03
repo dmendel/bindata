@@ -1,3 +1,4 @@
+require 'bindata/params'
 require 'bindata/struct'
 
 module BinData
@@ -44,6 +45,8 @@ module BinData
   class MultiValue < BinData::Struct
 
     class << self
+      extend Parameters
+
       # Register the names of all subclasses of this class.
       def inherited(subclass) #:nodoc:
         register(subclass.name, subclass)
@@ -132,7 +135,36 @@ module BinData
         params[:fields] = fields
         params[:hide]   = hide
 
+        # add default parameters
+        default_parameters.each do |k,v|
+          params[k] = v unless params.has_key?(k)
+        end
+
+        # ensure mandatory parameters exist
+        mandatory_parameters.each do |prm|
+          if not params.has_key?(prm)
+            raise ArgumentError, "parameter ':#{prm}' must be specified " +
+                                 "in #{self}"
+          end
+        end
+
         super(sanitizer, params)
+      end
+
+      # Sets the mandatory parameters used by this class.
+      def mandatory_parameters(*args) ; end
+
+      define_x_parameters(:mandatory, []) do |array, args|
+        args.each { |arg| array << arg.to_sym }
+        array.uniq!
+      end
+
+      # Sets the default parameters used by this class.
+      def default_parameters(params = {}); end
+
+      define_x_parameters(:default, {}) do |hash, args|
+        params = args.length > 0 ? args[0] : {}
+        hash.merge!(params)
       end
     end
   end

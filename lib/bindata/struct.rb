@@ -137,8 +137,8 @@ module BinData
     end
 
     # These are the parameters used by this class.
-    mandatory_parameter :fields
-    optional_parameters :endian, :hide
+    bindata_mandatory_parameter :fields
+    bindata_optional_parameters :endian, :hide
 
     # Creates a new Struct.
     def initialize(params = {}, parent = nil)

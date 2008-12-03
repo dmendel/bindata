@@ -31,7 +31,7 @@ module BinData
     register(self.name, self)
 
     # These are the parameters used by this class.
-    optional_parameters :max_length
+    bindata_optional_parameters :max_length
 
     # Overrides value to return the value of this data excluding the trailing
     # zero byte.

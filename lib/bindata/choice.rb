@@ -56,7 +56,7 @@ module BinData
     register(self.name, self)
 
     # These are the parameters used by this class.
-    mandatory_parameters :choices, :selection
+    bindata_mandatory_parameters :choices, :selection
 
     class << self
 
