@@ -58,80 +58,13 @@ module BinData
     end
 
     class << self
-      #### DEPRECATION HACK to allow inheriting from BinData::Struct
+      #### DEPRECATION HACK to warn about inheriting from BinData::Struct
       #
       def inherited(subclass) #:nodoc:
         if subclass != MultiValue
           # warn about deprecated method - remove before releasing 1.0
-          warn "warning: inheriting from BinData::Struct in deprecated. Inherit from BinData::MultiValue instead."
-
-          register(subclass.name, subclass)
+          fail "error: inheriting from BinData::Struct has been deprecated. Inherit from BinData::MultiValue instead."
         end
-      end
-      def endian(endian = nil)
-        @endian ||= nil
-        if [:little, :big].include?(endian)
-          @endian = endian
-        elsif endian != nil
-          raise ArgumentError, "unknown value for endian '#{endian}'"
-        end
-        @endian
-      end
-      def hide(*args)
-        # note that fields are stored in an instance variable not a class var
-        @hide ||= []
-        args.each do |name|
-          @hide << name.to_s
-        end
-        @hide
-      end
-      def fields
-        @fields || []
-      end
-      def method_missing(symbol, *args)
-        name, params = args
-
-        type = symbol
-        name = name.to_s
-        params ||= {}
-
-        # note that fields are stored in an instance variable not a class var
-        @fields ||= []
-
-        # check that type is known
-        unless Sanitizer.type_exists?(type, endian)
-          raise TypeError, "unknown type '#{type}' for #{self}", caller
-        end
-
-        # check for duplicate names
-        @fields.each do |t, n, p|
-          if n == name
-            raise SyntaxError, "duplicate field '#{name}' in #{self}", caller
-          end
-        end
-
-        # check that name doesn't shadow an existing method
-        if self.instance_methods.include?(name)
-          raise NameError.new("", name),
-                "field '#{name}' shadows an existing method", caller
-        end
-
-        # check that name isn't reserved
-        if self::RESERVED.include?(name)
-          raise NameError.new("", name),
-                "field '#{name}' is a reserved name", caller
-        end
-
-        # remember this field.  These fields will be recalled upon creating
-        # an instance of this class
-        @fields.push([type, name, params])
-      end
-      def deprecated_hack!(params)
-        # possibly override endian
-        endian = params[:endian] || self.endian
-        params[:endian] = endian unless endian.nil?
-        params[:fields] = params[:fields] || self.fields
-        params[:hide] = params[:hide] || self.hide
       end
       #
       #### DEPRECATION HACK to allow inheriting from BinData::Struct
@@ -139,12 +72,6 @@ module BinData
 
       # Ensures that +params+ is of the form expected by #initialize.
       def sanitize_parameters!(sanitizer, params)
-        #### DEPRECATION HACK to allow inheriting from BinData::Struct
-        #
-        deprecated_hack!(params)
-        #
-        #### DEPRECATION HACK to allow inheriting from BinData::Struct
-
         # possibly override endian
         endian = params[:endian]
         if endian != nil
