@@ -34,15 +34,21 @@ module BinData
     def self.create_read_code(nbits, endian)
       c16 = (endian == :little) ? 'v' : 'n'
       c32 = (endian == :little) ? 'V' : 'N'
-      b1  = (endian == :little) ? 0 : 1
-      b2  = (endian == :little) ? 1 : 0
+      idx = (0 ... (nbits / 32)).to_a
+      idx.reverse! if (endian == :little)
 
       case nbits
-      when  8; "io.readbytes(1).unpack('C').at(0)"
-      when 16; "io.readbytes(2).unpack('#{c16}').at(0)"
-      when 32; "io.readbytes(4).unpack('#{c32}').at(0)"
-      when 64; "(a = io.readbytes(8).unpack('#{c32 * 2}'); " +
-                     "(a.at(#{b2}) << 32) + a.at(#{b1}))"
+      when   8; "io.readbytes(1).unpack('C').at(0)"
+      when  16; "io.readbytes(2).unpack('#{c16}').at(0)"
+      when  32; "io.readbytes(4).unpack('#{c32}').at(0)"
+      when  64; "(a = io.readbytes(8).unpack('#{c32 * 2}'); " +
+                     "(a.at(#{idx[0]}) << 32) + " +
+                      "a.at(#{idx[1]}))"
+      when 128; "(a = io.readbytes(16).unpack('#{c32 * 4}'); " +
+                     "((a.at(#{idx[0]}) << 96) + " +
+                      "(a.at(#{idx[1]}) << 64) + " +
+                      "(a.at(#{idx[2]}) << 32) + " +
+                       "a.at(#{idx[3]})))"
       else
         raise "unknown nbits '#{nbits}'"
       end
@@ -51,14 +57,19 @@ module BinData
     def self.create_to_s_code(nbits, endian)
       c16 = (endian == :little) ? 'v' : 'n'
       c32 = (endian == :little) ? 'V' : 'N'
-      v1  = (endian == :little) ? 'val' : '(val >> 32)'
-      v2  = (endian == :little) ? '(val >> 32)' : 'val'
+      vals = (0 ... (nbits / 32)).collect { |i| "(val >> #{32 * i})" }
+      vals.reverse! if (endian == :little)
 
       case nbits
-      when  8; "val.chr"
-      when 16; "[val].pack('#{c16}')"
-      when 32; "[val].pack('#{c32}')"
-      when 64; "[#{v1} & 0xffffffff, #{v2} & 0xffffffff].pack('#{c32 * 2}')"
+      when   8; "val.chr"
+      when  16; "[val].pack('#{c16}')"
+      when  32; "[val].pack('#{c32}')"
+      when  64; "[#{vals[1]} & 0xffffffff, " +
+                 "#{vals[0]} & 0xffffffff].pack('#{c32 * 2}')"
+      when 128; "[#{vals[3]} & 0xffffffff, " +
+                 "#{vals[2]} & 0xffffffff, " +
+                 "#{vals[1]} & 0xffffffff, " +
+                 "#{vals[0]} & 0xffffffff].pack('#{c32 * 4}')"
       else
         raise "unknown nbits '#{nbits}'"
       end
@@ -141,6 +152,18 @@ module BinData
     Integer.create_uint_methods(self, 64, :big)
   end
 
+  # Unsigned 16 byte little endian integer.
+  class Uint128le < BinData::Single
+    register(self.name, self)
+    Integer.create_uint_methods(self, 128, :little)
+  end
+
+  # Unsigned 16 byte big endian integer.
+  class Uint128be < BinData::Single
+    register(self.name, self)
+    Integer.create_uint_methods(self, 128, :big)
+  end
+
   # Signed 1 byte integer.
   class Int8 < BinData::Single
     register(self.name, self)
@@ -181,5 +204,17 @@ module BinData
   class Int64be < BinData::Single
     register(self.name, self)
     Integer.create_int_methods(self, 64, :big)
+  end
+
+  # Signed 16 byte little endian integer.
+  class Int128le < BinData::Single
+    register(self.name, self)
+    Integer.create_int_methods(self, 128, :little)
+  end
+
+  # Signed 16 byte big endian integer.
+  class Int128be < BinData::Single
+    register(self.name, self)
+    Integer.create_int_methods(self, 128, :big)
   end
 end
