@@ -31,7 +31,7 @@ module BinData
       @raw_io = io
 
       # initial stream position if stream supports positioning
-      @initial_pos = io.respond_to?(:pos) ? io.pos : 0
+      @initial_pos = positioning_supported? ? io.pos : 0
 
       # bits when reading
       @rnbits  = 0
@@ -50,7 +50,7 @@ module BinData
     # Returns the current offset of the io stream.  The exact value of
     # the offset when reading bitfields is not defined.
     def offset
-      if @raw_io.respond_to?(:pos)
+      if positioning_supported?
         @raw_io.pos - @initial_pos
       else
         # stream does not support positioning
@@ -79,8 +79,8 @@ module BinData
       str
     end
 
-    # Reads exactly +nbits+ bits from +io+. +endian+ specifies whether
-    # the bits are stored in :big or :little endian format.
+    # Reads exactly +nbits+ bits from the stream. +endian+ specifies whether
+    # the bits are stored in +:big+ or +:little+ endian format.
     def readbits(nbits, endian = :big)
       if @rendian != endian
         # don't mix bits of differing endian
@@ -89,31 +89,11 @@ module BinData
         @rendian = endian
       end
 
-      while nbits > @rnbits
-        byte = @raw_io.read(1)
-        raise EOFError, "End of file reached" if byte.nil?
-        byte = byte.unpack('C').at(0) & 0xff
-
-        if endian == :big
-          @rval = (@rval << 8) | byte
-        else
-          @rval = @rval | (byte << @rnbits)
-        end
-
-        @rnbits += 8
-      end
-
       if endian == :big
-        val     = (@rval >> (@rnbits - nbits)) & ((1 << nbits) - 1)
-        @rnbits -= nbits
-        @rval   &= ((1 << @rnbits) - 1)
+        read_be_bits(nbits)
       else
-        val     = @rval & ((1 << nbits) - 1)
-        @rnbits -= nbits
-        @rval   >>= nbits
+        read_le_bits(nbits)
       end
-
-      val
     end
 
     # Writes the given string of bytes to the io stream.
@@ -122,8 +102,8 @@ module BinData
       @raw_io.write(str)
     end
 
-    # Reads +nbits+ bits from +val+ to the stream. +endian+ specifies whether
-    # the bits are to be stored in :big or :little endian format.
+    # Writes +nbits+ bits from +val+ to the stream. +endian+ specifies whether
+    # the bits are to be stored in +:big+ or +:little+ endian format.
     def writebits(val, nbits, endian = :big)
       # clamp val to range
       val = val & ((1 << nbits) - 1)
@@ -136,43 +116,9 @@ module BinData
       end
 
       if endian == :big
-        while nbits > 0
-          bits_req = 8 - @wnbits
-          if nbits >= bits_req
-            msb_bits = (val >> (nbits - bits_req)) & ((1 << bits_req) - 1)
-            nbits -= bits_req
-            val &= (1 << nbits) - 1
-
-            @wval   = (@wval << bits_req) | msb_bits
-            @raw_io.write(@wval.chr)
-
-            @wval   = 0
-            @wnbits = 0
-          else
-            @wval = (@wval << nbits) | val
-            @wnbits += nbits
-            nbits = 0
-          end
-        end
+        write_be_bits(val, nbits)
       else
-        while nbits > 0
-          bits_req = 8 - @wnbits
-          if nbits >= bits_req
-            lsb_bits = val & ((1 << bits_req) - 1)
-            nbits -= bits_req
-            val >>= bits_req
-
-            @wval   |= (lsb_bits << @wnbits)
-            @raw_io.write(@wval.chr)
-
-            @wval   = 0
-            @wnbits = 0
-          else
-            @wval   |= (val << @wnbits)
-            @wnbits += nbits
-            nbits = 0
-          end
-        end
+        write_le_bits(val, nbits)
       end
     end
 
@@ -188,5 +134,102 @@ module BinData
     end
     alias_method :flush, :flushbits
 
+    #---------------
+    private
+
+    # Checks if positioning is supported by the underlying io stream.
+    def positioning_supported?
+      unless defined? @positioning_supported
+        @positioning_supported = begin
+          @raw_io.pos
+          true
+        rescue NoMethodError, Errno::ESPIPE
+          false
+        end
+      end
+      @positioning_supported
+    end
+
+    # Reads exactly +nbits+ big endian bits from the stream.
+    def read_be_bits(nbits)
+      # ensure enough bits have accumulated
+      while nbits > @rnbits
+        byte = @raw_io.read(1)
+        raise EOFError, "End of file reached" if byte.nil?
+        byte = byte.unpack('C').at(0) & 0xff
+
+        @rval = (@rval << 8) | byte
+        @rnbits += 8
+      end
+
+      val     = (@rval >> (@rnbits - nbits)) & ((1 << nbits) - 1)
+      @rnbits -= nbits
+      @rval   &= ((1 << @rnbits) - 1)
+
+      val
+    end
+
+    # Reads exactly +nbits+ little endian bits from the stream.
+    def read_le_bits(nbits)
+      # ensure enough bits have accumulated
+      while nbits > @rnbits
+        byte = @raw_io.read(1)
+        raise EOFError, "End of file reached" if byte.nil?
+        byte = byte.unpack('C').at(0) & 0xff
+
+        @rval = @rval | (byte << @rnbits)
+        @rnbits += 8
+      end
+
+      val     = @rval & ((1 << nbits) - 1)
+      @rnbits -= nbits
+      @rval   >>= nbits
+
+      val
+    end
+
+    # Writes +nbits+ bits from +val+ to the stream in big endian format.
+    def write_be_bits(val, nbits)
+      while nbits > 0
+        bits_req = 8 - @wnbits
+        if nbits >= bits_req
+          msb_bits = (val >> (nbits - bits_req)) & ((1 << bits_req) - 1)
+          nbits -= bits_req
+          val &= (1 << nbits) - 1
+
+          @wval   = (@wval << bits_req) | msb_bits
+          @raw_io.write(@wval.chr)
+
+          @wval   = 0
+          @wnbits = 0
+        else
+          @wval = (@wval << nbits) | val
+          @wnbits += nbits
+          nbits = 0
+        end
+      end
+    end
+
+    # Writes +nbits+ bits from +val+ to the stream in little endian format.
+    def write_le_bits(val, nbits)
+      while nbits > 0
+        bits_req = 8 - @wnbits
+        if nbits >= bits_req
+          lsb_bits = val & ((1 << bits_req) - 1)
+          nbits -= bits_req
+          val >>= bits_req
+
+          @wval   |= (lsb_bits << @wnbits)
+          @raw_io.write(@wval.chr)
+
+          @wval   = 0
+          @wnbits = 0
+        else
+          @wval   |= (val << @wnbits)
+          @wnbits += nbits
+          nbits = 0
+        end
+      end
+    end
   end
 end
