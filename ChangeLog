@@ -1,5 +1,9 @@
 = BinData Changelog
 
+== Version
+
+* Arbitrary byte sized integers are now supported (e.g. 24bit, 808bit)
+
 == Version 0.9.3 (2008-12-03)
 
 * Arrays can now :read_until => :eof

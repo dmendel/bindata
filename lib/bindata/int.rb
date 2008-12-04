@@ -8,14 +8,14 @@ module BinData
     def self.create_int_methods(klass, nbits, endian)
       max = (1 << (nbits - 1)) - 1
       min = -(max + 1)
-      clamp = "val = (val < #{min}) ? #{min} : (val > #{max}) ? #{max} : val"
+
+      clamp = create_clamp_code(min, max)
+      read = create_read_code(nbits, endian)
+      to_s = create_to_s_code(nbits, endian)
 
       int2uint = "val = val & #{(1 << nbits) - 1}"
       uint2int = "val = ((val & #{1 << (nbits - 1)}).zero?) ? " +
                  "val & #{max} : -(((~val) & #{max}) + 1)"
-
-      read = create_read_code(nbits, endian)
-      to_s = create_to_s_code(nbits, endian)
 
       define_methods(klass, nbits / 8, clamp, read, to_s, int2uint, uint2int)
     end
@@ -23,56 +23,82 @@ module BinData
     def self.create_uint_methods(klass, nbits, endian)
       min = 0
       max = (1 << nbits) - 1
-      clamp = "val = (val < #{min}) ? #{min} : (val > #{max}) ? #{max} : val"
 
+      clamp = create_clamp_code(min, max)
       read = create_read_code(nbits, endian)
       to_s = create_to_s_code(nbits, endian)
 
       define_methods(klass, nbits / 8, clamp, read, to_s)
     end
 
-    def self.create_read_code(nbits, endian)
-      c16 = (endian == :little) ? 'v' : 'n'
-      c32 = (endian == :little) ? 'V' : 'N'
-      idx = (0 ... (nbits / 32)).to_a
-      idx.reverse! if (endian == :little)
+    def self.create_clamp_code(min, max)
+      "val = (val < #{min}) ? #{min} : (val > #{max}) ? #{max} : val"
+    end
 
-      case nbits
-      when   8; "io.readbytes(1).unpack('C').at(0)"
-      when  16; "io.readbytes(2).unpack('#{c16}').at(0)"
-      when  32; "io.readbytes(4).unpack('#{c32}').at(0)"
-      when  64; "(a = io.readbytes(8).unpack('#{c32 * 2}'); " +
-                     "(a.at(#{idx[0]}) << 32) + " +
-                      "a.at(#{idx[1]}))"
-      when 128; "(a = io.readbytes(16).unpack('#{c32 * 4}'); " +
-                     "((a.at(#{idx[0]}) << 96) + " +
-                      "(a.at(#{idx[1]}) << 64) + " +
-                      "(a.at(#{idx[2]}) << 32) + " +
-                       "a.at(#{idx[3]})))"
+    def self.create_read_code(nbits, endian)
+      raise "nbits must be divisible by 8" unless (nbits % 8).zero?
+
+      # determine "word" size and unpack directive
+      if (nbits % 32).zero?
+        bytes_per_word = 4
+        d = (endian == :big) ? 'N' : 'V'
+      elsif (nbits % 16).zero?
+        bytes_per_word = 2
+        d = (endian == :big) ? 'n' : 'v'
       else
-        raise "unknown nbits '#{nbits}'"
+        bytes_per_word = 1
+        d = 'C'
       end
+
+      bits_per_word = bytes_per_word * 8
+      nwords        = nbits / bits_per_word
+      nbytes        = nbits / 8
+
+      idx = (0 ... nwords).to_a
+      idx.reverse! if (endian == :big)
+
+      unpack_str = "a = io.readbytes(#{nbytes}).unpack('#{d * nwords}')"
+
+      parts = (0 ... nwords).collect do |i|
+                i.zero? ? "a.at(#{idx[i]})" :
+                          "(a.at(#{idx[i]}) << #{bits_per_word * i})"
+              end
+      assemble_str = parts.join(" + ")
+
+      "(#{unpack_str}; #{assemble_str})"
     end
 
     def self.create_to_s_code(nbits, endian)
-      c16 = (endian == :little) ? 'v' : 'n'
-      c32 = (endian == :little) ? 'V' : 'N'
-      vals = (0 ... (nbits / 32)).collect { |i| "(val >> #{32 * i})" }
-      vals.reverse! if (endian == :little)
+      raise "nbits must be divisible by 8" unless (nbits % 8).zero?
 
-      case nbits
-      when   8; "val.chr"
-      when  16; "[val].pack('#{c16}')"
-      when  32; "[val].pack('#{c32}')"
-      when  64; "[#{vals[1]} & 0xffffffff, " +
-                 "#{vals[0]} & 0xffffffff].pack('#{c32 * 2}')"
-      when 128; "[#{vals[3]} & 0xffffffff, " +
-                 "#{vals[2]} & 0xffffffff, " +
-                 "#{vals[1]} & 0xffffffff, " +
-                 "#{vals[0]} & 0xffffffff].pack('#{c32 * 4}')"
+      # special case 8bit integers for speed
+      return "val.chr" if nbits == 8
+
+      # determine "word" size and pack directive
+      if (nbits % 32).zero?
+        bytes_per_word = 4
+        d = (endian == :big) ? 'N' : 'V'
+      elsif (nbits % 16).zero?
+        bytes_per_word = 2
+        d = (endian == :big) ? 'n' : 'v'
       else
-        raise "unknown nbits '#{nbits}'"
+        bytes_per_word = 1
+        d = 'C'
       end
+
+      bits_per_word = bytes_per_word * 8
+      nwords        = nbits / bits_per_word
+      mask          = (1 << bits_per_word) - 1
+
+      vals = (0 ... nwords).collect do |i|
+               i.zero? ? "val" : "(val >> #{bits_per_word * i})"
+             end
+      vals.reverse! if (endian == :big)
+
+      parts = (0 ... nwords).collect { |i| "#{vals[i]} & #{mask}" }
+      array_str = "[" + parts.join(", ") + "]"
+
+      "#{array_str}.pack('#{d * nwords}')"
     end
 
     def self.define_methods(klass, nbytes, clamp, read, to_s,
@@ -107,6 +133,18 @@ module BinData
         end
       END
     end
+
+    def self.define_klass(nbits, endian, signed)
+      endian_str = (endian == :big) ? "be" : "le"
+      name = (signed ? "Int" : "Uint") + nbits.to_s + endian_str
+      creation_method = signed ? "create_int_methods" : "create_uint_methods"
+      BinData.module_eval <<-END
+        class #{name} < BinData::Single
+          register(self.name, self)
+          Integer.#{creation_method}(self, #{nbits}, :#{endian.to_s})
+        end
+      END
+    end
   end
 
 
@@ -116,105 +154,17 @@ module BinData
     Integer.create_uint_methods(self, 8, :little)
   end
 
-  # Unsigned 2 byte little endian integer.
-  class Uint16le < BinData::Single
-    register(self.name, self)
-    Integer.create_uint_methods(self, 16, :little)
-  end
-
-  # Unsigned 2 byte big endian integer.
-  class Uint16be < BinData::Single
-    register(self.name, self)
-    Integer.create_uint_methods(self, 16, :big)
-  end
-
-  # Unsigned 4 byte little endian integer.
-  class Uint32le < BinData::Single
-    register(self.name, self)
-    Integer.create_uint_methods(self, 32, :little)
-  end
-
-  # Unsigned 4 byte big endian integer.
-  class Uint32be < BinData::Single
-    register(self.name, self)
-    Integer.create_uint_methods(self, 32, :big)
-  end
-
-  # Unsigned 8 byte little endian integer.
-  class Uint64le < BinData::Single
-    register(self.name, self)
-    Integer.create_uint_methods(self, 64, :little)
-  end
-
-  # Unsigned 8 byte big endian integer.
-  class Uint64be < BinData::Single
-    register(self.name, self)
-    Integer.create_uint_methods(self, 64, :big)
-  end
-
-  # Unsigned 16 byte little endian integer.
-  class Uint128le < BinData::Single
-    register(self.name, self)
-    Integer.create_uint_methods(self, 128, :little)
-  end
-
-  # Unsigned 16 byte big endian integer.
-  class Uint128be < BinData::Single
-    register(self.name, self)
-    Integer.create_uint_methods(self, 128, :big)
-  end
-
   # Signed 1 byte integer.
   class Int8 < BinData::Single
     register(self.name, self)
     Integer.create_int_methods(self, 8, :little)
   end
 
-  # Signed 2 byte little endian integer.
-  class Int16le < BinData::Single
-    register(self.name, self)
-    Integer.create_int_methods(self, 16, :little)
-  end
-
-  # Signed 2 byte big endian integer.
-  class Int16be < BinData::Single
-    register(self.name, self)
-    Integer.create_int_methods(self, 16, :big)
-  end
-
-  # Signed 4 byte little endian integer.
-  class Int32le < BinData::Single
-    register(self.name, self)
-    Integer.create_int_methods(self, 32, :little)
-  end
-
-  # Signed 4 byte big endian integer.
-  class Int32be < BinData::Single
-    register(self.name, self)
-    Integer.create_int_methods(self, 32, :big)
-  end
-
-  # Signed 8 byte little endian integer.
-  class Int64le < BinData::Single
-    register(self.name, self)
-    Integer.create_int_methods(self, 64, :little)
-  end
-
-  # Signed 8 byte big endian integer.
-  class Int64be < BinData::Single
-    register(self.name, self)
-    Integer.create_int_methods(self, 64, :big)
-  end
-
-  # Signed 16 byte little endian integer.
-  class Int128le < BinData::Single
-    register(self.name, self)
-    Integer.create_int_methods(self, 128, :little)
-  end
-
-  # Signed 16 byte big endian integer.
-  class Int128be < BinData::Single
-    register(self.name, self)
-    Integer.create_int_methods(self, 128, :big)
+  # Create commonly used integers
+  [8, 16, 32, 64, 128].each do |nbits|
+    Integer.define_klass(nbits, :little, false)
+    Integer.define_klass(nbits, :little, true)
+    Integer.define_klass(nbits, :big, false)
+    Integer.define_klass(nbits, :big, true)
   end
 end

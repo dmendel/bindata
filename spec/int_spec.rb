@@ -3,161 +3,161 @@
 require File.expand_path(File.dirname(__FILE__)) + '/spec_common'
 require 'bindata/int'
 
-describe "All signed integers" do
+share_examples_for "All Integers" do
+  def all_klasses(&block)
+    @ints.each_pair do |klass, nbytes|
+      @nbytes = nbytes
+      yield klass
+    end
+  end
+
+  def max_value
+    if @signed
+      (1 << (@nbytes * 8 - 1)) - 1
+    else
+      (1 << (@nbytes * 8)) - 1
+    end
+  end
+
+  def min_value
+    if @signed
+      -max_value - 1
+    else
+      0
+    end
+  end
+
+  # resulting int is guaranteed to be +ve for signed or unsigned integers
+  def gen_test_int
+    (0 ... @nbytes).inject(0) { |val, i| (val << 8) | ((val + 0x11) % 0x100) }
+  end
+
+  def int_to_str(val)
+    str = ""
+    v = val & ((1 << (@nbytes * 8)) - 1)
+    @nbytes.times do
+      str.concat(v & 0xff)
+      v >>= 8
+    end
+    (@endian == :little) ? str : str.reverse
+  end
+
+  def test_conversion(klass, val, expected=nil)
+    expected ||= val
+
+    obj = klass.new
+    obj.value = val
+
+    # clamping should occur
+    obj.value.should == expected
+    
+    actual_str   = obj.to_s
+    expected_str = int_to_str(expected)
+
+    # should convert to string as expected
+    actual_str.should == expected_str
+
+    # should convert from string as expected
+    klass.read(expected_str).should == expected
+  end
+
   it "should have a sensible value of zero" do
-    [BinData::Int8,
-     BinData::Int16le,
-     BinData::Int16be,
-     BinData::Int32le,
-     BinData::Int32be,
-     BinData::Int64le,
-     BinData::Int64be,
-     BinData::Int128le,
-     BinData::Int128be].each do |klass|
+    all_klasses do |klass|
       klass.new.value.should be_zero
     end
   end
 
-  it "should pass these tests" do
-    [
-      [ 1, true,  BinData::Int8],
-      [ 2, false, BinData::Int16le],
-      [ 2, true,  BinData::Int16be],
-      [ 4, false, BinData::Int32le],
-      [ 4, true,  BinData::Int32be],
-      [ 8, false, BinData::Int64le],
-      [ 8, true,  BinData::Int64be],
-      [16, false, BinData::Int128le],
-      [16, true,  BinData::Int128be],
-    ].each do |nbytes, big_endian, klass|
-      gen_int_test_data(nbytes, big_endian).each do |val, clamped_val, str|
-        test_read_write(klass, val, clamped_val, str)
+  it "should clamp when below the minimum" do
+    all_klasses do |klass|
+      test_conversion(klass, min_value-1, min_value)
+    end
+  end
+
+  it "should clamp when above the maximum" do
+    all_klasses do |klass|
+      test_conversion(klass, max_value+1, max_value)
+    end
+  end
+
+  it "should convert a +ve number" do
+    all_klasses do |klass|
+      test_conversion(klass, gen_test_int)
+    end
+  end
+
+  it "should convert a -ve number" do
+    all_klasses do |klass|
+      if @signed
+        test_conversion(klass, -gen_test_int)
       end
     end
   end
 end
 
-describe "All unsigned integers" do
-  it "should have a sensible value of zero" do
-    [BinData::Uint8,
-     BinData::Uint16le,
-     BinData::Uint16be,
-     BinData::Uint32le,
-     BinData::Uint32be,
-     BinData::Uint64le,
-     BinData::Uint64be,
-     BinData::Uint128le,
-     BinData::Uint128be].each do |klass|
-      klass.new.value.should be_zero
-    end
-  end
+describe "All signed big endian integers" do
+  it_should_behave_like "All Integers"
 
-  it "should pass these tests" do
-    [
-      [ 1, true,  BinData::Uint8],
-      [ 2, false, BinData::Uint16le],
-      [ 2, true,  BinData::Uint16be],
-      [ 4, false, BinData::Uint32le],
-      [ 4, true,  BinData::Uint32be],
-      [ 8, false, BinData::Uint64le],
-      [ 8, true,  BinData::Uint64be],
-      [16, false, BinData::Uint128le],
-      [16, true,  BinData::Uint128be],
-    ].each do |nbytes, big_endian, klass|
-      gen_uint_test_data(nbytes, big_endian).each do |val, clamped_val, str|
-        test_read_write(klass, val, clamped_val, str)
-      end
-    end
+  before(:all) do
+    @endian = :big
+    @signed = true
+    @ints = {
+      BinData::Int8 => 1,
+      BinData::Int8be => 1,
+      BinData::Int16be => 2,
+      BinData::Int32be => 4,
+      BinData::Int64be => 8,
+      BinData::Int128be => 16,
+    }
   end
 end
 
-# run read / write tests for the given values
-def test_read_write(klass, val, clamped_val, str)
-  # set the data and ensure clamping occurs
-  data = klass.new
-  data.value = val
-  data.value.should == clamped_val
-  
-  # write the data
-  io = StringIO.new
-  data.write(io)
+describe "All unsigned big endian integers" do
+  it_should_behave_like "All Integers"
 
-  # check that we write the expected byte pattern
-  io.rewind
-  io.read.should == str
-
-  # check that we read in the same data that was written
-  io.rewind
-  data = klass.new
-  data.read(io)
-  data.value.should == clamped_val
+  before(:all) do
+    @endian = :big
+    @signed = false
+    @ints = {
+      BinData::Uint8 => 1,
+      BinData::Uint8be => 1,
+      BinData::Uint16be => 2,
+      BinData::Uint32be => 4,
+      BinData::Uint64be => 8,
+      BinData::Uint128be => 16,
+    }
+  end
 end
 
-# return test data for testing unsigned ints
-def gen_uint_test_data(nbytes, big_endian)
-  raise "nbytes too large" if nbytes > 16
-  tests = []
+describe "All signed little endian integers" do
+  it_should_behave_like "All Integers"
 
-  max_value = (1 << (nbytes * 8)) - 1
-  min_value = 0
-
-  # test the minimum value
-  v = min_value
-  s = "\x00" * nbytes
-  tests.push [v, v, big_endian ? s : s.reverse]
-
-  # values below minimum should be clamped to minimum
-  tests.push [v-1, v, big_endian ? s : s.reverse]
-
-  # test a value within range
-  v = 0x123456789abcdef0123456789abcdef0 >> ((16-nbytes) * 8)
-  s = "\x12\x34\x56\x78\x9a\xbc\xde\xf0\x12\x34\x56\x78\x9a\xbc\xde\xf0".slice(0, nbytes)
-  tests.push [v, v, big_endian ? s : s.reverse]
-
-  # test the maximum value
-  v = max_value
-  s = "\xff" * nbytes
-  tests.push [v, v, big_endian ? s : s.reverse]
-
-  # values above maximum should be clamped to maximum
-  tests.push [v+1, v, big_endian ? s : s.reverse]
-
-  tests
+  before(:all) do
+    @endian = :little
+    @signed = true
+    @ints = {
+      BinData::Int8 => 1,
+      BinData::Int8le => 1,
+      BinData::Int16le => 2,
+      BinData::Int32le => 4,
+      BinData::Int64le => 8,
+      BinData::Int128le => 16,
+    }
+  end
 end
 
-# return test data for testing signed ints
-def gen_int_test_data(nbytes, big_endian)
-  raise "nbytes too large" if nbytes > 16
-  tests = []
+describe "All unsigned little endian integers" do
+  it_should_behave_like "All Integers"
 
-  max_value = (1 << (nbytes * 8 - 1)) - 1
-  min_value = -max_value - 1
-
-  # test the minimum value
-  v = min_value
-  s = "\x80" + "\x00" * (nbytes - 1)
-  tests.push [v, v, big_endian ? s : s.reverse]
-
-  # values below minimum should be clamped to minimum
-  tests.push [v-1, v, big_endian ? s : s.reverse]
-
-  # test a -ve value within range
-  v = -1
-  s = "\xff" * nbytes
-  tests.push [v, v, big_endian ? s : s.reverse]
-
-  # test a +ve value within range
-  v = 0x123456789abcdef0123456789abcdef0 >> ((16-nbytes) * 8)
-  s = "\x12\x34\x56\x78\x9a\xbc\xde\xf0\x12\x34\x56\x78\x9a\xbc\xde\xf0".slice(0, nbytes)
-  tests.push [v, v, big_endian ? s : s.reverse]
-
-  # test the maximum value
-  v = max_value
-  s = "\x7f" + "\xff" * (nbytes - 1)
-  tests.push [v, v, big_endian ? s : s.reverse]
-
-  # values above maximum should be clamped to maximum
-  tests.push [v+1, v, big_endian ? s : s.reverse]
-
-  tests
+  before(:all) do
+    @endian = :little
+    @signed = false
+    @ints = {
+      BinData::Uint8 => 1,
+      BinData::Uint8le => 1,
+      BinData::Uint16le => 2,
+      BinData::Uint32le => 4,
+      BinData::Uint64le => 8,
+      BinData::Uint128le => 16,
+    }
+  end
 end
