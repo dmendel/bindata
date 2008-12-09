@@ -27,7 +27,7 @@ module BinData
         clamp = "val = (val == true) ? 1 : (not val) ? 0 : #{clamp}"
       end
 
-      define_methods(klass, nbits, endian, clamp)
+      define_methods(klass, nbits, endian.to_s, clamp)
     end
 
     def self.define_methods(klass, nbits, endian, clamp)
@@ -43,7 +43,7 @@ module BinData
 
         def _do_write(io)
           raise "can't write whilst reading" if @in_read
-          io.writebits(_value, #{nbits}, #{endian})
+          io.writebits(_value, #{nbits}, :#{endian})
         end
 
         def _do_num_bytes(ignored)
@@ -51,7 +51,7 @@ module BinData
         end
 
         def read_val(io)
-          io.readbits(#{nbits}, #{endian})
+          io.readbits(#{nbits}, :#{endian})
         end
 
         def sensible_default
