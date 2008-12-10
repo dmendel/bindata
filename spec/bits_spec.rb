@@ -4,136 +4,137 @@ require File.expand_path(File.dirname(__FILE__)) + '/spec_common'
 require 'bindata/bits'
 
 describe "Bits of size 1" do
+  before(:each) do
+    @bit_classes = [BinData::Bit1, BinData::Bit1le]
+  end
+
   it "should accept true as value" do
-    obj = BinData::Bit1.new
-    obj.value = true
-    obj.value.should == 1
-
-    obj = BinData::Bit1le.new
-    obj.value = true
-    obj.value.should == 1
-  end
-
-  it "should accept false as value" do
-    obj = BinData::Bit1.new
-    obj.value = false
-    obj.value.should == 0
-
-    obj = BinData::Bit1le.new
-    obj.value = false
-    obj.value.should == 0
-  end
-
-  it "should accept nil as value" do
-    obj = BinData::Bit1.new
-    obj.value = nil
-    obj.value.should == 0
-
-    obj = BinData::Bit1le.new
-    obj.value = nil
-    obj.value.should == 0
-  end
-end
-
-describe "All bitfields" do
-  it "should have a sensible value of zero" do
-    begin
-      nbits = 1
-      loop do
-        ["", "le"].each do |suffix|
-          klass = BinData.const_get("Bit#{nbits}#{suffix}")
-          klass.new.value.should be_zero
-        end
-
-        nbits += 1
-      end
-    rescue NameError
+    @bit_classes.each do |bit_class|
+      obj = bit_class.new
+      obj.value = true
+      obj.value.should == 1
     end
   end
 
-  it "should clamp " do
-    begin
-      nbits = 1
-      loop do
-        ["", "le"].each do |suffix|
-          klass = BinData.const_get("Bit#{nbits}#{suffix}")
-          obj = klass.new
+  it "should accept false as value" do
+    @bit_classes.each do |bit_class|
+      obj = bit_class.new
+      obj.value = false
+      obj.value.should == 0
+    end
+  end
 
-          obj.value = -1
-          obj.value.should == 0
+  it "should accept nil as value" do
+    @bit_classes.each do |bit_class|
+      obj = bit_class.new
+      obj.value = nil
+      obj.value.should == 0
+    end
+  end
+end
 
-          obj.value = 1 << nbits
-          obj.value.should == ((1 << nbits) - 1)
-        end
+share_examples_for "All bitfields" do
 
-        nbits += 1
+  it "should have a sensible value of zero" do
+    all_classes do |bit_class|
+      bit_class.new.value.should be_zero
+    end
+  end
+
+  it "should avoid underflow" do
+    all_classes do |bit_class|
+      obj = bit_class.new
+
+      obj.value = min_value - 1
+      obj.value.should == min_value
+    end
+  end
+
+  it "should avoid overflow" do
+    all_classes do |bit_class|
+      obj = bit_class.new
+
+      obj.value = max_value + 1
+      obj.value.should == max_value
+    end
+  end
+
+  it "should have symmetric #read and #write" do
+    all_classes do |bit_class|
+      some_values_within_range.each do |val|
+        obj = bit_class.new
+        obj.value = val
+
+        str = obj.to_s
+        bit_class.read(str).should == val
       end
-    rescue NameError
+    end
+  end
+
+  def all_classes(&block)
+    @bits.each_pair do |bit_class, nbits|
+      @nbits = nbits
+      yield bit_class
+    end
+  end
+
+  def min_value
+    0
+  end
+
+  def max_value
+    (1 << @nbits) - 1
+  end
+
+  def some_values_within_range
+    lo  = min_value + 1
+    mid = (min_value + max_value) / 2
+    hi  = max_value - 1
+
+    [lo, mid, hi].find_all { |v| (min_value .. max_value).include?(v) }
+  end
+end
+
+describe "Big endian bitfields" do
+  it_should_behave_like "All bitfields"
+
+  before(:all) do
+    @bits = {}
+    (1 .. 63).each do |nbits|
+      bit_class = BinData.const_get("Bit#{nbits}")
+      @bits[bit_class] = nbits
     end
   end
 
   it "should read big endian value" do
-    begin
-      nbits = 1
-      loop do
-        klass = BinData.const_get("Bit#{nbits}")
-        obj = klass.new
+    @bits.each_pair do |bit_class, nbits|
+      obj = bit_class.new
 
-        str = [0b1000_0000].pack("C") + "\000" * (nbits / 8)
-        obj.read(str)
-        obj.value.should == 1 << (nbits - 1)
+      str = [0b1000_0000].pack("C") + "\000" * (nbits / 8)
+      obj.read(str)
+      obj.value.should == 1 << (nbits - 1)
+    end
+  end
+end
 
-        nbits += 1
-      end
-    rescue NameError
+describe "Little endian bitfields" do
+  it_should_behave_like "All bitfields"
+
+  before(:all) do
+    @bits = {}
+    (1 .. 63).each do |nbits|
+      bit_class = BinData.const_get("Bit#{nbits}le")
+      @bits[bit_class] = nbits
     end
   end
 
   it "should read little endian value" do
-    begin
-      nbits = 1
-      loop do
-        klass = BinData.const_get("Bit#{nbits}le")
-        obj = klass.new
+    @bits.each_pair do |bit_class, nbits|
+      obj = bit_class.new
 
-        str = [0b0000_0001].pack("C") + "\000" * (nbits / 8)
-        obj.read(str)
-        obj.value.should == 1
-
-        nbits += 1
-      end
-    rescue NameError
-    end
-  end
-
-  it "should read written values" do
-    begin
-      nbits = 1
-      loop do
-        ["", "le"].each do |suffix|
-          klass = BinData.const_get("Bit#{nbits}#{suffix}")
-
-          min = 0
-          max = (1 << nbits) - 1
-          range = (min .. max)
-
-          values = []
-          values << (min + 1) if range.include?(min + 1)
-          values << (min + 3) if range.include?(min + 3)
-          values << (max - 1) if range.include?(max - 1)
-
-          values.each do |val|
-            obj = klass.new
-            obj.value = val
-            str = obj.to_s
-            obj.read(str)
-            obj.value.should == val
-          end
-        end
-
-        nbits += 1
-      end
-    rescue NameError
+      str = [0b0000_0001].pack("C") + "\000" * (nbits / 8)
+      obj.read(str)
+      obj.value.should == 1
     end
   end
 end

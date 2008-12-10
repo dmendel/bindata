@@ -4,18 +4,81 @@ require File.expand_path(File.dirname(__FILE__)) + '/spec_common'
 require 'bindata/int'
 
 share_examples_for "All Integers" do
-  def all_klasses(&block)
-    @ints.each_pair do |klass, nbytes|
-      @nbytes = nbytes
-      yield klass
+
+  it "should have a sensible value of zero" do
+    all_classes do |int_class|
+      int_class.new.value.should be_zero
     end
   end
 
-  def max_value
-    if @signed
-      (1 << (@nbytes * 8 - 1)) - 1
-    else
-      (1 << (@nbytes * 8)) - 1
+  it "should avoid underflow" do
+    all_classes do |int_class|
+      obj = int_class.new
+      obj.value = min_value - 1
+
+      obj.value.should == min_value
+    end
+  end
+
+  it "should avoid overflow" do
+    all_classes do |int_class|
+      obj = int_class.new
+      obj.value = max_value + 1
+
+      obj.value.should == max_value
+    end
+  end
+
+  it "should symmetrically read and write a +ve number" do
+    all_classes do |int_class|
+      obj = int_class.new
+      obj.value = gen_test_int
+
+      str = obj.to_s
+      int_class.read(str).should == obj.value
+    end
+  end
+
+  it "should symmetrically read and write a -ve number" do
+    all_classes do |int_class|
+      if @signed
+        obj = int_class.new
+        obj.value = -gen_test_int
+
+        str = obj.to_s
+        int_class.read(str).should == obj.value
+      end
+    end
+  end
+
+  it "should convert a +ve number to string" do
+    all_classes do |int_class|
+      val = gen_test_int
+
+      obj = int_class.new
+      obj.value = val
+
+      obj.to_s.should == int_to_str(val)
+    end
+  end
+
+  it "should convert a -ve number to string" do
+    all_classes do |int_class|
+      if @signed
+        val = -gen_test_int
+
+        obj = int_class.new
+        obj.value = val
+
+        obj.to_s.should == int_to_str(val)
+      end
+    end
+  end
+
+  def all_classes(&block)
+    @ints.each_pair do |int_class, nbytes|
+      @nbytes = nbytes
+      yield int_class
     end
   end
 
@@ -27,8 +90,16 @@ share_examples_for "All Integers" do
     end
   end
 
-  # resulting int is guaranteed to be +ve for signed or unsigned integers
+  def max_value
+    if @signed
+      (1 << (@nbytes * 8 - 1)) - 1
+    else
+      (1 << (@nbytes * 8)) - 1
+    end
+  end
+
   def gen_test_int
+    # resulting int is guaranteed to be +ve for signed or unsigned integers
     (0 ... @nbytes).inject(0) { |val, i| (val << 8) | ((val + 0x11) % 0x100) }
   end
 
@@ -40,57 +111,6 @@ share_examples_for "All Integers" do
       v >>= 8
     end
     (@endian == :little) ? str : str.reverse
-  end
-
-  def test_conversion(klass, val, expected=nil)
-    expected ||= val
-
-    obj = klass.new
-    obj.value = val
-
-    # clamping should occur
-    obj.value.should == expected
-    
-    actual_str   = obj.to_s
-    expected_str = int_to_str(expected)
-
-    # should convert to string as expected
-    actual_str.should == expected_str
-
-    # should convert from string as expected
-    klass.read(expected_str).should == expected
-  end
-
-  it "should have a sensible value of zero" do
-    all_klasses do |klass|
-      klass.new.value.should be_zero
-    end
-  end
-
-  it "should clamp when below the minimum" do
-    all_klasses do |klass|
-      test_conversion(klass, min_value-1, min_value)
-    end
-  end
-
-  it "should clamp when above the maximum" do
-    all_klasses do |klass|
-      test_conversion(klass, max_value+1, max_value)
-    end
-  end
-
-  it "should convert a +ve number" do
-    all_klasses do |klass|
-      test_conversion(klass, gen_test_int)
-    end
-  end
-
-  it "should convert a -ve number" do
-    all_klasses do |klass|
-      if @signed
-        test_conversion(klass, -gen_test_int)
-      end
-    end
   end
 end
 
