@@ -2,11 +2,24 @@ require 'singleton'
 
 module BinData
   # This registry contains a register of name -> class mappings.
+  #
+  # Names are stored in under_score_style, not camelCase.
   class Registry
     include Singleton
 
     def initialize
       @registry = {}
+    end
+
+    def register(name, class_to_register)
+      formatted_name = underscore_name(name)
+      warn_if_name_is_registered(formatted_name, class_to_register)
+
+      @registry[formatted_name] = class_to_register
+    end
+
+    def lookup(name)
+      @registry[underscore_name(name.to_s)]
     end
 
     # Convert camelCase +name+ to underscore style.
@@ -18,25 +31,15 @@ module BinData
                 downcase
     end
 
-    # Registers the mapping of +name+ to +klass+.  +name+ is converted
-    # from camelCase to underscore style.
-    # Returns the converted name
-    def register(name, klass)
-      # convert camelCase name to underscore style
-      key = underscore_name(name)
+    #---------------
+    private
 
-      # warn if replacing an existing class
-      if $VERBOSE and (existing = @registry[key])
-        warn "warning: replacing registered class #{existing} with #{klass}"
+    def warn_if_name_is_registered(name, class_to_register)
+      if $VERBOSE and @registry.has_key?(name)
+        prev_class = @registry[name]
+        warn "warning: replacing registered class #{prev_class} " +
+             "with #{class_to_register}"
       end
-
-      @registry[key] = klass
-      key.dup
-    end
-
-    # Returns the class matching a previously registered +name+.
-    def lookup(name)
-      @registry[name.to_s]
     end
   end
 end

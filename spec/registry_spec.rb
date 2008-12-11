@@ -26,22 +26,23 @@ describe BinData::Registry do
     @r.lookup('a_non_existent_sub_class').should be_nil
   end
 
-  it "should convert CamelCase to underscores" do
-    @r.register('CamelCase', A).should == 'camel_case'
-  end
-
-  it "should convert adjacent caps camelCase to underscores" do
-    @r.register('XYZCamelCase', A).should == 'xyz_camel_case'
-  end
-
-  it "should ignore the outer nestings of classes" do
-    @r.register('A::B::C', A).should == 'c'
-  end
-
   it "should allow overriding of registered classes" do
     @r.register('A', A)
     @r.register('A', B)
 
     @r.lookup('a').should == B
   end
+
+  it "should convert CamelCase to underscores" do
+    @r.underscore_name('CamelCase').should == 'camel_case'
+  end
+
+  it "should convert adjacent caps camelCase to underscores" do
+    @r.underscore_name('XYZCamelCase').should == 'xyz_camel_case'
+  end
+
+  it "should ignore the outer nestings of classes" do
+    @r.underscore_name('A::B::C').should == 'c'
+  end
+
 end
