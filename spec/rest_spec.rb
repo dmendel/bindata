@@ -27,4 +27,3 @@ describe BinData::Rest do
     }.should_not raise_error(BinData::ValidityError)
   end
 end
-

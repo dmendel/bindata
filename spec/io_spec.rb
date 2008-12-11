@@ -285,4 +285,3 @@ describe BinData::IO, "with changing endian" do
     io.value.should == [0b1100_0000, 0b0000_0010].pack("CC")
   end
 end
-

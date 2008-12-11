@@ -1,8 +1,6 @@
 #!/usr/bin/env ruby
 
 require File.expand_path(File.dirname(__FILE__)) + '/spec_common'
-require 'bindata/array'
-require 'bindata/int'
 require 'bindata/lazy'
 
 # A mock data object with customizable fields.
@@ -145,16 +143,5 @@ describe BinData::LazyEvaluator, "with nested parents" do
 
   it "should not resolve #index" do
     lambda { @ev.lazy_eval(lambda { index }) }.should raise_error(NoMethodError)
-  end
-end
-
-# This spec seems out of place, but :index is implemented in lazy.rb so this
-# is the best place for it.
-describe BinData::LazyEvaluator, "with BinData::Array" do
-  it "should use correct index" do
-    arr = BinData::Array.new(:type =>
-                               [:uint8, { :value => lambda { index * 10 } }],
-                             :initial_length => 3)
-    arr.snapshot.should == [0, 10, 20]
   end
 end

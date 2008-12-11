@@ -3,41 +3,6 @@
 require File.expand_path(File.dirname(__FILE__)) + '/spec_common'
 require 'bindata'
 
-describe BinData::MultiValue, "with hidden fields" do
-  before(:all) do
-    eval <<-END
-      class HiddenMultiValue < BinData::MultiValue
-        hide :b, 'c'
-        int8 :a
-        int8 'b', :initial_value => 10
-        int8 :c
-        int8 :d, :value => :b
-      end
-    END
-  end
-
-  before(:each) do
-    @obj = HiddenMultiValue.new
-  end
-
-  it "should only show fields that aren't hidden" do
-    @obj.field_names.should == ["a", "d"]
-  end
-
-  it "should be able to access hidden fields directly" do
-    @obj.b.should == 10
-    @obj.c = 15
-    @obj.c.should == 15
-
-    @obj.should respond_to(:b=)
-  end
-
-  it "should not include hidden fields in snapshot" do
-    @obj.b = 5
-    @obj.snapshot.should == {"a" => 0, "d" => 5}
-  end
-end
-
 describe BinData::MultiValue, "when defining" do
   it "should fail on non registered types" do
     lambda {
@@ -93,6 +58,41 @@ describe BinData::MultiValue, "when defining" do
   end
 end
 
+describe BinData::MultiValue, "with hidden fields" do
+  before(:all) do
+    eval <<-END
+      class HiddenMultiValue < BinData::MultiValue
+        hide :b, 'c'
+        int8 :a
+        int8 'b', :initial_value => 10
+        int8 :c
+        int8 :d, :value => :b
+      end
+    END
+  end
+
+  before(:each) do
+    @obj = HiddenMultiValue.new
+  end
+
+  it "should only show fields that aren't hidden" do
+    @obj.field_names.should == ["a", "d"]
+  end
+
+  it "should be able to access hidden fields directly" do
+    @obj.b.should == 10
+    @obj.c = 15
+    @obj.c.should == 15
+
+    @obj.should respond_to(:b=)
+  end
+
+  it "should not include hidden fields in snapshot" do
+    @obj.b = 5
+    @obj.snapshot.should == {"a" => 0, "d" => 5}
+  end
+end
+
 describe BinData::MultiValue, "with multiple fields" do
   before(:all) do
     eval <<-END
@@ -123,28 +123,23 @@ describe BinData::MultiValue, "with multiple fields" do
   it "should clear" do
     @obj.a = 6
     @obj.clear
-    @obj.clear?.should be_true
+    @obj.should be_clear
   end
 
   it "should clear individual elements" do
     @obj.a = 6
     @obj.b = 7
     @obj.clear(:a)
-    @obj.clear?(:a).should be_true
-    @obj.clear?(:b).should be_false
+    @obj.should be_clear(:a)
+    @obj.should_not be_clear(:b)
   end
 
   it "should write ordered" do
-    io = StringIO.new
-    @obj.write(io)
-
-    io.rewind
-    io.read.should == "\x01\x02"
+    @obj.to_s.should == "\x01\x02"
   end
 
   it "should read ordered" do
-    io = StringIO.new "\x03\x04"
-    @obj.read(io)
+    @obj.read("\x03\x04")
 
     @obj.a.should == 3
     @obj.b.should == 4
@@ -240,11 +235,7 @@ describe BinData::MultiValue, "with an endian defined" do
 
     expected = [1, 2.0, 3, 4, 5, 6, 7, 8].pack('veCCVvNv')
 
-    io = StringIO.new
-    @obj.write(io)
-
-    io.rewind
-    io.read.should == expected
+    @obj.to_s.should == expected
   end
 end
 

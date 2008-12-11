@@ -70,14 +70,10 @@ describe BinData::Single, "after initialisation" do
   end
 
   it "should have symmetric IO" do
-    io = StringIO.new
     @data.value = 42
-    @data.write(io)
+    written = @data.to_s
 
-    io.rewind
-    @data = ConcreteSingle.new
-    @data.read(io)
-    @data.value.should == 42
+    ConcreteSingle.read(written).should == 42
   end
 
   it "should be a single_value" do
@@ -99,8 +95,7 @@ describe BinData::Single, "after initialisation" do
   end
 
   it "should not be clear after reading" do
-    io = StringIO.new([123456].pack("V"))
-    @data.read(io)
+    @data.read("\x11\x22\x33\x44")
     @data.should_not be_clear
   end
 
@@ -129,8 +124,7 @@ describe BinData::Single, "with :initial_value" do
   end
 
   it "should forget :initial_value after reading" do
-    io = StringIO.new([56].pack("V"))
-    @data.read(io)
+    @data.read("\x11\x22\x33\x44")
     @data.value.should_not == 5
   end
 
@@ -199,7 +193,7 @@ describe BinData::Single, "when subclassing" do
   before(:all) do
     eval <<-END
       class SubClassOfSingle < BinData::Single
-        public :val_to_str, :read_val, :sensible_default
+        make_private_instance_methods_public
       end
     END
   end
@@ -214,4 +208,3 @@ describe BinData::Single, "when subclassing" do
     lambda { @obj.sensible_default }.should raise_error(NotImplementedError)
   end
 end
-

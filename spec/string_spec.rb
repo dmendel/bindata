@@ -41,8 +41,7 @@ describe BinData::String, "with :read_length" do
   end
 
   it "should read :read_length bytes" do
-    io = StringIO.new("abcdefghij")
-    @str.read(io)
+    @str.read("abcdefghij")
     @str.value.should == "abcde"
   end
 
@@ -50,8 +49,8 @@ describe BinData::String, "with :read_length" do
     @str.value = "abc"
     @str.num_bytes.should == 3
     @str.clear
-    io = StringIO.new("abcdefghij")
-    @str.read(io)
+
+    @str.read("abcdefghij")
     @str.value.should == "abcde"
   end
 end
@@ -75,8 +74,7 @@ describe BinData::String, "with :length" do
   end
 
   it "should read :length bytes" do
-    io = StringIO.new("abcdefghij")
-    @str.read(io)
+    @str.read("abcdefghij")
     @str.value.should == "abcde"
   end
 
@@ -113,8 +111,7 @@ describe BinData::String, "with :read_length and :initial_value" do
    end
 
   it "should forget :initial_value after reading" do
-    io = StringIO.new("ABCDEFGHIJKLMNOPQRST")
-    @str.read(io)
+    @str.read("ABCDEFGHIJKLMNOPQRST")
     @str.num_bytes.should == 5
     @str.value.should == "ABCDE"
   end
@@ -138,16 +135,13 @@ describe BinData::String, "with :read_length and :value" do
    end
 
   it "should not be affected by :read_length after reading" do
-    io = StringIO.new("ABCDEFGHIJKLMNOPQRST")
-    @str.read(io)
+    @str.read("ABCDEFGHIJKLMNOPQRST")
     @str.num_bytes.should == 10
     @str.value.should == "abcdefghij"
   end
 
   it "should return read value before calling done_read" do
-    io = StringIO.new("ABCDEFGHIJKLMNOPQRST")
-
-    @str.do_read(BinData::IO.new(io))
+    @str.do_read(BinData::IO.new("ABCDEFGHIJKLMNOPQRST"))
     @str.value.should == "ABCDE"
 
     @str.done_read

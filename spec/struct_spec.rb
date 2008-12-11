@@ -3,6 +3,44 @@
 require File.expand_path(File.dirname(__FILE__)) + '/spec_common'
 require 'bindata'
 
+describe BinData::Struct, "when initializing" do
+  it "should fail on non registered types" do
+    params = {:fields => [[:non_registered_type, :a]]}
+    lambda {
+      BinData::Struct.new(params)
+    }.should raise_error(TypeError)
+  end
+
+  it "should fail on duplicate names" do
+    params = {:fields => [[:int8, :a], [:int8, :b], [:int8, :a]]}
+    lambda {
+      BinData::Struct.new(params)
+    }.should raise_error(NameError)
+  end
+
+  it "should fail on reserved names" do
+    # note that #invert is from Hash.instance_methods
+    params = {:fields => [[:int8, :a], [:int8, :invert]]}
+    lambda {
+      BinData::Struct.new(params)
+    }.should raise_error(NameError)
+  end
+
+  it "should fail when field name shadows an existing method" do
+    params = {:fields => [[:int8, :object_id]]}
+    lambda {
+      BinData::Struct.new(params)
+    }.should raise_error(NameError)
+  end
+
+  it "should fail on unknown endian" do
+    params = {:endian => 'bad value', :fields => []}
+    lambda {
+      BinData::Struct.new(params)
+    }.should raise_error(ArgumentError)
+  end
+end
+
 describe BinData::Struct, "with hidden fields" do
   before(:each) do
     @params = { :hide => [:b, 'c'],
@@ -29,45 +67,6 @@ describe BinData::Struct, "with hidden fields" do
   it "should not include hidden fields in snapshot" do
     @obj.b = 5
     @obj.snapshot.should == {"a" => 0, "d" => 5}
-  end
-end
-
-describe BinData::Struct do
-  it "should fail on non registered types" do
-    params = {:fields => [[:non_registered_type, :a]]}
-    lambda {
-      BinData::Struct.new(params)
-    }.should raise_error(TypeError)
-  end
-
-  it "should fail on duplicate names" do
-    params = {:fields => [[:int8, :a], [:int8, :b], [:int8, :a]]}
-    lambda {
-      BinData::Struct.new(params)
-    }.should raise_error(NameError)
-  end
-
-  it "should fail on reserved names" do
-    # note that #invert is from Hash.instance_methods
-    params = {:fields => [[:int8, :a], [:int8, :invert]]}
-    lambda {
-      BinData::Struct.new(params)
-    }.should raise_error(NameError)
-  end
-
-  it "should fail when field name shadows an existing method" do
-    # note that #invert is from Hash.instance_methods
-    params = {:fields => [[:int8, :object_id]]}
-    lambda {
-      BinData::Struct.new(params)
-    }.should raise_error(NameError)
-  end
-
-  it "should fail on unknown endian" do
-    params = {:endian => 'bad value', :fields => []}
-    lambda {
-      BinData::Struct.new(params)
-    }.should raise_error(ArgumentError)
   end
 end
 
@@ -98,28 +97,23 @@ describe BinData::Struct, "with multiple fields" do
   it "should clear" do
     @obj.a = 6
     @obj.clear
-    @obj.clear?.should be_true
+    @obj.should be_clear
   end
 
   it "should clear individual elements" do
     @obj.a = 6
     @obj.b = 7
     @obj.clear(:a)
-    @obj.clear?(:a).should be_true
-    @obj.clear?(:b).should be_false
+    @obj.should be_clear(:a)
+    @obj.should_not be_clear(:b)
   end
 
   it "should write ordered" do
-    io = StringIO.new
-    @obj.write(io)
-
-    io.rewind
-    io.read.should == "\x01\x02"
+    @obj.to_s.should == "\x01\x02"
   end
 
   it "should read ordered" do
-    io = StringIO.new "\x03\x04"
-    @obj.read(io)
+    @obj.read("\x03\x04")
 
     @obj.a.should == 3
     @obj.b.should == 4
@@ -215,11 +209,7 @@ describe BinData::Struct, "with an endian defined" do
 
     expected = [1, 2.0, 3, 4, 5, 6, 7, 8].pack('veCCVvNv')
 
-    io = StringIO.new
-    @obj.write(io)
-
-    io.rewind
-    io.read.should == expected
+    @obj.to_s.should == expected
   end
 end
 
@@ -256,8 +246,7 @@ describe BinData::Struct, "with nested endian" do
                            [:struct, :s, nested_params],
                            [:int16, :d]] }
     obj = BinData::Struct.new(params)
-    str = "\x00\x01\x02\x00\x03\x00\x00\x04"
-    obj.read(str)
+    obj.read("\x00\x01\x02\x00\x03\x00\x00\x04")
 
     obj.a.should   == 1
     obj.s.b.should == 2

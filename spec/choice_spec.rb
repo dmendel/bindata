@@ -3,7 +3,6 @@
 require File.expand_path(File.dirname(__FILE__)) + '/spec_common'
 require 'bindata/choice'
 require 'bindata/int'
-require 'bindata/lazy'
 require 'bindata/struct'
 
 class Chooser
@@ -41,76 +40,19 @@ describe BinData::Choice, "when instantiating" do
   end
 end
 
-describe BinData::Choice, "with choices array" do
-  before(:each) do
-    chooser = Chooser.new
-    @data = BinData::Choice.new(:choices => [[:int8,    {:value => 3}],
-                                             [:int16le, {:value => 5}],
-                                             [:int32le, {:value => 7}]],
-                                :selection => lambda { chooser.choice } )
-    @chooser = chooser
-  end
-
-  it "should be able to select the choice" do
-    @chooser.choice = 0
-    @data.selection.should == 0
-    @data.value.should == 3
-
-    @chooser.choice = 1
-    @data.selection.should == 1
-    @data.value.should == 5
-
-    @chooser.choice = 2
-    @data.selection.should == 2
-    @data.value.should == 7
-  end
-
-  it "should handle :selection returning nil" do
-    @chooser.choice = nil
-    lambda { @data.value }.should raise_error(IndexError)
-  end
-
-  it "should not be able to select an invalid choice" do
-    @chooser.choice = 99
-    lambda { @data.value }.should raise_error(IndexError)
-  end
-
-  it "should handle missing methods correctly" do
-    @chooser.choice = 0
-
-    @data.should respond_to(:value)
-    @data.should_not respond_to(:does_not_exist)
-    lambda { @data.does_not_exist }.should raise_error(NoMethodError)
-  end
-
-  it "should delegate methods to the selected single choice" do
-    @chooser.choice = 1
-
-    @data.num_bytes.should == 2
-  end
-end
-
-describe BinData::Choice, "with sparse choices array" do
-  before(:each) do
-    chooser = Chooser.new
-    @data = BinData::Choice.new(:choices => [nil, nil, nil,
-                                             [:int8,    {:value => 3}],
-                                             nil,
-                                             [:int16le, {:value => 5}],
-                                             nil,
-                                             [:int32le, {:value => 7}]],
-                                :selection => lambda { chooser.choice } )
-    @chooser = chooser
-  end
-
+share_examples_for "Choice initialized with array or hash" do
   it "should be able to select the choice" do
     @chooser.choice = 3
     @data.selection.should == 3
-    @data.value.should == 3
+    @data.value.should == 30
+  end
+
+  it "should be able to change the choice" do
+    @chooser.choice = 3
 
     @chooser.choice = 7
     @data.selection.should == 7
-    @data.value.should == 7
+    @data.value.should == 70
   end
 
   it "should not be able to select an invalid choice" do
@@ -122,31 +64,48 @@ describe BinData::Choice, "with sparse choices array" do
     @chooser.choice = 1
     lambda { @data.value }.should raise_error(IndexError)
   end
+
+  it "should handle missing methods correctly" do
+    @chooser.choice = 3
+
+    @data.should respond_to(:value)
+    @data.should_not respond_to(:does_not_exist)
+    lambda { @data.does_not_exist }.should raise_error(NoMethodError)
+  end
+
+  it "should delegate methods to the selected single choice" do
+    @chooser.choice = 5
+
+    @data.num_bytes.should == 2
+  end
 end
 
-describe BinData::Choice, "with choices hash" do
+describe BinData::Choice, "with sparse choices array" do
+  it_should_behave_like "Choice initialized with array or hash"
+
   before(:each) do
     chooser = Chooser.new
-    @data = BinData::Choice.new(:choices => {3 => [:int8,    {:value => 3}],
-                                             5 => [:int16le, {:value => 5}],
-                                             7 => [:int32le, {:value => 7}]},
+    @data = BinData::Choice.new(:choices => [nil, nil, nil,
+                                             [:int8,    {:value => 30}],
+                                             nil,
+                                             [:int16le, {:value => 50}],
+                                             nil,
+                                             [:int32le, {:value => 70}]],
                                 :selection => lambda { chooser.choice } )
     @chooser = chooser
   end
+end
 
-  it "should be able to select the choice" do
-    @chooser.choice = 3
-    @data.value.should == 3
-    @data.selection.should == 3
+describe BinData::Choice, "with choices hash" do
+  it_should_behave_like "Choice initialized with array or hash"
 
-    @chooser.choice = 7
-    @data.value.should == 7
-    @data.selection.should == 7
-  end
-
-  it "should not be able to select an invalid choice" do
-    @chooser.choice = 99
-    lambda { @data.value }.should raise_error(IndexError)
+  before(:each) do
+    chooser = Chooser.new
+    @data = BinData::Choice.new(:choices => {3 => [:int8,    {:value => 30}],
+                                             5 => [:int16le, {:value => 50}],
+                                             7 => [:int32le, {:value => 70}]},
+                                :selection => lambda { chooser.choice } )
+    @chooser = chooser
   end
 end
 
@@ -164,13 +123,8 @@ describe BinData::Choice, "with single values" do
     @chooser.choice = 3
     @data.value = 254
 
-    @data.to_s.should == "\xfe"
-
-    @chooser.choice = 5
-    @data.to_s.should == "\xfe\x00"
-
     @chooser.choice = 7
-    @data.to_s.should == "\xfe\x00\x00\x00"
+    @data.value.should == 254
   end
 end
 
@@ -192,17 +146,20 @@ describe BinData::Choice, "with multi values" do
 
   it "should not copy values when changing fields" do
     @chooser.choice = 3
-    @data.a = 5
-    @data.a.should == 5
+    @data.a = 17
 
     @chooser.choice = 5
-    @data.a = 17
-    @data.a.should == 17
+    @data.a.should_not == 17
+  end
+
+  it "should preserve values when switching selection" do
+    @chooser.choice = 3
+    @data.a = 30
+
+    @chooser.choice = 5
+    @data.a = 50
 
     @chooser.choice = 3
-    @data.a.should == 5
-
-    @chooser.choice = 5
-    @data.a.should == 17
+    @data.a.should == 30
   end
 end

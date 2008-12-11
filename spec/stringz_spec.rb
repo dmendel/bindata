@@ -17,10 +17,7 @@ describe BinData::Stringz, "when empty" do
   end
 
   it "should write the zero byte terminator" do
-    io = StringIO.new
-    @str.write(io)
-    io.rewind
-    io.read.should == "\0"
+    @str.to_s.should == "\0"
   end
 end
 
@@ -39,10 +36,7 @@ describe BinData::Stringz, "with value set" do
   end
 
   it "should write the zero byte terminator" do
-    io = StringIO.new
-    @str.write(io)
-    io.rewind
-    io.read.should == "abcd\0"
+    @str.to_s.should == "abcd\0"
   end
 end
 
@@ -66,8 +60,7 @@ describe BinData::Stringz, "when reading" do
   end
 
   it "should fail if no zero byte is found" do
-    io = StringIO.new("abcd")
-    lambda {@str.read(io) }.should raise_error(EOFError)
+    lambda {@str.read("abcd") }.should raise_error(EOFError)
   end
 end
 
@@ -141,19 +134,18 @@ describe BinData::Stringz, "with max_length" do
     @str.value.should == "abcd"
   end
 
+  it "should write values greater than max_length" do
+    @str.value = "abcde"
+    @str.to_s.should == "abcd\0"
+  end
+
   it "should write values less than max_length" do
-    io = StringIO.new
     @str.value = "abc"
-    @str.write(io)
-    io.rewind
-    io.read.should == "abc\0"
+    @str.to_s.should == "abc\0"
   end
 
   it "should write values exactly max_length" do
-    io = StringIO.new
     @str.value = "abcd"
-    @str.write(io)
-    io.rewind
-    io.read.should == "abcd\0"
+    @str.to_s.should == "abcd\0"
   end
 end

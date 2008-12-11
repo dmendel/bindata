@@ -65,8 +65,8 @@ share_examples_for "All bitfields" do
         obj = bit_class.new
         obj.value = val
 
-        str = obj.to_s
-        bit_class.read(str).should == val
+        written = obj.to_s
+        bit_class.read(written).should == val
       end
     end
   end
@@ -110,7 +110,8 @@ describe "Big endian bitfields" do
     @bits.each_pair do |bit_class, nbits|
       obj = bit_class.new
 
-      str = [0b1000_0000].pack("C") + "\000" * (nbits / 8)
+      nbytes = (nbits + 7) / 8
+      str = [0b1000_0000].pack("C") + "\000" * (nbytes - 1)
       obj.read(str)
       obj.value.should == 1 << (nbits - 1)
     end
@@ -132,7 +133,8 @@ describe "Little endian bitfields" do
     @bits.each_pair do |bit_class, nbits|
       obj = bit_class.new
 
-      str = [0b0000_0001].pack("C") + "\000" * (nbits / 8)
+      nbytes = (nbits + 7) / 8
+      str = [0b0000_0001].pack("C") + "\000" * (nbytes - 1)
       obj.read(str)
       obj.value.should == 1
     end
