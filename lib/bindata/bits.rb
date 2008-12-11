@@ -5,7 +5,7 @@ module BinData
   # The integer is defined by endian and number of bits.
 
   module BitField #:nodoc: all
-    def self.define_klass(nbits, endian)
+    def self.define_class(nbits, endian)
       name = "Bit#{nbits}"
       name += "le" if endian == :little
 
@@ -17,7 +17,7 @@ module BinData
       END
     end
 
-    def self.create_methods(klass, nbits, endian)
+    def self.create_methods(bit_class, nbits, endian)
       min = 0
       max = (1 << nbits) - 1
       clamp = "val = (val < #{min}) ? #{min} : (val > #{max}) ? #{max} : val"
@@ -27,12 +27,11 @@ module BinData
         clamp = "val = (val == true) ? 1 : (not val) ? 0 : #{clamp}"
       end
 
-      define_methods(klass, nbits, endian.to_s, clamp)
+      define_methods(bit_class, nbits, endian.to_s, clamp)
     end
 
-    def self.define_methods(klass, nbits, endian, clamp)
-      # define methods in the given class
-      klass.module_eval <<-END
+    def self.define_methods(bit_class, nbits, endian, clamp)
+      bit_class.module_eval <<-END
         def value=(val)
           #{clamp}
           super(val)
@@ -63,7 +62,7 @@ module BinData
 
   # Create commonly used bit based integers
   (1 .. 63).each do |nbits|
-    BitField.define_klass(nbits, :little)
-    BitField.define_klass(nbits, :big)
+    BitField.define_class(nbits, :little)
+    BitField.define_class(nbits, :big)
   end
 end

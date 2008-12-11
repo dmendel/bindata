@@ -5,7 +5,19 @@ module BinData
   # is defined by endian, signedness and number of bytes.
 
   module Integer #:nodoc: all
-    def self.create_int_methods(klass, nbits, endian)
+    def self.define_class(nbits, endian, signed)
+      endian_str = (endian == :big) ? "be" : "le"
+      name = (signed ? "Int" : "Uint") + nbits.to_s + endian_str
+      creation_method = signed ? "create_int_methods" : "create_uint_methods"
+      BinData.module_eval <<-END
+        class #{name} < BinData::Single
+          register(self.name, self)
+          Integer.#{creation_method}(self, #{nbits}, :#{endian.to_s})
+        end
+      END
+    end
+
+    def self.create_int_methods(int_class, nbits, endian)
       max = (1 << (nbits - 1)) - 1
       min = -(max + 1)
 
@@ -17,10 +29,10 @@ module BinData
       uint2int = "val = ((val & #{1 << (nbits - 1)}).zero?) ? " +
                  "val & #{max} : -(((~val) & #{max}) + 1)"
 
-      define_methods(klass, nbits / 8, clamp, read, to_s, int2uint, uint2int)
+      define_methods(int_class, nbits / 8, clamp, read, to_s, int2uint, uint2int)
     end
 
-    def self.create_uint_methods(klass, nbits, endian)
+    def self.create_uint_methods(int_class, nbits, endian)
       min = 0
       max = (1 << nbits) - 1
 
@@ -28,7 +40,7 @@ module BinData
       read = create_read_code(nbits, endian)
       to_s = create_to_s_code(nbits, endian)
 
-      define_methods(klass, nbits / 8, clamp, read, to_s)
+      define_methods(int_class, nbits / 8, clamp, read, to_s)
     end
 
     def self.create_clamp_code(min, max)
@@ -101,10 +113,9 @@ module BinData
       "#{array_str}.pack('#{d * nwords}')"
     end
 
-    def self.define_methods(klass, nbytes, clamp, read, to_s,
+    def self.define_methods(int_class, nbytes, clamp, read, to_s,
                             int2uint = nil, uint2int = nil)
-      # define methods in the given class
-      klass.module_eval <<-END
+      int_class.module_eval <<-END
         def value=(val)
           #{clamp}
           super(val)
@@ -133,18 +144,6 @@ module BinData
         end
       END
     end
-
-    def self.define_klass(nbits, endian, signed)
-      endian_str = (endian == :big) ? "be" : "le"
-      name = (signed ? "Int" : "Uint") + nbits.to_s + endian_str
-      creation_method = signed ? "create_int_methods" : "create_uint_methods"
-      BinData.module_eval <<-END
-        class #{name} < BinData::Single
-          register(self.name, self)
-          Integer.#{creation_method}(self, #{nbits}, :#{endian.to_s})
-        end
-      END
-    end
   end
 
 
@@ -162,9 +161,9 @@ module BinData
 
   # Create commonly used integers
   [8, 16, 32, 64, 128].each do |nbits|
-    Integer.define_klass(nbits, :little, false)
-    Integer.define_klass(nbits, :little, true)
-    Integer.define_klass(nbits, :big, false)
-    Integer.define_klass(nbits, :big, true)
+    Integer.define_class(nbits, :little, false)
+    Integer.define_class(nbits, :little, true)
+    Integer.define_class(nbits, :big, false)
+    Integer.define_class(nbits, :big, true)
   end
 end

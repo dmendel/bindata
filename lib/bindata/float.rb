@@ -2,18 +2,19 @@ require 'bindata/single'
 
 module BinData
   # Provides a number of classes that contain a floating point number.
-  # The float is defined by endian, and precision.
+  # The float is defined by precision and endian.
 
-  module Float #:nodoc: all
-    def self.create_float_methods(klass, single_precision, endian)
-      read = create_read_code(single_precision, endian)
-      to_s = create_to_s_code(single_precision, endian)
+  module FloatingPoint #:nodoc: all
+    def self.create_float_methods(float_class, precision, endian)
+      read = create_read_code(precision, endian)
+      to_s = create_to_s_code(precision, endian)
+      nbytes = (precision == :single) ? 4 : 8
 
-      define_methods(klass, single_precision, read, to_s)
+      define_methods(float_class, nbytes, read, to_s)
     end
 
-    def self.create_read_code(single_precision, endian)
-      if single_precision
+    def self.create_read_code(precision, endian)
+      if precision == :single
         unpack = (endian == :little) ? 'e' : 'g'
         nbytes = 4
       else # double_precision
@@ -24,8 +25,8 @@ module BinData
       "io.readbytes(#{nbytes}).unpack('#{unpack}').at(0)"
     end
 
-    def self.create_to_s_code(single_precision, endian)
-      if single_precision
+    def self.create_to_s_code(precision, endian)
+      if precision == :single
         pack = (endian == :little) ? 'e' : 'g'
       else # double_precision
         pack = (endian == :little) ? 'E' : 'G'
@@ -34,11 +35,8 @@ module BinData
       "[val].pack('#{pack}')"
     end
 
-    def self.define_methods(klass, single_precision, read, to_s)
-      nbytes = single_precision ? 4 : 8
-
-      # define methods in the given class
-      klass.module_eval <<-END
+    def self.define_methods(float_class, nbytes, read, to_s)
+      float_class.module_eval <<-END
         def _do_num_bytes(ignored)
           #{nbytes}
         end
@@ -65,24 +63,24 @@ module BinData
   # Single precision floating point number in little endian format
   class FloatLe < BinData::Single
     register(self.name, self)
-    Float.create_float_methods(self, true, :little)
+    FloatingPoint.create_float_methods(self, :single, :little)
   end
 
   # Single precision floating point number in big endian format
   class FloatBe < BinData::Single
     register(self.name, self)
-    Float.create_float_methods(self, true, :big)
+    FloatingPoint.create_float_methods(self, :single, :big)
   end
 
   # Double precision floating point number in little endian format
   class DoubleLe < BinData::Single
     register(self.name, self)
-    Float.create_float_methods(self, false, :little)
+    FloatingPoint.create_float_methods(self, :double, :little)
   end
 
   # Double precision floating point number in big endian format
   class DoubleBe < BinData::Single
     register(self.name, self)
-    Float.create_float_methods(self, false, :big)
+    FloatingPoint.create_float_methods(self, :double, :big)
   end
 end
