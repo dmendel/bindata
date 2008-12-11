@@ -10,10 +10,10 @@ class MockDataObject
       meta = class << self ; self; end
       meta.send(:define_method, k.to_sym) { v }
     end
-    @parameters = params
+    @custom_parameters = params
     @parent = parent
   end
-  attr_accessor :parent, :parameters
+  attr_accessor :parent, :custom_parameters
 end
 
 describe BinData::LazyEvaluator, "with no parents" do

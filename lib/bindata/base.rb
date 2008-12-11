@@ -142,7 +142,7 @@ module BinData
     attr_accessor :parent
 
     # Returns all the custom parameters supplied to this data object.
-    def parameters
+    def custom_parameters
       @params.extra_parameters
     end
 

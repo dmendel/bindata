@@ -145,10 +145,10 @@ describe BinData::Base, "with multiple parameters" do
     internal_parameters.should_not include(:xx)
   end
 
-  it "should identify extra parameters" do
+  it "should identify custom parameters" do
     params = {:p1 => 1, :p2 => 2, :p3 => 3, :p4 => 4, :p5 => 5}
     obj = WithParamBase.new(params)
-    obj.parameters.should == {:p4 => 4, :p5 => 5}
+    obj.custom_parameters.should == {:p4 => 4, :p5 => 5}
   end
 
   it "should not allow parameters with nil values" do

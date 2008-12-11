@@ -5,14 +5,15 @@ module BinData
   #
   #    BinData::String.new(:value => lambda { %w{a test message}.join(" ") })
   #
-  # When evaluating lambdas, unknown methods are resolved in the context of
-  # the parent of the bound data object, first as keys in #parameters, and
-  # secondly as methods in this parent.  This resolution propagates up the
-  # chain of parent data objects.
+  # When evaluating lambdas, unknown methods are resolved in the context of the
+  # parent of the bound data object.  Resolution is attempted firstly as keys
+  # in #custom_parameters, and secondly as methods in this parent.  This
+  # resolution propagates up the chain of parent data objects.
   #
   # This resolution process makes the lambda easier to read as we just write
   # <tt>field</tt> instead of <tt>obj.field</tt>.
   class LazyEvaluator
+
     class << self
       # Lazily evaluates +val+ in the context of +obj+, with possibility of
       # +overrides+.
@@ -43,7 +44,7 @@ module BinData
 
     # Evaluates +val+ in the context of this data object.  Evaluation
     # recurses until it yields a value that is not a symbol or lambda.
-    # +overrides+ is an optional +obj.parameters+ like hash.
+    # +overrides+ is an optional +obj.custom_parameters+ like hash.
     def lazy_eval(val, overrides = nil)
       result = val
       @overrides = overrides if overrides
@@ -63,13 +64,7 @@ module BinData
       elsif symbol == :index
         array_index
       elsif @obj.parent
-        val = symbol
-        if @obj.parent.parameters and @obj.parent.parameters.has_key?(symbol)
-          val = @obj.parent.parameters[symbol]
-        elsif @obj.parent and @obj.parent.respond_to?(symbol)
-          val = @obj.parent.__send__(symbol, *args)
-        end
-        LazyEvaluator.eval(val, @obj.parent)
+        resolve_symbol_in_parent_context(symbol, args)
       else
         super
       end
@@ -94,5 +89,21 @@ module BinData
       raise NoMethodError, "no index found"
     end
 
+    def resolve_symbol_in_parent_context(symbol, args)
+      if @obj.parent.custom_parameters.has_key?(symbol)
+        result = @obj.parent.custom_parameters[symbol]
+      elsif @obj.parent.respond_to?(symbol)
+        result = @obj.parent.__send__(symbol, *args)
+      else
+        result = symbol
+      end
+
+      if result.is_a?(Symbol)
+        # recursively evaluate symbols
+        LazyEvaluator.eval(result, @obj.parent)
+      else
+        result
+      end
+    end
   end
 end
