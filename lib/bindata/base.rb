@@ -45,11 +45,13 @@ module BinData
 
       define_x_parameters(:bindata_mandatory, []) do |array, args|
         args.each { |arg| array << arg.to_sym }
+        array.sort! { |a,b| a.to_s <=> b.to_s }
         array.uniq!
       end
 
       define_x_parameters(:bindata_optional, []) do |array, args|
         args.each { |arg| array << arg.to_sym }
+        array.sort! { |a,b| a.to_s <=> b.to_s }
         array.uniq!
       end
 
@@ -60,6 +62,7 @@ module BinData
 
       define_x_parameters(:bindata_mutually_exclusive, []) do |array, args|
         array << [args[0].to_sym, args[1].to_sym]
+        array.uniq!
       end
 
       # Returns a list of internal parameters that are accepted by this object
@@ -156,10 +159,10 @@ module BinData
     def do_read(io)
       raise ArgumentError, "io must be a BinData::IO" unless BinData::IO === io
 
-      clear
       check_offset(io)
 
       if eval_param(:onlyif)
+        clear
         _do_read(io)
       end
     end
@@ -316,7 +319,7 @@ module BinData
     end
 
     # Returns the number of bytes it will take to write this data.
-    def _do_num_bytes
+    def _do_num_bytes(what)
       raise NotImplementedError
     end
 
