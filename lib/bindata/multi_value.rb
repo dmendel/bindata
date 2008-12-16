@@ -1,5 +1,7 @@
 require 'bindata/params'
+require 'bindata/registry'
 require 'bindata/struct'
+require 'set'
 
 module BinData
   # A MultiValue is a declarative wrapper around Struct.
@@ -47,12 +49,12 @@ module BinData
     class << self
       extend Parameters
 
-      # Register the names of all subclasses of this class.
       def inherited(subclass) #:nodoc:
+        # Register the names of all subclasses of this class.
         register(subclass.name, subclass)
       end
 
-      # Can this data object self reference itself?
+      # A MultiValue can self reference itself.
       def recursive?
         true
       end
@@ -73,19 +75,26 @@ module BinData
       # Returns the names of any hidden fields in this struct.  Any given args
       # are appended to the hidden list.
       def hide(*args)
-        # note that fields are stored in an instance variable not a class var
         @hide ||= []
         @hide.concat(args.collect { |name| name.to_s })
         @hide
       end
 
-      # Returns all stored fields.
-      # Should only be called by #sanitize_parameters
-      def fields
-        @fields ||= []
+      # Sets the mandatory parameters used by this class.
+      def mandatory_parameters(*args) ; end
+
+      define_parameters(:mandatory, Set.new) do |set, args|
+        set.merge(args.collect { |a| a.to_sym })
       end
 
-      # Used to define fields for this structure.
+      # Sets the default parameters used by this class.
+      def default_parameters(params = {}); end
+
+      define_parameters(:default, {}) do |hash, args|
+        params = args[0]
+        hash.merge!(params)
+      end
+
       def method_missing(symbol, *args)
         name, params = args
 
@@ -93,78 +102,81 @@ module BinData
         name = name.to_s
         params ||= {}
 
-        # note that fields are stored in an instance variable not a class var
-        @fields ||= []
+        ensure_type_exists(type)
+        ensure_valid_name(name)
 
-        # check that type is known
-        unless Sanitizer.type_exists?(type, endian)
-          raise TypeError, "unknown type '#{type}' for #{self}", caller
-        end
-
-        # check for duplicate names
-        @fields.each do |t, n, p|
-          if n == name
-            raise SyntaxError, "duplicate field '#{name}' in #{self}", caller
-          end
-        end
-
-        # check that name doesn't shadow an existing method
-        if self.instance_methods.include?(name)
-          raise NameError.new("", name),
-                "field '#{name}' shadows an existing method", caller
-        end
-
-        # check that name isn't reserved
-        if self::RESERVED.include?(name)
-          raise NameError.new("", name),
-                "field '#{name}' is a reserved name", caller
-        end
-
-        # remember this field.  These fields will be recalled upon creating
-        # an instance of this class
-        @fields.push([type, name, params])
+        append_field(type, name, params)
       end
 
-      # Ensures that +params+ is of the form expected by #initialize.
       def sanitize_parameters!(sanitizer, params)
-        endian = params[:endian] || self.endian
-        fields = params[:fields] || self.fields
-        hide   = params[:hide]   || self.hide
-
-        params[:endian] = endian unless endian.nil?
-        params[:fields] = fields
-        params[:hide]   = hide
-
-        # add default parameters
-        default_parameters.each do |k,v|
-          params[k] = v unless params.has_key?(k)
-        end
-
-        # ensure mandatory parameters exist
-        mandatory_parameters.each do |prm|
-          if not params.has_key?(prm)
-            raise ArgumentError, "parameter ':#{prm}' must be specified " +
-                                 "in #{self}"
-          end
-        end
+        merge_endian!(params)
+        merge_fields!(params)
+        merge_hide!(params)
+        merge_default_custom_parameters!(params)
+        ensure_mandatory_custom_parameters_exist(params)
 
         super(sanitizer, params)
       end
 
-      # Sets the mandatory parameters used by this class.
-      def mandatory_parameters(*args) ; end
+      #-------------
+      private
 
-      define_x_parameters(:mandatory, []) do |array, args|
-        args.each { |arg| array << arg.to_sym }
-        array.uniq!
+      def ensure_type_exists(type)
+        unless RegisteredClasses.is_registered?(type, endian)
+          raise TypeError, "unknown type '#{type}' for #{self}", caller(2)
+        end
       end
 
-      # Sets the default parameters used by this class.
-      def default_parameters(params = {}); end
+      def ensure_valid_name(name)
+        @fields ||= []
+        @fields.each do |t, n, p|
+          if n == name
+            raise SyntaxError, "duplicate field '#{name}' in #{self}", caller(2)
+          end
+        end
+        if self.instance_methods.include?(name)
+          raise NameError.new("", name),
+                "field '#{name}' shadows an existing method", caller(2)
+        end
+        if self::RESERVED.include?(name)
+          raise NameError.new("", name),
+                "field '#{name}' is a reserved name", caller(2)
+        end
+      end
 
-      define_x_parameters(:default, {}) do |hash, args|
-        params = args.length > 0 ? args[0] : {}
-        hash.merge!(params)
+      def append_field(type, name, params)
+        @fields ||= []
+        @fields.push([type, name, params])
+      end
+
+      def merge_endian!(params)
+        endian = params[:endian] || self.endian
+        params[:endian] = endian unless endian.nil?
+      end
+
+      def merge_fields!(params)
+        fields = params[:fields] || @fields || []
+        params[:fields] = fields
+      end
+
+      def merge_hide!(params)
+        hide = params[:hide] || self.hide
+        params[:hide] = hide
+      end
+
+      def merge_default_custom_parameters!(params)
+        default_parameters.each do |k,v|
+          params[k] = v unless params.has_key?(k)
+        end
+      end
+
+      def ensure_mandatory_custom_parameters_exist(params)
+        mandatory_parameters.each do |prm|
+          unless params.has_key?(prm)
+            raise ArgumentError, "parameter ':#{prm}' must be specified " +
+                                 "in #{self}"
+          end
+        end
       end
     end
   end

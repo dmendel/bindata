@@ -45,63 +45,74 @@ module BinData
   #                       a list of symbols representing the data object type.
   #                       If a choice is to have params passed to it, then it
   #                       should be provided as [type_symbol, hash_params].
-  #                       An implementation gotcha is that the hash may not
+  #                       An implementation constraint is that the hash may not
   #                       contain symbols as keys.
   # <tt>:selection</tt>:: An index/key into the :choices array/hash which
   #                       specifies the currently active choice.
   class Choice < BinData::Base
     extend Forwardable
 
-    # Register this class
     register(self.name, self)
 
-    # These are the parameters used by this class.
     bindata_mandatory_parameters :choices, :selection
 
     class << self
 
-      # Ensures that +params+ is of the form expected by #initialize.
       def sanitize_parameters!(sanitizer, params)
         if params.has_key?(:choices)
-          choices = params[:choices]
-
-          # convert array to hash keyed by index
-          if ::Array === choices
-            tmp = {}
-            choices.each_with_index do |el, i|
-              tmp[i] = el unless el.nil?
-            end
-            choices = tmp
-          end
-
-          # ensure valid hash keys
-          if choices.has_key?(nil)
-            raise ArgumentError, ":choices hash may not have nil key"
-          end
-          if choices.keys.detect { |k| Symbol === k }
-            raise ArgumentError, ":choices hash may not have symbols for keys"
-          end
-
-          # sanitize each choice
-          new_choices = {}
-          choices.each_pair do |key, val|
-            type, param = val
-            klass = sanitizer.lookup_klass(type)
-            sanitized_params = sanitizer.sanitize_params(klass, param)
-            new_choices[key] = [klass, sanitized_params]
-          end
-          params[:choices] = new_choices
+          choices = choices_as_hash(params[:choices])
+          ensure_valid_keys(choices)
+          params[:choices] = sanitized_choices(sanitizer, choices)
         end
 
         super(sanitizer, params)
+      end
+
+      #-------------
+      private
+
+      def choices_as_hash(choices)
+        if choices.is_a? ::Array
+          key_array_by_index(choices)
+        else
+          choices
+        end
+      end
+
+      def key_array_by_index(array)
+        result = {}
+        array.each_with_index do |el, i|
+          result[i] = el unless el.nil?
+        end
+        result
+      end
+
+      def ensure_valid_keys(choices)
+        if choices.has_key?(nil)
+          raise ArgumentError, ":choices hash may not have nil key"
+        end
+        if choices.keys.detect { |k| Symbol === k }
+          raise ArgumentError, ":choices hash may not have symbols for keys"
+        end
+      end
+
+      def sanitized_choices(sanitizer, choices)
+        result = {}
+        choices.each_pair do |key, val|
+          type, param = val
+          the_class = sanitizer.lookup_class(type)
+          sanitized_params = sanitizer.sanitized_params(the_class, param)
+          result[key] = [the_class, sanitized_params]
+        end
+        result
       end
     end
 
     def initialize(params = {}, parent = nil)
       super(params, parent)
 
-      @choices  = {}
-      @last_key = nil
+      @choices = {}
+      @last_selection = nil
     end
 
     # A convenience method that returns the current selection.
@@ -138,21 +149,22 @@ module BinData
 
     # A choice represents a specific object.
     def obj
-      the_choice
+      #TODO: this should be as written, but I can't work out how to make
+      # a failing test case with just "return current_choice"
+      current_choice.obj
     end
 
-    def_delegators :the_choice, :clear, :clear?, :single_value?
-    def_delegators :the_choice, :done_read, :_snapshot
-    def_delegators :the_choice, :_do_read, :_do_write, :_do_num_bytes
+    def_delegators :current_choice, :clear, :clear?, :single_value?
+    def_delegators :current_choice, :_do_read, :_done_read, :_do_write
+    def_delegators :current_choice, :_do_num_bytes, :_snapshot
 
-    # Override to include selected data object.
     def respond_to?(symbol, include_private = false)
-      super || the_choice.respond_to?(symbol, include_private)
+      super || current_choice.respond_to?(symbol, include_private)
     end
 
     def method_missing(symbol, *args, &block)
-      if the_choice.respond_to?(symbol)
-        the_choice.__send__(symbol, *args, &block)
+      if current_choice.respond_to?(symbol)
+        current_choice.__send__(symbol, *args, &block)
       else
         super
       end
@@ -161,37 +173,57 @@ module BinData
     #---------------
     private
 
-    # Returns the selected data object.
-    def the_choice
-      key = eval_param(:selection)
+    def current_choice
+      selection = eval_param(:selection)
+      raise IndexError, ":selection returned nil value" if selection.nil?
 
-      if key.nil?
-        raise IndexError, ":selection returned nil value"
-      end
-
-      obj = @choices[key]
-      if obj.nil?
-        # instantiate choice object
-        choice_klass, choice_params = no_eval_param(:choices)[key]
-        if choice_klass.nil?
-          raise IndexError, "selection #{key} does not exist in :choices"
-        end
-        obj = choice_klass.new(choice_params, self)
-        @choices[key] = obj
-      end
-
-      # for single_values copy the value when the selected object changes
-      if key != @last_key
-        if @last_key != nil
-          prev = @choices[@last_key]
-          if prev != nil and prev.single_value? and obj.single_value?
-            obj.value = prev.value
-          end
-        end
-        @last_key = key
-      end
+      obj = get_or_instantiate_choice(selection)
+      retain_previous_value_if_single(selection, obj)
 
       obj
+    end
+
+    def get_or_instantiate_choice(selection)
+      obj = @choices[selection]
+      if obj.nil?
+        obj = instantiate_choice(selection)
+        @choices[selection] = obj
+      end
+      obj
+    end
+
+    def instantiate_choice(selection)
+      choice_class, choice_params = no_eval_param(:choices)[selection]
+      if choice_class.nil?
+        raise IndexError, "selection #{selection} does not exist in :choices"
+      end
+      choice_class.new(choice_params, self)
+    end
+
+    def retain_previous_value_if_single(selection, obj)
+      prev = get_previous_choice(selection)
+      if should_retain_value?(prev, obj)
+        obj.value = prev.value
+      end
+      remember_current_selection(selection)
+    end
+
+    def should_retain_value?(prev, cur)
+      prev != nil and prev.single_value? and cur.single_value?
+    end
+
+    def get_previous_choice(selection)
+      if selection != @last_selection and @last_selection != nil
+        @choices[@last_selection]
+      else
+        nil
+      end
+    end
+
+    def remember_current_selection(selection)
+      if selection != @last_selection
+        @last_selection = selection
+      end
     end
   end
 end

@@ -39,6 +39,13 @@ describe BinData::IO do
     io.readbytes(4).should == "cdef"
   end
 
+  it "should read all bytes" do
+    stream = StringIO.new("abcdefghij")
+    io = BinData::IO.new(stream)
+
+    io.read_all_bytes.should == "abcdefghij"
+  end
+
   it "should raise error when reading at eof" do
     stream = StringIO.new("abcdefghij")
     io = BinData::IO.new(stream)
@@ -64,6 +71,17 @@ describe BinData::IO do
     stream.rewind
     stream.read.should == "abcd"
   end
+
+  it "should flush" do
+    stream = StringIO.new
+    io = BinData::IO.new(stream)
+    io.writebytes("abcd")
+    io.flush
+
+    stream.rewind
+    stream.read.should == "abcd"
+  end
+
 end
 
 describe BinData::IO, "reading bits in big endian" do

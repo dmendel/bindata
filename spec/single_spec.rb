@@ -6,11 +6,31 @@ require 'bindata/single'
 
 # An implementation of a unsigned 4 byte integer.
 class ConcreteSingle < BinData::Single
-  def val_to_str(val)    [val].pack("V") end
-  def read_val(io)       io.readbytes(4).unpack("V")[0] end
-  def sensible_default() 0 end
+  def value_to_string(val)       [val].pack("V") end
+  def read_and_return_value(io)  io.readbytes(4).unpack("V")[0] end
+  def sensible_default()         0 end
 
-  def in_read?()         @in_read end
+  def in_read?()                 @in_read end
+end
+
+describe BinData::Single, "when subclassing" do
+  before(:all) do
+    eval <<-END
+      class SubClassOfSingle < BinData::Single
+        make_private_instance_methods_public
+      end
+    END
+  end
+
+  before(:each) do
+    @obj = SubClassOfSingle.new
+  end
+
+  it "should raise errors on unimplemented methods" do
+    lambda { @obj.value_to_string(nil) }.should raise_error(NotImplementedError)
+    lambda { @obj.read_and_return_value(nil) }.should raise_error(NotImplementedError)
+    lambda { @obj.sensible_default }.should raise_error(NotImplementedError)
+  end
 end
 
 describe BinData::Single do
@@ -186,25 +206,5 @@ describe BinData::Single, "with :check_value" do
   it "should fail when check_value is boolean and false" do
     data = ConcreteSingle.new(:check_value => lambda { value > 100 })
     lambda { data.read(@io) }.should raise_error(BinData::ValidityError)
-  end
-end
-
-describe BinData::Single, "when subclassing" do
-  before(:all) do
-    eval <<-END
-      class SubClassOfSingle < BinData::Single
-        make_private_instance_methods_public
-      end
-    END
-  end
-
-  before(:each) do
-    @obj = SubClassOfSingle.new
-  end
-
-  it "should raise errors on unimplemented methods" do
-    lambda { @obj.val_to_str(nil) }.should raise_error(NotImplementedError)
-    lambda { @obj.read_val(nil) }.should raise_error(NotImplementedError)
-    lambda { @obj.sensible_default }.should raise_error(NotImplementedError)
   end
 end

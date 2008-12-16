@@ -2,7 +2,6 @@
 
 require File.expand_path(File.dirname(__FILE__)) + '/spec_common'
 require 'bindata/array'
-require 'bindata/bits'
 require 'bindata/int'
 require 'bindata/struct'
 
@@ -59,7 +58,7 @@ describe BinData::Array, "with no elements" do
   end
 
   it "should append an element" do
-    @data.append(99)
+    @data << 99
     @data.length.should == 1
     @data.last.should == 99
   end
@@ -179,21 +178,27 @@ describe BinData::Array, "with several elements" do
     @data.length.should == 5
   end
 
-  it "should read and write correctly" do
-    io = StringIO.new
+  it "should symmetrically read and write" do
     @data[1] = 8
-    @data.write(io)
+    str = @data.to_s
 
     @data.clear
-    io.rewind
     @data[1].should == 2
 
-    @data.read(io)
+    @data.read(str)
     @data[1].should == 8
   end
 
+  it "should identify index of elements" do
+    @data.index(3).should == 2
+  end
+
+  it "should return nil for index of non existent element" do
+    @data.index(42).should be_nil
+  end
+
   it "should append an element" do
-    @data.append(99)
+    @data.push(99)
     @data.length.should == 6
     @data.last.should == 99
   end
@@ -202,7 +207,7 @@ end
 describe BinData::Array, "containing structs" do
   before(:each) do
     type = [:struct, {:fields => [[:int8, :a,
-                                   {:initial_value => lambda { parent.index }}],
+                                   {:initial_value => lambda { index }}],
                                   [:int8, :b]]}]
     @data = BinData::Array.new(:type => type, :initial_length => 5)
   end
@@ -223,6 +228,10 @@ describe BinData::Array, "containing structs" do
     @data.collect { |s| s.a }.should == [0, 1, 2, 3, 4]
   end
 
+  it "should identify index of elements" do
+    @data.index(@data[3]).should == 3
+  end
+
   it "should be able to append elements" do
     obj = @data.append
     obj.a = 3
@@ -239,27 +248,22 @@ describe BinData::Array, "with :read_until containing +element+" do
     @data = BinData::Array.new(:type => :int8, :read_until => read_until)
   end
 
-  it "should append to an empty array" do
-    @data.append(3)
-    @data.first.should == 3
-  end
-
   it "should read until the sentinel is reached" do
-    io = StringIO.new("\x01\x02\x03\x04\x05\x06\x07")
-    @data.read(io)
+    str = "\x01\x02\x03\x04\x05\x06\x07"
+    @data.read(str)
     @data.length.should == 5
   end
 end
 
 describe BinData::Array, "with :read_until containing +array+ and +index+" do
   before(:each) do
-    read_until = lambda { index >=2 and array[index - 2] == 5 }
+    read_until = lambda { index >= 2 and array[index - 2] == 5 }
     @data = BinData::Array.new(:type => :int8, :read_until => read_until)
   end
 
   it "should read until the sentinel is reached" do
-    io = StringIO.new("\x01\x02\x03\x04\x05\x06\x07\x08")
-    @data.read(io)
+    str = "\x01\x02\x03\x04\x05\x06\x07\x08"
+    @data.read(str)
     @data.length.should == 7
   end
 end
@@ -267,51 +271,16 @@ end
 describe BinData::Array, "with :read_until => :eof" do
   it "should read records until eof" do
     obj = BinData::Array.new(:type => :int8, :read_until => :eof)
-    data = "\x01\x02\x03"
-    obj.read(data)
+    str = "\x01\x02\x03"
+    obj.read(str)
     obj.snapshot.should == [1, 2, 3]
   end
 
   it "should read records until eof, ignoring partial records" do
     obj = BinData::Array.new(:type => :int16be, :read_until => :eof)
-    data = "\x00\x01\x00\x02\x03"
-    obj.read(data)
+    str = "\x00\x01\x00\x02\x03"
+    obj.read(str)
     obj.snapshot.should == [1, 2]
-  end
-end
-
-describe BinData::Array, "of bits" do
-  before(:each) do
-    @data = BinData::Array.new(:type => :bit1, :initial_length => 15)
-  end
-
-  it "should read" do
-    str = [0b0001_0100, 0b1000_1000].pack("CC")
-    @data.read(str)
-    @data[0].should  == 0
-    @data[1].should  == 0
-    @data[2].should  == 0
-    @data[3].should  == 1
-    @data[4].should  == 0
-    @data[5].should  == 1
-    @data[6].should  == 0
-    @data[7].should  == 0
-    @data[8].should  == 1
-    @data[9].should  == 0
-    @data[10].should == 0
-    @data[11].should == 0
-    @data[12].should == 1
-    @data[13].should == 0
-    @data[14].should == 0
-  end
-
-  it "should write" do
-    @data[3] = 1
-    @data.to_s.should == [0b0001_0000, 0b0000_0000].pack("CC")
-  end
-
-  it "should return num_bytes" do
-    @data.num_bytes.should == 2
   end
 end
 
@@ -334,4 +303,4 @@ describe BinData::Array, "nested within an Array" do
   end
 end
 
-# TODO
+# TODO: #at, #concat, #find_index, #insert, #unshift

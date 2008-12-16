@@ -59,10 +59,10 @@ module BinData
     end
 
     def method_missing(symbol, *args)
-      if @overrides.include?(symbol)
+      if @overrides.has_key?(symbol)
         @overrides[symbol]
       elsif symbol == :index
-        array_index
+        index_in_array_ancestor
       elsif @obj.parent
         resolve_symbol_in_parent_context(symbol, args)
       else
@@ -73,14 +73,13 @@ module BinData
     #---------------
     private
 
-    # Returns the index in the closest ancestor array of this data object.
-    def array_index
-      bindata_array_klass = BinData.const_defined?("Array") ? 
+    def index_in_array_ancestor
+      bindata_array_class = BinData.const_defined?("Array") ? 
                               BinData.const_get("Array") : nil
       child = @obj
       parent = @obj.parent
       while parent
-        if parent.class == bindata_array_klass
+        if parent.class == bindata_array_class
           return parent.index(child)
         end
         child = parent

@@ -8,8 +8,8 @@ class BaseStub < BinData::Base
   def clear; end
   def clear?; end
   def single_value?; end
-  def done_read; end
   def _do_read(io) end
+  def _done_read; end
   def _do_write(io) end
   def _do_num_bytes(x) end
   def _snapshot; end
@@ -23,8 +23,8 @@ class MockBaseStub < BaseStub
   def clear;           mock.clear; end
   def clear?;          mock.clear?; end
   def single_value?;   mock.single_value?; end
-  def done_read;       mock.done_read; end
   def _do_read(io)     mock._do_read(io); end
+  def _done_read;      mock._done_read; end
   def _do_write(io)    mock._do_write(io); end
   def _do_num_bytes(x) mock._do_num_bytes(x) end
   def _snapshot;       mock._snapshot; end
@@ -47,8 +47,8 @@ describe BinData::Base, "when subclassing" do
     lambda { @obj.clear }.should raise_error(NotImplementedError)
     lambda { @obj.clear? }.should raise_error(NotImplementedError)
     lambda { @obj.single_value? }.should raise_error(NotImplementedError)
-    lambda { @obj.done_read }.should raise_error(NotImplementedError)
     lambda { @obj._do_read(nil) }.should raise_error(NotImplementedError)
+    lambda { @obj._done_read }.should raise_error(NotImplementedError)
     lambda { @obj._do_write(nil) }.should raise_error(NotImplementedError)
     lambda { @obj._do_num_bytes(nil) }.should raise_error(NotImplementedError)
     lambda { @obj._snapshot }.should raise_error(NotImplementedError)
@@ -274,9 +274,9 @@ describe BinData::Base, "with :onlyif => false" do
 
   it "should not read" do
     io = StringIO.new("12345678901234567890")
-    @obj.mock.should_receive(:done_read) # don't care, but mock forces it
     @obj.mock.should_not_receive(:clear)
     @obj.mock.should_not_receive(:_do_read)
+    @obj.mock.should_not_receive(:_done_read)
     @obj.read(io)
   end
 
@@ -330,37 +330,41 @@ describe BinData::Base, "as multi value" do
 end
 
 describe BinData::Base, "as black box" do
-  before(:all) do
-    eval <<-END
-      class InstanceOfBase < BaseStub
-        def snapshot; [1, 2, 3]; end
-        def _do_write(io) io.writebytes("abc"); end
-      end
-    END
-  end
-
-  before(:each) do
-    @obj = InstanceOfBase.new
+  it "should access parent" do
+    parent = BaseStub.new
+    child = BaseStub.new(nil, parent)
+    child.parent.should == parent
   end
 
   it "should return self for #read" do
-    @obj.read("").should == @obj
+    obj = BaseStub.new
+    obj.read("").should == obj
   end
 
   it "should return self for #write" do
-    @obj.write("").should == @obj
+    obj = BaseStub.new
+    obj.write("").should == obj
   end
 
   it "should forward #inspect to snapshot" do
-    @obj.inspect.should == @obj.snapshot.inspect
+    class SnapshotBase < BaseStub
+      def snapshot; [1, 2, 3]; end
+    end
+    obj = SnapshotBase.new
+    obj.inspect.should == obj.snapshot.inspect
   end
 
   it "should write the same as to_s" do
+    class WriteToSBase < BaseStub
+      def _do_write(io) io.writebytes("abc"); end
+    end
+
+    obj = WriteToSBase.new
     io = StringIO.new
-    @obj.write(io)
+    obj.write(io)
     io.rewind
     written = io.read
-    @obj.to_s.should == written
+    obj.to_s.should == written
   end
 end
 
@@ -373,7 +377,7 @@ describe BinData::Base, "as white box" do
   it "should forward read to _do_read" do
     @obj.mock.should_receive(:clear).ordered
     @obj.mock.should_receive(:_do_read).ordered
-    @obj.mock.should_receive(:done_read).ordered
+    @obj.mock.should_receive(:_done_read).ordered
     @obj.read(nil)
   end
 

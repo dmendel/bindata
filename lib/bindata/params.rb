@@ -5,7 +5,7 @@ module BinData
     # of parameters.  This is used for creating collections of mandatory,
     # optional, default etc parameters.  The parameters for a class will
     # include the parameters of its ancestors.
-    def define_x_parameters(name, empty, &block) #:nodoc:
+    def define_parameters(name, empty, &block) #:nodoc:
       full_name_singular = "#{name.to_s}_parameter"
       full_name_plural = "#{name.to_s}_parameters"
 

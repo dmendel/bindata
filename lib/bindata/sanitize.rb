@@ -1,3 +1,4 @@
+require 'bindata/registry'
 require 'forwardable'
 
 module BinData
@@ -9,7 +10,7 @@ module BinData
     extend Forwardable
 
     # Sanitize the given parameters.
-    def initialize(klass, params)
+    def initialize(the_class, params)
       @hash = params
       @internal_parameters = {}
       @extra_parameters = {}
@@ -18,10 +19,10 @@ module BinData
       @hash.each do |k,v|
         k = k.to_sym
         if v.nil?
-          raise ArgumentError, "parameter :#{k} has nil value in #{klass}"
+          raise ArgumentError, "parameter :#{k} has nil value in #{the_class}"
         end
 
-        if klass.internal_parameters.include?(k)
+        if the_class.internal_parameters.include?(k)
           @internal_parameters[k] = v
         else
           @extra_parameters[k] = v
@@ -41,45 +42,21 @@ module BinData
   class Sanitizer
 
     class << self
-
       # Sanitize +params+ for +obj+.
       # Returns sanitized parameters.
-      def sanitize(klass, params)
+      def sanitize(the_class, params)
         if SanitizedParameters === params
           params
         else
           sanitizer = self.new
-          sanitizer.sanitize_params(klass, params)
+          sanitizer.sanitized_params(the_class, params)
         end
-      end
-
-      # Returns true if +type+ is registered.
-      def type_exists?(type, endian = nil)
-        lookup(type, endian) != nil
-      end
-
-      # Returns the class matching a previously registered +name+.
-      def lookup(name, endian)
-        name = name.to_s
-        klass = Registry.instance.lookup(name)
-        if klass.nil? and endian != nil
-          # lookup failed so attempt endian lookup
-          if /^u?int\d{1,3}$/ =~ name
-            new_name = name + ((endian == :little) ? "le" : "be")
-            klass = Registry.instance.lookup(new_name)
-          elsif ["float", "double"].include?(name)
-            new_name = name + ((endian == :little) ? "_le" : "_be")
-            klass = Registry.instance.lookup(new_name)
-          end
-        end
-        klass
       end
     end
 
-    # Create a new Sanitizer.
     def initialize
-      @seen   = []
       @endian = nil
+      @seen   = []
     end
 
     # Executes the given block with +endian+ set as the current endian.
@@ -94,42 +71,56 @@ module BinData
       end
     end
 
-    # Converts +type+ into the appropriate class.
-    def lookup_klass(type)
-      klass = self.class.lookup(type, @endian)
-      raise TypeError, "unknown type '#{type}'" if klass.nil?
-      klass
+    def lookup_class(type)
+      registered_class = RegisteredClasses.lookup(type, @endian)
+      if registered_class.nil?
+        raise TypeError, "unknown type '#{type}'"
+      end
+      registered_class
     end
 
-    # Sanitizes +params+ for +klass+.
-    # Returns +sanitized_params+.
-    def sanitize_params(klass, params)
+    def sanitized_params(the_class, params)
       new_params = params.nil? ? {} : params.dup
 
-      if klass.recursive? and @seen.include?(klass)
-        # This klass is defined recursively.  Remember the current endian
-        # and delay sanitizing the parameters until later.
-        new_params[:endian] = @endian if can_store_endian?(klass, new_params)
-        ret_val = new_params
+      result = nil
+      if can_sanitize_parameters?(the_class)
+        with_class_to_sanitize(the_class) do
+          the_class.sanitize_parameters!(self, new_params)
+          result = SanitizedParameters.new(the_class, new_params)
+        end
       else
-        @seen.push(klass)
-
-        # Sanitize new_params.  This may recursively call this method again.
-        klass.sanitize_parameters!(self, new_params)
-        ret_val = SanitizedParameters.new(klass, new_params)
-
-        @seen.pop
+        store_current_endian!(the_class, new_params)
+        result = new_params
       end
 
-      ret_val
+      result
     end
 
     #---------------
     private
 
-    # Can we store the current endian for later?
-    def can_store_endian?(klass, params)
-      (@endian != nil and klass.internal_parameters.include?(:endian) and
+    def can_sanitize_parameters?(the_class)
+      not need_to_delay_sanitizing?(the_class)
+    end
+
+    def need_to_delay_sanitizing?(the_class)
+      the_class.recursive? and @seen.include?(the_class)
+    end
+
+    def with_class_to_sanitize(the_class, &block)
+      @seen.push(the_class)
+      yield
+      @seen.pop
+    end
+
+    def store_current_endian!(the_class, params)
+      if can_store_endian?(the_class, params)
+        params[:endian] = @endian 
+      end
+    end
+
+    def can_store_endian?(the_class, params)
+      (@endian != nil and the_class.internal_parameters.include?(:endian) and
        not params.has_key?(:endian))
     end
   end

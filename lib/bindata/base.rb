@@ -3,6 +3,7 @@ require 'bindata/lazy'
 require 'bindata/params'
 require 'bindata/registry'
 require 'bindata/sanitize'
+require 'set'
 require 'stringio'
 
 module BinData
@@ -16,7 +17,6 @@ module BinData
   # Parameters may be provided at initialisation to control the behaviour of
   # an object.  These params are:
   #
-  # [<tt>:readwrite</tt>]     Deprecated. An alias for :onlyif.
   # [<tt>:onlyif</tt>]        Used to indicate a data object is optional.
   #                           if false, calls to #read or #write will not
   #                           perform any I/O, #num_bytes will return 0 and
@@ -37,75 +37,6 @@ module BinData
     class << self
       extend Parameters
 
-      # Define methods for:
-      #   bindata_mandatory_parameters
-      #   bindata_optional_parameters
-      #   bindata_default_parameters
-      #   bindata_mutually_exclusive_parameters
-
-      define_x_parameters(:bindata_mandatory, []) do |array, args|
-        args.each { |arg| array << arg.to_sym }
-        array.sort! { |a,b| a.to_s <=> b.to_s }
-        array.uniq!
-      end
-
-      define_x_parameters(:bindata_optional, []) do |array, args|
-        args.each { |arg| array << arg.to_sym }
-        array.sort! { |a,b| a.to_s <=> b.to_s }
-        array.uniq!
-      end
-
-      define_x_parameters(:bindata_default, {}) do |hash, args|
-        params = args.length > 0 ? args[0] : {}
-        hash.merge!(params)
-      end
-
-      define_x_parameters(:bindata_mutually_exclusive, []) do |array, args|
-        array << [args[0].to_sym, args[1].to_sym]
-        array.uniq!
-      end
-
-      # Returns a list of internal parameters that are accepted by this object
-      def internal_parameters
-        (bindata_mandatory_parameters + bindata_optional_parameters +
-         bindata_default_parameters.keys).uniq
-      end
-
-      # Ensures that +params+ is of the form expected by #initialize.
-      def sanitize_parameters!(sanitizer, params)
-        # replace :readwrite with :onlyif
-        if params.has_key?(:readwrite)
-          warn ":readwrite is deprecated. Replacing with :onlyif"
-          params[:onlyif] = params.delete(:readwrite)
-        end
-
-        # add default parameters
-        bindata_default_parameters.each do |k,v|
-          params[k] = v unless params.has_key?(k)
-        end
-
-        # ensure mandatory parameters exist
-        bindata_mandatory_parameters.each do |prm|
-          if not params.has_key?(prm)
-            raise ArgumentError, "parameter ':#{prm}' must be specified " +
-                                 "in #{self}"
-          end
-        end
-
-        # ensure mutual exclusion
-        bindata_mutually_exclusive_parameters.each do |param1, param2|
-          if params.has_key?(param1) and params.has_key?(param2)
-            raise ArgumentError, "params #{param1} and #{param2} " +
-                                 "are mutually exclusive"
-          end
-        end
-      end
-
-      # Can this data object self reference itself?
-      def recursive?
-        false
-      end
-
       # Instantiates this class and reads from +io+.  For single value objects
       # just the value is returned, otherwise the newly created data object is
       # returned.
@@ -115,14 +46,78 @@ module BinData
         data.single_value? ? data.value : data
       end
 
-      # Registers the mapping of +name+ to +klass+.
-      def register(name, klass)
-        Registry.instance.register(name, klass)
+      # Can this data object self reference itself?
+      def recursive?
+        false
       end
-      private :register
+
+      # Define methods for:
+      #   bindata_mandatory_parameters
+      #   bindata_optional_parameters
+      #   bindata_default_parameters
+      #   bindata_mutually_exclusive_parameters
+
+      define_parameters(:bindata_mandatory, Set.new) do |set, args|
+        set.merge(args.collect { |a| a.to_sym })
+      end
+
+      define_parameters(:bindata_optional, Set.new) do |set, args|
+        set.merge(args.collect { |a| a.to_sym })
+      end
+
+      define_parameters(:bindata_default, {}) do |hash, args|
+        params = args[0]
+        hash.merge!(params)
+      end
+
+      define_parameters(:bindata_mutually_exclusive, Set.new) do |set, args|
+        set.add([args[0].to_sym, args[1].to_sym])
+      end
+
+      # Returns a list of internal parameters that are accepted by this object
+      def internal_parameters
+        (bindata_mandatory_parameters + bindata_optional_parameters +
+         bindata_default_parameters.keys)
+      end
+
+      def sanitize_parameters!(sanitizer, params)
+        merge_default_parameters!(params)
+        ensure_mandatory_parameters_exist(params)
+        ensure_mutual_exclusion_of_parameters(params)
+      end
+
+      #-------------
+      private
+
+      def merge_default_parameters!(params)
+        bindata_default_parameters.each do |k,v|
+          params[k] = v unless params.has_key?(k)
+        end
+      end
+
+      def ensure_mandatory_parameters_exist(params)
+        bindata_mandatory_parameters.each do |prm|
+          unless params.has_key?(prm)
+            raise ArgumentError, "parameter ':#{prm}' must be specified " +
+                                 "in #{self}"
+          end
+        end
+      end
+
+      def ensure_mutual_exclusion_of_parameters(params)
+        bindata_mutually_exclusive_parameters.each do |param1, param2|
+          if params.has_key?(param1) and params.has_key?(param2)
+            raise ArgumentError, "params #{param1} and #{param2} " +
+                                 "are mutually exclusive"
+          end
+        end
+      end
+
+      def register(name, class_to_register)
+        RegisteredClasses.register(name, class_to_register)
+      end
     end
 
-    # Define the parameters we use in this class.
     bindata_optional_parameters :check_offset, :adjust_offset
     bindata_default_parameters :onlyif => true
     bindata_mutually_exclusive_parameters :check_offset, :adjust_offset
@@ -146,7 +141,7 @@ module BinData
       @params.extra_parameters
     end
 
-    # Reads data into this data object by calling #do_read then #done_read.
+    # Reads data into this data object.
     def read(io)
       io = BinData::IO.new(io) unless BinData::IO === io
 
@@ -155,15 +150,17 @@ module BinData
       self
     end
 
-    # Reads the value for this data from +io+.
     def do_read(io)
-      raise ArgumentError, "io must be a BinData::IO" unless BinData::IO === io
-
-      check_offset(io)
-
       if eval_param(:onlyif)
+        check_or_adjust_offset(io)
         clear
         _do_read(io)
+      end
+    end
+
+    def done_read
+      if eval_param(:onlyif)
+        _done_read
       end
     end
 
@@ -176,24 +173,18 @@ module BinData
       self
     end
 
-
-    # Writes the value for this data to +io+.
     def do_write(io)
-      raise ArgumentError, "io must be a BinData::IO" unless BinData::IO === io
-
       if eval_param(:onlyif)
         _do_write(io)
       end
     end
 
-    # Returns the number of bytes it will take to write this data by calling
-    # #do_num_bytes.
+    # Returns the number of bytes it will take to write this data.
     def num_bytes(what = nil)
       num = do_num_bytes(what)
       num.ceil
     end
 
-    # Returns the number of bytes it will take to write this data.
     def do_num_bytes(what = nil)
       if eval_param(:onlyif)
         _do_num_bytes(what)
@@ -233,6 +224,44 @@ module BinData
     #---------------
     private
 
+    def check_or_adjust_offset(io)
+      if has_param?(:check_offset)
+        check_offset(io)
+      elsif has_param?(:adjust_offset)
+        adjust_offset(io)
+      end
+    end
+
+    def check_offset(io)
+      actual_offset = io.offset
+      expected = eval_param(:check_offset, :offset => actual_offset)
+
+      if not expected
+        raise ValidityError, "offset not as expected"
+      elsif actual_offset != expected and expected != true
+        raise ValidityError, "offset is '#{actual_offset}' but " +
+                             "expected '#{expected}'"
+      end
+    end
+
+    def adjust_offset(io)
+      actual_offset = io.offset
+      expected = eval_param(:adjust_offset)
+      if actual_offset != expected
+        begin
+          seek = expected - actual_offset
+          io.seekbytes(seek)
+          warn "adjusting stream position by #{seek} bytes" if $VERBOSE
+        rescue
+          raise ValidityError, "offset is '#{actual_offset}' but " +
+                               "couldn't seek to expected '#{expected}'"
+        end
+      end
+    end
+
+    ###########################################################################
+    # Available to subclasses
+
     # Returns the value of the evaluated parameter.  +key+ references a
     # parameter from the +params+ hash used when creating the data object.
     # +values+ contains data that may be accessed when evaluating +key+.
@@ -254,35 +283,8 @@ module BinData
       @params.internal_parameters.has_key?(key)
     end
 
-    # Checks that the current offset of +io+ is as expected.  This should
-    # be called from #do_read before performing the reading.
-    def check_offset(io)
-      if has_param?(:check_offset)
-        actual_offset = io.offset
-        expected = eval_param(:check_offset, :offset => actual_offset)
-
-        if not expected
-          raise ValidityError, "offset not as expected"
-        elsif actual_offset != expected and expected != true
-          raise ValidityError, "offset is '#{actual_offset}' but " +
-                               "expected '#{expected}'"
-        end
-      elsif has_param?(:adjust_offset)
-        actual_offset = io.offset
-        expected = eval_param(:adjust_offset)
-        if actual_offset != expected
-          begin
-            seek = expected - actual_offset
-            io.seekbytes(seek)
-            warn "adjusting stream position by #{seek} bytes" if $VERBOSE
-          rescue
-            # could not seek so raise an error
-            raise ValidityError, "offset is '#{actual_offset}' but " +
-                                 "couldn't seek to expected '#{expected}'"
-          end
-        end
-      end
-    end
+    # Available to subclasses
+    ###########################################################################
 
     ###########################################################################
     # To be implemented by subclasses
@@ -303,13 +305,13 @@ module BinData
       raise NotImplementedError
     end
 
-    # To be called after calling #do_read.
-    def done_read
+    # Reads the data for this data object from +io+.
+    def _do_read(io)
       raise NotImplementedError
     end
 
-    # Reads the data for this data object from +io+.
-    def _do_read(io)
+    # Trigger function that is called after #do_read.
+    def _done_read
       raise NotImplementedError
     end
 
@@ -329,8 +331,8 @@ module BinData
     end
 
     # Set visibility requirements of methods to implement
-    public :clear, :clear?, :single_value?, :done_read
-    private :_do_read, :_do_write, :_do_num_bytes, :_snapshot
+    public :clear, :clear?, :single_value?
+    private :_do_read, :_done_read, :_do_write, :_do_num_bytes, :_snapshot
 
     # End To be implemented by subclasses
     ###########################################################################

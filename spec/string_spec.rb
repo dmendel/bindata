@@ -22,10 +22,9 @@ describe BinData::String, "with mutually exclusive parameters" do
 end
 
 describe BinData::String, "with deprecated parameters" do
-  it "should substitude :read_length for :initial_length" do
-    obj = BinData::String.new(:initial_length => 3)
-    io = StringIO.new("abcdefghij")
-    obj.read(io)
+  it "should substitude :trim_padding for :trim_value" do
+    obj = BinData::String.new(:trim_value => true)
+    obj.value = "abc\0"
     obj.value.should == "abc"
   end
 end
@@ -187,10 +186,10 @@ describe BinData::String, "with :pad_char" do
   end
 end
 
-describe BinData::String, "with :trim_value" do
+describe BinData::String, "with :trim_padding" do
   it "set false is the default" do
     str1 = BinData::String.new(:length => 5)
-    str2 = BinData::String.new(:length => 5, :trim_value => false)
+    str2 = BinData::String.new(:length => 5, :trim_padding => false)
     str1.value = "abc"
     str2.value = "abc"
     str1.value.should == "abc\0\0"
@@ -198,25 +197,25 @@ describe BinData::String, "with :trim_value" do
   end
 
   it "should trim the value" do
-    str = BinData::String.new(:pad_char => 'R', :trim_value => true)
+    str = BinData::String.new(:pad_char => 'R', :trim_padding => true)
     str.value = "abcRR"
     str.value.should == "abc"
   end
 
   it "should not affect num_bytes" do
-    str = BinData::String.new(:pad_char => 'R', :trim_value => true)
+    str = BinData::String.new(:pad_char => 'R', :trim_padding => true)
     str.value = "abcRR"
     str.num_bytes.should == 5
   end
 
   it "should trim if last char is :pad_char" do
-    str = BinData::String.new(:pad_char => 'R', :trim_value => true)
+    str = BinData::String.new(:pad_char => 'R', :trim_padding => true)
     str.value = "abcRR"
     str.value.should == "abc"
   end
 
   it "should not trim if value contains :pad_char not at the end" do
-    str = BinData::String.new(:pad_char => 'R', :trim_value => true)
+    str = BinData::String.new(:pad_char => 'R', :trim_padding => true)
     str.value = "abcRRde"
     str.value.should == "abcRRde"
   end

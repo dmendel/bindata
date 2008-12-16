@@ -46,34 +46,28 @@ module BinData
   #                           or failure.  Any other return is compared to
   #                           the value just read in.
   class Single < BinData::Base
-    # These are the parameters used by this class.
+
     bindata_optional_parameters :initial_value, :value, :check_value
     bindata_mutually_exclusive_parameters :initial_value, :value
 
     def initialize(params = {}, parent = nil)
       super(params, parent)
-      clear
+
+      @value   = nil
+      @in_read = false
     end
 
-    # Resets the internal state to that of a newly created object.
+    def single_value?
+      true
+    end
+
     def clear
       @value = nil
       @in_read = false
     end
 
-    # Returns if the value of this data has been read or explicitly set.
     def clear?
       @value.nil?
-    end
-
-    # Single objects are single_values
-    def single_value?
-      true
-    end
-
-    # To be called after calling #do_read.
-    def done_read
-      @in_read = false
     end
 
     # Returns the current value of this data.
@@ -82,11 +76,11 @@ module BinData
     end
 
     # Sets the value of this data.
-    def value=(v)
+    def value=(val)
       # only allow modification if the value isn't predefined
       unless has_param?(:value)
-        raise ArgumentError, "can't set a nil value" if v.nil?
-        @value = v
+        raise ArgumentError, "can't set a nil value" if val.nil?
+        @value = val
 
         # Note that this doesn't do anything in ruby 1.8.x so ignore for now
         # # explicitly return the output of #value as v may be different
@@ -97,36 +91,38 @@ module BinData
     #---------------
     private
 
-    # Reads the value for this data from +io+.
     def _do_read(io)
       @in_read = true
-      @value   = read_val(io)
+      @value   = read_and_return_value(io)
 
-      # does the value meet expectations?
       if has_param?(:check_value)
-        current_value = self.value
-        expected = eval_param(:check_value, :value => current_value)
-        if not expected
-          raise ValidityError, "value '#{current_value}' not as expected"
-        elsif current_value != expected and expected != true
-          raise ValidityError, "value is '#{current_value}' but " +
-                               "expected '#{expected}'"
-        end
+        check_value(value)
       end
     end
 
-    # Writes the value for this data to +io+.
+    def check_value(current_value)
+      expected = eval_param(:check_value, :value => current_value)
+      if not expected
+        raise ValidityError, "value '#{current_value}' not as expected"
+      elsif current_value != expected and expected != true
+        raise ValidityError, "value is '#{current_value}' but " +
+                             "expected '#{expected}'"
+      end
+    end
+
+    def _done_read
+      @in_read = false
+    end
+
     def _do_write(io)
       raise "can't write whilst reading" if @in_read
-      io.writebytes(val_to_str(_value))
+      io.writebytes(value_to_string(_value))
     end
 
-    # Returns the number of bytes it will take to write this data.
     def _do_num_bytes(ignored)
-      val_to_str(_value).length
+      value_to_string(_value).length
     end
 
-    # Returns a snapshot of this data object.
     def _snapshot
       value
     end
@@ -143,9 +139,9 @@ module BinData
       #   5. clear?                       ->   sensible_default
       #   6. !clear?                      ->   @value
 
-      if not @in_read and (evaluated_value = eval_param(:value))
+      if not @in_read and has_param?(:value)
         # rule 1 above
-        evaluated_value
+        eval_param(:value)
       else
         # combining all other rules gives this simplified expression
         @value || eval_param(:value) ||
@@ -157,12 +153,12 @@ module BinData
     # To be implemented by subclasses
 
     # Return the string representation that +val+ will take when written.
-    def val_to_str(val)
+    def value_to_string(val)
       raise NotImplementedError
     end
 
     # Read a number of bytes from +io+ and return the value they represent.
-    def read_val(io)
+    def read_and_return_value(io)
       raise NotImplementedError
     end
 

@@ -17,23 +17,19 @@ module BinData
   #
   class Rest < BinData::Single
 
-    # Register this class
     register(self.name, self)
 
     #---------------
     private
 
-    # Return the string representation that +val+ will take when written.
-    def val_to_str(val)
+    def value_to_string(val)
       val
     end
 
-    # Read a number of bytes from +io+ and return the value they represent.
-    def read_val(io)
-      io.raw_io.read
+    def read_and_return_value(io)
+      io.read_all_bytes
     end
 
-    # Returns an empty string as default.
     def sensible_default
       ""
     end

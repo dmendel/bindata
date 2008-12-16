@@ -53,7 +53,6 @@ module BinData
       if positioning_supported?
         @raw_io.pos - @initial_pos
       else
-        # stream does not support positioning
         0
       end
     end
@@ -79,6 +78,15 @@ module BinData
       str
     end
 
+    # Reads all remaining bytes from the stream.
+    def read_all_bytes
+      raise "Internal state error nbits = #{@rnbits}" if @rnbits > 8
+      @rnbits = 0
+      @rval   = 0
+
+      @raw_io.read
+    end
+
     # Reads exactly +nbits+ bits from the stream. +endian+ specifies whether
     # the bits are stored in +:big+ or +:little+ endian format.
     def readbits(nbits, endian = :big)
@@ -90,9 +98,9 @@ module BinData
       end
 
       if endian == :big
-        read_be_bits(nbits)
+        read_big_endian_bits(nbits)
       else
-        read_le_bits(nbits)
+        read_little_endian_bits(nbits)
       end
     end
 
@@ -106,7 +114,7 @@ module BinData
     # the bits are to be stored in +:big+ or +:little+ endian format.
     def writebits(val, nbits, endian = :big)
       # clamp val to range
-      val = val & ((1 << nbits) - 1)
+      val = val & mask(nbits)
 
       if @wendian != endian
         # don't mix bits of differing endian
@@ -116,9 +124,9 @@ module BinData
       end
 
       if endian == :big
-        write_be_bits(val, nbits)
+        write_big_endian_bits(val, nbits)
       else
-        write_le_bits(val, nbits)
+        write_little_endian_bits(val, nbits)
       end
     end
 
@@ -137,7 +145,6 @@ module BinData
     #---------------
     private
 
-    # Checks if positioning is supported by the underlying io stream.
     def positioning_supported?
       unless defined? @positioning_supported
         @positioning_supported = begin
@@ -150,52 +157,55 @@ module BinData
       @positioning_supported
     end
 
-    # Reads exactly +nbits+ big endian bits from the stream.
-    def read_be_bits(nbits)
-      # ensure enough bits have accumulated
-      while nbits > @rnbits
-        byte = @raw_io.read(1)
-        raise EOFError, "End of file reached" if byte.nil?
-        byte = byte.unpack('C').at(0) & 0xff
-
-        @rval = (@rval << 8) | byte
-        @rnbits += 8
+    def read_big_endian_bits(nbits)
+      while @rnbits < nbits
+        accumulate_big_endian_bits
       end
 
-      val     = (@rval >> (@rnbits - nbits)) & ((1 << nbits) - 1)
+      val     = (@rval >> (@rnbits - nbits)) & mask(nbits)
       @rnbits -= nbits
-      @rval   &= ((1 << @rnbits) - 1)
+      @rval   &= mask(@rnbits)
 
       val
     end
 
-    # Reads exactly +nbits+ little endian bits from the stream.
-    def read_le_bits(nbits)
-      # ensure enough bits have accumulated
-      while nbits > @rnbits
-        byte = @raw_io.read(1)
-        raise EOFError, "End of file reached" if byte.nil?
-        byte = byte.unpack('C').at(0) & 0xff
+    def accumulate_big_endian_bits
+      byte = @raw_io.read(1)
+      raise EOFError, "End of file reached" if byte.nil?
+      byte = byte.unpack('C').at(0) & 0xff
 
-        @rval = @rval | (byte << @rnbits)
-        @rnbits += 8
+      @rval = (@rval << 8) | byte
+      @rnbits += 8
+    end
+
+    def read_little_endian_bits(nbits)
+      while @rnbits < nbits
+        accumulate_little_endian_bits
       end
 
-      val     = @rval & ((1 << nbits) - 1)
+      val     = @rval & mask(nbits)
       @rnbits -= nbits
       @rval   >>= nbits
 
       val
     end
 
-    # Writes +nbits+ bits from +val+ to the stream in big endian format.
-    def write_be_bits(val, nbits)
+    def accumulate_little_endian_bits
+      byte = @raw_io.read(1)
+      raise EOFError, "End of file reached" if byte.nil?
+      byte = byte.unpack('C').at(0) & 0xff
+
+      @rval = @rval | (byte << @rnbits)
+      @rnbits += 8
+    end
+
+    def write_big_endian_bits(val, nbits)
       while nbits > 0
         bits_req = 8 - @wnbits
         if nbits >= bits_req
-          msb_bits = (val >> (nbits - bits_req)) & ((1 << bits_req) - 1)
+          msb_bits = (val >> (nbits - bits_req)) & mask(bits_req)
           nbits -= bits_req
-          val &= (1 << nbits) - 1
+          val &= mask(nbits)
 
           @wval   = (@wval << bits_req) | msb_bits
           @raw_io.write(@wval.chr)
@@ -210,12 +220,11 @@ module BinData
       end
     end
 
-    # Writes +nbits+ bits from +val+ to the stream in little endian format.
-    def write_le_bits(val, nbits)
+    def write_little_endian_bits(val, nbits)
       while nbits > 0
         bits_req = 8 - @wnbits
         if nbits >= bits_req
-          lsb_bits = val & ((1 << bits_req) - 1)
+          lsb_bits = val & mask(bits_req)
           nbits -= bits_req
           val >>= bits_req
 
@@ -230,6 +239,10 @@ module BinData
           nbits = 0
         end
       end
+    end
+
+    def mask(nbits)
+      (1 << nbits) - 1
     end
   end
 end

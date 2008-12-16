@@ -1,7 +1,7 @@
 require 'bindata/single'
 
 module BinData
-  # Provides a number of classes that contain a bit based integer.
+  # Defines a number of classes that contain a bit based integer.
   # The integer is defined by endian and number of bits.
 
   module BitField #:nodoc: all
@@ -49,7 +49,7 @@ module BinData
           #{nbits} / 8.0
         end
 
-        def read_val(io)
+        def read_and_return_value(io)
           io.readbits(#{nbits}, :#{endian})
         end
 

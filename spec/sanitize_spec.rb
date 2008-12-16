@@ -62,24 +62,6 @@ describe BinData::SanitizedParameters do
   end
 end
 
-describe BinData::Sanitizer, "class methods" do
-  it "should resolve type with endian" do
-    BinData::Sanitizer.type_exists?(:int16, :little).should be_true
-  end
-
-  it "should detect if type exists" do
-    BinData::Sanitizer.type_exists?(:int8).should be_true
-  end
-
-  it "should detect if type doesn't exist" do
-    BinData::Sanitizer.type_exists?(:does_not_exist).should be_false
-  end
-
-  it "should lookup types" do
-    BinData::Sanitizer.lookup(:int16, :little).should == BinData::Int16le
-  end
-end
-
 describe BinData::Sanitizer do
   before(:each) do
     @sanitizer = BinData::Sanitizer.new
@@ -87,34 +69,34 @@ describe BinData::Sanitizer do
 
   it "should raise error on unknown types" do
     lambda {
-      @sanitizer.lookup_klass(:does_not_exist)
+      @sanitizer.lookup_class(:does_not_exist)
     }.should raise_error(TypeError)
   end
 
   it "should lookup when endian is set" do
     @sanitizer.with_endian(:little) do
-      the_class = @sanitizer.lookup_klass(:int16)
+      the_class = @sanitizer.lookup_class(:int16)
       the_class.should == BinData::Int16le
     end
   end
 
   it "should nest with_endian calls" do
     @sanitizer.with_endian(:little) do
-      the_class = @sanitizer.lookup_klass(:int16)
+      the_class = @sanitizer.lookup_class(:int16)
       the_class.should == BinData::Int16le
 
       @sanitizer.with_endian(:big) do
-        the_class = @sanitizer.lookup_klass(:int16)
+        the_class = @sanitizer.lookup_class(:int16)
         the_class.should == BinData::Int16be
       end
 
-      the_class = @sanitizer.lookup_klass(:int16)
+      the_class = @sanitizer.lookup_class(:int16)
       the_class.should == BinData::Int16le
     end
   end
 
   it "should sanitize parameters" do
-    params = @sanitizer.sanitize_params(BinData::Int8, {:value => 3})
+    params = @sanitizer.sanitized_params(BinData::Int8, {:value => 3})
     params.should have_key(:value)
   end
 end

@@ -55,16 +55,14 @@ module BinData
   class Array < BinData::Base
     include Enumerable
 
-    # Register this class
     register(self.name, self)
 
-    # These are the parameters used by this class.
     bindata_mandatory_parameter :type
     bindata_optional_parameters :initial_length, :read_until
     bindata_mutually_exclusive_parameters :initial_length, :read_until
 
     class << self
-      # Ensures that +params+ is of the form expected by #initialize.
+
       def sanitize_parameters!(sanitizer, params)
         unless params.has_key?(:initial_length) or params.has_key?(:read_until)
           # ensure one of :initial_length and :read_until exists
@@ -72,13 +70,14 @@ module BinData
         end
 
         if params.has_key?(:read_length)
-          warn ":read_length is not used with arrays.  You probably want to change this to :initial_length"
+          warn ":read_length is not used with arrays.  " +
+               "You probably want to change this to :initial_length"
         end
 
         if params.has_key?(:type)
           type, el_params = params[:type]
-          klass = sanitizer.lookup_klass(type)
-          sanitized_params = sanitizer.sanitize_params(klass, el_params)
+          klass = sanitizer.lookup_class(type)
+          sanitized_params = sanitizer.sanitized_params(klass, el_params)
           params[:type] = [klass, sanitized_params]
         end
 
@@ -86,15 +85,18 @@ module BinData
       end
     end
 
-    # Creates a new Array
     def initialize(params = {}, parent = nil)
       super(params, parent)
 
-      klass, el_params = no_eval_param(:type)
+      el_class, el_params = no_eval_param(:type)
 
       @element_list    = nil
-      @element_klass   = klass
+      @element_class   = el_class
       @element_params  = el_params
+    end
+
+    def single_value?
+      return false
     end
 
     # Returns if the element at position +index+ is clear?.  If +index+
@@ -123,17 +125,6 @@ module BinData
       end
     end
 
-    # Returns whether this data object contains a single value.  Single
-    # value data objects respond to <tt>#value</tt> and <tt>#value=</tt>.
-    def single_value?
-      return false
-    end
-
-    # To be called after calling #do_read.
-    def done_read
-      elements.each { |f| f.done_read }
-    end
-
     # Appends a new element to the end of the array.  If the array contains
     # single_values then the +value+ may be provided to the call.
     # Returns the appended object, or value in the case of single_values.
@@ -145,8 +136,11 @@ module BinData
     end
 
     def index(obj)
-      # TODO handle single values
-      elements.index(obj)
+      if obj.is_a?(BinData::Base)
+        elements.index(obj)
+      else
+        elements.find_index { |el| el.single_value? ? el.value == obj : false }
+      end
     end
 
     # Pushes the given object(s) on to the end of this array. 
@@ -154,7 +148,7 @@ module BinData
     # be chained together.
     def push(*args)
       args.each do |arg|
-        if @element_klass == arg.class
+        if @element_class == arg.class
           # TODO: need to modify arg.env to add_variable(:index) and
           # to link arg.env to self.env
           elements.push(arg)
@@ -164,6 +158,7 @@ module BinData
       end
       self
     end
+    alias_method :<<, :push
 
     # Returns the element at +index+.  If the element is a single_value
     # then the value of the element is returned instead.
@@ -188,7 +183,7 @@ module BinData
     # then the value of the element is set instead.
     def []=(index, value)
       # extend array automatically
-      while index >= elements.length
+      while elements.length <= index
         append_new_element
       end
 
@@ -253,7 +248,6 @@ module BinData
     #---------------
     private
 
-    # Reads the values for all fields in this object from +io+.
     def _do_read(io)
       if has_param?(:initial_length)
         elements.each { |f| f.do_read(io) }
@@ -283,14 +277,14 @@ module BinData
       end
     end
 
-    # Writes the values for all fields in this object to +io+.
+    def _done_read
+      elements.each { |f| f.done_read }
+    end
+
     def _do_write(io)
       elements.each { |f| f.do_write(io) }
     end
 
-    # Returns the number of bytes it will take to write the element at
-    # +index+.  If +index+, then returns the number of bytes required
-    # to write all fields.
     def _do_num_bytes(index)
       if index.nil?
         (elements.inject(0) { |sum, f| sum + f.do_num_bytes }).ceil
@@ -299,7 +293,6 @@ module BinData
       end
     end
 
-    # Returns a snapshot of the data in this array.
     def _snapshot
       elements.collect { |e| e.snapshot }
     end
@@ -325,9 +318,13 @@ module BinData
       # ensure @element_list is initialised
       elements()
 
-      element = @element_klass.new(@element_params, self)
+      element = @element_class.new(@element_params, self)
       @element_list << element
       element
+    end
+
+    def new_element
+      @element_class.new(@element_params, self)
     end
   end
 end

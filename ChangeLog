@@ -2,7 +2,8 @@
 
 == Version
 
-* Arbitrary byte sized integers are now supported (e.g. 24bit, 808bit)
+* Arbitrary byte sized integers are now supported (e.g. 24bit, 808bit).
+* Renamed String :trim_value parameter to :trim_padding.
 
 == Version 0.9.3 (2008-12-03)
 

@@ -41,75 +41,91 @@ module BinData
   # <tt>:pad_char</tt>::       The character to use when padding a string to a
   #                            set length.  Valid values are Integers and
   #                            Strings of length 1.  "\0" is the default.
-  # <tt>:trim_value</tt>::     Boolean, default false.  If set, #value will
+  # <tt>:trim_padding</tt>::   Boolean, default false.  If set, #value will
   #                            return the value with all pad_chars trimmed
   #                            from the end of the string.  The value will
   #                            not be trimmed when writing.
   class String < BinData::Single
 
-    # Register this class
     register(self.name, self)
 
-    # These are the parameters used by this class.
-    bindata_optional_parameters :read_length, :length, :trim_value
+    bindata_optional_parameters :read_length, :length, :trim_padding
     bindata_default_parameters  :pad_char => "\0"
     bindata_mutually_exclusive_parameters :read_length, :length
     bindata_mutually_exclusive_parameters :length, :value
 
     class << self
 
-      # Ensures that +params+ is of the form expected by #initialize.
       def sanitize_parameters!(sanitizer, params)
         # warn about deprecated param - remove before releasing 1.0
-        if params[:initial_length]
-          warn ":initial_length is deprecated. Replacing with :read_length"
-          params[:read_length] = params.delete(:initial_length)
+        if params.has_key?(:trim_value)
+          warn ":trim_value is deprecated. Replacing with :trim_padding"
+          params[:trim_padding] = params.delete(:trim_value)
         end
 
-        # set :pad_char to be a single length character string
+        if params.has_key?(:initial_length)
+          warn ":initial_length is not used with strings.  " +
+               "You probably want to change this to :read_length"
+        end
+
         if params.has_key?(:pad_char)
           ch = params[:pad_char]
-          ch = ch.respond_to?(:chr) ? ch.chr : ch.to_s
-          if ch.length > 1
-            raise ArgumentError, ":pad_char must not contain more than 1 char"
-          end
-          params[:pad_char] = ch
+          params[:pad_char] = sanitized_pad_char(ch)
         end
 
         super(sanitizer, params)
       end
+
+      #-------------
+      private
+
+      def sanitized_pad_char(ch)
+        result = ch.respond_to?(:chr) ? ch.chr : ch.to_s
+        if result.length > 1
+          raise ArgumentError, ":pad_char must not contain more than 1 char"
+        end
+        result
+      end
     end
 
-    # Overrides value to return the value padded to the desired length or
-    # trimmed as required.
     def value
-      v = val_to_str(_value)
-      if no_eval_param(:trim_value) == true
-        v.sub!(/#{eval_param(:pad_char)}*$/, "")
+      result = _value
+      if has_param?(:length)
+        result = truncate_or_pad_to_length(result)
       end
-      v
+      if no_eval_param(:trim_padding) == true
+        result = trim_padding(result)
+      end
+      result
     end
 
     #---------------
     private
 
-    # Returns +val+ ensuring that it is padded to the desired length.
-    def val_to_str(val)
-      # trim val if necessary
-      len = eval_param(:length) || val.length
-      str = val.slice(0, len)
-
-      # then pad to length if str is short
-      str << (eval_param(:pad_char) * (len - str.length))
+    def truncate_or_pad_to_length(str)
+      len = eval_param(:length) || str.length
+      if str.length == len
+        str
+      elsif str.length > len
+        str.slice(0, len)
+      else
+        str + (eval_param(:pad_char) * (len - str.length))
+      end
     end
 
-    # Read a number of bytes from +io+ and return the value they represent.
-    def read_val(io)
+    def trim_padding(str)
+      str.sub(/#{eval_param(:pad_char)}*$/, "")
+    end
+
+    def value_to_string(val)
+      truncate_or_pad_to_length(val)
+    end
+
+    def read_and_return_value(io)
       len = eval_param(:read_length) || eval_param(:length) || 0
       io.readbytes(len)
     end
 
-    # Returns an empty string as default.
     def sensible_default
       ""
     end

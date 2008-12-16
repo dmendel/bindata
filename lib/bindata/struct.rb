@@ -39,6 +39,8 @@ module BinData
   #                      nested data objects.
   class Struct < BinData::Base
 
+    register(self.name, self)
+
     # These reserved words may not be used as field names
     RESERVED = (::Hash.instance_methods + 
                 %w{alias and begin break case class def defined do else elsif
@@ -46,9 +48,6 @@ module BinData
                    rescue retry return self super then true undef unless until
                    when while yield} +
                 %w{array element index offset value} ).uniq
-
-    # Register this class
-    register(self.name, self)
 
     # A hash that can be accessed via attributes.
     class Snapshot < Hash #:nodoc:
@@ -70,83 +69,93 @@ module BinData
       #### DEPRECATION HACK to allow inheriting from BinData::Struct
 
 
-      # Ensures that +params+ is of the form expected by #initialize.
       def sanitize_parameters!(sanitizer, params)
-        # possibly override endian
-        endian = params[:endian]
-        if endian != nil
-          unless [:little, :big].include?(endian)
-            raise ArgumentError, "unknown value for endian '#{endian}'"
-          end
-
-          params[:endian] = endian
-        end
+        ensure_valid_endian(params)
 
         if params.has_key?(:fields)
-          sanitizer.with_endian(endian) do
-            # ensure names of fields are strings and that params is sanitized
-            all_fields = params[:fields].collect do |ftype, fname, fparams|
-              fname = fname.to_s
-              klass = sanitizer.lookup_klass(ftype)
-              sanitized_fparams = sanitizer.sanitize_params(klass, fparams)
-              [klass, fname, sanitized_fparams]
-            end
-            params[:fields] = all_fields
-          end
+          sfields = sanitized_fields(sanitizer, params[:fields], params[:endian])
+          field_names = sanitized_field_names(sfields)
+          hfield_names = hidden_field_names(params[:hide])
 
-          # now params are sanitized, check that parameter names are okay
-          field_names = []
-          instance_methods = self.instance_methods
-          reserved_names = RESERVED
+          ensure_field_names_are_valid(field_names)
 
-          params[:fields].each do |fklass, fname, fparams|
-
-            # check that name doesn't shadow an existing method
-            if instance_methods.include?(fname)
-              raise NameError.new("Rename field '#{fname}' in #{self}, " +
-                                  "as it shadows an existing method.", fname)
-            end
-
-            # check that name isn't reserved
-            if reserved_names.include?(fname)
-              raise NameError.new("Rename field '#{fname}' in #{self}, " +
-                                  "as it is a reserved name.", fname)
-            end
-
-            # check for multiple definitions
-            if field_names.include?(fname)
-              raise NameError.new("field '#{fname}' in #{self}, " +
-                                  "is defined multiple times.", fname)
-            end
-
-            field_names << fname
-          end
-
-          # collect all hidden names that correspond to a field name
-          hide = []
-          if params.has_key?(:hide)
-            hidden = (params[:hide] || []).collect { |h| h.to_s }
-            all_field_names = params[:fields].collect { |k,n,p| n }
-            hide = hidden & all_field_names
-          end
-          params[:hide] = hide
+          params[:fields] = sfields
+          params[:hide]   = (hfield_names & field_names)
         end
 
         super(sanitizer, params)
       end
+
+      #-------------
+      private
+
+      def ensure_valid_endian(params)
+        if params.has_key?(:endian)
+          endian = params[:endian]
+          unless [:little, :big].include?(endian)
+            raise ArgumentError, "unknown value for endian '#{endian}'"
+          end
+        end
+      end
+
+      def sanitized_fields(sanitizer, fields, endian)
+        result = nil
+        sanitizer.with_endian(endian) do
+          result = fields.collect do |ftype, fname, fparams|
+            sanitized_field(sanitizer, ftype, fname, fparams)
+          end
+        end
+        result
+      end
+
+      def sanitized_field(sanitizer, ftype, fname, fparams)
+        fname = fname.to_s
+        fclass = sanitizer.lookup_class(ftype)
+        sanitized_fparams = sanitizer.sanitized_params(fclass, fparams)
+        [fclass, fname, sanitized_fparams]
+      end
+
+      def sanitized_field_names(sanitized_fields)
+        sanitized_fields.collect { |fclass, fname, fparams| fname }
+      end
+
+      def hidden_field_names(hidden)
+        (hidden || []).collect { |h| h.to_s }
+      end
+
+      def ensure_field_names_are_valid(field_names)
+        instance_methods = self.instance_methods
+        reserved_names = RESERVED
+
+        field_names.each do |name|
+          if instance_methods.include?(name)
+            raise NameError.new("Rename field '#{name}' in #{self}, " +
+                                "as it shadows an existing method.", name)
+          end
+          if reserved_names.include?(name)
+            raise NameError.new("Rename field '#{name}' in #{self}, " +
+                                "as it is a reserved name.", name)
+          end
+          if field_names.count(name) != 1
+            raise NameError.new("field '#{name}' in #{self}, " +
+                                "is defined multiple times.", name)
+          end
+        end
+      end
     end
 
-    # These are the parameters used by this class.
     bindata_mandatory_parameter :fields
     bindata_optional_parameters :endian, :hide
 
-    # Creates a new Struct.
     def initialize(params = {}, parent = nil)
       super(params, parent)
 
-      # extract field names but don't instantiate the fields
       @field_names = no_eval_param(:fields).collect { |k, n, p| n }
       @field_objs  = []
+    end
+
+    def single_value?
+      return false
     end
 
     # Clears the field represented by +name+.  If no +name+
@@ -155,7 +164,7 @@ module BinData
       if name.nil?
         @field_objs.each { |f| f.clear unless f.nil? }
       else
-        obj = find_obj_for_name(name.to_s)
+        obj = find_obj_for_name(name)
         obj.clear unless obj.nil?
       end
     end
@@ -169,41 +178,27 @@ module BinData
         end
         true
       else
-        obj = find_obj_for_name(name.to_s)
+        obj = find_obj_for_name(name)
         obj.nil? ? true : obj.clear?
       end
-    end
-
-    # Returns whether this data object contains a single value.  Single
-    # value data objects respond to <tt>#value</tt> and <tt>#value=</tt>.
-    def single_value?
-      return false
     end
 
     # Returns a list of the names of all fields accessible through this
     # object.  +include_hidden+ specifies whether to include hidden names
     # in the listing.
     def field_names(include_hidden = false)
-      # collect field names
-      names = []
-      hidden = no_eval_param(:hide)
-      @field_names.each do |name|
-        if include_hidden or not hidden.include?(name)
-          names << name
-        end
+      if include_hidden
+        @field_names.dup
+      else
+        hidden = no_eval_param(:hide)
+        @field_names - hidden
       end
-      names
-    end
-
-    # To be called after calling #read.
-    def done_read
-      @field_objs.each { |f| f.done_read unless f.nil? }
     end
 
     def offset_of(field)
       idx = @field_names.index(field.to_s)
       if idx
-        instantiate_all
+        instantiate_all_objs
 
         offset = 0
         (0...idx).each do |i|
@@ -219,29 +214,15 @@ module BinData
       end
     end
 
-    # Override to include field names
-    alias_method :orig_respond_to?, :respond_to?
     def respond_to?(symbol, include_private = false)
-      orig_respond_to?(symbol, include_private) ||
+      super(symbol, include_private) ||
         field_names(true).include?(symbol.id2name.chomp("="))
     end
 
     def method_missing(symbol, *args, &block)
-      name = symbol.id2name
-
-      is_writer = (name[-1, 1] == "=")
-      name.chomp!("=")
-
-      # find the object that is responsible for name
-      if (obj = find_obj_for_name(name))
-        # pass on the request
-        if obj.single_value? and is_writer
-          obj.value = *args
-        elsif obj.single_value?
-          obj.value
-        else
-          obj
-        end
+      obj = find_obj_for_name(symbol)
+      if obj
+        invoke_field(obj, symbol, args)
       else
         super
       end
@@ -250,57 +231,67 @@ module BinData
     #---------------
     private
 
-    # Returns the data object that stores values for +name+.
+    def invoke_field(obj, symbol, args)
+      name = symbol.id2name
+      is_writer = (name[-1, 1] == "=")
+
+      if obj.single_value? and is_writer
+        obj.value = *args
+      elsif obj.single_value?
+        obj.value
+      else
+        obj
+      end
+    end
+
     def find_obj_for_name(name)
-      idx = @field_names.index(name)
+      field_name = name.to_s.chomp("=")
+      idx = @field_names.index(field_name)
       if idx
-        instantiate_obj(idx)
+        instantiate_obj_at(idx)
         @field_objs[idx].obj
       else
         nil
       end
     end
 
-    # Instantiates all fields.
-    def instantiate_all
-      @field_names.each_with_index { |name, i| instantiate_obj(i) }
+    def instantiate_all_objs
+      @field_names.each_index { |i| instantiate_obj_at(i) }
     end
 
-    # Instantiates the field object at position +idx+.
-    def instantiate_obj(idx)
+    def instantiate_obj_at(idx)
       if @field_objs[idx].nil?
-        fklass, fname, fparams = no_eval_param(:fields)[idx]
-        @field_objs[idx] = fklass.new(fparams, self)
+        fclass, fname, fparams = no_eval_param(:fields)[idx]
+        @field_objs[idx] = fclass.new(fparams, self)
       end
     end
 
-    # Reads the values for all fields in this object from +io+.
     def _do_read(io)
-      instantiate_all
+      instantiate_all_objs
       @field_objs.each { |f| f.do_read(io) }
     end
 
-    # Writes the values for all fields in this object to +io+.
+    def _done_read
+      @field_objs.each { |f| f.done_read }
+    end
+
     def _do_write(io)
-      instantiate_all
+      instantiate_all_objs
       @field_objs.each { |f| f.do_write(io) }
     end
 
-    # Returns the number of bytes it will take to write the field represented
-    # by +name+.  If +name+ is nil then returns the number of bytes required
-    # to write all fields.
     def _do_num_bytes(name)
       if name.nil?
-        instantiate_all
+        instantiate_all_objs
         (@field_objs.inject(0) { |sum, f| sum + f.do_num_bytes }).ceil
       else
-        obj = find_obj_for_name(name.to_s)
+        obj = find_obj_for_name(name)
         obj.nil? ? 0 : obj.do_num_bytes
       end
     end
 
-    # Returns a snapshot of this struct as a hash.
     def _snapshot
+      # Returns a snapshot of this struct as a hash.
       hash = Snapshot.new
       field_names.each do |name|
         ss = find_obj_for_name(name).snapshot

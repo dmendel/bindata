@@ -4,17 +4,28 @@ require File.expand_path(File.dirname(__FILE__)) + '/spec_common'
 require 'bindata/registry'
 
 describe BinData::Registry do
-  before(:each) do
-    @r = BinData::Registry.instance
+  before(:all) do
+    A = Class.new
+    B = Class.new
+    C = Class.new
+    D = Class.new
   end
 
-  it "should be a singleton" do
-    BinData::Registry.instance.should == BinData::Registry.instance
+  before(:each) do
+    @r = BinData::Registry.new
+  end
+
+  it "should determine if a name is registered" do
+    @r.register('A', A)
+
+    @r.is_registered?('a').should be_true
+  end
+
+  it "should determine if a name is not registered" do
+    @r.is_registered?('xyz').should be_false
   end
 
   it "should lookup registered names" do
-    A = Class.new
-    B = Class.new
     @r.register('ASubClass', A)
     @r.register('AnotherSubClass', B)
 
@@ -45,4 +56,33 @@ describe BinData::Registry do
     @r.underscore_name('A::B::C').should == 'c'
   end
 
+  it "should lookup integers with endian" do
+#    @r.register("Int24be", A)
+#    @r.register("Int24le", B)
+#    @r.register("Uint24be", C)
+#    @r.register("Uint24le", D)
+#
+#    @r.lookup("int24", :big).should == A
+#    @r.lookup("int24", :little).should == B
+#    @r.lookup("uint24", :big).should == C
+#    @r.lookup("uint24", :little).should == D
+  end
+
+  it "should not lookup integers without endian" do
+#    @r.register("Int24be", A)
+
+#    @r.lookup("int24").should be_nil
+  end
+
+  it "should lookup floats with endian" do
+#    @r.register("FloatBe", A)
+#    @r.register("FloatLe", B)
+#    @r.register("DoubleBe", C)
+#    @r.register("DoubleLe", D)
+#
+#    @r.lookup("float", :big).should == A
+#    @r.lookup("float", :little).should == B
+#    @r.lookup("double", :big).should == C
+#    @r.lookup("double", :little).should == D
+  end
 end

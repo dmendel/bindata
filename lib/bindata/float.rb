@@ -1,7 +1,7 @@
 require 'bindata/single'
 
 module BinData
-  # Provides a number of classes that contain a floating point number.
+  # Defines a number of classes that contain a floating point number.
   # The float is defined by precision and endian.
 
   module FloatingPoint #:nodoc: all
@@ -48,11 +48,11 @@ module BinData
           0.0
         end
 
-        def val_to_str(val)
+        def value_to_string(val)
           #{to_s}
         end
 
-        def read_val(io)
+        def read_and_return_value(io)
           #{read}
         end
       END

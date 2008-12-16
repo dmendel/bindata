@@ -1,6 +1,8 @@
 require 'bindata/params'
+require 'bindata/registry'
 require 'bindata/single'
 require 'bindata/struct'
+require 'set'
 
 module BinData
   # A SingleValue is a declarative way to define a new BinData data type.
@@ -64,12 +66,12 @@ module BinData
     class << self
       extend Parameters
 
-      # Register the names of all subclasses of this class.
       def inherited(subclass) #:nodoc:
+        # Register the names of all subclasses of this class.
         register(subclass.name, subclass)
       end
 
-      # Can this data object self reference itself?
+      # A SingleValue can possibly self reference itself.
       def recursive?
         true
       end
@@ -87,91 +89,91 @@ module BinData
         @endian
       end
 
-      # Returns all stored fields.  Should only be called by
-      # #sanitize_parameters
-      def fields
-        @fields || []
-      end
-
-      # Used to define fields for the internal structure.
-      def method_missing(symbol, *args)
-        name, params = args
-
-        type = symbol
-        name = (name.nil? or name == "") ? nil : name.to_s
-        params ||= {}
-
-        # note that fields are stored in an instance variable not a class var
-        @fields ||= []
-
-        # check that type is known
-        unless Sanitizer.type_exists?(type, endian)
-          raise TypeError, "unknown type '#{type}' for #{self}", caller
-        end
-
-        # check that name is okay
-        if name != nil
-          # check for duplicate names
-          @fields.each do |t, n, p|
-            if n == name
-              raise SyntaxError, "duplicate field '#{name}' in #{self}", caller
-            end
-          end
-
-          # check that name doesn't shadow an existing method
-          if self.instance_methods.include?(name)
-            raise NameError.new("", name),
-                  "field '#{name}' shadows an existing method", caller
-          end
-        end
-
-        # remember this field.  These fields will be recalled upon creating
-        # an instance of this class
-        @fields.push([type, name, params])
-      end
-
-      # Ensures that +params+ is of the form expected by #initialize.
-      def sanitize_parameters!(sanitizer, params)
-        struct_params = {}
-        struct_params[:fields] = self.fields
-        struct_params[:endian] = self.endian unless self.endian.nil?
-        
-        params[:struct_params] = struct_params
-
-        # add default parameters
-        default_parameters.each do |k,v|
-          params[k] = v unless params.has_key?(k)
-        end
-
-        # ensure mandatory parameters exist
-        mandatory_parameters.each do |prm|
-          if not params.has_key?(prm)
-            raise ArgumentError, "parameter ':#{prm}' must be specified " +
-                                 "in #{self}"
-          end
-        end
-
-        super(sanitizer, params)
-      end
-
       # Sets the mandatory parameters used by this class.
       def mandatory_parameters(*args) ; end
 
-      define_x_parameters(:mandatory, []) do |array, args|
-        args.each { |arg| array << arg.to_sym }
-        array.uniq!
+      define_parameters(:mandatory, Set.new) do |set, args|
+        set.merge(args.collect { |a| a.to_sym })
       end
 
       # Sets the default parameters used by this class.
       def default_parameters(params = {}); end
 
-      define_x_parameters(:default, {}) do |hash, args|
-        params = args.length > 0 ? args[0] : {}
+      define_parameters(:default, {}) do |hash, args|
+        params = args[0]
         hash.merge!(params)
       end
+
+      def method_missing(symbol, *args)
+        name, params = args
+
+        type = symbol
+        name = name.to_s
+        params ||= {}
+
+        ensure_type_exists(type)
+        ensure_valid_name(name) unless name.nil?
+
+        append_field(type, name, params)
+      end
+
+      def sanitize_parameters!(sanitizer, params)
+        struct_params = {}
+        struct_params[:fields] = @fields || []
+        struct_params[:endian] = self.endian unless self.endian.nil?
+        
+        params[:struct_params] = struct_params
+
+        merge_default_custom_parameters!(params)
+        ensure_mandatory_custom_parameters_exist(params)
+
+        super(sanitizer, params)
+      end
+
+      #-------------
+      private
+
+      def ensure_type_exists(type)
+        unless RegisteredClasses.is_registered?(type, endian)
+          raise TypeError, "unknown type '#{type}' for #{self}", caller(2)
+        end
+      end
+
+      def ensure_valid_name(name)
+        @fields ||= []
+        @fields.each do |t, n, p|
+          if n == name
+            raise SyntaxError, "duplicate field '#{name}' in #{self}", caller(2)
+          end
+        end
+        if self.instance_methods.include?(name)
+          raise NameError.new("", name),
+                "field '#{name}' shadows an existing method", caller(2)
+        end
+      end
+
+      def append_field(type, name, params)
+        @fields ||= []
+        @fields.push([type, name, params])
+      end
+
+      def merge_default_custom_parameters!(params)
+        default_parameters.each do |k,v|
+          params[k] = v unless params.has_key?(k)
+        end
+      end
+
+      def ensure_mandatory_custom_parameters_exist(params)
+        mandatory_parameters.each do |prm|
+          unless params.has_key?(prm)
+            raise ArgumentError, "parameter ':#{prm}' must be specified " +
+                                 "in #{self}"
+          end
+        end
+      end
+
     end
 
-    # These are the parameters used by this class.
     bindata_mandatory_parameter :struct_params
 
     def initialize(params = {}, parent = nil)
@@ -180,7 +182,6 @@ module BinData
       @struct = BinData::Struct.new(no_eval_param(:struct_params), self)
     end
 
-    # Forward method calls to the internal struct.
     def method_missing(symbol, *args, &block)
       if @struct.respond_to?(symbol)
         @struct.__send__(symbol, *args, &block)
@@ -192,20 +193,16 @@ module BinData
     #---------------
     private
 
-    # Retrieve a sensible default from the internal struct.
     def sensible_default
       get
     end
 
-    # Read data into the fields of the internal struct then return the value.
-    def read_val(io)
+    def read_and_return_value(io)
       @struct.read(io)
       get
     end
 
-    # Sets +val+ into the fields of the internal struct then returns the
-    # string representation.
-    def val_to_str(val)
+    def value_to_string(val)
       set(val)
       @struct.to_s
     end
