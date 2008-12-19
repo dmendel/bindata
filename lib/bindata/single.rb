@@ -70,22 +70,15 @@ module BinData
       @value.nil?
     end
 
-    # Returns the current value of this data.
     def value
       _value
     end
 
-    # Sets the value of this data.
     def value=(val)
-      # only allow modification if the value isn't predefined
-      unless has_param?(:value)
-        raise ArgumentError, "can't set a nil value" if val.nil?
-        @value = val
+      return if has_param?(:value)
+      raise ArgumentError, "can't set a nil value" if val.nil?
 
-        # Note that this doesn't do anything in ruby 1.8.x so ignore for now
-        # # explicitly return the output of #value as v may be different
-        # self.value
-      end
+      @value = val
     end
 
     #---------------
