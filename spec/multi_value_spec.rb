@@ -116,8 +116,8 @@ describe BinData::MultiValue, "with multiple fields" do
   end
 
   it "should identify accepted parameters" do
-    BinData::MultiValue.internal_parameters.should include(:hide)
-    BinData::MultiValue.internal_parameters.should include(:endian)
+    BinData::MultiValue.accepted_internal_parameters.should include(:hide)
+    BinData::MultiValue.accepted_internal_parameters.should include(:endian)
   end
 
   it "should clear" do

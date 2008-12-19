@@ -5,7 +5,7 @@ module BinData
 
   # A BinData object accepts arbitrary parameters.  This class only contains
   # parameters that have been sanitized, and categorizes them according to
-  # whether they are BinData::Base.internal_parameters or are extra.
+  # whether they are BinData::Base.accepted_internal_parameters or are custom.
   class SanitizedParameters
     extend Forwardable
 
@@ -13,24 +13,24 @@ module BinData
     def initialize(the_class, params)
       @hash = params
       @internal_parameters = {}
-      @extra_parameters = {}
+      @custom_parameters = {}
 
-      # partition parameters into known and extra parameters
+      # partition parameters into known and custom parameters
       @hash.each do |k,v|
         k = k.to_sym
         if v.nil?
           raise ArgumentError, "parameter :#{k} has nil value in #{the_class}"
         end
 
-        if the_class.internal_parameters.include?(k)
+        if the_class.accepted_internal_parameters.include?(k)
           @internal_parameters[k] = v
         else
-          @extra_parameters[k] = v
+          @custom_parameters[k] = v
         end
       end
     end
 
-    attr_reader :internal_parameters, :extra_parameters
+    attr_reader :internal_parameters, :custom_parameters
 
     def_delegators :@hash, :[], :has_key?, :include?, :keys
   end
@@ -120,7 +120,8 @@ module BinData
     end
 
     def can_store_endian?(the_class, params)
-      (@endian != nil and the_class.internal_parameters.include?(:endian) and
+      (@endian != nil and 
+       the_class.accepted_internal_parameters.include?(:endian) and
        not params.has_key?(:endian))
     end
   end

@@ -2,7 +2,6 @@ require 'bindata/params'
 require 'bindata/registry'
 require 'bindata/single'
 require 'bindata/struct'
-require 'set'
 
 module BinData
   # A SingleValue is a declarative way to define a new BinData data type.
@@ -64,21 +63,19 @@ module BinData
   class SingleValue < Single
 
     class << self
-      extend Parameters
 
       def inherited(subclass) #:nodoc:
         # Register the names of all subclasses of this class.
         register(subclass.name, subclass)
       end
 
-      # A SingleValue can possibly self reference itself.
       def recursive?
+        # A SingleValue can possibly self reference itself.
         true
       end
 
-      # Returns or sets the endianess of numerics used in this stucture.
-      # Endianess is applied to the fields of this structure.
-      # Valid values are :little and :big.
+      AcceptedParameters.define_accessors(self, :custom, :mandatory, :default)
+
       def endian(endian = nil)
         @endian ||= nil
         if [:little, :big].include?(endian)
@@ -87,21 +84,6 @@ module BinData
           raise ArgumentError, "unknown value for endian '#{endian}'"
         end
         @endian
-      end
-
-      # Sets the mandatory parameters used by this class.
-      def mandatory_parameters(*args) ; end
-
-      define_parameters(:mandatory, Set.new) do |set, args|
-        set.merge(args.collect { |a| a.to_sym })
-      end
-
-      # Sets the default parameters used by this class.
-      def default_parameters(params = {}); end
-
-      define_parameters(:default, {}) do |hash, args|
-        params = args[0]
-        hash.merge!(params)
       end
 
       def method_missing(symbol, *args)
@@ -124,8 +106,7 @@ module BinData
         
         params[:struct_params] = struct_params
 
-        merge_default_custom_parameters!(params)
-        ensure_mandatory_custom_parameters_exist(params)
+        AcceptedParameters.get(self, :custom).sanitize_parameters!(sanitizer, params)
 
         super(sanitizer, params)
       end
@@ -156,22 +137,6 @@ module BinData
         @fields ||= []
         @fields.push([type, name, params])
       end
-
-      def merge_default_custom_parameters!(params)
-        default_parameters.each do |k,v|
-          params[k] = v unless params.has_key?(k)
-        end
-      end
-
-      def ensure_mandatory_custom_parameters_exist(params)
-        mandatory_parameters.each do |prm|
-          unless params.has_key?(prm)
-            raise ArgumentError, "parameter ':#{prm}' must be specified " +
-                                 "in #{self}"
-          end
-        end
-      end
-
     end
 
     bindata_mandatory_parameter :struct_params

@@ -3,7 +3,6 @@ require 'bindata/lazy'
 require 'bindata/params'
 require 'bindata/registry'
 require 'bindata/sanitize'
-require 'set'
 require 'stringio'
 
 module BinData
@@ -35,7 +34,6 @@ module BinData
   class Base
 
     class << self
-      extend Parameters
 
       # Instantiates this class and reads from +io+.  For single value objects
       # just the value is returned, otherwise the newly created data object is
@@ -46,72 +44,23 @@ module BinData
         data.single_value? ? data.value : data
       end
 
-      # Can this data object self reference itself?
       def recursive?
+        # data objects to not self reference by default
         false
       end
 
-      # Define methods for:
-      #   bindata_mandatory_parameters
-      #   bindata_optional_parameters
-      #   bindata_default_parameters
-      #   bindata_mutually_exclusive_parameters
+      AcceptedParameters.define_all_accessors(self, :internal, :bindata)
 
-      define_parameters(:bindata_mandatory, Set.new) do |set, args|
-        set.merge(args.collect { |a| a.to_sym })
-      end
-
-      define_parameters(:bindata_optional, Set.new) do |set, args|
-        set.merge(args.collect { |a| a.to_sym })
-      end
-
-      define_parameters(:bindata_default, {}) do |hash, args|
-        params = args[0]
-        hash.merge!(params)
-      end
-
-      define_parameters(:bindata_mutually_exclusive, Set.new) do |set, args|
-        set.add([args[0].to_sym, args[1].to_sym])
-      end
-
-      # Returns a list of internal parameters that are accepted by this object
-      def internal_parameters
-        (bindata_mandatory_parameters + bindata_optional_parameters +
-         bindata_default_parameters.keys)
+      def accepted_internal_parameters
+        AcceptedParameters.get(self, :internal).all
       end
 
       def sanitize_parameters!(sanitizer, params)
-        merge_default_parameters!(params)
-        ensure_mandatory_parameters_exist(params)
-        ensure_mutual_exclusion_of_parameters(params)
+        AcceptedParameters.get(self, :internal).sanitize_parameters!(sanitizer, params)
       end
 
       #-------------
       private
-
-      def merge_default_parameters!(params)
-        bindata_default_parameters.each do |k,v|
-          params[k] = v unless params.has_key?(k)
-        end
-      end
-
-      def ensure_mandatory_parameters_exist(params)
-        bindata_mandatory_parameters.each do |prm|
-          unless params.has_key?(prm)
-            raise ArgumentError, "parameter ':#{prm}' must be specified " +
-                                 "in #{self}"
-          end
-        end
-      end
-
-      def ensure_mutual_exclusion_of_parameters(params)
-        bindata_mutually_exclusive_parameters.each do |param1, param2|
-          if params.has_key?(param1) and params.has_key?(param2)
-            raise ArgumentError, "params #{param1} and #{param2} " +
-                                 "are mutually exclusive"
-          end
-        end
-      end
 
       def register(name, class_to_register)
         RegisteredClasses.register(name, class_to_register)
@@ -133,12 +82,11 @@ module BinData
       @parent = parent
     end
 
-    # The parent data object.
     attr_accessor :parent
 
     # Returns all the custom parameters supplied to this data object.
     def custom_parameters
-      @params.extra_parameters
+      @params.custom_parameters
     end
 
     # Reads data into this data object.
@@ -164,7 +112,7 @@ module BinData
       end
     end
 
-    # Writes the value for this data to +io+ by calling #do_write.
+    # Writes the value for this data to +io+.
     def write(io)
       io = BinData::IO.new(io) unless BinData::IO === io
 

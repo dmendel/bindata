@@ -7,7 +7,7 @@ require 'bindata/int'
 describe BinData::SanitizedParameters, "with bad input" do
   before(:each) do
     @mock = mock("dummy class")
-    @mock.stub!(:internal_parameters).and_return([:a, :b, :c])
+    @mock.stub!(:accepted_internal_parameters).and_return([:a, :b, :c])
     @params = {:a => 1, :b => 2, :c => 3, :d => 4, :e => 5}
   end
 
@@ -15,7 +15,7 @@ describe BinData::SanitizedParameters, "with bad input" do
     the_params = {'a' => 1, 'b' => 2, 'e' => 5}
     sanitized = BinData::SanitizedParameters.new(@mock, the_params)
     sanitized.internal_parameters.should == {:a => 1, :b => 2}
-    sanitized.extra_parameters.should == {:e => 5}
+    sanitized.custom_parameters.should == {:e => 5}
   end
 
   it "should raise error if parameter has nil value" do
@@ -29,14 +29,14 @@ end
 describe BinData::SanitizedParameters do
   before(:each) do
     @mock = mock("dummy class")
-    @mock.stub!(:internal_parameters).and_return([:a, :b, :c])
+    @mock.stub!(:accepted_internal_parameters).and_return([:a, :b, :c])
     @params = {:a => 1, :b => 2, :c => 3, :d => 4, :e => 5}
   end
 
   it "should partition" do
     sanitized = BinData::SanitizedParameters.new(@mock, @params)
     sanitized.internal_parameters.should == {:a => 1, :b => 2, :c => 3}
-    sanitized.extra_parameters.should == {:d => 4, :e => 5}
+    sanitized.custom_parameters.should == {:d => 4, :e => 5}
   end
 
   it "should respond_to keys" do

@@ -138,11 +138,11 @@ describe BinData::Base, "with multiple parameters" do
   end
 
   it "should identify internally accepted parameters" do
-    internal_parameters = WithParamBase.internal_parameters
-    internal_parameters.should include(:p1)
-    internal_parameters.should include(:p2)
-    internal_parameters.should include(:p3)
-    internal_parameters.should_not include(:xx)
+    accepted = WithParamBase.accepted_internal_parameters
+    accepted.should include(:p1)
+    accepted.should include(:p2)
+    accepted.should include(:p3)
+    accepted.should_not include(:xx)
   end
 
   it "should identify custom parameters" do

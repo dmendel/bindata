@@ -1,7 +1,6 @@
 require 'bindata/params'
 require 'bindata/registry'
 require 'bindata/struct'
-require 'set'
 
 module BinData
   # A MultiValue is a declarative wrapper around Struct.
@@ -47,21 +46,19 @@ module BinData
   class MultiValue < BinData::Struct
 
     class << self
-      extend Parameters
 
       def inherited(subclass) #:nodoc:
         # Register the names of all subclasses of this class.
         register(subclass.name, subclass)
       end
 
-      # A MultiValue can self reference itself.
       def recursive?
+        # A MultiValue can self reference itself.
         true
       end
 
-      # Returns or sets the endianess of numerics used in this stucture.
-      # Endianess is applied to the fields of this structure.
-      # Valid values are :little and :big.
+      AcceptedParameters.define_accessors(self, :custom, :mandatory, :default)
+
       def endian(endian = nil)
         @endian ||= nil
         if [:little, :big].include?(endian)
@@ -72,27 +69,10 @@ module BinData
         @endian
       end
 
-      # Returns the names of any hidden fields in this struct.  Any given args
-      # are appended to the hidden list.
       def hide(*args)
         @hide ||= []
         @hide.concat(args.collect { |name| name.to_s })
         @hide
-      end
-
-      # Sets the mandatory parameters used by this class.
-      def mandatory_parameters(*args) ; end
-
-      define_parameters(:mandatory, Set.new) do |set, args|
-        set.merge(args.collect { |a| a.to_sym })
-      end
-
-      # Sets the default parameters used by this class.
-      def default_parameters(params = {}); end
-
-      define_parameters(:default, {}) do |hash, args|
-        params = args[0]
-        hash.merge!(params)
       end
 
       def method_missing(symbol, *args)
@@ -112,8 +92,7 @@ module BinData
         merge_endian!(params)
         merge_fields!(params)
         merge_hide!(params)
-        merge_default_custom_parameters!(params)
-        ensure_mandatory_custom_parameters_exist(params)
+        AcceptedParameters.get(self, :custom).sanitize_parameters!(sanitizer, params)
 
         super(sanitizer, params)
       end
@@ -162,21 +141,6 @@ module BinData
       def merge_hide!(params)
         hide = params[:hide] || self.hide
         params[:hide] = hide
-      end
-
-      def merge_default_custom_parameters!(params)
-        default_parameters.each do |k,v|
-          params[k] = v unless params.has_key?(k)
-        end
-      end
-
-      def ensure_mandatory_custom_parameters_exist(params)
-        mandatory_parameters.each do |prm|
-          unless params.has_key?(prm)
-            raise ArgumentError, "parameter ':#{prm}' must be specified " +
-                                 "in #{self}"
-          end
-        end
       end
     end
   end
