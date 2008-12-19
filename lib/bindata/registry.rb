@@ -1,5 +1,3 @@
-require 'singleton'
-
 module BinData
   # This registry contains a register of name -> class mappings.
   #
