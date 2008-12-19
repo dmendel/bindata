@@ -33,15 +33,6 @@ module BinData
       @overrides = @@empty_hash
     end
 
-    # Returns a LazyEvaluator for the parent of this data object.
-    def parent
-      if @obj.parent
-        LazyEvaluator.new(@obj.parent)
-      else
-        nil
-      end
-    end
-
     # Evaluates +val+ in the context of this data object.  Evaluation
     # recurses until it yields a value that is not a symbol or lambda.
     # +overrides+ is an optional +obj.custom_parameters+ like hash.
@@ -56,6 +47,15 @@ module BinData
       end
       @overrides = @@empty_hash
       result
+    end
+
+    # Returns a LazyEvaluator for the parent of this data object.
+    def parent
+      if @obj.parent
+        LazyEvaluator.new(@obj.parent)
+      else
+        nil
+      end
     end
 
     def method_missing(symbol, *args)
