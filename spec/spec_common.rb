@@ -10,7 +10,7 @@ require 'spec'
 require 'stringio'
 
 class Object
-  def self.make_private_instance_methods_public
+  def self.expose_methods_for_testing
     private_method_names = self.private_instance_methods - Object.private_instance_methods
     public(*private_method_names.collect { |m| m.to_sym })
 

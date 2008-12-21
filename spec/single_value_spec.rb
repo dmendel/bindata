@@ -7,7 +7,7 @@ describe BinData::SingleValue, "when subclassing" do
   before(:all) do
     eval <<-END
       class SubClassOfSingleValue < BinData::SingleValue
-        make_private_instance_methods_public
+        expose_methods_for_testing
       end
     END
   end

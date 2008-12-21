@@ -17,7 +17,7 @@ describe BinData::Single, "when subclassing" do
   before(:all) do
     eval <<-END
       class SubClassOfSingle < BinData::Single
-        make_private_instance_methods_public
+        expose_methods_for_testing
       end
     END
   end

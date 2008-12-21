@@ -14,8 +14,7 @@ class BaseStub < BinData::Base
   def _do_num_bytes(x) end
   def _snapshot; end
 
-  # Allow testing of private methods used by subclasses
-  make_private_instance_methods_public
+  expose_methods_for_testing
 end
 
 class MockBaseStub < BaseStub
@@ -34,7 +33,7 @@ describe BinData::Base, "when subclassing" do
   before(:all) do
     eval <<-END
       class SubClassOfBase < BinData::Base
-        make_private_instance_methods_public
+        expose_methods_for_testing
       end
     END
   end
