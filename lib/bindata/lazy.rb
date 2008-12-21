@@ -97,12 +97,16 @@ module BinData
         result = symbol
       end
 
-      if result.is_a?(Symbol)
+      if can_eval?(result)
         # recursively evaluate symbols
         LazyEvaluator.eval(result, @obj.parent)
       else
         result
       end
+    end
+
+    def can_eval?(val)
+      val.is_a?(Symbol) or val.respond_to?(:arity)
     end
   end
 end

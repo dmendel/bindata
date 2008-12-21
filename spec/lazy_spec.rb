@@ -91,7 +91,7 @@ describe BinData::LazyEvaluator, "with nested parents" do
     pparent_params  = {:p1 => 'PPp1', :p2 => 'PPp2', :com => 'PPpC'}
     pparent_obj = MockDataObject.new(pparent_methods, pparent_params)
 
-    parent_methods = {:m1 => 'Pm1', :com => 'PmC', :sym1 => :m2}
+    parent_methods = {:m1 => 'Pm1', :com => 'PmC', :sym1 => :m2, :sym2 => lambda { m2 }}
     parent_params  = {:p1 => 'Pp1', :com => 'PpC'}
     parent_obj = MockDataObject.new(parent_methods, parent_params, pparent_obj)
 
@@ -139,6 +139,7 @@ describe BinData::LazyEvaluator, "with nested parents" do
 
   it "should cascade lambdas " do
     @ev.lazy_eval(lambda { sym1 }).should == 'PPm2'
+    @ev.lazy_eval(lambda { sym2 }).should == 'PPm2'
   end
 
   it "should not resolve #index" do
