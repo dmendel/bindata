@@ -54,7 +54,7 @@ module BinData
       end
 
       def ensure_parameter_storage_exists(obj_class, method_name)
-        return if obj_class.respond_to?(method_name)
+        return if obj_class.instance_methods.include?(method_name)
 
         iv = "@#{method_name}"
         obj_class.class_eval <<-END
