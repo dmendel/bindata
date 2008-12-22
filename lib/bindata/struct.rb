@@ -150,7 +150,7 @@ module BinData
     def initialize(params = {}, parent = nil)
       super(params, parent)
 
-      @field_names = no_eval_param(:fields).collect { |k, n, p| n }
+      @field_names = no_eval_param(:fields).collect { |c, n, p| n }
       @field_objs  = []
     end
 
@@ -173,10 +173,7 @@ module BinData
     # is given, returns whether all fields are clear.
     def clear?(name = nil)
       if name.nil?
-        @field_objs.each do |f|
-          return false unless f.nil? or f.clear?
-        end
-        true
+        @field_objs.inject(true) { |all_clear, f| all_clear and (f.nil? or f.clear?) }
       else
         obj = find_obj_for_name(name)
         obj.nil? ? true : obj.clear?
@@ -283,7 +280,8 @@ module BinData
     def _do_num_bytes(name)
       if name.nil?
         instantiate_all_objs
-        (@field_objs.inject(0) { |sum, f| sum + f.do_num_bytes }).ceil
+        total = @field_objs.inject(0) { |sum, f| sum + f.do_num_bytes }
+        total.ceil
       else
         obj = find_obj_for_name(name)
         obj.nil? ? 0 : obj.do_num_bytes
@@ -291,7 +289,6 @@ module BinData
     end
 
     def _snapshot
-      # Returns a snapshot of this struct as a hash.
       hash = Snapshot.new
       field_names.each do |name|
         ss = find_obj_for_name(name).snapshot

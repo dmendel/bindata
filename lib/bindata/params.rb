@@ -131,8 +131,7 @@ module BinData
     def ensure_mandatory_parameters_exist(params)
       @mandatory.each do |prm|
         unless params.has_key?(prm)
-          raise ArgumentError, "parameter ':#{prm}' must be specified " +
-                               "in #{self}"
+          raise ArgumentError, "parameter ':#{prm}' must be specified"
         end
       end
     end
