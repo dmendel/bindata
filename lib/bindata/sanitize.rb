@@ -9,7 +9,6 @@ module BinData
   class SanitizedParameters
     extend Forwardable
 
-    # Sanitize the given parameters.
     def initialize(the_class, params)
       @hash = params
       @internal_parameters = {}
@@ -42,7 +41,7 @@ module BinData
   class Sanitizer
 
     class << self
-      # Sanitize +params+ for +obj+.
+      # Sanitize +params+ for +the_class+.
       # Returns sanitized parameters.
       def sanitize(the_class, params)
         if SanitizedParameters === params
@@ -82,18 +81,12 @@ module BinData
     def sanitized_params(the_class, params)
       new_params = params.nil? ? {} : params.dup
 
-      result = nil
       if can_sanitize_parameters?(the_class)
-        with_class_to_sanitize(the_class) do
-          the_class.sanitize_parameters!(self, new_params)
-          result = SanitizedParameters.new(the_class, new_params)
-        end
+        get_sanitized_params(the_class, new_params)
       else
         store_current_endian!(the_class, new_params)
-        result = new_params
+        new_params
       end
-
-      result
     end
 
     #---------------
@@ -105,6 +98,15 @@ module BinData
 
     def need_to_delay_sanitizing?(the_class)
       the_class.recursive? and @seen.include?(the_class)
+    end
+
+    def get_sanitized_params(the_class, params)
+      result = nil
+      with_class_to_sanitize(the_class) do
+        the_class.sanitize_parameters!(self, params)
+        result = SanitizedParameters.new(the_class, params)
+      end
+      result
     end
 
     def with_class_to_sanitize(the_class, &block)
@@ -126,4 +128,3 @@ module BinData
     end
   end
 end
-

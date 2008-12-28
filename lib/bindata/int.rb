@@ -15,6 +15,7 @@ module BinData
           name = "Uint#{nbits}#{endian_str}"
           creation_method = "create_uint_methods"
         end
+
         BinData.module_eval <<-END
           class #{name} < BinData::Single
             register(self.name, self)

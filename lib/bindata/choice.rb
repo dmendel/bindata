@@ -72,8 +72,8 @@ module BinData
       private
 
       def choices_as_hash(choices)
-        if choices.is_a? ::Array
-          key_array_by_index(choices)
+        if choices.respond_to?(:to_ary)
+          key_array_by_index(choices.to_ary)
         else
           choices
         end

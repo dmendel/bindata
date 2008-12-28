@@ -193,12 +193,12 @@ module BinData
     end
 
     def offset_of(field)
-      idx = @field_names.index(field.to_s)
-      if idx
+      index = @field_names.find_index(field.to_s)
+      if index
         instantiate_all_objs
 
         offset = 0
-        (0...idx).each do |i|
+        (0...index).each do |i|
           this_offset = @field_objs[i].do_num_bytes
           if ::Float === offset and ::Integer === this_offset
             offset = offset.ceil
@@ -243,10 +243,10 @@ module BinData
 
     def find_obj_for_name(name)
       field_name = name.to_s.chomp("=")
-      idx = @field_names.index(field_name)
-      if idx
-        instantiate_obj_at(idx)
-        @field_objs[idx].obj
+      index = @field_names.find_index(field_name)
+      if index
+        instantiate_obj_at(index)
+        @field_objs[index].obj
       else
         nil
       end
@@ -256,10 +256,10 @@ module BinData
       @field_names.each_index { |i| instantiate_obj_at(i) }
     end
 
-    def instantiate_obj_at(idx)
-      if @field_objs[idx].nil?
-        fclass, fname, fparams = no_eval_param(:fields)[idx]
-        @field_objs[idx] = fclass.new(fparams, self)
+    def instantiate_obj_at(index)
+      if @field_objs[index].nil?
+        fclass, fname, fparams = no_eval_param(:fields)[index]
+        @field_objs[index] = fclass.new(fparams, self)
       end
     end
 
