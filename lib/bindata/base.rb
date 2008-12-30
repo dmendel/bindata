@@ -111,6 +111,7 @@ module BinData
         _done_read
       end
     end
+    protected :do_read, :done_read
 
     # Writes the value for this data to +io+.
     def write(io)
@@ -126,6 +127,7 @@ module BinData
         _do_write(io)
       end
     end
+    protected :do_write
 
     # Returns the number of bytes it will take to write this data.
     def num_bytes(what = nil)
@@ -140,6 +142,7 @@ module BinData
         0
       end
     end
+    protected :do_num_bytes
 
     # Returns a snapshot of this data object.
     # Returns nil if :onlyif is false
