@@ -90,7 +90,7 @@ module BinData
 
       el_class, el_params = no_eval_param(:type)
 
-      @element_list    = nil
+      @element_list    = []
       @element_class   = el_class
       @element_params  = el_params
     end
@@ -100,15 +100,14 @@ module BinData
     end
 
     # Returns if the element at position +index+ is clear?.  If +index+
-    # is not given, then returns whether all fields are clear.
+    # is not given, then returns whether all elements are clear.
     def clear?(index = nil)
-      if @element_list.nil?
-        true
-      elsif index.nil?
-        elements.each { |f| return false if not f.clear? }
-        true
+      if index.nil?
+        elements.inject(true) { |all_clear, f| all_clear and f.clear? }
+      elsif index < elements.length
+        elements[index].clear?
       else
-        (index < elements.length) ? elements[index].clear? : true
+        true
       end
     end
 
@@ -116,98 +115,116 @@ module BinData
     # the internal state of the array is reset to that of a newly created
     # object.
     def clear(index = nil)
-      if @element_list.nil?
-        # do nothing as the array is already clear
-      elsif index.nil?
-        @element_list = nil
+      if index.nil?
+        @element_list.clear
       elsif index < elements.length
         elements[index].clear
       end
     end
 
-    # Appends a new element to the end of the array.  If the array contains
-    # single_values then the +value+ may be provided to the call.
-    # Returns the appended object, or value in the case of single_values.
-    def append(value = nil)
-      # TODO: deprecate #append as it can be replaced with #push
-      append_new_element
-      self[-1] = value unless value.nil?
-      self.last
-    end
-
-    def index(obj)
+    # Returns the first index of +obj+ in self.
+    #
+    # a = BinData::String.new; a.value = "a"
+    # b = BinData::String.new; b.value = "b"
+    # c = BinData::String.new; c.value = "c"
+    #
+    # arr = BinData::Array.new(:type => :string)
+    # arr.push(a, b, c)
+    #
+    # arr.find_index("b") #=> 1
+    # arr.find_index(c) #=> 2
+    #
+    def find_index(obj)
       if obj.is_a?(BinData::Base)
-        elements.index(obj)
+        elements.find_index(obj)
       else
         elements.find_index { |el| el.single_value? ? el.value == obj : false }
       end
     end
+    alias_method :index, :find_index
 
-    # Pushes the given object(s) on to the end of this array. 
-    # This expression returns the array itself, so several appends may 
-    # be chained together.
+
     def push(*args)
-      args.each do |arg|
-        if @element_class == arg.class
-          # TODO: need to modify arg.env to add_variable(:index) and
-          # to link arg.env to self.env
-          elements.push(arg)
-        else
-          append(arg)
-        end
-      end
+      insert(-1, *args)
       self
     end
     alias_method :<<, :push
 
+    def unshift(*args)
+      insert(0, *args)
+      self
+    end
+
+    def concat(array)
+      insert(-1, *array.to_ary)
+      self
+    end
+
+    def insert(index, *objs)
+      extend_array(index - 1)
+      elements.insert(index, *to_storage_formats(objs))
+      self
+    end
+
+    def append(value = nil)
+      warn "#append is deprecated, use push or slice instead"
+      if value.nil?
+        slice(length)
+      else
+        push(value)
+      end
+      self.last
+    end
+
     # Returns the element at +index+.  If the element is a single_value
     # then the value of the element is returned instead.
-    def [](*args)
-      if args.length == 1 and ::Integer === args[0]
-        # extend array automatically
-        while args[0] >= elements.length
-          append_new_element
-        end
-      end
-
-      data = elements[*args]
-      if args.length > 1 or ::Range === args[0]
-        data.collect { |el| (el && el.single_value?) ? el.value : el }
+    def [](arg1, arg2 = nil)
+      if arg1.respond_to?(:to_int) and arg2.nil?
+        slice_index(arg1.to_int)
+      elsif arg1.respond_to?(:to_int) and arg2.respond_to?(:to_int)
+        slice_start_length(arg1.to_int, arg2.to_int)
+      elsif arg1.is_a?(Range) and arg2.nil?
+        slice_range(arg1)
       else
-        (data && data.single_value?) ? data.value : data
+        raise TypeError, "can't convert #{arg1} into Integer" unless arg1.respond_to?(:to_int)
+        raise TypeError, "can't convert #{arg2} into Integer" unless arg2.respond_to?(:to_int)
       end
     end
     alias_method :slice, :[]
 
-    # Sets the element at +index+.  If the element is a single_value
-    # then the value of the element is set instead.
-    def []=(index, value)
-      # extend array automatically
-      while elements.length <= index
-        append_new_element
-      end
-
-      obj = elements[index]
-      unless obj.single_value?
-        # TODO: allow setting objects, not just values
-        raise NoMethodError, "undefined method `[]=' for #{self}", caller
-      end
-      obj.value = value
+    def slice_index(index)
+      extend_array(index)
+      at(index)
     end
 
-    # Iterate over each element in the array.  If the elements are
-    # single_values then the values of the elements are iterated instead.
-    def each
-      elements.each do |el|
-        yield(el.single_value? ? el.value : el)
-      end
+    def slice_start_length(start, length)
+      from_storage_formats(elements[start, length])
+    end
+
+    def slice_range(range)
+      from_storage_formats(elements[range])
+    end
+    private :slice_index, :slice_start_length, :slice_range
+
+    # Returns the element at +index+.  If the element is a single_value
+    # then the value of the element is returned instead.  Unlike +slice+,
+    # if +index+ is out of range the array will not be automatically extended.
+    def at(index)
+      from_storage_format(elements[index])
+    end
+
+    # Sets the element at +index+.  If the array type is a single_value
+    # then the value of the element will be set.
+    def []=(index, value)
+      extend_array(index)
+      elements[index] = to_storage_format(value)
     end
 
     # Returns the first element, or the first +n+ elements, of the array.
     # If the array is empty, the first form returns nil, and the second
     # form returns an empty array.
     def first(n = nil)
-      if n.nil? and elements.empty?
+      if n.nil? and empty?
         # explicitly return nil as arrays grow automatically
         nil
       elsif n.nil?
@@ -245,35 +262,95 @@ module BinData
       snapshot
     end
 
+    # Iterate over each element in the array.  If the elements are
+    # single_values then the values of the elements are iterated instead.
+    def each
+      elements.each { |el| yield from_storage_format(el) }
+    end
+
     #---------------
     private
+
+    def extend_array(max_index)
+      max_length = max_index + 1
+      while elements.length < max_length
+        append_new_element
+      end
+    end
+
+    def to_storage_formats(els)
+      els.collect { |el| to_storage_format(el) }
+    end
+
+    def to_storage_format(obj)
+      if obj.is_a?(BinData::Base) and obj.class != @element_class
+        warn "maybe this will work, maybe not"
+      end
+
+      if obj.is_a?(BinData::Base)
+        obj.parent = self
+        obj
+      else
+        element = new_element
+        element.value = obj
+        element
+      end
+    rescue
+      raise ArgumentError, "Can not convert #{obj} to BinData::Base"
+    end
+
+    def from_storage_formats(els)
+      return nil if els.nil?
+
+      els.collect { |el| from_storage_format(el) }
+    end
+
+    def from_storage_format(el)
+      if el and el.single_value?
+        el.value
+      else
+        el
+      end
+    end
+
 
     def _do_read(io)
       if has_param?(:initial_length)
         elements.each { |f| f.do_read(io) }
       elsif has_param?(:read_until)
-        if no_eval_param(:read_until) == :eof
-          @element_list = nil
-          loop do
-            element = append_new_element
-            begin
-              element.do_read(io)
-            rescue
-              @element_list.pop
-              break
-            end
-          end
-        else
-          @element_list = nil
-          loop do
-            element = append_new_element
-            element.do_read(io)
-            variables = { :index => self.length - 1, :element => self.last,
-                          :array => self }
-            finished = eval_param(:read_until, variables)
-            break if finished
-          end
+        read_until(io)
+      end
+    end
+
+    def read_until(io)
+      if no_eval_param(:read_until) == :eof
+        read_until_eof(io)
+      else
+        read_until_condition(io)
+      end
+    end
+
+    def read_until_eof(io)
+      finished = false
+      while not finished
+        element = append_new_element
+        begin
+          element.do_read(io)
+        rescue
+          @element_list.pop
+          finished = true
         end
+      end
+    end
+
+    def read_until_condition(io)
+      finished = false
+      while not finished
+        element = append_new_element
+        element.do_read(io)
+        variables = { :index => self.length - 1, :element => self.last,
+                      :array => self }
+        finished = eval_param(:read_until, variables)
       end
     end
 
@@ -287,9 +364,12 @@ module BinData
 
     def _do_num_bytes(index)
       if index.nil?
-        (elements.inject(0) { |sum, f| sum + f.do_num_bytes }).ceil
-      else
+        total = elements.inject(0) { |sum, f| sum + f.do_num_bytes }
+        total.ceil
+      elsif index < elements.length
         elements[index].do_num_bytes
+      else
+        0
       end
     end
 
@@ -297,29 +377,18 @@ module BinData
       elements.collect { |e| e.snapshot }
     end
 
-    # Returns the list of all elements in the array.  The elements
-    # will be instantiated on the first call to this method.
     def elements
-      if @element_list.nil?
-        @element_list = []
-        if has_param?(:initial_length)
-          # create the desired number of instances
-          eval_param(:initial_length).times do
-            append_new_element
-          end
+      if @element_list.empty? and has_param?(:initial_length)
+        eval_param(:initial_length).times do
+          @element_list << new_element
         end
       end
       @element_list
     end
 
-    # Creates a new element and appends it to the end of @element_list.
-    # Returns the newly created element
     def append_new_element
-      # ensure @element_list is initialised
-      elements()
-
-      element = @element_class.new(@element_params, self)
-      @element_list << element
+      element = new_element
+      elements << element
       element
     end
 

@@ -1,9 +1,9 @@
 #!/usr/bin/env ruby
 
 require File.expand_path(File.dirname(__FILE__)) + '/spec_common'
+require File.expand_path(File.dirname(__FILE__)) + '/example'
 require 'bindata/array'
 require 'bindata/int'
-require 'bindata/struct'
 
 describe BinData::Array, "when instantiating" do
   it "should ensure mandatory parameters are supplied" do
@@ -26,11 +26,15 @@ end
 
 describe BinData::Array, "with no elements" do
   before(:each) do
-    @data = BinData::Array.new(:type => :int8)
+    @data = BinData::Array.new(:type => :example_single)
   end
 
   it "should not be a single_value" do
     @data.should_not be_single_value
+  end
+
+  it "should be clear" do
+    @data.should be_clear
   end
 
   it "should return zero length" do
@@ -56,17 +60,11 @@ describe BinData::Array, "with no elements" do
   it "should return [] for the last n elements" do
     @data.last(3).should == []
   end
-
-  it "should append an element" do
-    @data << 99
-    @data.length.should == 1
-    @data.last.should == 99
-  end
 end
 
 describe BinData::Array, "with several elements" do
   before(:each) do
-    type = [:int16le, {:initial_value => lambda { index + 1 }}]
+    type = [:example_single, {:initial_value => lambda { index + 1 }}]
     @data = BinData::Array.new(:type => type, :initial_length => 5)
   end
 
@@ -110,11 +108,11 @@ describe BinData::Array, "with several elements" do
   end
 
   it "should have correct num_bytes" do
-    @data.num_bytes.should == 10
+    @data.num_bytes.should == 5 * ExampleSingle.new.num_bytes
   end
 
   it "should have correct num_bytes for individual elements" do
-    @data.num_bytes(0).should == 2
+    @data.num_bytes(0).should == ExampleSingle.new.num_bytes
   end
 
   it "should be able to directly access elements" do
@@ -134,12 +132,6 @@ describe BinData::Array, "with several elements" do
     @data.select { |x| (x % 2) == 0 }.should == [2, 4]
   end
 
-  it "should automatically extend" do
-    @data[9] = 3
-    @data[8].should == 9
-    @data.length.should == 10
-  end
-
   it "should clear" do
     @data[1] = 8
     @data.clear
@@ -152,30 +144,20 @@ describe BinData::Array, "with several elements" do
     @data[1].should == 2
   end
 
-  it "should clear a single element out of range without extending" do
-    @data.clear(9)
-    @data.length.should == 5
-  end
-
   it "should be clear upon creation" do
-    @data.clear?.should be_true
+    @data.should be_clear
   end
 
   it "should be clear if all elements are clear" do
     @data[1] = 8
     @data.clear(1)
-    @data.clear?.should be_true
+    @data.should be_clear
   end
 
   it "should test clear status of individual elements" do
     @data[1] = 8
     @data.clear?(0).should be_true
     @data.clear?(1).should be_false
-  end
-
-  it "should test clear status of out of range elements without extending" do
-    @data.clear?(9).should be_true
-    @data.length.should == 5
   end
 
   it "should symmetrically read and write" do
@@ -196,36 +178,119 @@ describe BinData::Array, "with several elements" do
   it "should return nil for index of non existent element" do
     @data.index(42).should be_nil
   end
+end
 
-  it "should append an element" do
-    @data.push(99)
-    @data.length.should == 6
-    @data.last.should == 99
+describe BinData::Array, "when accessing elements" do
+  before(:each) do
+    type = [:example_single, {:initial_value => lambda { index + 1 }}]
+    @data = BinData::Array.new(:type => type, :initial_length => 5)
+    @data[0] = 1
+    @data[1] = 2
+    @data[2] = 3
+    @data[3] = 4
+    @data[4] = 5
+  end
+
+  it "should insert with positive indexes" do
+    @data.insert(2, 30, 40)
+    @data.snapshot.should == [1, 2, 30, 40, 3, 4, 5]
+  end
+
+  it "should insert with negative indexes" do
+    @data.insert(-2, 30, 40)
+    @data.snapshot.should == [1, 2, 3, 4, 30, 40, 5]
+  end
+
+  it "should push" do
+    @data.push(30, 40)
+    @data.snapshot.should == [1, 2, 3, 4, 5, 30, 40]
+  end
+
+  it "should concat" do
+    @data.concat([30, 40])
+    @data.snapshot.should == [1, 2, 3, 4, 5, 30, 40]
+  end
+
+  it "should unshift" do
+    @data.unshift(30, 40)
+    @data.snapshot.should == [30, 40, 1, 2, 3, 4, 5]
+  end
+
+  it "should automatically extend on [index]" do
+    @data[9].should == 10
+    @data.snapshot.should == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+  end
+
+  it "should automatically extend on []=" do
+    @data[9] = 30
+    @data.snapshot.should == [1, 2, 3, 4, 5, 6, 7, 8, 9, 30]
+  end
+
+  it "should automatically extend on insert" do
+    @data.insert(7, 30, 40)
+    @data.snapshot.should == [1, 2, 3, 4, 5, 6, 7, 30, 40]
+  end
+
+  it "should not extend on at" do
+    @data.at(9).should be_nil
+    @data.length.should == 5
+  end
+
+  it "should not extend on [start, length]" do
+    @data[9, 2].should be_nil
+    @data.length.should == 5
+  end
+
+  it "should not extend on [range]" do
+    @data[9 .. 10].should be_nil
+    @data.length.should == 5
+  end
+
+  it "should not extend on clear" do
+    @data.clear(9)
+    @data.length.should == 5
+  end
+
+  it "should not extend on clear?" do
+    @data.clear?(9).should be_true
+    @data.length.should == 5
+  end
+
+  it "should not extend on num_bytes" do
+    @data.num_bytes(9).should == 0
+    @data.length.should == 5
+  end
+
+  it "should raise error on bad input to []" do
+    lambda { @data["a"] }.should raise_error(TypeError)
+    lambda { @data[1, "a"] }.should raise_error(TypeError)
   end
 end
 
-describe BinData::Array, "containing structs" do
+describe BinData::Array, "containing multi values" do
   before(:each) do
-    type = [:struct, {:fields => [[:int8, :a,
-                                   {:initial_value => lambda { index }}],
-                                  [:int8, :b]]}]
-    @data = BinData::Array.new(:type => type, :initial_length => 5)
+    @data = BinData::Array.new(:type => :example_multi, :initial_length => 5)
+    @data[0].set_value(0, 0)
+    @data[1].set_value(1, 1)
+    @data[2].set_value(2, 2)
+    @data[3].set_value(3, 3)
+    @data[4].set_value(4, 4)
   end
 
   it "should access elements, not values" do
-    @data[3].a.should == 3
+    @data[3].get_value.should == [3, 3]
   end
 
   it "should access multiple elements with slice" do
-    @data.slice(2, 3).collect { |x| x.a }.should == [2, 3, 4]
+    @data.slice(2, 3).collect { |x| x.get_value[0] }.should == [2, 3, 4]
   end
 
   it "should not be able to modify elements" do
-    lambda { @data[1] = 3 }.should raise_error(NoMethodError)
+    lambda { @data[1] = 3 }.should raise_error(ArgumentError)
   end
 
   it "should interate over each element" do
-    @data.collect { |s| s.a }.should == [0, 1, 2, 3, 4]
+    @data.collect { |s| s.get_value[0] }.should == [0, 1, 2, 3, 4]
   end
 
   it "should identify index of elements" do
@@ -233,12 +298,19 @@ describe BinData::Array, "containing structs" do
   end
 
   it "should be able to append elements" do
-    obj = @data.append
-    obj.a = 3
-    obj.b = 5
+    obj = ExampleMulti.new
+    obj.set_value(9, 9)
 
-    @data.last.a.should == 3
-    @data.last.b.should == 5
+    @data.push(obj)
+    @data.last.get_value.should == [9, 9]
+  end
+
+  it "should find_index of appended elements" do
+    obj = ExampleMulti.new
+    obj.set_value(9, 9)
+
+    @data.push(obj)
+    @data.find_index(obj).should == 5
   end
 end
 
@@ -302,5 +374,3 @@ describe BinData::Array, "nested within an Array" do
     @data.snapshot.should == [ [4], [5, 6], [7, 8, 9] ]
   end
 end
-
-# TODO: #at, #concat, #find_index, #insert, #unshift
