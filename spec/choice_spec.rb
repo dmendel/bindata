@@ -1,9 +1,8 @@
 #!/usr/bin/env ruby
 
 require File.expand_path(File.dirname(__FILE__)) + '/spec_common'
+require File.expand_path(File.dirname(__FILE__)) + '/example'
 require 'bindata/choice'
-require 'bindata/int'
-require 'bindata/struct'
 
 class Chooser
   attr_accessor :choice
@@ -30,12 +29,12 @@ describe BinData::Choice, "when instantiating" do
   end
 
   it "should fail if :choices Hash has a symbol as key" do
-    args = {:choices => {:a => :int8}, :selection => 0}
+    args = {:choices => {:a => :example_single}, :selection => 0}
     lambda { BinData::Choice.new(args) }.should raise_error(ArgumentError)
   end
 
   it "should fail if :choices Hash has a nil key" do
-    args = {:choices => {nil => :int8}, :selection => 0}
+    args = {:choices => {nil => :example_single}, :selection => 0}
     lambda { BinData::Choice.new(args) }.should raise_error(ArgumentError)
   end
 end
@@ -79,7 +78,7 @@ share_examples_for "Choice initialized with array or hash" do
   it "should delegate methods to the selected single choice" do
     @chooser.choice = 5
 
-    @data.num_bytes.should == 2
+    @data.num_bytes.should == ExampleSingle.new.num_bytes
   end
 end
 
@@ -89,11 +88,11 @@ describe BinData::Choice, "with sparse choices array" do
   before(:each) do
     chooser = Chooser.new
     @data = BinData::Choice.new(:choices => [nil, nil, nil,
-                                             [:int8,    {:value => 30}],
+                                             [:example_single, {:value => 30}],
                                              nil,
-                                             [:int16le, {:value => 50}],
+                                             [:example_single, {:value => 50}],
                                              nil,
-                                             [:int32le, {:value => 70}]],
+                                             [:example_single, {:value => 70}]],
                                 :selection => lambda { chooser.choice } )
     @chooser = chooser
   end
@@ -104,9 +103,9 @@ describe BinData::Choice, "with choices hash" do
 
   before(:each) do
     chooser = Chooser.new
-    @data = BinData::Choice.new(:choices => {3 => [:int8,    {:value => 30}],
-                                             5 => [:int16le, {:value => 50}],
-                                             7 => [:int32le, {:value => 70}]},
+    @data = BinData::Choice.new(:choices => {3 => [:example_single, {:value => 30}],
+                                             5 => [:example_single, {:value => 50}],
+                                             7 => [:example_single, {:value => 70}]},
                                 :selection => lambda { chooser.choice } )
     @chooser = chooser
   end
@@ -115,9 +114,9 @@ end
 describe BinData::Choice, "with single values" do
   before(:each) do
     chooser = Chooser.new
-    @data = BinData::Choice.new(:choices => {3 => :uint8,
-                                             5 => :uint16le,
-                                             7 => :uint32le,},
+    @data = BinData::Choice.new(:choices => {3 => :example_single,
+                                             5 => :example_single,
+                                             7 => :example_single,},
                                 :selection => lambda { chooser.choice } )
     @chooser = chooser
   end
@@ -135,34 +134,34 @@ describe BinData::Choice, "with multi values" do
   before(:each) do
     chooser = Chooser.new
     @data = BinData::Choice.new(:choices =>
-                                  {3 => [:struct, {:fields => [[:int8,  :a]]}],
-                                   5 => [:struct, {:fields => [[:int8,  :a]]}]},
+                                  {3 => :example_multi,
+                                   5 => :example_multi},
                                 :selection => lambda { chooser.choice } )
     @chooser = chooser
   end
 
   it "should access fields" do
     @chooser.choice = 3
-    @data.a = 5
-    @data.a.should == 5
+    @data.set_value(8, 9)
+    @data.get_value.should == [8, 9]
   end
 
   it "should not copy values when changing fields" do
     @chooser.choice = 3
-    @data.a = 17
+    @data.set_value(8, 9)
 
     @chooser.choice = 5
-    @data.a.should_not == 17
+    @data.get_value.should_not == [8, 9]
   end
 
   it "should preserve values when switching selection" do
     @chooser.choice = 3
-    @data.a = 30
+    @data.set_value(8, 9)
 
     @chooser.choice = 5
-    @data.a = 50
+    @data.set_value(11, 12)
 
     @chooser.choice = 3
-    @data.a.should == 30
+    @data.get_value.should == [8, 9]
   end
 end

@@ -1,16 +1,15 @@
 #!/usr/bin/env ruby
 
 require File.expand_path(File.dirname(__FILE__)) + '/spec_common'
+require File.expand_path(File.dirname(__FILE__)) + '/example'
 require 'bindata/io'
 require 'bindata/single'
 
-# An implementation of a unsigned 4 byte integer.
-class ConcreteSingle < BinData::Single
-  def value_to_string(val)       [val].pack("V") end
-  def read_and_return_value(io)  io.readbytes(4).unpack("V")[0] end
-  def sensible_default()         0 end
-
-  def in_read?()                 @in_read end
+class ExampleSingle
+  # reopen example to make @in_read public for testing
+  def in_read?
+    @in_read
+  end
 end
 
 describe BinData::Single, "when subclassing" do
@@ -35,40 +34,41 @@ end
 
 describe BinData::Single do
   it "should conform to rule 1 for returning a value" do
-    data = ConcreteSingle.new(:value => 5)
+    data = ExampleSingle.new(:value => 5)
     data.should_not be_in_read
     data.value.should == 5
   end
 
   it "should conform to rule 2 for returning a value" do
     io = StringIO.new([42].pack("V"))
-    data = ConcreteSingle.new(:value => 5)
+    data = ExampleSingle.new(:value => 5)
+    data.expose_methods_for_testing
     data.do_read(BinData::IO.new(io))
     data.should be_in_read
     data.value.should == 42
   end
 
   it "should conform to rule 3 for returning a value" do
-    data = ConcreteSingle.new(:initial_value => 5)
+    data = ExampleSingle.new(:initial_value => 5)
     data.should be_clear
     data.value.should == 5
   end
 
   it "should conform to rule 4 for returning a value" do
-    data = ConcreteSingle.new(:initial_value => 5)
+    data = ExampleSingle.new(:initial_value => 5)
     data.value = 17
     data.should_not be_clear
     data.value.should == 17
   end
 
   it "should conform to rule 5 for returning a value" do
-    data = ConcreteSingle.new
+    data = ExampleSingle.new
     data.should be_clear
     data.value.should == 0
   end
 
   it "should conform to rule 6 for returning a value" do
-    data = ConcreteSingle.new
+    data = ExampleSingle.new
     data.value = 8
     data.should_not be_clear
     data.value.should == 8
@@ -77,12 +77,12 @@ end
 
 describe BinData::Single, "after initialisation" do
   before(:each) do
-    @data = ConcreteSingle.new
+    @data = ExampleSingle.new
   end
 
   it "should not allow both :initial_value and :value" do
     params = {:initial_value => 1, :value => 2}
-    lambda { ConcreteSingle.new(params) }.should raise_error(ArgumentError)
+    lambda { ExampleSingle.new(params) }.should raise_error(ArgumentError)
   end
 
   it "should have a sensible value" do
@@ -93,7 +93,7 @@ describe BinData::Single, "after initialisation" do
     @data.value = 42
     written = @data.to_s
 
-    ConcreteSingle.read(written).should == 42
+    ExampleSingle.read(written).should == 42
   end
 
   it "should be a single_value" do
@@ -131,7 +131,7 @@ end
 
 describe BinData::Single, "with :initial_value" do
   before(:each) do
-    @data = ConcreteSingle.new(:initial_value => 5)
+    @data = ExampleSingle.new(:initial_value => 5)
   end
 
   it "should return that initial value before reading or being set" do
@@ -157,7 +157,8 @@ end
 
 describe BinData::Single, "with :value" do
   before(:each) do
-    @data = ConcreteSingle.new(:value => 5)
+    @data = ExampleSingle.new(:value => 5)
+    @data.expose_methods_for_testing
   end
 
   it "should return that :value" do
@@ -189,22 +190,22 @@ describe BinData::Single, "with :check_value" do
   end
 
   it "should succeed when check_value is non boolean and correct" do
-    data = ConcreteSingle.new(:check_value => 34)
+    data = ExampleSingle.new(:check_value => 34)
     lambda { data.read(@io) }.should_not raise_error
   end
 
   it "should fail when check_value is non boolean and incorrect" do
-    data = ConcreteSingle.new(:check_value => lambda { 123 * 5 })
+    data = ExampleSingle.new(:check_value => lambda { 123 * 5 })
     lambda { data.read(@io) }.should raise_error(BinData::ValidityError)
   end
 
   it "should succeed when check_value is boolean and true" do
-    data = ConcreteSingle.new(:check_value => lambda { (value % 2) == 0})
+    data = ExampleSingle.new(:check_value => lambda { (value % 2) == 0})
     lambda { data.read(@io) }.should_not raise_error
   end
 
   it "should fail when check_value is boolean and false" do
-    data = ConcreteSingle.new(:check_value => lambda { value > 100 })
+    data = ExampleSingle.new(:check_value => lambda { value > 100 })
     lambda { data.read(@io) }.should raise_error(BinData::ValidityError)
   end
 end

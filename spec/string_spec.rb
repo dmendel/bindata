@@ -120,6 +120,7 @@ end
 describe BinData::String, "with :read_length and :value" do
   before(:each) do
     @str = BinData::String.new(:read_length => 5, :value => "abcdefghij")
+    @str.expose_methods_for_testing
   end
 
   it "should not be affected by :read_length before value is read" do

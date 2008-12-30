@@ -132,3 +132,18 @@ describe BinData::Array, "of bits" do
     @data.num_bytes.should == 2
   end
 end
+
+describe "Objects with debug_name" do
+#  it "should have default name of obj" do
+#    el = BinData::Int8.new
+#    el.debug_name.should == "obj"
+#  end
+
+#  it "should include array index" do
+#    el = BinData::Int8.new
+#    arr = BinData::Array.new
+#    arr.push(el)
+#    el.debug_name.should == "obj[0]"
+#  end
+end
+
