@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 
 require File.expand_path(File.dirname(__FILE__)) + '/spec_common'
+require File.expand_path(File.dirname(__FILE__)) + '/example'
 require 'bindata'
 
 describe "lambdas with index" do
@@ -134,16 +135,32 @@ describe BinData::Array, "of bits" do
 end
 
 describe "Objects with debug_name" do
-#  it "should have default name of obj" do
-#    el = BinData::Int8.new
-#    el.debug_name.should == "obj"
-#  end
+  it "should have default name of obj" do
+    el = ExampleSingle.new
+    el.debug_name.should == "obj"
+  end
 
-#  it "should include array index" do
-#    el = BinData::Int8.new
-#    arr = BinData::Array.new
-#    arr.push(el)
-#    el.debug_name.should == "obj[0]"
-#  end
+  it "should include array index" do
+    arr = BinData::Array.new(:type => :example_multi, :initial_length => 2)
+    arr[2].debug_name.should == "obj[2]"
+  end
+
+  it "should include field name" do
+    s = BinData::Struct.new(:fields => [[:example_multi, :a]])
+    s.a.debug_name.should == "obj.a"
+  end
+
+  it "should delegate to choice" do
+    choice_params = {:choices => [:example_multi], :selection => 0}
+    s = BinData::Struct.new(:fields => [[:choice, :a, choice_params]])
+    s.a.debug_name.should == "obj.a"
+  end
+
+  it "should nest" do
+    nested_struct_params = {:fields => [[:example_multi, :c]]}
+    struct_params = {:fields => [[:struct, :b, nested_struct_params]]}
+    s = BinData::Struct.new(:fields => [[:struct, :a, struct_params]])
+    s.a.b.c.debug_name.should == "obj.a.b.c"
+  end
 end
 

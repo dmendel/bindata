@@ -170,6 +170,10 @@ module BinData
       end
     end
 
+    def debug_name_of(child)
+      debug_name
+    end
+
     #---------------
     private
 

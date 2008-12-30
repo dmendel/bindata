@@ -225,6 +225,12 @@ module BinData
       end
     end
 
+    def debug_name_of(child)
+      index = @field_objs.find_index(child)
+      field_name = @field_names[index]
+      "#{debug_name}.#{field_name}"
+    end
+
     #---------------
     private
 

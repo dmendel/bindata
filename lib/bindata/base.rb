@@ -172,6 +172,15 @@ module BinData
       self
     end
 
+    # Returns a user friendly name of this object for debugging purposes.
+    def debug_name
+      if parent
+        parent.debug_name_of(self)
+      else
+        "obj"
+      end
+    end
+
     #---------------
     private
 
@@ -281,8 +290,14 @@ module BinData
       raise NotImplementedError
     end
 
+    # Returns the debug name of +child+.  This only needs to be implemented
+    # by objects that are _not_ single_value?
+    def debug_name_of(child)
+      raise NotImplementedError
+    end
+
     # Set visibility requirements of methods to implement
-    public :clear, :clear?, :single_value?
+    public :clear, :clear?, :single_value?, :debug_name_of
     private :_do_read, :_done_read, :_do_write, :_do_num_bytes, :_snapshot
 
     # End To be implemented by subclasses

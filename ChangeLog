@@ -4,6 +4,8 @@
 
 * Arbitrary byte sized integers are now supported (e.g. 24bit, 808bit).
 * Renamed String :trim_value parameter to :trim_padding.
+* BinData::Array now behaves more like Ruby's Array.
+* Added debug_name
 
 == Version 0.9.3 (2008-12-03)
 

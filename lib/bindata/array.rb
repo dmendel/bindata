@@ -268,6 +268,11 @@ module BinData
       elements.each { |el| yield from_storage_format(el) }
     end
 
+    def debug_name_of(child)
+      index = find_index(child)
+      "#{debug_name}[#{index}]"
+    end
+
     #---------------
     private
 
