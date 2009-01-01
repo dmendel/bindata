@@ -169,7 +169,7 @@ describe "Tracing"  do
     arr = BinData::Array.new(:type => :int8, :initial_length => 5)
 
     io = StringIO.new
-    BinData::trace_read(io) { arr.read("\x01\x02\x03\x04\x05") }
+    BinData::trace_reading(io) { arr.read("\x01\x02\x03\x04\x05") }
     io.rewind
 
     expected = (0..4).collect { |i| "obj[#{i}] => #{i + 1}\n" }.join("")
@@ -186,7 +186,7 @@ describe "Tracing"  do
     obj = DebugNameSingleValue.new
 
     io = StringIO.new
-    BinData::trace_read(io) { obj.read("\x01") }
+    BinData::trace_reading(io) { obj.read("\x01") }
     io.rewind
 
     io.read.should == ["obj-internal-.ex => 1\n", "obj => 1\n"].join("")
@@ -196,7 +196,7 @@ describe "Tracing"  do
     obj = BinData::Choice.new(:choices => [:int8, :int16be], :selection => 0)
 
     io = StringIO.new
-    BinData::trace_read(io) { obj.read("\x01") }
+    BinData::trace_reading(io) { obj.read("\x01") }
     io.rewind
 
     io.read.should == ["obj-selection- => 0\n", "obj => 1\n"].join("")
