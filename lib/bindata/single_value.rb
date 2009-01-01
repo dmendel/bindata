@@ -101,8 +101,8 @@ module BinData
 
       def sanitize_parameters!(sanitizer, params)
         struct_params = {}
-        struct_params[:fields] = @fields || []
-        struct_params[:endian] = self.endian unless self.endian.nil?
+        struct_params[:fields] = fields
+        struct_params[:endian] = endian unless endian.nil?
         
         params[:struct_params] = struct_params
 
@@ -121,8 +121,7 @@ module BinData
       end
 
       def ensure_valid_name(name)
-        @fields ||= []
-        @fields.each do |t, n, p|
+        fields.each do |t, n, p|
           if n == name
             raise SyntaxError, "duplicate field '#{name}' in #{self}", caller(2)
           end
@@ -134,8 +133,11 @@ module BinData
       end
 
       def append_field(type, name, params)
+        fields.push([type, name, params])
+      end
+
+      def fields
         @fields ||= []
-        @fields.push([type, name, params])
       end
     end
 
@@ -153,6 +155,10 @@ module BinData
       else
         super
       end
+    end
+
+    def debug_name_of(child)
+      debug_name + "-internal-"
     end
 
     #---------------

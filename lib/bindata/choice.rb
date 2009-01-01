@@ -155,8 +155,6 @@ module BinData
     end
 
     def_delegators :current_choice, :clear, :clear?, :single_value?
-    def_delegators :current_choice, :_do_read, :_done_read, :_do_write
-    def_delegators :current_choice, :_do_num_bytes, :_snapshot
 
     def respond_to?(symbol, include_private = false)
       super || current_choice.respond_to?(symbol, include_private)
@@ -176,6 +174,36 @@ module BinData
 
     #---------------
     private
+
+    def _do_read(io)
+      trace(eval_param(:selection))
+      current_choice.do_read(io)
+    end
+
+    def trace(selection)
+      selection_string = selection.inspect
+      if selection_string.length > 30
+        selection_string = selection_string.slice(0 .. 30) + "..."
+      end
+
+      BinData::trace_message("#{debug_name}-selection- => #{selection_string}")
+    end
+
+    def _done_read
+      current_choice.done_read
+    end
+
+    def _do_write(io)
+      current_choice.do_write(io)
+    end
+
+    def _do_num_bytes(what)
+      current_choice.do_num_bytes(what)
+    end
+
+    def _snapshot
+      current_choice.snapshot
+    end
 
     def current_choice
       selection = eval_param(:selection)

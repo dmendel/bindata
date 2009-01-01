@@ -19,4 +19,22 @@ require 'bindata/struct'
 # 
 module BinData
   VERSION = "0.9.3"
+
+  def trace_read(io = STDERR, &block)
+    @trace_io ||= nil
+    @saved_io = @trace_io
+    @trace = true
+    @trace_io = io
+    block.call
+  ensure
+    @trace = false
+    @trace_io = @saved_io
+  end
+
+  def trace_message(msg)
+    @trace_io ||= nil
+    @trace_io.puts(msg) if @trace_io
+  end
+
+  module_function :trace_read, :trace_message
 end

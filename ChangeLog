@@ -6,6 +6,7 @@
 * Renamed String :trim_value parameter to :trim_padding.
 * BinData::Array now behaves more like Ruby's Array.
 * Added debug_name
+* Added ability to trace reading
 
 == Version 0.9.3 (2008-12-03)
 

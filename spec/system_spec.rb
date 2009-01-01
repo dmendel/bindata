@@ -164,3 +164,42 @@ describe "Objects with debug_name" do
   end
 end
 
+describe "Tracing"  do
+  it "should trace arrays" do
+    arr = BinData::Array.new(:type => :int8, :initial_length => 5)
+
+    io = StringIO.new
+    BinData::trace_read(io) { arr.read("\x01\x02\x03\x04\x05") }
+    io.rewind
+
+    expected = (0..4).collect { |i| "obj[#{i}] => #{i + 1}\n" }.join("")
+    io.read.should == expected
+  end
+
+  it "should trace custom single values" do
+    class DebugNameSingleValue < BinData::SingleValue
+      int8 :ex
+      def get;     self.ex; end
+      def set(val) self.ex = val; end
+    end
+
+    obj = DebugNameSingleValue.new
+
+    io = StringIO.new
+    BinData::trace_read(io) { obj.read("\x01") }
+    io.rewind
+
+    io.read.should == ["obj-internal-.ex => 1\n", "obj => 1\n"].join("")
+  end
+
+  it "should trace choice selection" do
+    obj = BinData::Choice.new(:choices => [:int8, :int16be], :selection => 0)
+
+    io = StringIO.new
+    BinData::trace_read(io) { obj.read("\x01") }
+    io.rewind
+
+    io.read.should == ["obj-selection- => 0\n", "obj => 1\n"].join("")
+  end
+end
+
