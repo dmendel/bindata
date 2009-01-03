@@ -62,6 +62,13 @@ module BinData
       #-------------
       private
 
+      def warn_replacement_parameter(params, bad_key, suggested_key)
+        if params.has_key?(bad_key)
+          warn ":#{bad_key} is not used with #{self}.  " +
+               "You probably want to change this to :#{suggested_key}"
+        end
+      end
+
       def register(name, class_to_register)
         RegisteredClasses.register(name, class_to_register)
       end

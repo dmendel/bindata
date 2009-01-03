@@ -69,10 +69,7 @@ module BinData
           params[:initial_length] = 0
         end
 
-        if params.has_key?(:read_length)
-          warn ":read_length is not used with arrays.  " +
-               "You probably want to change this to :initial_length"
-        end
+        warn_replacement_parameter(params, :read_length, :initial_length)
 
         if params.has_key?(:type)
           type, el_params = params[:type]

@@ -56,17 +56,18 @@ module BinData
 
     class << self
 
+      def deprecate!(params, old_key, new_key)
+        if params.has_key?(old_key)
+          warn ":#{old_key} is deprecated. Replacing with :#{new_key}"
+          params[new_key] = params.delete(old_key)
+        end
+      end
+
       def sanitize_parameters!(sanitizer, params)
         # warn about deprecated param - remove before releasing 1.0
-        if params.has_key?(:trim_value)
-          warn ":trim_value is deprecated. Replacing with :trim_padding"
-          params[:trim_padding] = params.delete(:trim_value)
-        end
+        deprecate!(params, :trim_value, :trim_padding)
 
-        if params.has_key?(:initial_length)
-          warn ":initial_length is not used with strings.  " +
-               "You probably want to change this to :read_length"
-        end
+        warn_replacement_parameter(params, :initial_length, :read_length)
 
         if params.has_key?(:pad_char)
           ch = params[:pad_char]
