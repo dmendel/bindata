@@ -41,7 +41,7 @@ module BinData
         private
 
         def _do_write(io)
-          raise "can't write whilst reading" if @in_read
+          raise "can't write whilst reading \#{debug_name}" if @in_read
           io.writebits(_value, #{nbits}, :#{endian})
         end
 

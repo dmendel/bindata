@@ -46,6 +46,7 @@ describe BinData::Base, "when subclassing" do
     lambda { @obj.clear }.should raise_error(NotImplementedError)
     lambda { @obj.clear? }.should raise_error(NotImplementedError)
     lambda { @obj.single_value? }.should raise_error(NotImplementedError)
+    lambda { @obj.debug_name_of(nil) }.should raise_error(NotImplementedError)
     lambda { @obj._do_read(nil) }.should raise_error(NotImplementedError)
     lambda { @obj._done_read }.should raise_error(NotImplementedError)
     lambda { @obj._do_write(nil) }.should raise_error(NotImplementedError)

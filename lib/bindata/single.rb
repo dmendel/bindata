@@ -76,7 +76,7 @@ module BinData
 
     def value=(val)
       return if has_param?(:value)
-      raise ArgumentError, "can't set a nil value" if val.nil?
+      raise ArgumentError, "can't set a nil value for #{debug_name}" if val.nil?
 
       @value = val
     end
@@ -107,10 +107,12 @@ module BinData
     def check_value(current_value)
       expected = eval_param(:check_value, :value => current_value)
       if not expected
-        raise ValidityError, "value '#{current_value}' not as expected"
+        raise ValidityError,
+              "value '#{current_value}' not as expected for #{debug_name}"
       elsif current_value != expected and expected != true
-        raise ValidityError, "value is '#{current_value}' but " +
-                             "expected '#{expected}'"
+        raise ValidityError,
+              "value is '#{current_value}' but " +
+              "expected '#{expected}' for #{debug_name}"
       end
     end
 
@@ -119,7 +121,7 @@ module BinData
     end
 
     def _do_write(io)
-      raise "can't write whilst reading" if @in_read
+      raise "can't write whilst reading #{debug_name}" if @in_read
       io.writebytes(value_to_string(_value))
     end
 

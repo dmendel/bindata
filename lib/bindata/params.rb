@@ -139,7 +139,7 @@ module BinData
     def ensure_mutual_exclusion_of_parameters(params)
       @mutually_exclusive.each do |param1, param2|
         if params.has_key?(param1) and params.has_key?(param2)
-          raise ArgumentError, "params #{param1} and #{param2} " +
+          raise ArgumentError, "params ':#{param1}' and ':#{param2}' " +
                                "are mutually exclusive"
         end
       end

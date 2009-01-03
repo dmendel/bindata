@@ -81,7 +81,7 @@ module BinData
         if [:little, :big].include?(endian)
           @endian = endian
         elsif endian != nil
-          raise ArgumentError, "unknown value for endian '#{endian}'"
+          raise ArgumentError, "unknown value for endian '#{endian}'", caller(1)
         end
         @endian
       end
@@ -123,7 +123,7 @@ module BinData
       def ensure_valid_name(name)
         fields.each do |t, n, p|
           if n == name
-            raise SyntaxError, "duplicate field '#{name}' in #{self}", caller(2)
+            raise SyntaxError, "duplicate field '#{name}' in #{self}", caller(4)
           end
         end
         if self.instance_methods.include?(name)

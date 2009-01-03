@@ -207,7 +207,9 @@ module BinData
 
     def current_choice
       selection = eval_param(:selection)
-      raise IndexError, ":selection returned nil value" if selection.nil?
+      if selection.nil?
+        raise IndexError, ":selection returned nil value for #{debug_name}"
+      end
 
       obj = get_or_instantiate_choice(selection)
       retain_previous_value_if_single(selection, obj)
@@ -227,7 +229,7 @@ module BinData
     def instantiate_choice(selection)
       choice_class, choice_params = no_eval_param(:choices)[selection]
       if choice_class.nil?
-        raise IndexError, "selection #{selection} does not exist in :choices"
+        raise IndexError, "selection '#{selection}' does not exist in :choices for #{debug_name}"
       end
       choice_class.new(choice_params, self)
     end
