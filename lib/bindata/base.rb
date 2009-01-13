@@ -45,18 +45,20 @@ module BinData
       end
 
       def recursive?
-        # data objects to not self reference by default
+        # data objects do not self reference by default
         false
       end
 
       AcceptedParameters.define_all_accessors(self, :internal, :bindata)
 
       def accepted_internal_parameters
-        AcceptedParameters.get(self, :internal).all
+        internal = AcceptedParameters.get(self, :internal)
+        internal.all
       end
 
       def sanitize_parameters!(sanitizer, params)
-        AcceptedParameters.get(self, :internal).sanitize_parameters!(sanitizer, params)
+        internal = AcceptedParameters.get(self, :internal)
+        internal.sanitize_parameters!(sanitizer, params)
       end
 
       #-------------
