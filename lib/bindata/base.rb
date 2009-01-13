@@ -209,7 +209,7 @@ module BinData
         raise ValidityError, "offset not as expected for #{debug_name}"
       elsif actual_offset != expected and expected != true
         raise ValidityError,
-              "offset is '#{actual_offset}' but "
+              "offset is '#{actual_offset}' but " +
               "expected '#{expected}' for #{debug_name}"
       end
     end
@@ -224,7 +224,7 @@ module BinData
           warn "adjusting stream position by #{seek} bytes" if $VERBOSE
         rescue
           raise ValidityError,
-                "offset is '#{actual_offset}' but couldn't seek to "
+                "offset is '#{actual_offset}' but couldn't seek to " +
                 "expected '#{expected}' for #{debug_name}"
         end
       end
