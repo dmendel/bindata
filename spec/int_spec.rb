@@ -205,3 +205,23 @@ describe "All unsigned little endian integers" do
     }
   end
 end
+
+describe "Custom defined integers" do
+  it "should fail unless bits are a multiple of 8" do
+    lambda {
+      BinData::Integer.define_class(7, :little, :unsigned)
+    }.should raise_error
+
+    lambda {
+      BinData::Integer.define_class(7, :big, :unsigned)
+    }.should raise_error
+
+    lambda {
+      BinData::Integer.define_class(7, :little, :signed)
+    }.should raise_error
+
+    lambda {
+      BinData::Integer.define_class(7, :big, :signed)
+    }.should raise_error
+  end
+end
