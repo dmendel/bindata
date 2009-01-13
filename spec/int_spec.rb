@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 require File.expand_path(File.dirname(__FILE__)) + '/spec_common'
-require 'bindata/int'
+require 'bindata'
 
 share_examples_for "All Integers" do
 
@@ -118,14 +118,20 @@ describe "All signed big endian integers" do
   it_should_behave_like "All Integers"
 
   before(:all) do
+    BinData::Integer.define_class(24, :big, :signed)
+    BinData::Integer.define_class(48, :big, :signed)
+    BinData::Integer.define_class(96, :big, :signed)
     @endian = :big
     @signed = true
     @ints = {
       BinData::Int8 => 1,
       BinData::Int8be => 1,
       BinData::Int16be => 2,
+      BinData::Int24be => 3,
       BinData::Int32be => 4,
+      BinData::Int48be => 6,
       BinData::Int64be => 8,
+      BinData::Int96be => 12,
       BinData::Int128be => 16,
     }
   end
@@ -135,14 +141,20 @@ describe "All unsigned big endian integers" do
   it_should_behave_like "All Integers"
 
   before(:all) do
+    BinData::Integer.define_class(24, :big, :unsigned)
+    BinData::Integer.define_class(48, :big, :unsigned)
+    BinData::Integer.define_class(96, :big, :unsigned)
     @endian = :big
     @signed = false
     @ints = {
       BinData::Uint8 => 1,
       BinData::Uint8be => 1,
       BinData::Uint16be => 2,
+      BinData::Uint24be => 3,
       BinData::Uint32be => 4,
+      BinData::Uint48be => 6,
       BinData::Uint64be => 8,
+      BinData::Uint96be => 12,
       BinData::Uint128be => 16,
     }
   end
@@ -152,14 +164,20 @@ describe "All signed little endian integers" do
   it_should_behave_like "All Integers"
 
   before(:all) do
+    BinData::Integer.define_class(24, :little, :signed)
+    BinData::Integer.define_class(48, :little, :signed)
+    BinData::Integer.define_class(96, :little, :signed)
     @endian = :little
     @signed = true
     @ints = {
       BinData::Int8 => 1,
       BinData::Int8le => 1,
       BinData::Int16le => 2,
+      BinData::Int24le => 3,
       BinData::Int32le => 4,
+      BinData::Int48le => 6,
       BinData::Int64le => 8,
+      BinData::Int96le => 12,
       BinData::Int128le => 16,
     }
   end
@@ -169,14 +187,20 @@ describe "All unsigned little endian integers" do
   it_should_behave_like "All Integers"
 
   before(:all) do
+    BinData::Integer.define_class(24, :little, :unsigned)
+    BinData::Integer.define_class(48, :little, :unsigned)
+    BinData::Integer.define_class(96, :little, :unsigned)
     @endian = :little
     @signed = false
     @ints = {
       BinData::Uint8 => 1,
       BinData::Uint8le => 1,
       BinData::Uint16le => 2,
+      BinData::Uint24le => 3,
       BinData::Uint32le => 4,
+      BinData::Uint48le => 6,
       BinData::Uint64le => 8,
+      BinData::Uint96le => 12,
       BinData::Uint128le => 16,
     }
   end
