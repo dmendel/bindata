@@ -16,7 +16,7 @@ module BinData
   #   obj.snapshot #=> "abcd"
   #   obj.value #=> "abcd"
   #   obj.num_bytes #=> 5
-  #   obj.to_s #=> "abcd\000"
+  #   obj.to_binary_s #=> "abcd\000"
   #
   # == Parameters
   #

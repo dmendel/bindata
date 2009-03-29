@@ -162,7 +162,7 @@ describe BinData::Array, "with several elements" do
 
   it "should symmetrically read and write" do
     @data[1] = 8
-    str = @data.to_s
+    str = @data.to_binary_s
 
     @data.clear
     @data[1].should == 2

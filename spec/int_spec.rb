@@ -34,7 +34,7 @@ share_examples_for "All Integers" do
       obj = int_class.new
       obj.value = gen_test_int
 
-      str = obj.to_s
+      str = obj.to_binary_s
       int_class.read(str).should == obj.value
     end
   end
@@ -45,7 +45,7 @@ share_examples_for "All Integers" do
         obj = int_class.new
         obj.value = -gen_test_int
 
-        str = obj.to_s
+        str = obj.to_binary_s
         int_class.read(str).should == obj.value
       end
     end
@@ -58,7 +58,7 @@ share_examples_for "All Integers" do
       obj = int_class.new
       obj.value = val
 
-      obj.to_s.should == int_to_str(val)
+      obj.to_binary_s.should == int_to_binary_str(val)
     end
   end
 
@@ -70,7 +70,7 @@ share_examples_for "All Integers" do
         obj = int_class.new
         obj.value = val
 
-        obj.to_s.should == int_to_str(val)
+        obj.to_binary_s.should == int_to_binary_str(val)
       end
     end
   end
@@ -103,7 +103,7 @@ share_examples_for "All Integers" do
     (0 ... @nbytes).inject(0) { |val, i| (val << 8) | ((val + 0x11) % 0x100) }
   end
 
-  def int_to_str(val)
+  def int_to_binary_str(val)
     str = ""
     v = val & ((1 << (@nbytes * 8)) - 1)
     @nbytes.times do

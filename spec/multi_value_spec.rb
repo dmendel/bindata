@@ -135,7 +135,7 @@ describe BinData::MultiValue, "with multiple fields" do
   end
 
   it "should write ordered" do
-    @obj.to_s.should == "\x01\x02"
+    @obj.to_binary_s.should == "\x01\x02"
   end
 
   it "should read ordered" do
@@ -235,7 +235,7 @@ describe BinData::MultiValue, "with an endian defined" do
 
     expected = [1, 2.0, 3, 4, 5, 6, 7, 8].pack('veCCVvNv')
 
-    @obj.to_s.should == expected
+    @obj.to_binary_s.should == expected
   end
 end
 
@@ -275,7 +275,7 @@ describe BinData::MultiValue, "defined recursively" do
     obj.val = 5
     obj.nxt.val = 6
     obj.nxt.nxt.val = 7
-    obj.to_s.should == "\x00\x05\x01\x00\x06\x01\x00\x07\x00"
+    obj.to_binary_s.should == "\x00\x05\x01\x00\x06\x01\x00\x07\x00"
   end
 end
 

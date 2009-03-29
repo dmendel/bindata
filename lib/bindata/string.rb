@@ -23,12 +23,12 @@ module BinData
   #   obj = BinData::String.new(:length => 6, :trim_value => true)
   #   obj.value = "abcd"
   #   obj.value #=> "abcd"
-  #   obj.to_s #=> "abcd\000\000"
+  #   obj.to_binary_s #=> "abcd\000\000"
   #
   #   obj = BinData::String.new(:length => 6, :pad_char => 'A')
   #   obj.value = "abcd"
   #   obj.value #=> "abcdAA"
-  #   obj.to_s #=> "abcdAA"
+  #   obj.to_binary_s #=> "abcdAA"
   #
   # == Parameters
   #

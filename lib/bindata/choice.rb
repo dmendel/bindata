@@ -30,10 +30,10 @@ module BinData
   #   a = BinData::Choice.new(:choices => choices,
   #                           :selection => lambda { mychoice })
   #   a.value  = 256
-  #   a.to_s #=> "\001\000"
+  #   a.to_binary_s #=> "\001\000"
   #   mychoice.replace 'little'
   #   a.selection #=> 'little'
-  #   a.to_s #=> "\000\001"
+  #   a.to_binary_s #=> "\000\001"
   #
   #
   # == Parameters

@@ -84,12 +84,12 @@ describe BinData::SingleValue do
 
   it "should support endian" do
     @obj.value = 5
-    @obj.to_s.should == "\x05\x00"
+    @obj.to_binary_s.should == "\x05\x00"
   end
 
   it "should set value" do
     @obj.value = 5
-    @obj.to_s.should == "\x05\x00"
+    @obj.to_binary_s.should == "\x05\x00"
   end
 
   it "should read value" do
@@ -99,7 +99,7 @@ describe BinData::SingleValue do
 
   it "should accept standard parameters" do
     obj = SingleValueWithEndian.new(:initial_value => 2)
-    obj.to_s.should == "\x02\x00"
+    obj.to_binary_s.should == "\x02\x00"
   end
 
   it "should return num_bytes" do

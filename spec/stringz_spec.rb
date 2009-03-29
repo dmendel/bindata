@@ -17,7 +17,7 @@ describe BinData::Stringz, "when empty" do
   end
 
   it "should write the zero byte terminator" do
-    @str.to_s.should == "\0"
+    @str.to_binary_s.should == "\0"
   end
 end
 
@@ -36,7 +36,7 @@ describe BinData::Stringz, "with value set" do
   end
 
   it "should write the zero byte terminator" do
-    @str.to_s.should == "abcd\0"
+    @str.to_binary_s.should == "abcd\0"
   end
 end
 
@@ -136,16 +136,16 @@ describe BinData::Stringz, "with max_length" do
 
   it "should write values greater than max_length" do
     @str.value = "abcde"
-    @str.to_s.should == "abcd\0"
+    @str.to_binary_s.should == "abcd\0"
   end
 
   it "should write values less than max_length" do
     @str.value = "abc"
-    @str.to_s.should == "abc\0"
+    @str.to_binary_s.should == "abc\0"
   end
 
   it "should write values exactly max_length" do
     @str.value = "abcd"
-    @str.to_s.should == "abcd\0"
+    @str.to_binary_s.should == "abcd\0"
   end
 end

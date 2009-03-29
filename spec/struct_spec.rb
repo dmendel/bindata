@@ -109,7 +109,7 @@ describe BinData::Struct, "with multiple fields" do
   end
 
   it "should write ordered" do
-    @obj.to_s.should == "\x01\x02"
+    @obj.to_binary_s.should == "\x01\x02"
   end
 
   it "should read ordered" do
@@ -209,7 +209,7 @@ describe BinData::Struct, "with an endian defined" do
 
     expected = [1, 2.0, 3, 4, 5, 6, 7, 8].pack('veCCVvNv')
 
-    @obj.to_s.should == expected
+    @obj.to_binary_s.should == expected
   end
 end
 
@@ -226,7 +226,7 @@ describe BinData::Struct, "with bit fields" do
   end
 
   it "should write" do
-    @obj.to_s.should == [0b0000_0101].pack("C")
+    @obj.to_binary_s.should == [0b0000_0101].pack("C")
   end
 
   it "should read" do

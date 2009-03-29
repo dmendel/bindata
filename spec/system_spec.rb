@@ -126,7 +126,7 @@ describe BinData::Array, "of bits" do
 
   it "should write" do
     @data[3] = 1
-    @data.to_s.should == [0b0001_0000, 0b0000_0000].pack("CC")
+    @data.to_binary_s.should == [0b0001_0000, 0b0000_0000].pack("CC")
   end
 
   it "should return num_bytes" do

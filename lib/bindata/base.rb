@@ -164,7 +164,7 @@ module BinData
     end
 
     # Returns the string representation of this data object.
-    def to_s
+    def to_binary_s
       io = StringIO.new
       write(io)
       io.rewind

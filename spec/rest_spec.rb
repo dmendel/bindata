@@ -17,7 +17,7 @@ describe BinData::Rest do
     rest = BinData::Rest.new
     rest.value = "123"
     rest.value.should == "123"
-    rest.to_s.should == "123"
+    rest.to_binary_s.should == "123"
   end
 
   it "should accept BinData::Single parameters" do

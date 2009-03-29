@@ -65,7 +65,7 @@ share_examples_for "All bitfields" do
         obj = bit_class.new
         obj.value = val
 
-        written = obj.to_s
+        written = obj.to_binary_s
         bit_class.read(written).should == val
       end
     end

@@ -65,9 +65,9 @@ describe "A DoubleBe" do
 end
 
 def written_value(obj)
-  obj.to_s
+  obj.to_binary_s
 end
 
 def value_read_from_written(obj)
-  obj.class.read(obj.to_s)
+  obj.class.read(obj.to_binary_s)
 end

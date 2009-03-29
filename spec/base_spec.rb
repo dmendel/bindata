@@ -354,7 +354,7 @@ describe BinData::Base, "as black box" do
     obj.inspect.should == obj.snapshot.inspect
   end
 
-  it "should write the same as to_s" do
+  it "should write the same as to_binary_s" do
     class WriteToSBase < BaseStub
       def _do_write(io) io.writebytes("abc"); end
     end
@@ -364,7 +364,7 @@ describe BinData::Base, "as black box" do
     obj.write(io)
     io.rewind
     written = io.read
-    obj.to_s.should == written
+    obj.to_binary_s.should == written
   end
 end
 

@@ -28,7 +28,7 @@ module BinData
   #    end
   #
   #    ps = PascalString.new(:initial_value => "hello")
-  #    ps.to_s #=> "\005hello"
+  #    ps.to_binary_s #=> "\005hello"
   #    ps.read("\003abcde")
   #    ps.value #=> "abc"
   #
@@ -175,7 +175,7 @@ module BinData
 
     def value_to_string(val)
       set(val)
-      @struct.to_s
+      @struct.to_binary_s
     end
 
     ###########################################################################

@@ -115,7 +115,7 @@ describe BinData::Single, "after initialisation" do
 
   it "should have symmetric IO" do
     @data.value = 42
-    written = @data.to_s
+    written = @data.to_binary_s
 
     ExampleSingle.read(written).should == 42
   end
