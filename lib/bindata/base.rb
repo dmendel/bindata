@@ -171,9 +171,14 @@ module BinData
       io.read
     end
 
-    # Return a human readable representation of this object.
+    # Return a human readable representation of this data object.
     def inspect
       snapshot.inspect
+    end
+
+    # Return a string representing this data object.
+    def to_s
+      snapshot.to_s
     end
 
     # Returns the object this object represents.

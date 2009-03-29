@@ -354,6 +354,14 @@ describe BinData::Base, "as black box" do
     obj.inspect.should == obj.snapshot.inspect
   end
 
+  it "should forward #to_s to snapshot" do
+    class SnapshotBase < BaseStub
+      def snapshot; [1, 2, 3]; end
+    end
+    obj = SnapshotBase.new
+    obj.to_s.should == obj.snapshot.to_s
+  end
+
   it "should write the same as to_binary_s" do
     class WriteToSBase < BaseStub
       def _do_write(io) io.writebytes("abc"); end
