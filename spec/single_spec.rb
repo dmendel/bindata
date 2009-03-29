@@ -97,6 +97,17 @@ describe ExampleSingle do
     (@data + 1).should == 6
     (1 + @data).should == 6
   end
+
+  it "should be equal to other ExampleSingle" do
+    other = ExampleSingle.new
+    other.value = 5
+    @data.should == other
+  end
+
+  it "should be equal to raw values" do
+    @data.should == 5
+    5.should == @data
+  end
 end
 
 describe BinData::Single, "after initialisation" do

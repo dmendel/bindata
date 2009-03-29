@@ -94,6 +94,14 @@ module BinData
       end
     end
 
+    def ==(other)
+      if BinData::Base === other
+        value == other.value
+      else
+        value == other
+      end
+    end
+
     #---------------
     private
 
