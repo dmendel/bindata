@@ -133,7 +133,7 @@ module BinData
     #
     def find_index(obj)
       if obj.is_a?(BinData::Base)
-        elements.find_index(obj)
+        elements.find_index { |el| el.equal?(obj) }
       else
         elements.find_index { |el| el.single_value? ? el.value == obj : false }
       end

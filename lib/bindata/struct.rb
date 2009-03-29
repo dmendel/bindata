@@ -226,7 +226,7 @@ module BinData
     end
 
     def debug_name_of(child)
-      index = @field_objs.find_index(child)
+      index = @field_objs.find_index { |el| el.equal?(child) }
       field_name = @field_names[index]
       "#{debug_name}.#{field_name}"
     end
