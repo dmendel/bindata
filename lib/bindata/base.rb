@@ -177,7 +177,7 @@ module BinData
     end
 
     # Returns the object this object represents.
-    def obj
+    def to_ref
       self
     end
 

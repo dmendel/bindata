@@ -239,6 +239,7 @@ module BinData
       is_writer = (name[-1, 1] == "=")
 
       if obj.single_value? and is_writer
+        #TODO what if  args is BinData? - need to do all  possibilities
         obj.value = *args
       elsif obj.single_value?
         obj.value
@@ -252,7 +253,7 @@ module BinData
       index = @field_names.find_index(field_name)
       if index
         instantiate_obj_at(index)
-        @field_objs[index].obj
+        @field_objs[index].to_ref
       else
         nil
       end

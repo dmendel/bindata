@@ -148,10 +148,10 @@ module BinData
     end
 
     # A choice represents a specific object.
-    def obj
+    def to_ref
       #TODO: this should be as written, but I can't work out how to make
       # a failing test case with just "return current_choice"
-      current_choice.obj
+      current_choice.to_ref
     end
 
     def_delegators :current_choice, :clear, :clear?, :single_value?
