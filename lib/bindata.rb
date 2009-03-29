@@ -12,6 +12,7 @@ require 'bindata/single_value'
 require 'bindata/string'
 require 'bindata/stringz'
 require 'bindata/struct'
+require 'bindata/trace'
 
 # = BinData
 # 
@@ -19,22 +20,4 @@ require 'bindata/struct'
 # 
 module BinData
   VERSION = "0.9.3"
-
-  def trace_reading(io = STDERR, &block)
-    @trace_io ||= nil
-    @saved_io = @trace_io
-    @trace = true
-    @trace_io = io
-    block.call
-  ensure
-    @trace = false
-    @trace_io = @saved_io
-  end
-
-  def trace_message(msg)
-    @trace_io ||= nil
-    @trace_io.puts(msg) if @trace_io
-  end
-
-  module_function :trace_reading, :trace_message
 end

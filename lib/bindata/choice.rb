@@ -1,6 +1,7 @@
 require 'forwardable'
 require 'bindata/base'
 require 'bindata/sanitize'
+require 'bindata/trace'
 
 module BinData
   # A Choice is a collection of data objects of which only one is active
