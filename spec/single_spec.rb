@@ -75,6 +75,30 @@ describe BinData::Single do
   end
 end
 
+describe ExampleSingle do
+  before(:each) do
+    @data = ExampleSingle.new
+    @data.value = 5
+  end
+
+  it "should respond to known methods" do
+    @data.should respond_to(:num_bytes)
+  end
+
+  it "should respond to known methods in #value" do
+    @data.should respond_to(:div)
+  end
+
+  it "should not respond to unknown methods in self and #value" do
+    @data.should_not respond_to(:does_not_exist)
+  end
+
+  it "should behave as #value" do
+    (@data + 1).should == 6
+    (1 + @data).should == 6
+  end
+end
+
 describe BinData::Single, "after initialisation" do
   before(:each) do
     @data = ExampleSingle.new

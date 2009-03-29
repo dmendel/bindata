@@ -1,4 +1,5 @@
 require 'bindata/base'
+require 'bindata/trace'
 
 module BinData
   # A BinData::Single object is a container for a value that has a particular
@@ -34,7 +35,7 @@ module BinData
   # [<tt>:initial_value</tt>] This is the initial value to use before one is
   #                           either #read or explicitly set with #value=.
   # [<tt>:value</tt>]         The object will always have this value.
-  #                           Explicitly calling #value= is prohibited when
+  #                           Calls to #value= are ignored when
   #                           using this param.  In the interval between
   #                           calls to #do_read and #done_read, #value
   #                           will return the value of the data read from the
@@ -79,6 +80,18 @@ module BinData
       raise ArgumentError, "can't set a nil value for #{debug_name}" if val.nil?
 
       @value = val
+    end
+
+    def respond_to?(symbol, include_private=false)
+      super || value.respond_to?(symbol, include_private)
+    end
+
+    def method_missing(symbol, *args, &block)
+      if value.respond_to?(symbol)
+        value.__send__(symbol, *args, &block)
+      else
+        super
+      end
     end
 
     #---------------

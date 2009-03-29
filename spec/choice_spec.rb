@@ -128,6 +128,14 @@ describe BinData::Choice, "with single values" do
     @chooser.choice = 7
     @data.value.should == 254
   end
+
+  it "should behave as value" do
+    @chooser.choice = 3
+    @data.value = 5
+
+    (@data + 1).should == 6
+    (1 + @data).should == 6
+  end
 end
 
 describe BinData::Choice, "with multi values" do
