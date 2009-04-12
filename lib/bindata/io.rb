@@ -68,7 +68,7 @@ module BinData
     #
     # If the data read is too short an IOError is raised.
     def readbytes(n)
-      raise "Internal state error nbits = #{@rnbits}" if @rnbits > 8
+      raise "Internal state error nbits = #{@rnbits}" if @rnbits >= 8
       @rnbits = 0
       @rval   = 0
 
@@ -80,7 +80,7 @@ module BinData
 
     # Reads all remaining bytes from the stream.
     def read_all_bytes
-      raise "Internal state error nbits = #{@rnbits}" if @rnbits > 8
+      raise "Internal state error nbits = #{@rnbits}" if @rnbits >= 8
       @rnbits = 0
       @rval   = 0
 
@@ -89,7 +89,7 @@ module BinData
 
     # Reads exactly +nbits+ bits from the stream. +endian+ specifies whether
     # the bits are stored in +:big+ or +:little+ endian format.
-    def readbits(nbits, endian = :big)
+    def readbits(nbits, endian)
       if @rendian != endian
         # don't mix bits of differing endian
         @rnbits  = 0
@@ -112,32 +112,29 @@ module BinData
 
     # Writes +nbits+ bits from +val+ to the stream. +endian+ specifies whether
     # the bits are to be stored in +:big+ or +:little+ endian format.
-    def writebits(val, nbits, endian = :big)
-      # clamp val to range
-      val = val & mask(nbits)
-
+    def writebits(val, nbits, endian)
       if @wendian != endian
         # don't mix bits of differing endian
-        flushbits if @wnbits > 0
+        flushbits
 
         @wendian = endian
       end
 
+      clamped_val = val & mask(nbits)
+
       if endian == :big
-        write_big_endian_bits(val, nbits)
+        write_big_endian_bits(clamped_val, nbits)
       else
-        write_little_endian_bits(val, nbits)
+        write_little_endian_bits(clamped_val, nbits)
       end
     end
 
     # To be called after all +writebits+ have been applied.
     def flushbits
-      if @wnbits > 8
-        raise "Internal state error nbits = #{@wnbits}" if @wnbits > 8
-      elsif @wnbits > 0
+      raise "Internal state error nbits = #{@wnbits}" if @wnbits >= 8
+
+      if @wnbits > 0
         writebits(0, 8 - @wnbits, @wendian)
-      else
-        # do nothing
       end
     end
     alias_method :flush, :flushbits
@@ -228,13 +225,13 @@ module BinData
           nbits -= bits_req
           val >>= bits_req
 
-          @wval   |= (lsb_bits << @wnbits)
+          @wval   = @wval | (lsb_bits << @wnbits)
           @raw_io.write(@wval.chr)
 
           @wval   = 0
           @wnbits = 0
         else
-          @wval   |= (val << @wnbits)
+          @wval   = @wval | (val << @wnbits)
           @wnbits += nbits
           nbits = 0
         end

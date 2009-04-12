@@ -94,36 +94,36 @@ describe BinData::IO, "reading bits in big endian" do
   end
 
   it "should read a bitfield less than 1 byte" do
-    @io.readbits(3).should == 0b111
+    @io.readbits(3, :big).should == 0b111
   end
 
   it "should read a bitfield more than 1 byte" do
-    @io.readbits(10).should == 0b1111_1010_11
+    @io.readbits(10, :big).should == 0b1111_1010_11
   end
 
   it "should read a bitfield more than 2 bytes" do
-    @io.readbits(17).should == 0b1111_1010_1100_1110_0
+    @io.readbits(17, :big).should == 0b1111_1010_1100_1110_0
   end
 
   it "should read two bitfields totalling less than 1 byte" do
-    @io.readbits(5).should == 0b1111_1
-    @io.readbits(2).should == 0b01
+    @io.readbits(5, :big).should == 0b1111_1
+    @io.readbits(2, :big).should == 0b01
   end
 
   it "should read two bitfields totalling more than 1 byte" do
-    @io.readbits(6).should == 0b1111_10
-    @io.readbits(8).should == 0b10_1100_11
+    @io.readbits(6, :big).should == 0b1111_10
+    @io.readbits(8, :big).should == 0b10_1100_11
   end
 
   it "should read two bitfields totalling more than 2 bytes" do
-    @io.readbits(7).should == 0b1111_101
-    @io.readbits(12).should == 0b0_1100_1110_011
+    @io.readbits(7, :big).should == 0b1111_101
+    @io.readbits(12, :big).should == 0b0_1100_1110_011
   end
 
   it "should ignore unused bits when reading bytes" do
-    @io.readbits(3).should == 0b111
+    @io.readbits(3, :big).should == 0b111
     @io.readbytes(1).should == [@b2].pack("C")
-    @io.readbits(2).should == 0b01
+    @io.readbits(2, :big).should == 0b01
   end
 end
 
@@ -176,7 +176,7 @@ class BitWriterHelper
     @io = BinData::IO.new(@stringio)
   end
 
-  def writebits(val, nbits, endian = :big)
+  def writebits(val, nbits, endian)
     @io.writebits(val, nbits, endian)
   end
 
@@ -197,42 +197,42 @@ describe BinData::IO, "writing bits in big endian" do
   end
 
   it "should write a bitfield less than 1 byte" do
-    @io.writebits(0b010, 3)
+    @io.writebits(0b010, 3, :big)
     @io.value.should == [0b0100_0000].pack("C")
   end
 
   it "should write a bitfield more than 1 byte" do
-    @io.writebits(0b10_1001_1101, 10)
+    @io.writebits(0b10_1001_1101, 10, :big)
     @io.value.should == [0b1010_0111, 0b0100_0000].pack("CC")
   end
 
   it "should write a bitfield more than 2 bytes" do
-    @io.writebits(0b101_1000_0010_1001_1101, 19)
+    @io.writebits(0b101_1000_0010_1001_1101, 19, :big)
     @io.value.should == [0b1011_0000, 0b0101_0011, 0b1010_0000].pack("CCC")
   end
 
   it "should write two bitfields totalling less than 1 byte" do
-    @io.writebits(0b1_1001, 5)
-    @io.writebits(0b00, 2)
+    @io.writebits(0b1_1001, 5, :big)
+    @io.writebits(0b00, 2, :big)
     @io.value.should == [0b1100_1000].pack("C")
   end
 
   it "should write two bitfields totalling more than 1 byte" do
-    @io.writebits(0b01_0101, 6)
-    @io.writebits(0b001_1001, 7)
+    @io.writebits(0b01_0101, 6, :big)
+    @io.writebits(0b001_1001, 7, :big)
     @io.value.should == [0b0101_0100, 0b1100_1000].pack("CC")
   end
 
   it "should write two bitfields totalling more than 2 bytes" do
-    @io.writebits(0b01_0111, 6)
-    @io.writebits(0b1_0010_1001_1001, 13)
+    @io.writebits(0b01_0111, 6, :big)
+    @io.writebits(0b1_0010_1001_1001, 13, :big)
     @io.value.should == [0b0101_1110, 0b0101_0011, 0b0010_0000].pack("CCC")
   end
 
   it "should pad unused bits when writing bytes" do
-    @io.writebits(0b101, 3)
+    @io.writebits(0b101, 3, :big)
     @io.writebytes([0b1011_1111].pack("C"))
-    @io.writebits(0b01, 2)
+    @io.writebits(0b01, 2, :big)
 
     @io.value.should == [0b1010_0000, 0b1011_1111, 0b0100_0000].pack("CCC")
   end
