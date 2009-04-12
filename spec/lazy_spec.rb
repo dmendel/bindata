@@ -24,6 +24,14 @@ describe BinData::LazyEvaluator, "with no parents" do
     @ev = BinData::LazyEvaluator.new(obj)
   end
 
+  it "should evaluate raw value" do
+    @ev.lazy_eval(5).should == 5
+  end
+
+  it "should evaluate value" do
+    @ev.lazy_eval(lambda { 5 }).should == 5
+  end
+
   it "should evaluate overrides" do
     @ev.lazy_eval(lambda { o1 }, :o1 => 'o1').should == 'o1'
   end
@@ -54,6 +62,14 @@ describe BinData::LazyEvaluator, "with one parent" do
     obj = MockDataObject.new(methods, params, parent_obj)
 
     @ev = BinData::LazyEvaluator.new(obj)
+  end
+
+  it "should evaluate raw value" do
+    @ev.lazy_eval(5).should == 5
+  end
+
+  it "should evaluate value" do
+    @ev.lazy_eval(lambda { 5 }).should == 5
   end
 
   it "should evaluate overrides" do
