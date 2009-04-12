@@ -5,6 +5,12 @@ require 'bindata'
 
 share_examples_for "All Integers" do
 
+  it "should have correct num_bytes" do
+    all_classes do |int_class|
+      int_class.new.num_bytes.should == @nbytes
+    end
+  end
+
   it "should have a sensible value of zero" do
     all_classes do |int_class|
       int_class.new.value.should be_zero
