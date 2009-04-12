@@ -9,6 +9,10 @@ describe "A FloatLe" do
     @obj.value = Math::PI
   end
 
+  it "should be 4 bytes in size" do
+    @obj.num_bytes.should == 4
+  end
+
   it "should write the expected value" do
     written_value(@obj).should == [Math::PI].pack('e')
   end
@@ -22,6 +26,10 @@ describe "A FloatBe" do
   before(:each) do
     @obj = BinData::FloatBe.new
     @obj.value = Math::PI
+  end
+
+  it "should be 4 bytes in size" do
+    @obj.num_bytes.should == 4
   end
 
   it "should write the expected value" do
@@ -39,6 +47,10 @@ describe "A DoubleLe" do
     @obj.value = Math::PI
   end
 
+  it "should be 8 bytes in size" do
+    @obj.num_bytes.should == 8
+  end
+
   it "should write the expected value" do
     written_value(@obj).should == [Math::PI].pack('E')
   end
@@ -53,6 +65,10 @@ describe "A DoubleBe" do
   before(:each) do
     @obj = BinData::DoubleBe.new
     @obj.value = Math::PI
+  end
+
+  it "should be 8 bytes in size" do
+    @obj.num_bytes.should == 8
   end
 
   it "should write the expected value" do
