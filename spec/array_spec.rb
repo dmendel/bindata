@@ -64,6 +64,10 @@ describe BinData::Array, "with several elements" do
     @data = BinData::Array.new(:type => type, :initial_length => 5)
   end
 
+  it "should have correct debug name" do
+    @data[2].debug_name.should == "obj[2]"
+  end
+
   it "should return a correct snapshot" do
     @data.snapshot.should == [1, 2, 3, 4, 5]
   end
@@ -279,49 +283,6 @@ describe BinData::Array, "when accessing elements" do
   it "should raise error on bad input to []" do
     lambda { @data["a"] }.should raise_error(TypeError)
     lambda { @data[1, "a"] }.should raise_error(TypeError)
-  end
-end
-
-describe BinData::Array, "containing multi values" do
-  before(:each) do
-    @data = BinData::Array.new(:type => :example_multi, :initial_length => 5)
-    @data[0].set_value(0, 0)
-    @data[1].set_value(1, 1)
-    @data[2].set_value(2, 2)
-    @data[3].set_value(3, 3)
-    @data[4].set_value(4, 4)
-  end
-
-  it "should access elements, not values" do
-    @data[3].get_value.should == [3, 3]
-  end
-
-  it "should access multiple elements with slice" do
-    @data.slice(2, 3).collect { |x| x.get_value[0] }.should == [2, 3, 4]
-  end
-
-  it "should interate over each element" do
-    @data.collect { |s| s.get_value[0] }.should == [0, 1, 2, 3, 4]
-  end
-
-  it "should identify index of elements" do
-    @data.index(@data[3]).should == 3
-  end
-
-  it "should be able to append elements" do
-    obj = ExampleMulti.new
-    obj.set_value(9, 9)
-
-    @data.push(obj)
-    @data.last.get_value.should == [9, 9]
-  end
-
-  it "should find_index of appended elements" do
-    obj = ExampleMulti.new
-    obj.set_value(9, 9)
-
-    @data.push(obj)
-    @data.find_index(obj).should == 5
   end
 end
 

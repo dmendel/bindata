@@ -346,8 +346,7 @@ module BinData
     def _assign(array)
       raise ArgumentError, "can't set a nil value for #{debug_name}" if array.nil?
 
-      @element_list.clear
-      @element_list.concat(to_storage_formats(array.to_ary))
+      @element_list.replace(to_storage_formats(array.to_ary))
     end
 
     def _snapshot
