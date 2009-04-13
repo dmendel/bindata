@@ -26,7 +26,7 @@ describe BinData::Single, "when subclassing" do
   end
 
   it "should raise errors on unimplemented methods" do
-    lambda { @obj.value_to_string(nil) }.should raise_error(NotImplementedError)
+    lambda { @obj.value_to_binary_string(nil) }.should raise_error(NotImplementedError)
     lambda { @obj.read_and_return_value(nil) }.should raise_error(NotImplementedError)
     lambda { @obj.sensible_default }.should raise_error(NotImplementedError)
   end
@@ -81,19 +81,35 @@ describe ExampleSingle do
     @data.value = 5
   end
 
+  it "should fail when assigning nil values" do
+    lambda { @data.assign(nil) }.should raise_error(ArgumentError)
+  end
+
+  it "should allowing setting and retrieving value" do
+    @data.value = 7
+    @data.value.should == 7
+  end
+
+  it "should allowing setting and retrieving BinData::Singles" do
+    obj = ExampleSingle.new
+    obj.value = 7
+    @data.value = obj
+    @data.value.should == 7
+  end
+
   it "should respond to known methods" do
     @data.should respond_to(:num_bytes)
   end
 
-  it "should respond to known methods in #value" do
+  it "should respond to known methods in #snapshot" do
     @data.should respond_to(:div)
   end
 
-  it "should not respond to unknown methods in self and #value" do
+  it "should not respond to unknown methods in self or #snapshot" do
     @data.should_not respond_to(:does_not_exist)
   end
 
-  it "should behave as #value" do
+  it "should behave as #snapshot" do
     (@data + 1).should == 6
     (1 + @data).should == 6
   end
@@ -129,10 +145,6 @@ describe BinData::Single, "after initialisation" do
     written = @data.to_binary_s
 
     ExampleSingle.read(written).should == 42
-  end
-
-  it "should be a single_value" do
-    @data.should be_single_value
   end
 
   it "should allowing setting and retrieving value" do

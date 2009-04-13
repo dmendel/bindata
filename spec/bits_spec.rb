@@ -59,6 +59,31 @@ share_examples_for "All bitfields" do
     end
   end
 
+  it "should assign values" do
+    all_classes do |bit_class|
+      some_values_within_range.each do |val|
+        obj = bit_class.new
+        obj.assign(val)
+
+        obj.value.should == val
+      end
+    end
+  end
+
+  it "should assign values from other bit objects" do
+    all_classes do |bit_class|
+      some_values_within_range.each do |val|
+        src = bit_class.new
+        src.assign(val)
+
+        obj = bit_class.new
+        obj.assign(src)
+
+        obj.value.should == val
+      end
+    end
+  end
+
   it "should have symmetric #read and #write" do
     all_classes do |bit_class|
       some_values_within_range.each do |val|

@@ -2,11 +2,12 @@ $LOAD_PATH.unshift(File.expand_path(File.dirname(__FILE__) + "/../lib"))
 
 begin
   require 'rubygems'
-  gem 'rspec', '> 1.0.0'
+  gem 'rspec', '> 1.2.2'
 rescue LoadError
 end
 
 require 'spec'
+require 'spec/autorun'
 require 'stringio'
 
 class Object

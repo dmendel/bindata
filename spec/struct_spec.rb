@@ -126,10 +126,38 @@ describe BinData::Struct, "with multiple fields" do
     snap.should == { "a" => 1, "b" => 2 }
   end
 
-  it "should return field_names" do
-    @obj.field_names.should == ["a", "b"]
+  it "should assign from partial hash" do
+    @obj.assign("a" => 3)
+    @obj.a.should == 3
+    @obj.b.should == 0
   end
-  
+
+  it "should assign from hash" do
+    @obj.assign("a" => 3, "b" => 4)
+    @obj.a.should == 3
+    @obj.b.should == 4
+  end
+
+  it "should assign from Struct" do
+    src = BinData::Struct.new(@params)
+    src.a = 3
+    src.b = 4
+
+    @obj.assign(src)
+    @obj.a.should == 3
+    @obj.b.should == 4
+  end
+
+  it "should assign from snapshot" do
+    src = BinData::Struct.new(@params)
+    src.a = 3
+    src.b = 4
+
+    @obj.assign(src.snapshot)
+    @obj.a.should == 3
+    @obj.b.should == 4
+  end
+
   it "should fail on unknown method call" do
     lambda { @obj.does_not_exist }.should raise_error(NoMethodError)
   end

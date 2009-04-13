@@ -35,13 +35,12 @@ module BinData
 
     class << self
 
-      # Instantiates this class and reads from +io+.  For single value objects
-      # just the value is returned, otherwise the newly created data object is
-      # returned.
+      # Instantiates this class and reads from +io+, returning the newly
+      # created data object.
       def read(io)
         data = self.new
         data.read(io)
-        data.single_value? ? data.value : data
+        data
       end
 
       def recursive?
@@ -153,6 +152,14 @@ module BinData
     end
     protected :do_num_bytes
 
+    # Assigns the value of +val+ to this data object.  Note that +val+ will
+    # always be deep copied to ensure no aliasing problems can occur.
+    def assign(val)
+      if eval_param(:onlyif)
+        _assign(val)
+      end
+    end
+
     # Returns a snapshot of this data object.
     # Returns nil if :onlyif is false
     def snapshot
@@ -181,11 +188,6 @@ module BinData
       snapshot.to_s
     end
 
-    # Returns the object this object represents.
-    def to_ref
-      self
-    end
-
     # Returns a user friendly name of this object for debugging purposes.
     def debug_name
       if parent
@@ -194,6 +196,21 @@ module BinData
         "obj"
       end
     end
+
+    def ==(other)
+      # double dispatch
+      other == snapshot
+    end
+
+    def eql?(other)
+      # double dispatch
+      other.eql?(snapshot)
+    end
+
+    def hash
+      snapshot.hash
+    end
+    # TODO test these
 
     #---------------
     private
@@ -275,9 +292,9 @@ module BinData
       raise NotImplementedError
     end
 
-    # Returns whether this data object contains a single value.  Single
-    # value data objects respond to <tt>#value</tt> and <tt>#value=</tt>.
-    def single_value?
+    # Returns the debug name of +child+.  This only needs to be implemented
+    # by objects that contain child objects.
+    def debug_name_of(child)
       raise NotImplementedError
     end
 
@@ -301,20 +318,26 @@ module BinData
       raise NotImplementedError
     end
 
+    # Assigns the value of +val+ to this data object.  Note that +val+ will
+    # always be deep copied to ensure no aliasing problems can occur.
+    def _assign(val)
+      raise NotImplementedError
+    end
+
     # Returns a snapshot of this data object.
     def _snapshot
       raise NotImplementedError
     end
 
-    # Returns the debug name of +child+.  This only needs to be implemented
-    # by objects that are _not_ single_value?
-    def debug_name_of(child)
-      raise NotImplementedError
-    end
-
     # Set visibility requirements of methods to implement
-    public :clear, :clear?, :single_value?, :debug_name_of
-    private :_do_read, :_done_read, :_do_write, :_do_num_bytes, :_snapshot
+    public :clear, :clear?, :debug_name_of #, :offset_of, :abs_offset_of
+    private :_do_read, :_done_read, :_do_write, :_do_num_bytes, :_assign, :_snapshot
+
+def single_value?
+  warn "#single_value? is deprecated.  It should no longer be needed"
+  false
+end
+public :single_value?
 
     # End To be implemented by subclasses
     ###########################################################################

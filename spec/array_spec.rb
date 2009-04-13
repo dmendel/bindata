@@ -29,10 +29,6 @@ describe BinData::Array, "with no elements" do
     @data = BinData::Array.new(:type => :example_single)
   end
 
-  it "should not be a single_value" do
-    @data.should_not be_single_value
-  end
-
   it "should be clear" do
     @data.should be_clear
   end
@@ -68,16 +64,35 @@ describe BinData::Array, "with several elements" do
     @data = BinData::Array.new(:type => type, :initial_length => 5)
   end
 
-  it "should not be a single_value" do
-    @data.should_not be_single_value
-  end
-
   it "should return a correct snapshot" do
     @data.snapshot.should == [1, 2, 3, 4, 5]
   end
 
+  it "should assign primitive values" do
+    @data.assign([4, 5, 6])
+    @data.snapshot.should == [4, 5, 6]
+  end
+
+  it "should assign bindata objects" do
+    o1 = ExampleSingle.new
+    o1.value = 4
+    o2 = ExampleSingle.new
+    o2.value = 5
+    o3 = ExampleSingle.new
+    o3.value = 6
+    @data.assign([o1, o2, o3])
+    @data.snapshot.should == [4, 5, 6]
+  end
+
+  it "should assign bindata array" do
+    array = BinData::Array.new(:type => :example_single)
+    array.push(4, 5, 6)
+    @data.assign(array)
+    @data.snapshot.should == [4, 5, 6]
+  end
+
   it "should coerce to ::Array if required" do
-    ((1..7).to_a - @data).should == [6, 7]
+    [0].concat(@data).should == [0, 1, 2, 3, 4, 5]
   end
 
   it "should return the first element" do
@@ -283,10 +298,6 @@ describe BinData::Array, "containing multi values" do
 
   it "should access multiple elements with slice" do
     @data.slice(2, 3).collect { |x| x.get_value[0] }.should == [2, 3, 4]
-  end
-
-  it "should not be able to modify elements" do
-    lambda { @data[1] = 3 }.should raise_error(ArgumentError)
   end
 
   it "should interate over each element" do

@@ -6,7 +6,7 @@ class ExampleSingle < BinData::Single
 
   private
 
-  def value_to_string(val)
+  def value_to_binary_string(val)
     [val].pack("V")
   end
 
@@ -38,10 +38,6 @@ class ExampleMulti < BinData::Base
     [@a.value, @b.value]
   end
 
-  def single_value?
-    false
-  end
-
   def clear
     @a.clear
     @b.clear
@@ -49,6 +45,10 @@ class ExampleMulti < BinData::Base
 
   def clear?
     @a.clear? and @b.clear?
+  end
+
+  def assign(val)
+    set_value(*val.get_value)
   end
 
   #-----------------

@@ -80,7 +80,7 @@ module BinData
       parent = @obj.parent
       while parent
         if parent.class == bindata_array_class
-          return parent.index(child)
+          return parent.find_index_of(child)
         end
         child = parent
         parent = parent.parent

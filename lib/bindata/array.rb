@@ -92,10 +92,6 @@ module BinData
       @element_params  = el_params
     end
 
-    def single_value?
-      return false
-    end
-
     # Returns if the element at position +index+ is clear?.  If +index+
     # is not given, then returns whether all elements are clear.
     def clear?(index = nil)
@@ -132,14 +128,16 @@ module BinData
     # arr.find_index(c) #=> 2
     #
     def find_index(obj)
-      if obj.is_a?(BinData::Base)
-        elements.find_index { |el| el.equal?(obj) }
-      else
-        elements.find_index { |el| el.single_value? ? el.value == obj : false }
-      end
+      elements.find_index(obj)
     end
     alias_method :index, :find_index
 
+    # Returns the first index of +obj+ in self.
+    #
+    # Uses equal? for the comparator.
+    def find_index_of(obj)
+      elements.find_index { |el| el.equal?(obj) }
+    end
 
     def push(*args)
       insert(-1, *args)
@@ -173,8 +171,7 @@ module BinData
       self.last
     end
 
-    # Returns the element at +index+.  If the element is a single_value
-    # then the value of the element is returned instead.
+    # Returns the element at +index+.
     def [](arg1, arg2 = nil)
       if arg1.respond_to?(:to_int) and arg2.nil?
         slice_index(arg1.to_int)
@@ -195,26 +192,24 @@ module BinData
     end
 
     def slice_start_length(start, length)
-      from_storage_formats(elements[start, length])
+      elements[start, length]
     end
 
     def slice_range(range)
-      from_storage_formats(elements[range])
+      elements[range]
     end
     private :slice_index, :slice_start_length, :slice_range
 
-    # Returns the element at +index+.  If the element is a single_value
-    # then the value of the element is returned instead.  Unlike +slice+,
-    # if +index+ is out of range the array will not be automatically extended.
+    # Returns the element at +index+.  Unlike +slice+, if +index+ is out
+    # of range the array will not be automatically extended.
     def at(index)
-      from_storage_format(elements[index])
+      elements[index]
     end
 
-    # Sets the element at +index+.  If the array type is a single_value
-    # then the value of the element will be set.
+    # Sets the element at +index+.
     def []=(index, value)
       extend_array(index)
-      elements[index] = to_storage_format(value)
+      elements[index].assign(value)
     end
 
     # Returns the first element, or the first +n+ elements, of the array.
@@ -256,17 +251,16 @@ module BinData
 
     # Allow this object to be used in array context.
     def to_ary
-      snapshot
+      collect { |el| el }
     end
 
-    # Iterate over each element in the array.  If the elements are
-    # single_values then the values of the elements are iterated instead.
+    # Iterate over each element in the array.
     def each
-      elements.each { |el| yield from_storage_format(el) }
+      elements.each { |el| yield el }
     end
 
     def debug_name_of(child)
-      index = find_index(child)
+      index = find_index_of(child)
       "#{debug_name}[#{index}]"
     end
 
@@ -285,36 +279,10 @@ module BinData
     end
 
     def to_storage_format(obj)
-      if obj.is_a?(BinData::Base) and obj.class != @element_class
-        warn "maybe this will work, maybe not"
-      end
-
-      if obj.is_a?(BinData::Base)
-        obj.parent = self
-        obj
-      else
-        element = new_element
-        element.value = obj
-        element
-      end
-    rescue
-      raise ArgumentError, "Can not convert #{obj} to BinData::Base"
+      element = new_element
+      element.assign(obj)
+      element
     end
-
-    def from_storage_formats(els)
-      return nil if els.nil?
-
-      els.collect { |el| from_storage_format(el) }
-    end
-
-    def from_storage_format(el)
-      if el and el.single_value?
-        el.value
-      else
-        el
-      end
-    end
-
 
     def _do_read(io)
       if has_param?(:initial_length)
@@ -373,6 +341,13 @@ module BinData
       else
         0
       end
+    end
+
+    def _assign(array)
+      raise ArgumentError, "can't set a nil value for #{debug_name}" if array.nil?
+
+      @element_list.clear
+      @element_list.concat(to_storage_formats(array.to_ary))
     end
 
     def _snapshot

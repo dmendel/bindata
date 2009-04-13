@@ -41,15 +41,18 @@ module BinData
   # Parameters may be provided at initialisation to control the behaviour of
   # an object.  These params are:
   #
-  # <tt>:choices</tt>::   Either an array or a hash specifying the possible
-  #                       data objects.  The format of the array/hash.values is
-  #                       a list of symbols representing the data object type.
-  #                       If a choice is to have params passed to it, then it
-  #                       should be provided as [type_symbol, hash_params].
-  #                       An implementation constraint is that the hash may not
-  #                       contain symbols as keys.
-  # <tt>:selection</tt>:: An index/key into the :choices array/hash which
-  #                       specifies the currently active choice.
+  # <tt>:choices</tt>::      Either an array or a hash specifying the possible
+  #                          data objects.  The format of the array/hash.values
+  #                          is a list of symbols representing the data object
+  #                          type.  If a choice is to have params passed to it,
+  #                          then it should be provided as [type_symbol,
+  #                          hash_params].  An implementation constraint is
+  #                          that the hash may not contain symbols as keys.
+  # <tt>:selection</tt>::    An index/key into the :choices array/hash which
+  #                          specifies the currently active choice.
+  # <tt>:copyonchange</tt>:: If set to true, copy the value of the previous
+  #                          selection to the current selection whenever the
+  #                          selection changes.  Default is false.
   class Choice < BinData::Base
     extend Forwardable
 
@@ -148,14 +151,7 @@ module BinData
       raise NoMethodError
     end
 
-    # A choice represents a specific object.
-    def to_ref
-      #TODO: this should be as written, but I can't work out how to make
-      # a failing test case with just "return current_choice"
-      current_choice.to_ref
-    end
-
-    def_delegators :current_choice, :clear, :clear?, :single_value?
+    def_delegators :current_choice, :clear, :clear?
 
     def respond_to?(symbol, include_private = false)
       super || current_choice.respond_to?(symbol, include_private)
@@ -202,6 +198,10 @@ module BinData
       current_choice.do_num_bytes(what)
     end
 
+    def _assign(val)
+      current_choice.assign(val)
+    end
+
     def _snapshot
       current_choice.snapshot
     end
@@ -209,11 +209,11 @@ module BinData
     def current_choice
       selection = eval_param(:selection)
       if selection.nil?
-        raise IndexError, ":selection returned nil value for #{debug_name}"
+        raise IndexError, ":selection returned nil for #{debug_name}"
       end
 
       obj = get_or_instantiate_choice(selection)
-      retain_previous_value_if_single(selection, obj)
+      retain_previous_value_if_required(selection, obj)
 
       obj
     end
@@ -235,16 +235,17 @@ module BinData
       choice_class.new(choice_params, self)
     end
 
-    def retain_previous_value_if_single(selection, obj)
+    def retain_previous_value_if_required(selection, obj)
       prev = get_previous_choice(selection)
       if should_retain_value?(prev, obj)
-        obj.value = prev.value
+        obj.assign(prev)
       end
       remember_current_selection(selection)
     end
 
     def should_retain_value?(prev, cur)
-      prev != nil and prev.single_value? and cur.single_value?
+      # TODO: use copyonchange
+      prev != nil and BinData::Single === prev and BinData::Single === cur
     end
 
     def get_previous_choice(selection)

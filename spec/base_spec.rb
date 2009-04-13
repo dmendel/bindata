@@ -7,11 +7,11 @@ class BaseStub < BinData::Base
   # Override to avoid NotImplemented errors
   def clear; end
   def clear?; end
-  def single_value?; end
   def _do_read(io) end
   def _done_read; end
   def _do_write(io) end
   def _do_num_bytes(x) end
+  def _assign(x); end
   def _snapshot; end
 
   expose_methods_for_testing
@@ -21,11 +21,11 @@ class MockBaseStub < BaseStub
   attr_accessor :mock
   def clear;           mock.clear; end
   def clear?;          mock.clear?; end
-  def single_value?;   mock.single_value?; end
   def _do_read(io)     mock._do_read(io); end
   def _done_read;      mock._done_read; end
   def _do_write(io)    mock._do_write(io); end
   def _do_num_bytes(x) mock._do_num_bytes(x) end
+  def _assign(x);      mock._assign(x); end
   def _snapshot;       mock._snapshot; end
 end
 
@@ -45,7 +45,7 @@ describe BinData::Base, "when subclassing" do
   it "should raise errors on unimplemented methods" do
     lambda { @obj.clear }.should raise_error(NotImplementedError)
     lambda { @obj.clear? }.should raise_error(NotImplementedError)
-    lambda { @obj.single_value? }.should raise_error(NotImplementedError)
+    lambda { @obj.assign(nil) }.should raise_error(NotImplementedError)
     lambda { @obj.debug_name_of(nil) }.should raise_error(NotImplementedError)
     lambda { @obj._do_read(nil) }.should raise_error(NotImplementedError)
     lambda { @obj._done_read }.should raise_error(NotImplementedError)
@@ -297,43 +297,15 @@ describe BinData::Base, "with :onlyif => false" do
   end
 end
 
-describe BinData::Base, "as a single value" do
-  before(:all) do
-    eval <<-END
-      class SingleValueSubClassOfBase < BaseStub
-        def single_value?;  true  ; end
-
-        def value;          "123" ; end
-      end
-    END
-  end
-
-  it "should return value when reading" do
-    obj = SingleValueSubClassOfBase.new
-    SingleValueSubClassOfBase.read(nil).should == obj.value
-  end
-end
-
-describe BinData::Base, "as multi value" do
-  before(:all) do
-    eval <<-END
-      class MultiValueSubClassOfBase < BaseStub
-        def single_value?; false; end
-      end
-    END
-  end
-
-  it "should return self when reading" do
-    obj = MultiValueSubClassOfBase.read(nil)
-    obj.class.should == MultiValueSubClassOfBase
-  end
-end
-
 describe BinData::Base, "as black box" do
   it "should access parent" do
     parent = BaseStub.new
     child = BaseStub.new(nil, parent)
     child.parent.should == parent
+  end
+
+  it "should instantiate self for ::read" do
+    BaseStub.read("").class.should == BaseStub
   end
 
   it "should return self for #read" do

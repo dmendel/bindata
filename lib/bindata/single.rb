@@ -58,10 +58,6 @@ module BinData
       @in_read = false
     end
 
-    def single_value?
-      true
-    end
-
     def clear
       @value = nil
       @in_read = false
@@ -72,14 +68,13 @@ module BinData
     end
 
     def value
-      _value
+      # TODO: warn "#value is deprecated, use #snapshot instead"
+      snapshot
     end
 
     def value=(val)
-      return if has_param?(:value)
-      raise ArgumentError, "can't set a nil value for #{debug_name}" if val.nil?
-
-      @value = val
+      # TODO: warn "#value= is deprecated, use #assign instead"
+      assign(val)
     end
 
     def respond_to?(symbol, include_private=false)
@@ -91,14 +86,6 @@ module BinData
         value.__send__(symbol, *args, &block)
       else
         super
-      end
-    end
-
-    def ==(other)
-      if BinData::Base === other
-        value == other.value
-      else
-        value == other
       end
     end
 
@@ -143,15 +130,29 @@ module BinData
 
     def _do_write(io)
       raise "can't write whilst reading #{debug_name}" if @in_read
-      io.writebytes(value_to_string(_value))
+      io.writebytes(value_to_binary_string(_value))
     end
 
     def _do_num_bytes(ignored)
-      value_to_string(_value).length
+      value_to_binary_string(_value).length
+    end
+
+    def _assign(val)
+      raise ArgumentError, "can't set a nil value for #{debug_name}" if val.nil?
+
+      unless has_param?(:value)
+        raw_val = val.respond_to?(:snapshot) ? val.snapshot : val
+        @value = begin
+                   raw_val.dup
+                 rescue TypeError
+                   # can't dup Fixnums
+                   raw_val
+                 end
+      end
     end
 
     def _snapshot
-      value
+      _value
     end
 
     # The unmodified value of this data object.  Note that #value calls this
@@ -180,7 +181,7 @@ module BinData
     # To be implemented by subclasses
 
     # Return the string representation that +val+ will take when written.
-    def value_to_string(val)
+    def value_to_binary_string(val)
       raise NotImplementedError
     end
 

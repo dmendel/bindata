@@ -32,13 +32,13 @@ module BinData
 
     def self.define_methods(bit_class, nbits, endian, clamp)
       bit_class.module_eval <<-END
-        def value=(val)
+        #---------------
+        private
+
+        def _assign(val)
           #{clamp}
           super(val)
         end
-
-        #---------------
-        private
 
         def _do_write(io)
           raise "can't write whilst reading \#{debug_name}" if @in_read

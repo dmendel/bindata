@@ -35,6 +35,26 @@ share_examples_for "All Integers" do
     end
   end
 
+  it "should assign values" do
+    all_classes do |int_class|
+      obj = int_class.new
+      test_int = gen_test_int
+      obj.assign(test_int)
+      obj.value.should == test_int
+    end
+  end
+
+  it "should assign values from other int objects" do
+    all_classes do |int_class|
+      src = int_class.new
+      src.assign(gen_test_int)
+
+      obj = int_class.new
+      obj.assign(src)
+      obj.value.should == src.value
+    end
+  end
+
   it "should symmetrically read and write a +ve number" do
     all_classes do |int_class|
       obj = int_class.new

@@ -31,14 +31,16 @@ module BinData
 
     bindata_optional_parameters :max_length
 
-    def value
-      trim_and_zero_terminate(_value).chomp("\0")
-    end
-
     #---------------
     private
 
-    def value_to_string(val)
+    def _snapshot
+      # override to always remove trailing zero bytes
+      result = super
+      trim_and_zero_terminate(result).chomp("\0")
+    end
+
+    def value_to_binary_string(val)
       trim_and_zero_terminate(val)
     end
 

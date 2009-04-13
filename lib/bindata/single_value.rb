@@ -173,7 +173,7 @@ module BinData
       get
     end
 
-    def value_to_string(val)
+    def value_to_binary_string(val)
       set(val)
       @struct.to_binary_s
     end

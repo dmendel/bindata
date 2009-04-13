@@ -48,7 +48,7 @@ module BinData
           0.0
         end
 
-        def value_to_string(val)
+        def value_to_binary_string(val)
           #{to_s}
         end
 

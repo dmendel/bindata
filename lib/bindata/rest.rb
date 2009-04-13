@@ -22,7 +22,7 @@ module BinData
     #---------------
     private
 
-    def value_to_string(val)
+    def value_to_binary_string(val)
       val
     end
 

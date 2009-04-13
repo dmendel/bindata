@@ -89,8 +89,12 @@ module BinData
       end
     end
 
-    def value
-      result = _value
+    #---------------
+    private
+
+    def _snapshot
+      # override to ensure length and optionally trim padding
+      result = super
       if has_param?(:length)
         result = truncate_or_pad_to_length(result)
       end
@@ -99,9 +103,6 @@ module BinData
       end
       result
     end
-
-    #---------------
-    private
 
     def truncate_or_pad_to_length(str)
       len = eval_param(:length) || str.length
@@ -118,7 +119,7 @@ module BinData
       str.sub(/#{eval_param(:pad_char)}*$/, "")
     end
 
-    def value_to_string(val)
+    def value_to_binary_string(val)
       truncate_or_pad_to_length(val)
     end
 

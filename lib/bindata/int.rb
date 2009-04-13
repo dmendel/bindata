@@ -133,7 +133,10 @@ module BinData
       def define_methods(int_class, nbytes, clamp, read, to_s,
                               int2uint = nil, uint2int = nil)
         int_class.module_eval <<-END
-          def value=(val)
+          #---------------
+          private
+
+          def _assign(val)
             #{clamp}
             super(val)
           end
@@ -142,14 +145,11 @@ module BinData
             #{nbytes}
           end
 
-          #---------------
-          private
-
           def sensible_default
             0
           end
 
-          def value_to_string(val)
+          def value_to_binary_string(val)
             #{clamp}
             #{int2uint unless int2uint.nil?}
             #{to_s}

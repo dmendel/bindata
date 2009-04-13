@@ -29,6 +29,23 @@ describe BinData::String, "with deprecated parameters" do
   end
 end
 
+describe BinData::String, "when assigning" do
+  before(:each) do
+    @small = BinData::String.new(:length => 3, :pad_char => "A")
+    @large = BinData::String.new(:length => 5, :pad_char => "B")
+  end
+
+  it "should copy data from small to large" do
+    @large.value = @small
+    @large.value.should == "AAABB"
+  end
+
+  it "should copy data from large to small" do
+    @small.value = @large
+    @small.value.should == "BBB"
+  end
+end
+
 describe BinData::String, "with :read_length" do
   before(:each) do
     @str = BinData::String.new(:read_length => 5)

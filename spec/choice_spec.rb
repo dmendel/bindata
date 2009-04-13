@@ -57,6 +57,10 @@ share_examples_for "Choice initialized with array or hash" do
     @data.value.should == 70
   end
 
+  it "should fail if no choice has been set" do
+    lambda { @data.value }.should raise_error(IndexError)
+  end
+
   it "should not be able to select an invalid choice" do
     @chooser.choice = 99
     lambda { @data.value }.should raise_error(IndexError)
@@ -121,12 +125,48 @@ describe BinData::Choice, "with single values" do
     @chooser = chooser
   end
 
+  it "should assign raw values" do
+    @chooser.choice = 3
+    @data.value = 254
+    @data.value.should == 254
+  end
+
+  it "should assign Single values" do
+    obj = ExampleSingle.new
+    obj.value = 11
+
+    @chooser.choice = 3
+    @data.value = obj
+    @data.value.should == 11
+  end
+
   it "should copy value when changing selection" do
     @chooser.choice = 3
     @data.value = 254
 
     @chooser.choice = 7
     @data.value.should == 254
+  end
+
+  it "should clear" do
+    @chooser.choice = 3
+    @data.value = 254
+
+    @data.clear
+    @data.value.should be_zero
+  end
+
+  it "should be clear on initialisation" do
+    @chooser.choice = 3
+
+    @data.should be_clear
+  end
+
+  it "should not be clear after assignment" do
+    @chooser.choice = 3
+    @data.value = 254
+
+    @data.should_not be_clear
   end
 
   it "should behave as value" do

@@ -51,8 +51,12 @@ module BinData
 
     # A hash that can be accessed via attributes.
     class Snapshot < Hash #:nodoc:
+      def respond_to?(symbol, include_private = false)
+        has_key?(symbol.to_s) || super(symbol, include_private)
+      end
+
       def method_missing(symbol, *args)
-        self[symbol.id2name] || super
+        self[symbol.to_s] || super
       end
     end
 
@@ -154,10 +158,6 @@ module BinData
       @field_objs  = []
     end
 
-    def single_value?
-      return false
-    end
-
     # Clears the field represented by +name+.  If no +name+
     # is given, clears all fields in the struct.
     def clear(name = nil)
@@ -213,7 +213,7 @@ module BinData
 
     def respond_to?(symbol, include_private = false)
       super(symbol, include_private) ||
-        field_names(true).include?(symbol.id2name.chomp("="))
+        field_names(true).include?(symbol.to_s.chomp("="))
     end
 
     def method_missing(symbol, *args, &block)
@@ -225,9 +225,8 @@ module BinData
       end
     end
 
-    def debug_name_of(child)
-      index = @field_objs.find_index { |el| el.equal?(child) }
-      field_name = @field_names[index]
+    def debug_name_of(obj)
+      field_name = @field_names[find_index_of(obj)]
       "#{debug_name}.#{field_name}"
     end
 
@@ -235,17 +234,18 @@ module BinData
     private
 
     def invoke_field(obj, symbol, args)
-      name = symbol.id2name
+      name = symbol.to_s
       is_writer = (name[-1, 1] == "=")
 
-      if obj.single_value? and is_writer
-        #TODO what if  args is BinData? - need to do all  possibilities
-        obj.value = *args
-      elsif obj.single_value?
-        obj.value
+      if is_writer
+        obj.assign(*args)
       else
         obj
       end
+    end
+
+    def find_index_of(obj)
+      @field_objs.find_index { |el| el.equal?(obj) }
     end
 
     def find_obj_for_name(name)
@@ -253,7 +253,7 @@ module BinData
       index = @field_names.find_index(field_name)
       if index
         instantiate_obj_at(index)
-        @field_objs[index].to_ref
+        @field_objs[index]
       else
         nil
       end
@@ -295,13 +295,39 @@ module BinData
       end
     end
 
+    def _assign(val)
+      clear
+      assign_fields(as_snapshot(val))
+    end
+
+    def as_snapshot(val)
+      if val.class == Hash
+        snapshot = Snapshot.new
+        val.each_pair { |k,v| snapshot[k.to_s] = v unless v.nil? }
+        snapshot
+      elsif val.nil?
+        Snapshot.new
+      else
+        val
+      end
+    end
+
+    def assign_fields(snapshot)
+      field_names(true).each do |name|
+        obj = find_obj_for_name(name)
+        if obj and snapshot.respond_to?(name)
+          obj.assign(snapshot.__send__(name))
+        end
+      end
+    end
+
     def _snapshot
-      hash = Snapshot.new
+      snapshot = Snapshot.new
       field_names.each do |name|
         ss = find_obj_for_name(name).snapshot
-        hash[name] = ss unless ss.nil?
+        snapshot[name] = ss unless ss.nil?
       end
-      hash
+      snapshot
     end
   end
 end
