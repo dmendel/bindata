@@ -98,6 +98,7 @@ module BinData
       if index.nil?
         elements.inject(true) { |all_clear, f| all_clear and f.clear? }
       elsif index < elements.length
+        warn "'obj.clear?(n)' is deprecated.  Use 'obj[n].clear?' instead"
         elements[index].clear?
       else
         true
@@ -111,6 +112,7 @@ module BinData
       if index.nil?
         @element_list.clear
       elsif index < elements.length
+        warn "'obj.clear(n)' is deprecated.  Use 'obj[n].clear' instead"
         elements[index].clear
       end
     end
@@ -345,6 +347,7 @@ module BinData
       if index.nil?
         sum_num_bytes_for_all_elements.ceil
       elsif index < elements.length
+        warn "'obj.num_bytes(n)' is deprecated.  Use 'obj[n].num_bytes' instead"
         elements[index].do_num_bytes
       else
         0
