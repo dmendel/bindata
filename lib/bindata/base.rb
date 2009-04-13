@@ -197,6 +197,15 @@ module BinData
       end
     end
 
+    # Returns the offset of this object wrt to its most distant ancestor.
+    def offset
+      if parent
+        parent.offset_of(self)
+      else
+        0
+      end
+    end
+
     def ==(other)
       # double dispatch
       other == snapshot
@@ -298,6 +307,12 @@ module BinData
       raise NotImplementedError
     end
 
+    # Returns the offset of +child+.  This only needs to be implemented
+    # by objects that contain child objects.
+    def offset_of(child)
+      raise NotImplementedError
+    end
+
     # Reads the data for this data object from +io+.
     def _do_read(io)
       raise NotImplementedError
@@ -330,7 +345,7 @@ module BinData
     end
 
     # Set visibility requirements of methods to implement
-    public :clear, :clear?, :debug_name_of #, :offset_of, :abs_offset_of
+    public :clear, :clear?, :debug_name_of, :offset_of
     private :_do_read, :_done_read, :_do_write, :_do_num_bytes, :_assign, :_snapshot
 
 def single_value?

@@ -196,11 +196,11 @@ describe BinData::Struct, "with nested structs" do
     @obj.c.z.should == 0
   end
 
-  it "should return correct offset of" do
-    @obj.offset_of("b").should == 1
-    @obj.offset_of("b").should == 1
-    @obj.offset_of("c").should == 3
-    @obj.offset_of("y").should be_nil
+  it "should return correct offset" do
+    @obj.b.offset.should == 1
+    @obj.b.w.offset.should == 1
+    @obj.c.offset.should == 3
+    @obj.c.z.offset.should == 4
   end
 end
 
@@ -243,25 +243,36 @@ end
 
 describe BinData::Struct, "with bit fields" do
   before(:each) do
-    @params = { :fields => [ [:bit1le, :a], [:bit2le, :b] ] }
+    @params = { :fields => [ [:bit1le, :a], [:bit2le, :b], [:uint8, :c], [:bit1le, :d] ] }
     @obj = BinData::Struct.new(@params)
     @obj.a = 1
     @obj.b = 2
+    @obj.c = 3
+    @obj.d = 1
   end
 
   it "should return num_bytes" do
-    @obj.num_bytes.should == 1
+    @obj.num_bytes.should == 3
   end
 
   it "should write" do
-    @obj.to_binary_s.should == [0b0000_0101].pack("C")
+    @obj.to_binary_s.should == [0b0000_0101, 3, 1].pack("C*")
   end
 
   it "should read" do
-    str = [0b0000_0110].pack("C")
+    str = [0b0000_0110, 5, 0].pack("C*")
     @obj.read(str)
     @obj.a.should == 0
     @obj.b.should == 3
+    @obj.c.should == 5
+    @obj.d.should == 0
+  end
+
+  it "should have correct offsets" do
+    @obj.a.offset.should == 0
+    @obj.b.offset.should == 0
+    @obj.c.offset.should == 1
+    @obj.d.offset.should == 2
   end
 end
 

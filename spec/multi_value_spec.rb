@@ -197,9 +197,11 @@ describe BinData::MultiValue, "with nested structs" do
     @obj.c.y.should == 3
   end
 
-  it "should return correct offset of" do
-    @obj.offset_of("b").should == 1
-    @obj.offset_of("c").should == 3
+  it "should return correct offset" do
+    @obj.b.offset.should == 1
+    @obj.b.w.offset.should == 1
+    @obj.c.offset.should == 3
+    @obj.c.z.offset.should == 4
   end
 end
 

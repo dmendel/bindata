@@ -47,7 +47,7 @@ module BinData
                    end ensure false for if in module next nil not or redo
                    rescue retry return self super then true undef unless until
                    when while yield} +
-                %w{array element index offset value} ).uniq
+                %w{array element index value} ).uniq
 
     # A hash that can be accessed via attributes.
     class Snapshot < Hash #:nodoc:
@@ -192,25 +192,6 @@ module BinData
       end
     end
 
-    def offset_of(field)
-      index = @field_names.find_index(field.to_s)
-      if index
-        instantiate_all_objs
-
-        offset = 0
-        (0...index).each do |i|
-          this_offset = @field_objs[i].do_num_bytes
-          if ::Float === offset and ::Integer === this_offset
-            offset = offset.ceil
-          end
-          offset += this_offset
-        end
-        offset
-      else
-        nil
-      end
-    end
-
     def respond_to?(symbol, include_private = false)
       super(symbol, include_private) ||
         field_names(true).include?(symbol.to_s.chomp("="))
@@ -225,9 +206,21 @@ module BinData
       end
     end
 
-    def debug_name_of(obj)
-      field_name = @field_names[find_index_of(obj)]
+    def debug_name_of(child)
+      field_name = @field_names[find_index_of(child)]
       "#{debug_name}.#{field_name}"
+    end
+
+    def offset_of(child)
+      if child.class == ::String
+        fail "error: 'offset_of(\"fieldname\")' is deprecated.  Use 'fieldname.offset' instead"
+      end
+
+      instantiate_all_objs
+      sum = sum_num_bytes_below_index(find_index_of(child))
+      child_offset = (::Integer === child.do_num_bytes) ? sum.ceil : sum.floor
+
+      offset + child_offset
     end
 
     #---------------
@@ -287,8 +280,7 @@ module BinData
     def _do_num_bytes(name)
       if name.nil?
         instantiate_all_objs
-        total = @field_objs.inject(0) { |sum, f| sum + f.do_num_bytes }
-        total.ceil
+        sum_num_bytes_for_all_fields.ceil
       else
         obj = find_obj_for_name(name)
         obj.nil? ? 0 : obj.do_num_bytes
@@ -328,6 +320,20 @@ module BinData
         snapshot[name] = ss unless ss.nil?
       end
       snapshot
+    end
+
+    def sum_num_bytes_for_all_fields
+      sum_num_bytes_below_index(@field_objs.length)
+    end
+
+    def sum_num_bytes_below_index(index)
+      sum = 0
+      (0...index).each do |i|
+        nbytes = @field_objs[i].do_num_bytes
+        sum = ((::Integer === nbytes) ? sum.ceil : sum) + nbytes
+      end
+
+      sum
     end
   end
 end

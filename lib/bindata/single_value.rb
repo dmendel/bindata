@@ -161,6 +161,10 @@ module BinData
       debug_name + "-internal-"
     end
 
+    def offset_of(child)
+      offset
+    end
+
     #---------------
     private
 

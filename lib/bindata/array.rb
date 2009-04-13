@@ -264,6 +264,15 @@ module BinData
       "#{debug_name}[#{index}]"
     end
 
+    def offset_of(child)
+      index = find_index_of(child)
+      sum = sum_num_bytes_below_index(index)
+
+      child_offset = (::Integer === child.do_num_bytes) ? sum.ceil : sum.floor
+
+      offset + child_offset
+    end
+
     #---------------
     private
 
@@ -334,8 +343,7 @@ module BinData
 
     def _do_num_bytes(index)
       if index.nil?
-        total = elements.inject(0) { |sum, f| sum + f.do_num_bytes }
-        total.ceil
+        sum_num_bytes_for_all_elements.ceil
       elsif index < elements.length
         elements[index].do_num_bytes
       else
@@ -370,6 +378,20 @@ module BinData
 
     def new_element
       @element_class.new(@element_params, self)
+    end
+
+    def sum_num_bytes_for_all_elements
+      sum_num_bytes_below_index(length)
+    end
+
+    def sum_num_bytes_below_index(index)
+      sum = 0
+      (0...index).each do |i|
+        nbytes = elements[i].do_num_bytes
+        sum = ((::Integer === nbytes) ? sum.ceil : sum) + nbytes
+      end
+
+      sum
     end
   end
 end

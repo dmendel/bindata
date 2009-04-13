@@ -71,31 +71,38 @@ describe "MultiValues with choice field" do
         uint8 :a, :value => 3
         uint8 :b, :value => 5
       end
+
+      class MultiWithChoiceField < BinData::MultiValue
+        choice :x, :choices => [[:tuple_multi_value]], :selection => 0
+      end
+
+      class MultiWithNestedChoiceField < BinData::MultiValue
+        choice :x, :choices => [
+                      [:choice, {
+                          :choices => [[:tuple_multi_value]],
+                          :selection => 0}
+                      ]
+                   ],
+                   :selection => 0
+      end
     END
   end
 
   it "should treat choice object transparently " do
-    class MultiWithChoiceField < BinData::MultiValue
-      choice :x, :choices => [[:tuple_multi_value]], :selection => 0
-    end
     obj = MultiWithChoiceField.new
 
     obj.x.a.should == 3
   end
 
   it "should treat nested choice object transparently " do
-    class MultiWithNestedChoiceField < BinData::MultiValue
-      choice :x, :choices => [
-                    [:choice, {
-                        :choices => [[:tuple_multi_value]],
-                        :selection => 0}
-                    ]
-                 ],
-                 :selection => 0
-    end
     obj = MultiWithNestedChoiceField.new
 
     obj.x.a.should == 3
+  end
+
+  it "should have correct offset" do
+    obj = MultiWithNestedChoiceField.new
+    obj.x.b.offset.should == 1
   end
 end
 
@@ -132,6 +139,11 @@ describe BinData::Array, "of bits" do
   it "should return num_bytes" do
     @data.num_bytes.should == 2
   end
+
+  it "should have correct offset" do
+    @data[7].offset.should == 0
+    @data[8].offset.should == 1
+  end
 end
 
 describe "Objects with debug_name" do
@@ -141,23 +153,23 @@ describe "Objects with debug_name" do
   end
 
   it "should include array index" do
-    arr = BinData::Array.new(:type => :example_multi, :initial_length => 2)
+    arr = BinData::Array.new(:type => :example_single, :initial_length => 2)
     arr[2].debug_name.should == "obj[2]"
   end
 
   it "should include field name" do
-    s = BinData::Struct.new(:fields => [[:example_multi, :a]])
+    s = BinData::Struct.new(:fields => [[:example_single, :a]])
     s.a.debug_name.should == "obj.a"
   end
 
   it "should delegate to choice" do
-    choice_params = {:choices => [:example_multi], :selection => 0}
+    choice_params = {:choices => [:example_single], :selection => 0}
     s = BinData::Struct.new(:fields => [[:choice, :a, choice_params]])
     s.a.debug_name.should == "obj.a"
   end
 
   it "should nest" do
-    nested_struct_params = {:fields => [[:example_multi, :c]]}
+    nested_struct_params = {:fields => [[:example_single, :c]]}
     struct_params = {:fields => [[:struct, :b, nested_struct_params]]}
     s = BinData::Struct.new(:fields => [[:struct, :a, struct_params]])
     s.a.b.c.debug_name.should == "obj.a.b.c"

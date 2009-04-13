@@ -68,6 +68,10 @@ describe BinData::Array, "with several elements" do
     @data[2].debug_name.should == "obj[2]"
   end
 
+  it "should have correct offset" do
+    @data[2].offset.should == ExampleSingle.new.num_bytes * 2
+  end
+
   it "should return a correct snapshot" do
     @data.snapshot.should == [1, 2, 3, 4, 5]
   end
