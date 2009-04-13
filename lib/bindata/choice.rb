@@ -41,24 +41,26 @@ module BinData
   # Parameters may be provided at initialisation to control the behaviour of
   # an object.  These params are:
   #
-  # <tt>:choices</tt>::      Either an array or a hash specifying the possible
-  #                          data objects.  The format of the array/hash.values
-  #                          is a list of symbols representing the data object
-  #                          type.  If a choice is to have params passed to it,
-  #                          then it should be provided as [type_symbol,
-  #                          hash_params].  An implementation constraint is
-  #                          that the hash may not contain symbols as keys.
-  # <tt>:selection</tt>::    An index/key into the :choices array/hash which
-  #                          specifies the currently active choice.
-  # <tt>:copyonchange</tt>:: If set to true, copy the value of the previous
-  #                          selection to the current selection whenever the
-  #                          selection changes.  Default is false.
+  # <tt>:choices</tt>::        Either an array or a hash specifying the possible
+  #                            data objects.  The format of the
+  #                            array/hash.values is a list of symbols
+  #                            representing the data object type.  If a choice
+  #                            is to have params passed to it, then it should
+  #                            be provided as [type_symbol, hash_params].  An
+  #                            implementation constraint is that the hash may
+  #                            not contain symbols as keys.
+  # <tt>:selection</tt>::      An index/key into the :choices array/hash which
+  #                            specifies the currently active choice.
+  # <tt>:copy_on_change</tt>:: If set to true, copy the value of the previous
+  #                            selection to the current selection whenever the
+  #                            selection changes.  Default is false.
   class Choice < BinData::Base
     extend Forwardable
 
     register(self.name, self)
 
     bindata_mandatory_parameters :choices, :selection
+    bindata_default_parameters   :copy_on_change => false
 
     class << self
 
@@ -213,7 +215,7 @@ module BinData
       end
 
       obj = get_or_instantiate_choice(selection)
-      retain_previous_value_if_required(selection, obj)
+      copy_previous_value_if_required(selection, obj)
 
       obj
     end
@@ -235,17 +237,16 @@ module BinData
       choice_class.new(choice_params, self)
     end
 
-    def retain_previous_value_if_required(selection, obj)
+    def copy_previous_value_if_required(selection, obj)
       prev = get_previous_choice(selection)
-      if should_retain_value?(prev, obj)
+      if should_copy_value?(prev, obj)
         obj.assign(prev)
       end
       remember_current_selection(selection)
     end
 
-    def should_retain_value?(prev, cur)
-      # TODO: use copyonchange
-      prev != nil and BinData::Single === prev and BinData::Single === cur
+    def should_copy_value?(prev, cur)
+      prev != nil and eval_param(:copy_on_change) == true
     end
 
     def get_previous_choice(selection)

@@ -140,14 +140,6 @@ describe BinData::Choice, "with single values" do
     @data.value.should == 11
   end
 
-  it "should copy value when changing selection" do
-    @chooser.choice = 3
-    @data.value = 254
-
-    @chooser.choice = 7
-    @data.value.should == 254
-  end
-
   it "should clear" do
     @chooser.choice = 3
     @data.value = 254
@@ -169,6 +161,14 @@ describe BinData::Choice, "with single values" do
     @data.should_not be_clear
   end
 
+  it "should not copy value when changing selection" do
+    @chooser.choice = 3
+    @data.value = 254
+
+    @chooser.choice = 7
+    @data.value.should_not == 254
+  end
+
   it "should behave as value" do
     @chooser.choice = 3
     @data.value = 5
@@ -178,38 +178,22 @@ describe BinData::Choice, "with single values" do
   end
 end
 
-describe BinData::Choice, "with multi values" do
+describe BinData::Choice, "with copy_on_change => true" do
   before(:each) do
     chooser = Chooser.new
-    @data = BinData::Choice.new(:choices =>
-                                  {3 => :example_multi,
-                                   5 => :example_multi},
-                                :selection => lambda { chooser.choice } )
+    @data = BinData::Choice.new(:choices => {3 => :example_single,
+                                             5 => :example_single,
+                                             7 => :example_single,},
+                                :selection => lambda { chooser.choice },
+                                :copy_on_change => true)
     @chooser = chooser
   end
 
-  it "should access fields" do
+  it "should copy value when changing selection" do
     @chooser.choice = 3
-    @data.set_value(8, 9)
-    @data.get_value.should == [8, 9]
-  end
+    @data.value = 254
 
-  it "should not copy values when changing fields" do
-    @chooser.choice = 3
-    @data.set_value(8, 9)
-
-    @chooser.choice = 5
-    @data.get_value.should_not == [8, 9]
-  end
-
-  it "should preserve values when switching selection" do
-    @chooser.choice = 3
-    @data.set_value(8, 9)
-
-    @chooser.choice = 5
-    @data.set_value(11, 12)
-
-    @chooser.choice = 3
-    @data.get_value.should == [8, 9]
+    @chooser.choice = 7
+    @data.value.should == 254
   end
 end
