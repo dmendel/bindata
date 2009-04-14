@@ -90,7 +90,7 @@ module BinData
       @parent = parent
     end
 
-    attr_accessor :parent
+    attr_reader :parent
 
     # Returns all the custom parameters supplied to this data object.
     def custom_parameters
