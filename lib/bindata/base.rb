@@ -97,6 +97,24 @@ module BinData
       @params.custom_parameters
     end
 
+    # Returns the value of the evaluated custom parameter +key+.
+    # Returns nil if +key+ does not refer to any custom parameter.
+    def eval_custom_parameter(key)
+      LazyEvaluator.eval(no_eval_custom_parameter(key), self, nil)
+    end
+
+    # Returns the custom parameter referenced by +key+.
+    # Use this method if you are sure the parameter is not to be evaluated.
+    # You most likely want #eval_custom_parameter.
+    def no_eval_custom_parameter(key)
+      custom_parameters[key]
+    end
+
+    # Returns whether +key+ exists in the +custom_parameters+ hash.
+    def has_custom_parameter?(key)
+      custom_parameters.has_key?(key)
+    end
+
     # Reads data into this data object.
     def read(io)
       io = BinData::IO.new(io) unless BinData::IO === io
@@ -155,9 +173,7 @@ module BinData
     # Assigns the value of +val+ to this data object.  Note that +val+ will
     # always be deep copied to ensure no aliasing problems can occur.
     def assign(val)
-      if eval_param(:onlyif)
-        _assign(val)
-      end
+      _assign(val)
     end
 
     # Returns a snapshot of this data object.

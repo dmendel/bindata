@@ -271,3 +271,21 @@ describe "Forward referencing with Array" do
   end
 end
 
+describe "Evaluating custom parameters" do
+  before(:all) do
+    eval <<-END
+      class CustomParameterRecord < BinData::Record
+        mandatory_parameter :zz
+
+        uint8 :a, :value => :zz
+        uint8 :b, :value => :a
+        uint8 :c, :custom => :b
+      end
+    END
+  end
+
+  it "should recursively evaluate custom parameter" do
+    obj = CustomParameterRecord.new(:zz => 5)
+    obj.c.eval_custom_parameter(:custom).should == 5
+  end
+end

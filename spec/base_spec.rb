@@ -152,6 +152,24 @@ describe BinData::Base, "with multiple parameters" do
     obj.custom_parameters.should == {:p4 => 4, :p5 => 5}
   end
 
+  it "should evaluate custom parameters" do
+    params = {:p1 => 1, :p2 => 2, :p3 => 3, :p4 => lambda { 4 }}
+    obj = WithParamBase.new(params)
+    obj.eval_custom_parameter(:p4).should == 4
+  end
+
+  it "should return custom parameters" do
+    params = {:p1 => 1, :p2 => 2, :p3 => 3, :p4 => :a}
+    obj = WithParamBase.new(params)
+    obj.no_eval_custom_parameter(:p4).should == :a
+  end
+
+  it "should have custom parameters" do
+    params = {:p1 => 1, :p2 => 2, :p3 => 3, :p4 => 4}
+    obj = WithParamBase.new(params)
+    obj.should have_custom_parameter(:p4)
+  end
+
   it "should not allow parameters with nil values" do
     lambda { WithParamBase.new(:p1 => 1, :p2 => nil) }.should raise_error(ArgumentError)
   end
