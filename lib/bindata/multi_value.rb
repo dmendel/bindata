@@ -134,6 +134,7 @@ module BinData
       end
 
       def merge_fields!(params)
+        @fields ||= []
         fields = params[:fields] || @fields || []
         params[:fields] = fields
       end
