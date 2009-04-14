@@ -336,3 +336,36 @@ describe BinData::Record, "with custom default parameters" do
     obj.a.should == 7
   end
 end
+
+describe BinData::Record, "with :onlyif" do
+  before(:all) do
+    eval <<-END
+      class OnlyIfRecord < BinData::Record
+        uint8 :a, :initial_value => 3
+        uint8 :b, :initial_value => 5, :onlyif => lambda { a == 3 }
+        uint8 :c, :initial_value => 7, :onlyif => lambda { a != 3 }
+      end
+    END
+  end
+
+  before(:each) do
+    @obj = OnlyIfRecord.new
+  end
+
+  it "should have correct num_bytes" do
+    @obj.num_bytes.should == 2
+  end
+
+  it "should have expected snapshot" do
+    @obj.snapshot.should == {"a" => 3, "b" => 5}
+  end
+
+  it "should read as expected" do
+    @obj.read("\x01\x02")
+    @obj.snapshot.should == {"a" => 1, "c" => 2}
+  end
+
+  it "should write as expected" do
+    @obj.to_binary_s.should == "\x03\x05"
+  end
+end
