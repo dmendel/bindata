@@ -96,20 +96,22 @@ module BinData
       @in_read = true
       @value   = read_and_return_value(io)
 
-      trace(@value)
+      trace_value
 
       if has_param?(:check_value)
         check_value(value)
       end
     end
 
-    def trace(val)
-      value_string = val.inspect
-      if value_string.length > 30
-        value_string = value_string.slice(0 .. 30) + "..."
-      end
+    def trace_value
+      BinData::trace_message do |tracer|
+        value_string = _value.inspect
+        if value_string.length > 30
+          value_string = value_string.slice(0 .. 30) + "..."
+        end
 
-      BinData::trace_message("#{debug_name} => #{value_string}")
+        tracer.trace("#{debug_name} => #{value_string}")
+      end
     end
 
     def check_value(current_value)

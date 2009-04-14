@@ -179,17 +179,19 @@ module BinData
     private
 
     def _do_read(io)
-      trace(eval_param(:selection))
+      trace_selection
       current_choice.do_read(io)
     end
 
-    def trace(selection)
-      selection_string = selection.inspect
-      if selection_string.length > 30
-        selection_string = selection_string.slice(0 .. 30) + "..."
-      end
+    def trace_selection
+      BinData::trace_message do |tracer|
+        selection_string = eval_param(:selection).inspect
+        if selection_string.length > 30
+          selection_string = selection_string.slice(0 .. 30) + "..."
+        end
 
-      BinData::trace_message("#{debug_name}-selection- => #{selection_string}")
+        tracer.trace("#{debug_name}-selection- => #{selection_string}")
+      end
     end
 
     def _done_read
