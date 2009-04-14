@@ -87,7 +87,7 @@ module BinData
 
       el_class, el_params = no_eval_param(:type)
 
-      @element_list    = []
+      @element_list    = nil
       @element_class   = el_class
       @element_params  = el_params
     end
@@ -96,7 +96,7 @@ module BinData
     # is not given, then returns whether all elements are clear.
     def clear?(index = nil)
       if index.nil?
-        elements.inject(true) { |all_clear, f| all_clear and f.clear? }
+        @element_list.nil? or elements.inject(true) { |all_clear, f| all_clear and f.clear? }
       elsif index < elements.length
         warn "'obj.clear?(n)' is deprecated.  Use 'obj[n].clear?' instead"
         elements[index].clear?
@@ -110,7 +110,7 @@ module BinData
     # object.
     def clear(index = nil)
       if index.nil?
-        @element_list.clear
+        @element_list = nil
       elsif index < elements.length
         warn "'obj.clear(n)' is deprecated.  Use 'obj[n].clear' instead"
         elements[index].clear
@@ -318,7 +318,7 @@ module BinData
         begin
           element.do_read(io)
         rescue
-          @element_list.pop
+          elements.pop
           finished = true
         end
       end
@@ -357,7 +357,7 @@ module BinData
     def _assign(array)
       raise ArgumentError, "can't set a nil value for #{debug_name}" if array.nil?
 
-      @element_list.replace(to_storage_formats(array.to_ary))
+      @element_list = to_storage_formats(array.to_ary)
     end
 
     def _snapshot
@@ -365,9 +365,12 @@ module BinData
     end
 
     def elements
-      if @element_list.empty? and has_param?(:initial_length)
-        eval_param(:initial_length).times do
-          @element_list << new_element
+      if @element_list.nil?
+        @element_list = []
+        if has_param?(:initial_length)
+          eval_param(:initial_length).times do
+            @element_list << new_element
+          end
         end
       end
       @element_list

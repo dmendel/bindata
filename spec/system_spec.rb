@@ -215,3 +215,59 @@ describe "Tracing"  do
   end
 end
 
+describe "Forward referencing with Single" do
+  before(:all) do
+    eval <<-END
+      class FRSingle < BinData::MultiValue
+        uint8  :len, :value => lambda { data.length }
+        string :data, :read_length => :len
+      end
+    END
+  end
+
+  it "should initialise" do
+    @obj = FRSingle.new
+    @obj.snapshot.should == {"len" => 0, "data" => ""}
+  end
+
+  it "should read" do
+    @obj = FRSingle.new
+    @obj.read("\x04test")
+    @obj.snapshot.should == {"len" => 4, "data" => "test"}
+  end
+
+  it "should set value" do
+    @obj = FRSingle.new
+    @obj.data = "hello"
+    @obj.snapshot.should == {"len" => 5, "data" => "hello"}
+  end
+end
+
+describe "Forward referencing with Array" do
+  before(:all) do
+    eval <<-END
+      class FRArray < BinData::MultiValue
+        uint8  :len, :value => lambda { data.length }
+        array :data, :type => :uint8, :initial_length => :len
+      end
+    END
+  end
+
+  it "should initialise" do
+    @obj = FRArray.new
+    @obj.snapshot.should == {"len" => 0, "data" => []}
+  end
+
+  it "should read" do
+    @obj = FRArray.new
+    @obj.read("\x04\x01\x02\x03\x04")
+    @obj.snapshot.should == {"len" => 4, "data" => [1, 2, 3, 4]}
+  end
+
+  it "should set value" do
+    @obj = FRArray.new
+    @obj.data = [1, 2, 3]
+    @obj.snapshot.should == {"len" => 3, "data" => [1, 2, 3]}
+  end
+end
+
