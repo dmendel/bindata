@@ -1,5 +1,3 @@
-require 'set'
-
 module BinData
   # BinData objects accept parameters when initializing.  AcceptedParameters
   # allow a BinData class to declaratively identify accepted parameters as
@@ -59,35 +57,36 @@ module BinData
         iv = "@#{method_name}"
         obj_class.class_eval <<-END
           def #{method_name}
-            iv = "#{iv}".to_sym
-            unless instance_variable_defined?(iv)
-              ancestor = ancestors[1..-1].find { |a| a.instance_variable_defined?(iv) }
-              ancestor_params = ancestor.nil? ? nil : ancestor.instance_variable_get(iv)
-              instance_variable_set(iv, AcceptedParameters.new(ancestor_params))
+            unless defined? #{iv}
+              ancestor = ancestors[1..-1].find { |a| a.instance_variable_defined?(:#{iv}) }
+              ancestor_params = ancestor.nil? ? nil : ancestor.instance_variable_get(:#{iv})
+              #{iv} = AcceptedParameters.new(ancestor_params)
             end
-            instance_variable_get(iv)
+            #{iv}
           end
         END
       end
     end
 
     def initialize(ancestor_params = nil)
-      @mandatory = ancestor_params ? ancestor_params.mandatory : Set.new
-      @optional = ancestor_params ? ancestor_params.optional : Set.new
+      @mandatory = ancestor_params ? ancestor_params.mandatory : []
+      @optional = ancestor_params ? ancestor_params.optional : []
       @default = ancestor_params ? ancestor_params.default : Hash.new
-      @mutually_exclusive = ancestor_params ? ancestor_params.mutually_exclusive : Set.new
+      @mutually_exclusive = ancestor_params ? ancestor_params.mutually_exclusive : []
     end
 
     def mandatory(*args)
       if not args.empty?
-        @mandatory.merge(args.collect { |a| a.to_sym })
+        @mandatory.concat(args.collect { |a| a.to_sym })
+        @mandatory.uniq!
       end
       @mandatory.dup
     end
 
     def optional(*args)
       if not args.empty?
-        @optional.merge(args.collect { |a| a.to_sym })
+        @optional.concat(args.collect { |a| a.to_sym })
+        @optional.uniq!
       end
       @optional.dup
     end
@@ -104,13 +103,14 @@ module BinData
     def mutually_exclusive(*args)
       arg1, arg2 = args
       if arg1 != nil && arg2 != nil
-        @mutually_exclusive.add([arg1.to_sym, arg2.to_sym])
+        @mutually_exclusive.push([arg1.to_sym, arg2.to_sym])
+        @mutually_exclusive.uniq!
       end
       @mutually_exclusive.dup
     end
 
     def all
-      (@mandatory + @optional + @default.keys)
+      (@mandatory + @optional + @default.keys).uniq
     end
 
     def sanitize_parameters!(sanitizer, params)
