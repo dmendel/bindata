@@ -203,7 +203,7 @@ module BinData
   class SingleValue < Primitive
     class << self
       def inherited(subclass) #:nodoc:
-        warn "BinData::SingleValue is deprecated.  Inherit from BinData::Primitive instead."
+        warn "BinData::SingleValue is deprecated.  Replacing with BinData::Primitive"
         super
       end
     end

@@ -67,7 +67,7 @@ module BinData
 
   class Registry
     def Registry.instance
-      warn "'Registry.instance' is deprecated.  Use 'RegisteredClasses' instead."
+      warn "'Registry.instance' is deprecated.  Replacing with 'RegisteredClasses'"
       RegisteredClasses
     end
   end

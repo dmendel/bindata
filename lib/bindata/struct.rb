@@ -164,7 +164,7 @@ module BinData
       if name.nil?
         @field_objs.each { |f| f.clear unless f.nil? }
       else
-        warn "'obj.clear(name)' is deprecated.  Use 'obj.name.clear' instead"
+        warn "'obj.clear(name)' is deprecated.  Replacing with 'obj.name.clear'"
         obj = find_obj_for_name(name)
         obj.clear unless obj.nil?
       end
@@ -176,7 +176,7 @@ module BinData
       if name.nil?
         @field_objs.inject(true) { |all_clear, f| all_clear and (f.nil? or f.clear?) }
       else
-        warn "'obj.clear?(name)' is deprecated.  Use 'obj.name.clear?' instead"
+        warn "'obj.clear?(name)' is deprecated.  Replacing with 'obj.name.clear?'"
         obj = find_obj_for_name(name)
         obj.nil? ? true : obj.clear?
       end
@@ -284,7 +284,7 @@ module BinData
         instantiate_all_objs
         sum_num_bytes_for_all_fields.ceil
       else
-        warn "'obj.num_bytes(name)' is deprecated.  Use 'obj.name.num_bytes' instead"
+        warn "'obj.num_bytes(name)' is deprecated.  Replacing with 'obj.name.num_bytes'"
         obj = find_obj_for_name(name)
         obj.nil? ? 0 : obj.do_num_bytes
       end
