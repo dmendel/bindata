@@ -64,4 +64,11 @@ module BinData
 
   # A singleton registry of all registered classes.
   RegisteredClasses = Registry.new
+
+  class Registry
+    def Registry.instance
+      warn "'Registry.instance' is deprecated.  Use 'RegisteredClasses' instead."
+      RegisteredClasses
+    end
+  end
 end
