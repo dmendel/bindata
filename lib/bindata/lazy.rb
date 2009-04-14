@@ -18,8 +18,19 @@ module BinData
       # Lazily evaluates +val+ in the context of +obj+, with possibility of
       # +overrides+.
       def eval(val, obj, overrides = nil)
-        env = self.new(obj)
-        env.lazy_eval(val, overrides)
+        if can_eval?(val)
+          env = self.new(obj)
+          env.lazy_eval(val, overrides)
+        else
+          val
+        end
+      end
+
+      #-------------
+      private
+
+      def can_eval?(val)
+        val.is_a?(Symbol) or val.respond_to?(:arity)
       end
     end
 
@@ -89,24 +100,18 @@ module BinData
     end
 
     def resolve_symbol_in_parent_context(symbol, args)
-      if @obj.parent.custom_parameters.has_key?(symbol)
-        result = @obj.parent.custom_parameters[symbol]
-      elsif @obj.parent.respond_to?(symbol)
-        result = @obj.parent.__send__(symbol, *args)
+      obj_parent = @obj.parent
+
+      if obj_parent.custom_parameters.has_key?(symbol)
+        result = obj_parent.custom_parameters[symbol]
+      elsif obj_parent.respond_to?(symbol)
+        result = obj_parent.__send__(symbol, *args)
       else
         result = symbol
       end
 
-      if can_eval?(result)
-        # recursively evaluate symbols
-        LazyEvaluator.eval(result, @obj.parent)
-      else
-        result
-      end
-    end
-
-    def can_eval?(val)
-      val.is_a?(Symbol) or val.respond_to?(:arity)
+      # recursively evaluate symbols
+      LazyEvaluator.eval(result, obj_parent)
     end
   end
 end
