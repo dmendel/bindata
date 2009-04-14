@@ -3,17 +3,17 @@
 require File.expand_path(File.dirname(__FILE__)) + '/spec_common'
 require 'bindata'
 
-describe BinData::SingleValue, "when subclassing" do
+describe BinData::Primitive, "when subclassing" do
   before(:all) do
     eval <<-END
-      class SubClassOfSingleValue < BinData::SingleValue
+      class SubClassOfPrimitive < BinData::Primitive
         expose_methods_for_testing
       end
     END
   end
 
   before(:each) do
-    @obj = SubClassOfSingleValue.new
+    @obj = SubClassOfPrimitive.new
   end
 
   it "should raise errors on unimplemented methods" do
@@ -22,11 +22,20 @@ describe BinData::SingleValue, "when subclassing" do
   end
 end
 
-describe BinData::SingleValue, "when defining" do
+describe BinData::Primitive, "when defining" do
+  it "should allow inheriting from deprecated SingleValue" do
+    lambda {
+      eval <<-END
+        class SubclassSingleValue < BinData::SingleValue
+        end
+      END
+    }.should_not raise_error
+  end
+
   it "should fail on non registered types" do
     lambda {
       eval <<-END
-        class BadTypeSingleValue < BinData::SingleValue
+        class BadTypePrimitive < BinData::Primitive
           non_registered_type :a
         end
       END
@@ -36,7 +45,7 @@ describe BinData::SingleValue, "when defining" do
   it "should fail on duplicate names" do
     lambda {
       eval <<-END
-        class DuplicateNameSingleValue < BinData::SingleValue
+        class DuplicateNamePrimitive < BinData::Primitive
           int8 :a
           int8 :b
           int8 :a
@@ -48,7 +57,7 @@ describe BinData::SingleValue, "when defining" do
   it "should fail when field name shadows an existing method" do
     lambda {
       eval <<-END
-        class ExistingNameSingleValue < BinData::SingleValue
+        class ExistingNamePrimitive < BinData::Primitive
           int8 :object_id
         end
       END
@@ -58,7 +67,7 @@ describe BinData::SingleValue, "when defining" do
   it "should fail on unknown endian" do
     lambda {
       eval <<-END
-        class BadEndianSingleValue < BinData::SingleValue
+        class BadEndianPrimitive < BinData::Primitive
           endian 'a bad value'
         end
       END
@@ -66,10 +75,10 @@ describe BinData::SingleValue, "when defining" do
   end
 end
 
-describe BinData::SingleValue do
+describe BinData::Primitive do
   before(:all) do
     eval <<-END
-      class SingleValueWithEndian < BinData::SingleValue
+      class PrimitiveWithEndian < BinData::Primitive
         endian :little
         int16 :a
         def get; self.a; end
@@ -79,7 +88,7 @@ describe BinData::SingleValue do
   end
 
   before(:each) do
-    @obj = SingleValueWithEndian.new
+    @obj = PrimitiveWithEndian.new
   end
 
   it "should support endian" do
@@ -98,7 +107,7 @@ describe BinData::SingleValue do
   end
 
   it "should accept standard parameters" do
-    obj = SingleValueWithEndian.new(:initial_value => 2)
+    obj = PrimitiveWithEndian.new(:initial_value => 2)
     obj.to_binary_s.should == "\x02\x00"
   end
 
@@ -113,10 +122,10 @@ describe BinData::SingleValue do
   end
 end
 
-describe BinData::SingleValue, "requiring custom parameters" do
+describe BinData::Primitive, "requiring custom parameters" do
   before(:all) do
     eval <<-END
-      class SingleValueWithCustom < BinData::SingleValue
+      class PrimitiveWithCustom < BinData::Primitive
         int8 :a, :initial_value => :iv
         def get; self.a; end
         def set(v); self.a = v; end
@@ -125,15 +134,15 @@ describe BinData::SingleValue, "requiring custom parameters" do
   end
 
   it "should pass parameters correctly" do
-    obj = SingleValueWithCustom.new(:iv => 5)
+    obj = PrimitiveWithCustom.new(:iv => 5)
     obj.value.should == 5
   end
 end
 
-describe BinData::SingleValue, "with custom mandatory parameters" do
+describe BinData::Primitive, "with custom mandatory parameters" do
   before(:all) do
     eval <<-END
-      class MandatorySingleValue < BinData::SingleValue
+      class MandatoryPrimitive < BinData::Primitive
         mandatory_parameter :arg1
 
         uint8 :a, :value => :arg1
@@ -144,19 +153,19 @@ describe BinData::SingleValue, "with custom mandatory parameters" do
   end
 
   it "should raise error if mandatory parameter is not supplied" do
-    lambda { MandatorySingleValue.new }.should raise_error(ArgumentError)
+    lambda { MandatoryPrimitive.new }.should raise_error(ArgumentError)
   end
 
   it "should use mandatory parameter" do
-    obj = MandatorySingleValue.new(:arg1 => 5)
+    obj = MandatoryPrimitive.new(:arg1 => 5)
     obj.value.should == 5
   end
 end
 
-describe BinData::SingleValue, "with custom default parameters" do
+describe BinData::Primitive, "with custom default parameters" do
   before(:all) do
     eval <<-END
-      class DefaultSingleValue < BinData::SingleValue
+      class DefaultPrimitive < BinData::Primitive
         default_parameter :arg1 => 5
 
         uint8 :a, :value => :arg1
@@ -167,16 +176,16 @@ describe BinData::SingleValue, "with custom default parameters" do
   end
 
   it "should not raise error if default parameter is not supplied" do
-    lambda { DefaultSingleValue.new }.should_not raise_error(ArgumentError)
+    lambda { DefaultPrimitive.new }.should_not raise_error(ArgumentError)
   end
 
   it "should use default parameter" do
-    obj = DefaultSingleValue.new
+    obj = DefaultPrimitive.new
     obj.value.should == 5
   end
 
   it "should be able to override default parameter" do
-    obj = DefaultSingleValue.new(:arg1 => 7)
+    obj = DefaultPrimitive.new(:arg1 => 7)
     obj.value.should == 7
   end
 end

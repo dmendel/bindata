@@ -3,11 +3,20 @@
 require File.expand_path(File.dirname(__FILE__)) + '/spec_common'
 require 'bindata'
 
-describe BinData::MultiValue, "when defining" do
+describe BinData::Record, "when defining" do
+  it "should allow inheriting from deprecated MultiValue" do
+    lambda {
+      eval <<-END
+        class SubclassMultiValue < BinData::MultiValue
+        end
+      END
+    }.should_not raise_error
+  end
+
   it "should fail on non registered types" do
     lambda {
       eval <<-END
-        class BadTypeMultiValue < BinData::MultiValue
+        class BadTypeRecord < BinData::Record
           non_registerd_type :a
         end
       END
@@ -17,7 +26,7 @@ describe BinData::MultiValue, "when defining" do
   it "should fail on duplicate names" do
     lambda {
       eval <<-END
-        class DuplicateNameMultiValue < BinData::MultiValue
+        class DuplicateNameRecord < BinData::Record
           int8 :a
           int8 :b
           int8 :a
@@ -29,7 +38,7 @@ describe BinData::MultiValue, "when defining" do
   it "should fail on reserved names" do
     lambda {
       eval <<-END
-        class ReservedNameMultiValue < BinData::MultiValue
+        class ReservedNameRecord < BinData::Record
           int8 :a
           int8 :invert # from Hash.instance_methods
         end
@@ -40,7 +49,7 @@ describe BinData::MultiValue, "when defining" do
   it "should fail when field name shadows an existing method" do
     lambda {
       eval <<-END
-        class ExistingNameMultiValue < BinData::MultiValue
+        class ExistingNameRecord < BinData::Record
           int8 :object_id
         end
       END
@@ -50,7 +59,7 @@ describe BinData::MultiValue, "when defining" do
   it "should fail on unknown endian" do
     lambda {
       eval <<-END
-        class BadEndianMultiValue < BinData::MultiValue
+        class BadEndianRecord < BinData::Record
           endian 'a bad value'
         end
       END
@@ -58,10 +67,10 @@ describe BinData::MultiValue, "when defining" do
   end
 end
 
-describe BinData::MultiValue, "with hidden fields" do
+describe BinData::Record, "with hidden fields" do
   before(:all) do
     eval <<-END
-      class HiddenMultiValue < BinData::MultiValue
+      class HiddenRecord < BinData::Record
         hide :b, 'c'
         int8 :a
         int8 'b', :initial_value => 10
@@ -72,7 +81,7 @@ describe BinData::MultiValue, "with hidden fields" do
   end
 
   before(:each) do
-    @obj = HiddenMultiValue.new
+    @obj = HiddenRecord.new
   end
 
   it "should only show fields that aren't hidden" do
@@ -93,10 +102,10 @@ describe BinData::MultiValue, "with hidden fields" do
   end
 end
 
-describe BinData::MultiValue, "with multiple fields" do
+describe BinData::Record, "with multiple fields" do
   before(:all) do
     eval <<-END
-      class MultiFieldMultiValue < BinData::MultiValue
+      class MultiFieldRecord < BinData::Record
         int8 :a
         int8 :b
       end
@@ -104,7 +113,7 @@ describe BinData::MultiValue, "with multiple fields" do
   end
 
   before(:each) do
-    @obj = MultiFieldMultiValue.new
+    @obj = MultiFieldRecord.new
     @obj.a = 1
     @obj.b = 2
   end
@@ -116,8 +125,8 @@ describe BinData::MultiValue, "with multiple fields" do
   end
 
   it "should identify accepted parameters" do
-    BinData::MultiValue.accepted_internal_parameters.should include(:hide)
-    BinData::MultiValue.accepted_internal_parameters.should include(:endian)
+    BinData::Record.accepted_internal_parameters.should include(:hide)
+    BinData::Record.accepted_internal_parameters.should include(:endian)
   end
 
   it "should clear" do
@@ -161,29 +170,29 @@ describe BinData::MultiValue, "with multiple fields" do
   end
 end
 
-describe BinData::MultiValue, "with nested structs" do
+describe BinData::Record, "with nested structs" do
   before(:all) do
     eval <<-END
-      class MultiValueInner1 < BinData::MultiValue
+      class Inner1Record < BinData::Record
         int8 :w, :initial_value => 3
         int8 :x, :value => :the_val
       end
 
-      class MultiValueInner2 < BinData::MultiValue
+      class Inner2Record < BinData::Record
         int8 :y, :value => lambda { parent.b.w }
         int8 :z
       end
 
-      class MultiValueOuter < BinData::MultiValue
+      class RecordOuter < BinData::Record
         int8               :a, :initial_value => 6
-        multi_value_inner1 :b, :the_val => :a
-        multi_value_inner2 :c
+        inner1_record :b, :the_val => :a
+        inner2_record :c
       end
     END
   end
 
   before(:each) do
-    @obj = MultiValueOuter.new
+    @obj = RecordOuter.new
   end
 
   it "should included nested field names" do
@@ -205,10 +214,10 @@ describe BinData::MultiValue, "with nested structs" do
   end
 end
 
-describe BinData::MultiValue, "with an endian defined" do
+describe BinData::Record, "with an endian defined" do
   before(:all) do
     eval <<-END
-      class MultiValueWithEndian < BinData::MultiValue
+      class RecordWithEndian < BinData::Record
         endian :little
 
         uint16 :a
@@ -222,7 +231,7 @@ describe BinData::MultiValue, "with an endian defined" do
   end
 
   before(:each) do
-    @obj = MultiValueWithEndian.new
+    @obj = RecordWithEndian.new
   end
 
   it "should use correct endian" do
@@ -241,39 +250,39 @@ describe BinData::MultiValue, "with an endian defined" do
   end
 end
 
-describe BinData::MultiValue, "defined recursively" do
+describe BinData::Record, "defined recursively" do
   before(:all) do
     eval <<-END
-      class RecursiveMultiValue < BinData::MultiValue
+      class RecursiveRecord < BinData::Record
         endian  :big
         uint16  :val
         uint8   :has_nxt, :value => lambda { nxt.clear? ? 0 : 1 }
-        recursive_multi_value :nxt, :onlyif => lambda { has_nxt > 0 }
+        recursive_record :nxt, :onlyif => lambda { has_nxt > 0 }
       end
     END
   end
 
   it "should be able to be created" do
-    obj = RecursiveMultiValue.new
+    obj = RecursiveRecord.new
   end
 
   it "should read" do
     str = "\x00\x01\x01\x00\x02\x01\x00\x03\x00"
-    obj = RecursiveMultiValue.read(str)
+    obj = RecursiveRecord.read(str)
     obj.val.should == 1
     obj.nxt.val.should == 2
     obj.nxt.nxt.val.should == 3
   end
 
   it "should be assignable on demand" do
-    obj = RecursiveMultiValue.new
+    obj = RecursiveRecord.new
     obj.val = 13
     obj.nxt.val = 14
     obj.nxt.nxt.val = 15
   end
 
   it "should write" do
-    obj = RecursiveMultiValue.new
+    obj = RecursiveRecord.new
     obj.val = 5
     obj.nxt.val = 6
     obj.nxt.nxt.val = 7
@@ -281,10 +290,10 @@ describe BinData::MultiValue, "defined recursively" do
   end
 end
 
-describe BinData::MultiValue, "with custom mandatory parameters" do
+describe BinData::Record, "with custom mandatory parameters" do
   before(:all) do
     eval <<-END
-      class MandatoryMultiValue < BinData::MultiValue
+      class MandatoryRecord < BinData::Record
         mandatory_parameter :arg1
 
         uint8 :a, :value => :arg1
@@ -293,19 +302,19 @@ describe BinData::MultiValue, "with custom mandatory parameters" do
   end
 
   it "should raise error if mandatory parameter is not supplied" do
-    lambda { MandatoryMultiValue.new }.should raise_error(ArgumentError)
+    lambda { MandatoryRecord.new }.should raise_error(ArgumentError)
   end
 
   it "should use mandatory parameter" do
-    obj = MandatoryMultiValue.new(:arg1 => 5)
+    obj = MandatoryRecord.new(:arg1 => 5)
     obj.a.should == 5
   end
 end
 
-describe BinData::MultiValue, "with custom default parameters" do
+describe BinData::Record, "with custom default parameters" do
   before(:all) do
     eval <<-END
-      class DefaultMultiValue < BinData::MultiValue
+      class DefaultRecord < BinData::Record
         default_parameter :arg1 => 5
 
         uint8 :a, :value => :arg1
@@ -314,16 +323,16 @@ describe BinData::MultiValue, "with custom default parameters" do
   end
 
   it "should not raise error if default parameter is not supplied" do
-    lambda { DefaultMultiValue.new }.should_not raise_error(ArgumentError)
+    lambda { DefaultRecord.new }.should_not raise_error(ArgumentError)
   end
 
   it "should use default parameter" do
-    obj = DefaultMultiValue.new
+    obj = DefaultRecord.new
     obj.a.should == 5
   end
 
   it "should be able to override default parameter" do
-    obj = DefaultMultiValue.new(:arg1 => 7)
+    obj = DefaultRecord.new(:arg1 => 7)
     obj.a.should == 7
   end
 end

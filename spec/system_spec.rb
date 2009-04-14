@@ -7,7 +7,7 @@ require 'bindata'
 describe "lambdas with index" do
   before(:all) do
     eval <<-END
-      class NestedLambdaWithIndex < BinData::MultiValue
+      class NestedLambdaWithIndex < BinData::Record
         uint8 :a, :value => lambda { index * 10 }
       end
     END
@@ -34,12 +34,12 @@ end
 
 describe "lambdas with parent" do
   it "should access immediate parent when no parent is specified" do
-    class NestedLambdaWithoutParent < BinData::MultiValue
+    class NestedLambdaWithoutParent < BinData::Record
       int8 :a, :value => 5
       int8 :b, :value => lambda { a }
     end
 
-    class TestLambdaWithoutParent < BinData::MultiValue
+    class TestLambdaWithoutParent < BinData::Record
       int8   :a, :value => 3
       nested_lambda_without_parent :x
     end
@@ -49,12 +49,12 @@ describe "lambdas with parent" do
   end
 
   it "should access parent's parent when parent is specified" do
-    class NestedLambdaWithParent < BinData::MultiValue
+    class NestedLambdaWithParent < BinData::Record
       int8 :a, :value => 5
       int8 :b, :value => lambda { parent.a }
     end
 
-    class TestLambdaWithParent < BinData::MultiValue
+    class TestLambdaWithParent < BinData::Record
       int8   :a, :value => 3
       nested_lambda_with_parent :x
     end
@@ -64,22 +64,22 @@ describe "lambdas with parent" do
   end
 end
 
-describe "MultiValues with choice field" do
+describe "Records with choice field" do
   before(:all) do
     eval <<-END
-      class TupleMultiValue < BinData::MultiValue
+      class TupleRecord < BinData::Record
         uint8 :a, :value => 3
         uint8 :b, :value => 5
       end
 
-      class MultiWithChoiceField < BinData::MultiValue
-        choice :x, :choices => [[:tuple_multi_value]], :selection => 0
+      class RecordWithChoiceField < BinData::Record
+        choice :x, :choices => [[:tuple_record]], :selection => 0
       end
 
-      class MultiWithNestedChoiceField < BinData::MultiValue
+      class RecordWithNestedChoiceField < BinData::Record
         choice :x, :choices => [
                       [:choice, {
-                          :choices => [[:tuple_multi_value]],
+                          :choices => [[:tuple_record]],
                           :selection => 0}
                       ]
                    ],
@@ -89,19 +89,19 @@ describe "MultiValues with choice field" do
   end
 
   it "should treat choice object transparently " do
-    obj = MultiWithChoiceField.new
+    obj = RecordWithChoiceField.new
 
     obj.x.a.should == 3
   end
 
   it "should treat nested choice object transparently " do
-    obj = MultiWithNestedChoiceField.new
+    obj = RecordWithNestedChoiceField.new
 
     obj.x.a.should == 3
   end
 
   it "should have correct offset" do
-    obj = MultiWithNestedChoiceField.new
+    obj = RecordWithNestedChoiceField.new
     obj.x.b.offset.should == 1
   end
 end
@@ -189,13 +189,13 @@ describe "Tracing"  do
   end
 
   it "should trace custom single values" do
-    class DebugNameSingleValue < BinData::SingleValue
+    class DebugNamePrimitive < BinData::Primitive
       int8 :ex
       def get;     self.ex; end
       def set(val) self.ex = val; end
     end
 
-    obj = DebugNameSingleValue.new
+    obj = DebugNamePrimitive.new
 
     io = StringIO.new
     BinData::trace_reading(io) { obj.read("\x01") }
@@ -218,7 +218,7 @@ end
 describe "Forward referencing with Single" do
   before(:all) do
     eval <<-END
-      class FRSingle < BinData::MultiValue
+      class FRSingle < BinData::Record
         uint8  :len, :value => lambda { data.length }
         string :data, :read_length => :len
       end
@@ -246,7 +246,7 @@ end
 describe "Forward referencing with Array" do
   before(:all) do
     eval <<-END
-      class FRArray < BinData::MultiValue
+      class FRArray < BinData::Record
         uint8  :len, :value => lambda { data.length }
         array :data, :type => :uint8, :initial_length => :len
       end

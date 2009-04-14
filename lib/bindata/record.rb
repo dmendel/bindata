@@ -3,17 +3,17 @@ require 'bindata/registry'
 require 'bindata/struct'
 
 module BinData
-  # A MultiValue is a declarative wrapper around Struct.
+  # A Record is a declarative wrapper around Struct.
   #
   #    require 'bindata'
   #
-  #    class Tuple < BinData::MultiValue
+  #    class Tuple < BinData::Record
   #      int8  :x
   #      int8  :y
   #      int8  :z
   #    end
   #
-  #    class SomeDataType < BinData::MultiValue
+  #    class SomeDataType < BinData::Record
   #      hide 'a'
   #
   #      int32le :a
@@ -43,7 +43,7 @@ module BinData
   # <tt>:endian</tt>::   Either :little or :big.  This specifies the default
   #                      endian of any numerics in this struct, or in any
   #                      nested data objects.
-  class MultiValue < BinData::Struct
+  class Record < BinData::Struct
 
     class << self
 
@@ -53,7 +53,7 @@ module BinData
       end
 
       def recursive?
-        # A MultiValue can self reference itself.
+        # A Record can self reference itself.
         true
       end
 
@@ -142,6 +142,15 @@ module BinData
       def merge_hide!(params)
         hide = params[:hide] || self.hide
         params[:hide] = hide
+      end
+    end
+  end
+
+  class MultiValue < Record
+    class << self
+      def inherited(subclass) #:nodoc:
+        warn "BinData::MultiValue is deprecated.  Inherit from BinData::Record instead."
+        super
       end
     end
   end

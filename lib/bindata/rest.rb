@@ -6,7 +6,7 @@ module BinData
   #
   #   require 'bindata'
   #
-  #   class A < BinData::MultiValue
+  #   class A < BinData::Record
   #     string :a, :read_length => 5
   #     rest   :rest
   #   end

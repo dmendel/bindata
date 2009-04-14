@@ -6,7 +6,7 @@ module BinData
   #
   #    require 'bindata'
   #
-  #    class Tuple < BinData::MultiValue
+  #    class Tuple < BinData::Record
   #      int8  :x
   #      int8  :y
   #      int8  :z
@@ -64,9 +64,9 @@ module BinData
       #### DEPRECATION HACK to warn about inheriting from BinData::Struct
       #
       def inherited(subclass) #:nodoc:
-        if subclass != MultiValue
+        if subclass != Record
           # warn about deprecated method - remove before releasing 1.0
-          fail "error: inheriting from BinData::Struct has been deprecated. Inherit from BinData::MultiValue instead."
+          fail "error: inheriting from BinData::Struct has been deprecated. Inherit from BinData::Record instead."
         end
       end
       #

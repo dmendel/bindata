@@ -4,17 +4,17 @@ require 'bindata/single'
 require 'bindata/struct'
 
 module BinData
-  # A SingleValue is a declarative way to define a new BinData data type.
-  # The data type must contain a single value only.  For new data types
-  # that contain multiple values see BinData::MultiValue.
+  # A Primitive is a declarative way to define a new BinData data type.
+  # The data type must contain a primitive value only, i.e numbers or strings.
+  # For new data types that contain multiple values see BinData::Record.
   #
-  # To define a new data type, set fields as if for MultiValue and add a
+  # To define a new data type, set fields as if for Record and add a
   # #get and #set method to extract / convert the data between the fields
   # and the #value of the object.
   #
   #    require 'bindata'
   #
-  #    class PascalString < BinData::SingleValue
+  #    class PascalString < BinData::Primitive
   #      uint8  :len,  :value => lambda { data.length }
   #      string :data, :read_length => :len
   #    
@@ -33,7 +33,7 @@ module BinData
   #    ps.value #=> "abc"
   #
   #    # Unsigned 24 bit big endian integer
-  #    class Uint24be < BinData::SingleValue
+  #    class Uint24be < BinData::Primitive
   #      uint8 :byte1
   #      uint8 :byte2
   #      uint8 :byte3
@@ -58,9 +58,9 @@ module BinData
   #
   # == Parameters
   #
-  # SingleValue objects accept all the parameters that BinData::Single do.
+  # Primitive objects accept all the parameters that BinData::Single do.
   #
-  class SingleValue < Single
+  class Primitive < Single
 
     class << self
 
@@ -70,7 +70,7 @@ module BinData
       end
 
       def recursive?
-        # A SingleValue can possibly self reference itself.
+        # A Primitive can possibly self reference itself.
         true
       end
 
@@ -198,5 +198,14 @@ module BinData
 
     # To be implemented by subclasses
     ###########################################################################
+  end
+
+  class SingleValue < Primitive
+    class << self
+      def inherited(subclass) #:nodoc:
+        warn "BinData::SingleValue is deprecated.  Inherit from BinData::Primitive instead."
+        super
+      end
+    end
   end
 end

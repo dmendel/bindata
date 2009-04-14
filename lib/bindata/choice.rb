@@ -133,7 +133,7 @@ module BinData
     # If you really *must* be able to programmatically adjust the selection
     # then try something like the following.
     #
-    #   class ProgrammaticChoice < BinData::MultiValue
+    #   class ProgrammaticChoice < BinData::Record
     #     choice :data, :choices => :choices, :selection => :selection
     #     attrib_accessor :selection
     #   end
