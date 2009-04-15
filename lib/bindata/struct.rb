@@ -37,6 +37,15 @@ module BinData
   # <tt>:endian</tt>::   Either :little or :big.  This specifies the default
   #                      endian of any numerics in this struct, or in any
   #                      nested data objects.
+  #
+  # == Field Parameters
+  #
+  # Fields may have have extra parameters as listed below:
+  #
+  # [<tt>:onlyif</tt>]   Used to indicate a data object is optional.
+  #                      if false, calls to #read or #write will not
+  #                      perform any I/O, #num_bytes will return 0 and
+  #                      #snapshot will return nil.  Default is true.
   class Struct < BinData::Base
 
     register(self.name, self)
