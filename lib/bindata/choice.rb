@@ -60,7 +60,7 @@ module BinData
     register(self.name, self)
 
     bindata_mandatory_parameters :choices, :selection
-    bindata_default_parameters   :copy_on_change => false
+    bindata_optional_parameter   :copy_on_change
 
     class << self
 
