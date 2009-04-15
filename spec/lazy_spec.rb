@@ -72,8 +72,12 @@ describe BinData::LazyEvaluator, "with one parent" do
     @ev.lazy_eval(lambda { 5 }).should == 5
   end
 
-  it "should evaluate overrides" do
+  it "should evaluate overrides before params" do
     @ev.lazy_eval(lambda { p1 }, :p1 => 'o1').should == 'o1'
+  end
+
+  it "should evaluate overrides before methods" do
+    @ev.lazy_eval(lambda { m1 }, :m1 => 'o1').should == 'o1'
   end
 
   it "should not resolve any unknown methods" do
