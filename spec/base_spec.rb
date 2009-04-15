@@ -285,37 +285,6 @@ describe BinData::Base, "with :adjust_offset" do
   end
 end
 
-describe BinData::Base, "with :onlyif => false" do
-  before(:each) do
-    @obj = MockBaseStub.new(:onlyif => false)
-    @obj.mock = mock('mock')
-  end
-
-  it "should not read" do
-    io = StringIO.new("12345678901234567890")
-    @obj.mock.should_not_receive(:clear)
-    @obj.mock.should_not_receive(:_do_read)
-    @obj.mock.should_not_receive(:_done_read)
-    @obj.read(io)
-  end
-
-  it "should not write" do
-    io = StringIO.new
-    @obj.mock.should_not_receive(:_do_write)
-    @obj.write(io)
-  end
-
-  it "should have zero num_bytes" do
-    @obj.mock.should_not_receive(:_do_num_bytes)
-    @obj.num_bytes.should be_zero
-  end
-
-  it "should have nil snapshot" do
-    @obj.mock.should_not_receive(:_snapshot)
-    @obj.snapshot.should be_nil
-  end
-end
-
 describe BinData::Base, "as black box" do
   it "should access parent" do
     parent = BaseStub.new

@@ -16,6 +16,7 @@ module BinData
   # Parameters may be provided at initialisation to control the behaviour of
   # an object.  These params are:
   #
+  # TODO: move doc for onlyif
   # [<tt>:onlyif</tt>]        Used to indicate a data object is optional.
   #                           if false, calls to #read or #write will not
   #                           perform any I/O, #num_bytes will return 0 and
@@ -76,7 +77,7 @@ module BinData
     end
 
     bindata_optional_parameters :check_offset, :adjust_offset
-    bindata_default_parameters :onlyif => true
+#    bindata_default_parameters :onlyif => true
     bindata_mutually_exclusive_parameters :check_offset, :adjust_offset
 
     # Creates a new data object.
@@ -125,17 +126,17 @@ module BinData
     end
 
     def do_read(io)
-      if eval_param(:onlyif)
+#      if eval_param(:onlyif)
         check_or_adjust_offset(io)
         clear
         _do_read(io)
-      end
+#      end
     end
 
     def done_read
-      if eval_param(:onlyif)
+#      if eval_param(:onlyif)
         _done_read
-      end
+#      end
     end
     protected :do_read, :done_read
 
@@ -149,9 +150,9 @@ module BinData
     end
 
     def do_write(io)
-      if eval_param(:onlyif)
+#      if eval_param(:onlyif)
         _do_write(io)
-      end
+#      end
     end
     protected :do_write
 
@@ -162,11 +163,11 @@ module BinData
     end
 
     def do_num_bytes(what = nil)
-      if eval_param(:onlyif)
+#      if eval_param(:onlyif)
         _do_num_bytes(what)
-      else
-        0
-      end
+#      else
+#        0
+#      end
     end
     protected :do_num_bytes
 
@@ -179,11 +180,11 @@ module BinData
     # Returns a snapshot of this data object.
     # Returns nil if :onlyif is false
     def snapshot
-      if eval_param(:onlyif)
+#      if eval_param(:onlyif)
         _snapshot
-      else
-        nil
-      end
+#      else
+#        nil
+#      end
     end
 
     # Returns the string representation of this data object.

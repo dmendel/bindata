@@ -267,16 +267,16 @@ module BinData
 
     def _do_read(io)
       instantiate_all_objs
-      @field_objs.each { |f| f.do_read(io) }
+      @field_objs.each { |f| f.do_read(io) if use_obj(f) }
     end
 
     def _done_read
-      @field_objs.each { |f| f.done_read }
+      @field_objs.each { |f| f.done_read if use_obj(f) }
     end
 
     def _do_write(io)
       instantiate_all_objs
-      @field_objs.each { |f| f.do_write(io) }
+      @field_objs.each { |f| f.do_write(io) if use_obj(f) }
     end
 
     def _do_num_bytes(name)
@@ -319,8 +319,10 @@ module BinData
     def _snapshot
       snapshot = Snapshot.new
       field_names.each do |name|
-        ss = find_obj_for_name(name).snapshot
-        snapshot[name] = ss unless ss.nil?
+        obj = find_obj_for_name(name)
+        if use_obj(obj)
+          snapshot[name] = obj.snapshot
+        end
       end
       snapshot
     end
@@ -332,11 +334,18 @@ module BinData
     def sum_num_bytes_below_index(index)
       sum = 0
       (0...index).each do |i|
-        nbytes = @field_objs[i].do_num_bytes
-        sum = ((::Integer === nbytes) ? sum.ceil : sum) + nbytes
+        obj = @field_objs[i]
+        if use_obj(obj)
+          nbytes = obj.do_num_bytes
+          sum = ((::Integer === nbytes) ? sum.ceil : sum) + nbytes
+        end
       end
 
       sum
+    end
+
+    def use_obj(obj)
+      not obj.has_custom_parameter?(:onlyif) or obj.eval_custom_parameter(:onlyif)
     end
   end
 end
