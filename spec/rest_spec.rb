@@ -20,7 +20,7 @@ describe BinData::Rest do
     rest.to_binary_s.should == "123"
   end
 
-  it "should accept BinData::Single parameters" do
+  it "should accept BinData::BasePrimitive parameters" do
     rest = BinData::Rest.new(:check_value => "abc")
     lambda {
       rest.read("abc")

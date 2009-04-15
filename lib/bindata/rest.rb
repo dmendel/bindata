@@ -1,4 +1,4 @@
-require "bindata/single"
+require "bindata/base_primitive"
 
 module BinData
   # Rest will consume the input stream from the current position to the end of
@@ -15,7 +15,7 @@ module BinData
   #   obj.a #=> "abcde"
   #   obj.rest #=" "fghij"
   #
-  class Rest < BinData::Single
+  class Rest < BinData::BasePrimitive
 
     register(self.name, self)
 

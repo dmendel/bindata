@@ -1,4 +1,4 @@
-require 'bindata/single'
+require 'bindata/base_primitive'
 
 module BinData
   # Defines a number of classes that contain a bit based integer.
@@ -10,7 +10,7 @@ module BinData
       name += "le" if endian == :little
 
       BinData.module_eval <<-END
-        class #{name} < BinData::Single
+        class #{name} < BinData::BasePrimitive
           register(self.name, self)
           BitField.create_methods(self, #{nbits}, :#{endian.to_s})
         end

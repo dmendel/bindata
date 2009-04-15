@@ -1,4 +1,4 @@
-require 'bindata/single'
+require 'bindata/base_primitive'
 
 module BinData
   # Defines a number of classes that contain an integer.  The integer
@@ -17,7 +17,7 @@ module BinData
         end
 
         BinData.module_eval <<-END
-          class #{name} < BinData::Single
+          class #{name} < BinData::BasePrimitive
             register(self.name, self)
             Integer.#{creation_method}(self, #{nbits}, :#{endian.to_s})
           end
@@ -166,13 +166,13 @@ module BinData
 
 
   # Unsigned 1 byte integer.
-  class Uint8 < BinData::Single
+  class Uint8 < BinData::BasePrimitive
     register(self.name, self)
     Integer.create_uint_methods(self, 8, :little)
   end
 
   # Signed 1 byte integer.
-  class Int8 < BinData::Single
+  class Int8 < BinData::BasePrimitive
     register(self.name, self)
     Integer.create_int_methods(self, 8, :little)
   end

@@ -2,8 +2,8 @@
 
 require File.expand_path(File.dirname(__FILE__)) + '/spec_common'
 require File.expand_path(File.dirname(__FILE__)) + '/example'
+require 'bindata/base_primitive'
 require 'bindata/io'
-require 'bindata/single'
 
 class ExampleSingle
   # reopen example to make @in_read public for testing
@@ -12,10 +12,10 @@ class ExampleSingle
   end
 end
 
-describe BinData::Single, "when subclassing" do
+describe BinData::BasePrimitive, "when subclassing" do
   before(:all) do
     eval <<-END
-      class SubClassOfSingle < BinData::Single
+      class SubClassOfSingle < BinData::BasePrimitive
         expose_methods_for_testing
       end
     END
@@ -32,7 +32,7 @@ describe BinData::Single, "when subclassing" do
   end
 end
 
-describe BinData::Single do
+describe BinData::BasePrimitive do
   it "should conform to rule 1 for returning a value" do
     data = ExampleSingle.new(:value => 5)
     data.should_not be_in_read
@@ -90,7 +90,7 @@ describe ExampleSingle do
     @data.value.should == 7
   end
 
-  it "should allowing setting and retrieving BinData::Singles" do
+  it "should allowing setting and retrieving BinData::BasePrimitives" do
     obj = ExampleSingle.new
     obj.value = 7
     @data.value = obj
@@ -126,7 +126,7 @@ describe ExampleSingle do
   end
 end
 
-describe BinData::Single, "after initialisation" do
+describe BinData::BasePrimitive, "after initialisation" do
   before(:each) do
     @data = ExampleSingle.new
   end
@@ -176,7 +176,7 @@ describe BinData::Single, "after initialisation" do
   end
 end
 
-describe BinData::Single, "with :initial_value" do
+describe BinData::BasePrimitive, "with :initial_value" do
   before(:each) do
     @data = ExampleSingle.new(:initial_value => 5)
   end
@@ -202,7 +202,7 @@ describe BinData::Single, "with :initial_value" do
   end
 end
 
-describe BinData::Single, "with :value" do
+describe BinData::BasePrimitive, "with :value" do
   before(:each) do
     @data = ExampleSingle.new(:value => 5)
     @data.expose_methods_for_testing
@@ -231,7 +231,7 @@ describe BinData::Single, "with :value" do
   end
 end
 
-describe BinData::Single, "with :check_value" do
+describe BinData::BasePrimitive, "with :check_value" do
   before(:each) do
     @io = StringIO.new([34].pack("V"))
   end

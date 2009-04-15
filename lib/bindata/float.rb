@@ -1,4 +1,4 @@
-require 'bindata/single'
+require 'bindata/base_primitive'
 
 module BinData
   # Defines a number of classes that contain a floating point number.
@@ -61,25 +61,25 @@ module BinData
 
 
   # Single precision floating point number in little endian format
-  class FloatLe < BinData::Single
+  class FloatLe < BinData::BasePrimitive
     register(self.name, self)
     FloatingPoint.create_float_methods(self, :single, :little)
   end
 
   # Single precision floating point number in big endian format
-  class FloatBe < BinData::Single
+  class FloatBe < BinData::BasePrimitive
     register(self.name, self)
     FloatingPoint.create_float_methods(self, :single, :big)
   end
 
   # Double precision floating point number in little endian format
-  class DoubleLe < BinData::Single
+  class DoubleLe < BinData::BasePrimitive
     register(self.name, self)
     FloatingPoint.create_float_methods(self, :double, :little)
   end
 
   # Double precision floating point number in big endian format
-  class DoubleBe < BinData::Single
+  class DoubleBe < BinData::BasePrimitive
     register(self.name, self)
     FloatingPoint.create_float_methods(self, :double, :big)
   end

@@ -1,6 +1,6 @@
+require 'bindata/base_primitive'
 require 'bindata/params'
 require 'bindata/registry'
-require 'bindata/single'
 require 'bindata/struct'
 
 module BinData
@@ -58,9 +58,9 @@ module BinData
   #
   # == Parameters
   #
-  # Primitive objects accept all the parameters that BinData::Single do.
+  # Primitive objects accept all the parameters that BinData::BasePrimitive do.
   #
-  class Primitive < Single
+  class Primitive < BasePrimitive
 
     class << self
 
@@ -203,7 +203,7 @@ module BinData
   class SingleValue < Primitive
     class << self
       def inherited(subclass) #:nodoc:
-        warn "BinData::SingleValue is deprecated.  Replacing with BinData::Primitive"
+        warn "BinData::BasePrimitiveValue is deprecated.  Replacing with BinData::Primitive"
         super
       end
     end

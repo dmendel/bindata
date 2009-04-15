@@ -1,4 +1,4 @@
-require "bindata/single"
+require "bindata/base_primitive"
 
 module BinData
   # A String is a sequence of bytes.  This is the same as strings in Ruby.
@@ -32,7 +32,7 @@ module BinData
   #
   # == Parameters
   #
-  # String objects accept all the params that BinData::Single
+  # String objects accept all the params that BinData::BasePrimitive
   # does, as well as the following:
   #
   # <tt>:read_length</tt>::    The length to use when reading a value.
@@ -45,7 +45,7 @@ module BinData
   #                            return the value with all pad_chars trimmed
   #                            from the end of the string.  The value will
   #                            not be trimmed when writing.
-  class String < BinData::Single
+  class String < BinData::BasePrimitive
 
     register(self.name, self)
 

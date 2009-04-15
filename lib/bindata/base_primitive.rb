@@ -2,7 +2,7 @@ require 'bindata/base'
 require 'bindata/trace'
 
 module BinData
-  # A BinData::Single object is a container for a value that has a particular
+  # A BinData::BasePrimitive object is a container for a value that has a particular
   # binary representation.  A value corresponds to a primitive type such as
   # as integer, float or string.  Only one value can be contained by this
   # object.  This value can be read from or written to an IO stream.
@@ -46,7 +46,7 @@ module BinData
   #                           parameter.  A boolean return indicates success
   #                           or failure.  Any other return is compared to
   #                           the value just read in.
-  class Single < BinData::Base
+  class BasePrimitive < BinData::Base
 
     bindata_optional_parameters :initial_value, :value, :check_value
     bindata_mutually_exclusive_parameters :initial_value, :value

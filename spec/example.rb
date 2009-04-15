@@ -1,7 +1,6 @@
-require 'bindata/base'
-require 'bindata/single'
+require 'bindata/base_primitive'
 
-class ExampleSingle < BinData::Single
+class ExampleSingle < BinData::BasePrimitive
   register(self.name, self)
 
   private

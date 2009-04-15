@@ -1,4 +1,4 @@
-require "bindata/single"
+require "bindata/base_primitive"
 
 module BinData
   # A BinData::Stringz object is a container for a zero ("\0") terminated
@@ -20,12 +20,12 @@ module BinData
   #
   # == Parameters
   #
-  # Stringz objects accept all the params that BinData::Single
+  # Stringz objects accept all the params that BinData::BasePrimitive
   # does, as well as the following:
   #
   # <tt>:max_length</tt>:: The maximum length of the string including the zero
   #                        byte.
-  class Stringz < BinData::Single
+  class Stringz < BinData::BasePrimitive
 
     register(self.name, self)
 
