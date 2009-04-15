@@ -64,7 +64,7 @@ class Gzip
   def_delegators :@footer, :crc32, :uncompressed_size
 
   def mtime
-    Time.at(@header.mtime)
+    Time.at(@header.mtime.snapshot)
   end
 
   def mtime=(tm)
