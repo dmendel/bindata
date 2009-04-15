@@ -14,8 +14,7 @@ describe BinData::SanitizedParameters, "with bad input" do
   it "should convert keys to symbols" do
     the_params = {'a' => 1, 'b' => 2, 'e' => 5}
     sanitized = BinData::SanitizedParameters.new(@mock, the_params)
-    sanitized.internal_parameters.should == {:a => 1, :b => 2}
-    sanitized.custom_parameters.should == {:e => 5}
+    sanitized.parameters.should == {:a => 1, :b => 2, :e => 5}
   end
 
   it "should raise error if parameter has nil value" do
@@ -31,12 +30,6 @@ describe BinData::SanitizedParameters do
     @mock = mock("dummy class")
     @mock.stub!(:accepted_internal_parameters).and_return([:a, :b, :c])
     @params = {:a => 1, :b => 2, :c => 3, :d => 4, :e => 5}
-  end
-
-  it "should partition" do
-    sanitized = BinData::SanitizedParameters.new(@mock, @params)
-    sanitized.internal_parameters.should == {:a => 1, :b => 2, :c => 3}
-    sanitized.custom_parameters.should == {:d => 4, :e => 5}
   end
 
   it "should respond_to keys" do

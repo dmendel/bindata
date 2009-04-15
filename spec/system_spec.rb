@@ -284,8 +284,8 @@ describe "Evaluating custom parameters" do
     END
   end
 
-  it "should recursively evaluate custom parameter" do
+  it "should recursively evaluate parameter" do
     obj = CustomParameterRecord.new(:zz => 5)
-    obj.c.eval_custom_parameter(:custom).should == 5
+    obj.c.eval_parameter(:custom).should == 5
   end
 end

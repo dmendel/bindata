@@ -157,13 +157,13 @@ module BinData
       end
     end
 
-    bindata_mandatory_parameter :fields
-    bindata_optional_parameters :endian, :hide
+    mandatory_parameter :fields
+    optional_parameters :endian, :hide
 
     def initialize(params = {}, parent = nil)
       super(params, parent)
 
-      @field_names = no_eval_param(:fields).collect { |c, n, p| n }
+      @field_names = get_parameter(:fields).collect { |c, n, p| n }
       @field_objs  = []
     end
 
@@ -198,7 +198,7 @@ module BinData
       if include_hidden
         @field_names.dup
       else
-        hidden = no_eval_param(:hide)
+        hidden = get_parameter(:hide)
         @field_names - hidden
       end
     end
@@ -269,7 +269,7 @@ module BinData
 
     def instantiate_obj_at(index)
       if @field_objs[index].nil?
-        fclass, fname, fparams = no_eval_param(:fields)[index]
+        fclass, fname, fparams = get_parameter(:fields)[index]
         @field_objs[index] = fclass.new(fparams, self)
       end
     end
@@ -354,7 +354,7 @@ module BinData
     end
 
     def use_obj(obj)
-      not obj.has_custom_parameter?(:onlyif) or obj.eval_custom_parameter(:onlyif)
+      not obj.has_parameter?(:onlyif) or obj.eval_parameter(:onlyif)
     end
   end
 end

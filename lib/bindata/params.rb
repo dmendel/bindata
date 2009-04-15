@@ -4,16 +4,16 @@ module BinData
   # mandatory, optional, default or mutually exclusive.
   class AcceptedParameters
     class << self
-      def define_all_accessors(obj_class, param_name, accessor_prefix)
+      def define_all_accessors(obj_class, param_name)
         all_accessors = [:mandatory, :optional, :default, :mutually_exclusive]
         all_accessors.each do |accessor|
-          define_accessor(obj_class, param_name, accessor_prefix, accessor)
+          define_accessor(obj_class, param_name, accessor)
         end
       end
 
       def define_accessors(obj_class, param_name, *accessors)
         accessors.each do |accessor|
-          define_accessor(obj_class, param_name, nil, accessor)
+          define_accessor(obj_class, param_name, accessor)
         end
       end
 
@@ -24,8 +24,8 @@ module BinData
       #-------------
       private
 
-      def define_accessor(obj_class, param_name, accessor_prefix, accessor)
-        singular_name = accessor_method_name(accessor_prefix, accessor)
+      def define_accessor(obj_class, param_name, accessor)
+        singular_name = accessor_method_name(accessor)
         plural_name = singular_name + "s"
         internal_storage_method = internal_storage_method_name(param_name)
 
@@ -39,12 +39,8 @@ module BinData
         END
       end
 
-      def accessor_method_name(accessor_prefix, accessor)
-        if accessor_prefix
-          "#{accessor_prefix}_#{accessor}_parameter"
-        else
-          "#{accessor}_parameter"
-        end
+      def accessor_method_name(accessor)
+        "#{accessor}_parameter"
       end
 
       def internal_storage_method_name(param_name)

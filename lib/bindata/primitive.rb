@@ -1,5 +1,4 @@
 require 'bindata/base_primitive'
-require 'bindata/params'
 require 'bindata/registry'
 require 'bindata/struct'
 
@@ -74,8 +73,6 @@ module BinData
         true
       end
 
-      AcceptedParameters.define_accessors(self, :custom, :mandatory, :default)
-
       def endian(endian = nil)
         @endian ||= nil
         if [:little, :big].include?(endian)
@@ -105,8 +102,6 @@ module BinData
         struct_params[:endian] = endian unless endian.nil?
         
         params[:struct_params] = struct_params
-
-        AcceptedParameters.get(self, :custom).sanitize_parameters!(sanitizer, params)
 
         super(sanitizer, params)
       end
@@ -141,12 +136,12 @@ module BinData
       end
     end
 
-    bindata_mandatory_parameter :struct_params
+    mandatory_parameter :struct_params
 
     def initialize(params = {}, parent = nil)
       super(params, parent)
 
-      @struct = BinData::Struct.new(no_eval_param(:struct_params), self)
+      @struct = BinData::Struct.new(get_parameter(:struct_params), self)
     end
 
     def method_missing(symbol, *args, &block)

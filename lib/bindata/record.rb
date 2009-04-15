@@ -1,4 +1,3 @@
-require 'bindata/params'
 require 'bindata/registry'
 require 'bindata/struct'
 
@@ -57,8 +56,6 @@ module BinData
         true
       end
 
-      AcceptedParameters.define_accessors(self, :custom, :mandatory, :default)
-
       def endian(endian = nil)
         @endian ||= nil
         if [:little, :big].include?(endian)
@@ -92,7 +89,6 @@ module BinData
         merge_endian!(params)
         merge_fields!(params)
         merge_hide!(params)
-        AcceptedParameters.get(self, :custom).sanitize_parameters!(sanitizer, params)
 
         super(sanitizer, params)
       end

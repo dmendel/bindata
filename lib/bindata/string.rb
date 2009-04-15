@@ -49,10 +49,10 @@ module BinData
 
     register(self.name, self)
 
-    bindata_optional_parameters :read_length, :length, :trim_padding
-    bindata_default_parameters  :pad_char => "\0"
-    bindata_mutually_exclusive_parameters :read_length, :length
-    bindata_mutually_exclusive_parameters :length, :value
+    optional_parameters :read_length, :length, :trim_padding
+    default_parameters  :pad_char => "\0"
+    mutually_exclusive_parameters :read_length, :length
+    mutually_exclusive_parameters :length, :value
 
     class << self
 
@@ -95,28 +95,28 @@ module BinData
     def _snapshot
       # override to ensure length and optionally trim padding
       result = super
-      if has_param?(:length)
+      if has_parameter?(:length)
         result = truncate_or_pad_to_length(result)
       end
-      if no_eval_param(:trim_padding) == true
+      if get_parameter(:trim_padding) == true
         result = trim_padding(result)
       end
       result
     end
 
     def truncate_or_pad_to_length(str)
-      len = eval_param(:length) || str.length
+      len = eval_parameter(:length) || str.length
       if str.length == len
         str
       elsif str.length > len
         str.slice(0, len)
       else
-        str + (eval_param(:pad_char) * (len - str.length))
+        str + (eval_parameter(:pad_char) * (len - str.length))
       end
     end
 
     def trim_padding(str)
-      str.sub(/#{eval_param(:pad_char)}*$/, "")
+      str.sub(/#{eval_parameter(:pad_char)}*$/, "")
     end
 
     def value_to_binary_string(val)
@@ -124,7 +124,7 @@ module BinData
     end
 
     def read_and_return_value(io)
-      len = eval_param(:read_length) || eval_param(:length) || 0
+      len = eval_parameter(:read_length) || eval_parameter(:length) || 0
       io.readbytes(len)
     end
 

@@ -44,7 +44,7 @@ module BinData
         false
       end
 
-      AcceptedParameters.define_all_accessors(self, :internal, :bindata)
+      AcceptedParameters.define_all_accessors(self, :internal)
 
       def accepted_internal_parameters
         internal = AcceptedParameters.get(self, :internal)
@@ -71,8 +71,8 @@ module BinData
       end
     end
 
-    bindata_optional_parameters :check_offset, :adjust_offset
-    bindata_mutually_exclusive_parameters :check_offset, :adjust_offset
+    optional_parameters :check_offset, :adjust_offset
+    mutually_exclusive_parameters :check_offset, :adjust_offset
 
     # Creates a new data object.
     #
@@ -87,27 +87,24 @@ module BinData
 
     attr_reader :parent
 
-    # Returns all the custom parameters supplied to this data object.
-    def custom_parameters
-      @params.custom_parameters
+    # Returns the result of evaluating the parameter identified by +key+.
+    # +overrides+ is an optional +parameters+ like hash that allow the
+    # parameters given at object construction to be overridden.
+    # Returns nil if +key+ does not refer to any parameter.
+    def eval_parameter(key, overrides = nil)
+      LazyEvaluator.eval(get_parameter(key), self, overrides)
     end
 
-    # Returns the value of the evaluated custom parameter +key+.
-    # Returns nil if +key+ does not refer to any custom parameter.
-    def eval_custom_parameter(key)
-      LazyEvaluator.eval(no_eval_custom_parameter(key), self, nil)
-    end
-
-    # Returns the custom parameter referenced by +key+.
+    # Returns the parameter referenced by +key+.
     # Use this method if you are sure the parameter is not to be evaluated.
-    # You most likely want #eval_custom_parameter.
-    def no_eval_custom_parameter(key)
-      custom_parameters[key]
+    # You most likely want #eval_parameter.
+    def get_parameter(key)
+      @params[key]
     end
 
-    # Returns whether +key+ exists in the +custom_parameters+ hash.
-    def has_custom_parameter?(key)
-      custom_parameters.has_key?(key)
+    # Returns whether +key+ exists in the +parameters+ hash.
+    def has_parameter?(key)
+      @params.has_key?(key)
     end
 
     # Reads data into this data object.
@@ -221,16 +218,16 @@ module BinData
     private
 
     def check_or_adjust_offset(io)
-      if has_param?(:check_offset)
+      if has_parameter?(:check_offset)
         check_offset(io)
-      elsif has_param?(:adjust_offset)
+      elsif has_parameter?(:adjust_offset)
         adjust_offset(io)
       end
     end
 
     def check_offset(io)
       actual_offset = io.offset
-      expected = eval_param(:check_offset, :offset => actual_offset)
+      expected = eval_parameter(:check_offset, :offset => actual_offset)
 
       if not expected
         raise ValidityError, "offset not as expected for #{debug_name}"
@@ -243,7 +240,7 @@ module BinData
 
     def adjust_offset(io)
       actual_offset = io.offset
-      expected = eval_param(:adjust_offset)
+      expected = eval_parameter(:adjust_offset)
       if actual_offset != expected
         begin
           seek = expected - actual_offset
@@ -256,33 +253,6 @@ module BinData
         end
       end
     end
-
-    ###########################################################################
-    # Available to subclasses
-
-    # Returns the value of the evaluated parameter.  +key+ references a
-    # parameter from the +params+ hash used when creating the data object.
-    # +values+ contains data that may be accessed when evaluating +key+.
-    # Returns nil if +key+ does not refer to any parameter.
-    def eval_param(key, values = nil)
-      LazyEvaluator.eval(no_eval_param(key), self, values)
-    end
-
-    # Returns the parameter from the +params+ hash referenced by +key+.
-    # Use this method if you are sure the parameter is not to be evaluated.
-    # You most likely want #eval_param.
-    def no_eval_param(key)
-      @params.internal_parameters[key]
-    end
-
-    # Returns whether +key+ exists in the +params+ hash used when creating
-    # this data object.
-    def has_param?(key)
-      @params.internal_parameters.has_key?(key)
-    end
-
-    # Available to subclasses
-    ###########################################################################
 
     ###########################################################################
     # To be implemented by subclasses

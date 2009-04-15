@@ -7,7 +7,7 @@ module BinData
   #
   # When evaluating lambdas, unknown methods are resolved in the context of the
   # parent of the bound data object.  Resolution is attempted firstly as keys
-  # in #custom_parameters, and secondly as methods in this parent.  This
+  # in #parameters, and secondly as methods in this parent.  This
   # resolution propagates up the chain of parent data objects.
   #
   # This resolution process makes the lambda easier to read as we just write
@@ -46,7 +46,7 @@ module BinData
 
     # Evaluates +val+ in the context of this data object.  Evaluation
     # recurses until it yields a value that is not a symbol or lambda.
-    # +overrides+ is an optional +obj.custom_parameters+ like hash.
+    # +overrides+ is an optional +obj.parameters+ like hash.
     def lazy_eval(val, overrides = nil)
       result = val
       @overrides = overrides if overrides
@@ -102,8 +102,8 @@ module BinData
     def resolve_symbol_in_parent_context(symbol, args)
       obj_parent = @obj.parent
 
-      if obj_parent.custom_parameters.has_key?(symbol)
-        result = obj_parent.custom_parameters[symbol]
+      if obj_parent.has_parameter?(symbol)
+        result = obj_parent.get_parameter(symbol)
       elsif obj_parent.respond_to?(symbol)
         result = obj_parent.__send__(symbol, *args)
       else

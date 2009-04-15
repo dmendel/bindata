@@ -57,9 +57,9 @@ module BinData
 
     register(self.name, self)
 
-    bindata_mandatory_parameter :type
-    bindata_optional_parameters :initial_length, :read_until
-    bindata_mutually_exclusive_parameters :initial_length, :read_until
+    mandatory_parameter :type
+    optional_parameters :initial_length, :read_until
+    mutually_exclusive_parameters :initial_length, :read_until
 
     class << self
 
@@ -85,7 +85,7 @@ module BinData
     def initialize(params = {}, parent = nil)
       super(params, parent)
 
-      el_class, el_params = no_eval_param(:type)
+      el_class, el_params = get_parameter(:type)
 
       @element_list    = nil
       @element_class   = el_class
@@ -296,15 +296,15 @@ module BinData
     end
 
     def _do_read(io)
-      if has_param?(:initial_length)
+      if has_parameter?(:initial_length)
         elements.each { |f| f.do_read(io) }
-      elsif has_param?(:read_until)
+      elsif has_parameter?(:read_until)
         read_until(io)
       end
     end
 
     def read_until(io)
-      if no_eval_param(:read_until) == :eof
+      if get_parameter(:read_until) == :eof
         read_until_eof(io)
       else
         read_until_condition(io)
@@ -331,7 +331,7 @@ module BinData
         element.do_read(io)
         variables = { :index => self.length - 1, :element => self.last,
                       :array => self }
-        finished = eval_param(:read_until, variables)
+        finished = eval_parameter(:read_until, variables)
       end
     end
 
@@ -367,8 +367,8 @@ module BinData
     def elements
       if @element_list.nil?
         @element_list = []
-        if has_param?(:initial_length)
-          eval_param(:initial_length).times do
+        if has_parameter?(:initial_length)
+          eval_parameter(:initial_length).times do
             @element_list << new_element
           end
         end

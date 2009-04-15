@@ -29,7 +29,7 @@ module BinData
 
     register(self.name, self)
 
-    bindata_optional_parameters :max_length
+    optional_parameters :max_length
 
     #---------------
     private
@@ -45,7 +45,7 @@ module BinData
     end
 
     def read_and_return_value(io)
-      max_length = eval_param(:max_length)
+      max_length = eval_parameter(:max_length)
       str = ""
       i = 0
       ch = nil
@@ -66,7 +66,7 @@ module BinData
 
     def trim_and_zero_terminate(str)
       str = truncate_at_first_zero_byte(str)
-      str = trim_to(str, eval_param(:max_length))
+      str = trim_to(str, eval_parameter(:max_length))
       append_zero_byte_if_needed(str)
     end
 

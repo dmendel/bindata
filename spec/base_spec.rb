@@ -60,8 +60,8 @@ describe BinData::Base, "with mandatory parameters" do
   before(:all) do
     eval <<-END
       class MandatoryBase < BaseStub
-        bindata_mandatory_parameter :p1
-        bindata_mandatory_parameter :p2
+        mandatory_parameter :p1
+        mandatory_parameter :p2
       end
     END
   end
@@ -85,21 +85,21 @@ describe BinData::Base, "with default parameters" do
   before(:all) do
     eval <<-END
       class DefaultBase < BaseStub
-        bindata_default_parameter :p1 => "a"
+        default_parameter :p1 => "a"
       end
     END
   end
 
   it "should use default parameters when not specified" do
     obj = DefaultBase.new
-    obj.should have_param(:p1)
-    obj.eval_param(:p1).should == "a"
+    obj.should have_parameter(:p1)
+    obj.eval_parameter(:p1).should == "a"
   end
 
   it "should be able to override default parameters" do
     obj = DefaultBase.new(:p1 => "b")
-    obj.should have_param(:p1)
-    obj.eval_param(:p1).should == "b"
+    obj.should have_parameter(:p1)
+    obj.eval_parameter(:p1).should == "b"
   end
 end
 
@@ -107,8 +107,8 @@ describe BinData::Base, "with mutually exclusive parameters" do
   before(:all) do
     eval <<-END
       class MutexParamBase < BaseStub
-        bindata_optional_parameters :p1, :p2
-        bindata_mutually_exclusive_parameters :p1, :p2
+        optional_parameters :p1, :p2
+        mutually_exclusive_parameters :p1, :p2
       end
     END
   end
@@ -131,9 +131,9 @@ describe BinData::Base, "with multiple parameters" do
   before(:all) do
     eval <<-END
       class WithParamBase < BaseStub
-        bindata_mandatory_parameter :p1
-        bindata_optional_parameter  :p2
-        bindata_default_parameter   :p3 => 3
+        mandatory_parameter :p1
+        optional_parameter  :p2
+        default_parameter   :p3 => 3
       end
     END
   end
@@ -146,34 +146,30 @@ describe BinData::Base, "with multiple parameters" do
     accepted.should_not include(:xx)
   end
 
-  it "should identify custom parameters" do
-    params = {:p1 => 1, :p2 => 2, :p3 => 3, :p4 => 4, :p5 => 5}
-    obj = WithParamBase.new(params)
-    obj.custom_parameters.should == {:p4 => 4, :p5 => 5}
-  end
-
-  it "should evaluate custom parameters" do
+  it "should evaluate parameters" do
     params = {:p1 => 1, :p2 => 2, :p3 => 3, :p4 => lambda { 4 }}
     obj = WithParamBase.new(params)
-    obj.eval_custom_parameter(:p4).should == 4
+    obj.eval_parameter(:p4).should == 4
   end
 
-  it "should return custom parameters" do
+  it "should return parameters" do
     params = {:p1 => 1, :p2 => 2, :p3 => 3, :p4 => :a}
     obj = WithParamBase.new(params)
-    obj.no_eval_custom_parameter(:p4).should == :a
+    obj.get_parameter(:p4).should == :a
   end
 
-  it "should have custom parameters" do
+  it "should have parameters" do
     params = {:p1 => 1, :p2 => 2, :p3 => 3, :p4 => 4}
     obj = WithParamBase.new(params)
-    obj.should have_custom_parameter(:p4)
+    obj.should have_parameter(:p4)
   end
 
   it "should not allow parameters with nil values" do
     lambda { WithParamBase.new(:p1 => 1, :p2 => nil) }.should raise_error(ArgumentError)
   end
 
+=begin
+# TODO: how should we evaluate internal parameters? think about this
   it "should only recall mandatory, default and optional parameters" do
     obj = WithParamBase.new(:p1 => 1, :p3 => 3, :p4 => 4, :p5 => 5)
     obj.should     have_param(:p1)
@@ -185,18 +181,19 @@ describe BinData::Base, "with multiple parameters" do
 
   it "should evaluate mandatory, default and optional parameters" do
     obj = WithParamBase.new(:p1 => 1, :p3 => lambda {1 + 2}, :p4 => 4, :p5 => 5)
-    obj.eval_param(:p1).should == 1
-    obj.eval_param(:p2).should be_nil
-    obj.eval_param(:p3).should == 3
-    obj.eval_param(:p4).should be_nil
-    obj.eval_param(:p5).should be_nil
+    obj.eval_parameter(:p1).should == 1
+    obj.eval_parameter(:p2).should be_nil
+    obj.eval_parameter(:p3).should == 3
+    obj.eval_parameter(:p4).should be_nil
+    obj.eval_parameter(:p5).should be_nil
   end
+=end
 
   it "should be able to access without evaluating" do
     obj = WithParamBase.new(:p1 => :asym, :p3 => lambda {1 + 2})
-    obj.no_eval_param(:p1).should == :asym
-    obj.no_eval_param(:p2).should be_nil
-    obj.no_eval_param(:p3).should respond_to(:arity)
+    obj.get_parameter(:p1).should == :asym
+    obj.get_parameter(:p2).should be_nil
+    obj.get_parameter(:p3).should respond_to(:arity)
   end
 end
 

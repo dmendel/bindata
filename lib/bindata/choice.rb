@@ -59,8 +59,8 @@ module BinData
 
     register(self.name, self)
 
-    bindata_mandatory_parameters :choices, :selection
-    bindata_optional_parameter   :copy_on_change
+    mandatory_parameters :choices, :selection
+    optional_parameter   :copy_on_change
 
     class << self
 
@@ -123,7 +123,7 @@ module BinData
 
     # A convenience method that returns the current selection.
     def selection
-      eval_param(:selection)
+      eval_parameter(:selection)
     end
 
     # This method does not exist. This stub only exists to document why.
@@ -185,7 +185,7 @@ module BinData
 
     def trace_selection
       BinData::trace_message do |tracer|
-        selection_string = eval_param(:selection).inspect
+        selection_string = eval_parameter(:selection).inspect
         if selection_string.length > 30
           selection_string = selection_string.slice(0 .. 30) + "..."
         end
@@ -215,7 +215,7 @@ module BinData
     end
 
     def current_choice
-      selection = eval_param(:selection)
+      selection = eval_parameter(:selection)
       if selection.nil?
         raise IndexError, ":selection returned nil for #{debug_name}"
       end
@@ -236,7 +236,7 @@ module BinData
     end
 
     def instantiate_choice(selection)
-      choice_class, choice_params = no_eval_param(:choices)[selection]
+      choice_class, choice_params = get_parameter(:choices)[selection]
       if choice_class.nil?
         raise IndexError, "selection '#{selection}' does not exist in :choices for #{debug_name}"
       end
@@ -252,7 +252,7 @@ module BinData
     end
 
     def should_copy_value?(prev, cur)
-      prev != nil and eval_param(:copy_on_change) == true
+      prev != nil and eval_parameter(:copy_on_change) == true
     end
 
     def get_previous_choice(selection)

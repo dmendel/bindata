@@ -4,34 +4,26 @@ require 'forwardable'
 module BinData
 
   # A BinData object accepts arbitrary parameters.  This class only contains
-  # parameters that have been sanitized, and categorizes them according to
-  # whether they are BinData::Base.accepted_internal_parameters or are custom.
+  # parameters that have been sanitized.
   class SanitizedParameters
     extend Forwardable
 
     def initialize(the_class, params)
-      @hash = params
-      @internal_parameters = {}
-      @custom_parameters = {}
+      @parameters = {}
 
-      # partition parameters into known and custom parameters
-      @hash.each do |k,v|
+      params.each do |k,v|
         k = k.to_sym
         if v.nil?
           raise ArgumentError, "parameter :#{k} has nil value in #{the_class}"
         end
 
-        if the_class.accepted_internal_parameters.include?(k)
-          @internal_parameters[k] = v
-        else
-          @custom_parameters[k] = v
-        end
+        @parameters[k] = v
       end
     end
 
-    attr_reader :internal_parameters, :custom_parameters
+    attr_reader :parameters
 
-    def_delegators :@hash, :[], :has_key?, :include?, :keys
+    def_delegators :@parameters, :[], :has_key?, :include?, :keys
   end
 
   # The Sanitizer sanitizes the parameters that are passed when creating a

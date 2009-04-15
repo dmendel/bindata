@@ -48,8 +48,8 @@ module BinData
   #                           the value just read in.
   class BasePrimitive < BinData::Base
 
-    bindata_optional_parameters :initial_value, :value, :check_value
-    bindata_mutually_exclusive_parameters :initial_value, :value
+    optional_parameters :initial_value, :value, :check_value
+    mutually_exclusive_parameters :initial_value, :value
 
     def initialize(params = {}, parent = nil)
       super(params, parent)
@@ -98,7 +98,7 @@ module BinData
 
       trace_value
 
-      if has_param?(:check_value)
+      if has_parameter?(:check_value)
         check_value(value)
       end
     end
@@ -115,7 +115,7 @@ module BinData
     end
 
     def check_value(current_value)
-      expected = eval_param(:check_value, :value => current_value)
+      expected = eval_parameter(:check_value, :value => current_value)
       if not expected
         raise ValidityError,
               "value '#{current_value}' not as expected for #{debug_name}"
@@ -142,7 +142,7 @@ module BinData
     def _assign(val)
       raise ArgumentError, "can't set a nil value for #{debug_name}" if val.nil?
 
-      unless has_param?(:value)
+      unless has_parameter?(:value)
         raw_val = val.respond_to?(:snapshot) ? val.snapshot : val
         @value = begin
                    raw_val.dup
@@ -169,13 +169,13 @@ module BinData
       #   5. clear?                       ->   sensible_default
       #   6. !clear?                      ->   @value
 
-      if not @in_read and has_param?(:value)
+      if not @in_read and has_parameter?(:value)
         # rule 1 above
-        eval_param(:value)
+        eval_parameter(:value)
       else
         # combining all other rules gives this simplified expression
-        @value || eval_param(:value) ||
-          eval_param(:initial_value) || sensible_default()
+        @value || eval_parameter(:value) ||
+          eval_parameter(:initial_value) || sensible_default()
       end
     end
 
