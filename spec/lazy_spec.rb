@@ -24,38 +24,40 @@ class MockDataObject
   end
 end
 
+# Shortcut to save typing
+LE = BinData::LazyEvaluator
+
 describe BinData::LazyEvaluator, "with no parents" do
   before(:each) do
     methods = {:m1 => 'm1', :com => 'mC'}
     params  = {:p1 => 'p1', :com => 'pC'}
-    obj = MockDataObject.new(methods, params)
-    @ev = BinData::LazyEvaluator.new(obj)
+    @obj = MockDataObject.new(methods, params)
   end
 
   it "should evaluate raw value" do
-    @ev.lazy_eval(5).should == 5
+    LE.eval(@obj, 5).should == 5
   end
 
   it "should evaluate value" do
-    @ev.lazy_eval(lambda { 5 }).should == 5
+    LE.eval(@obj, lambda { 5 }).should == 5
   end
 
   it "should evaluate overrides" do
-    @ev.lazy_eval(lambda { o1 }, :o1 => 'o1').should == 'o1'
+    LE.eval(@obj, lambda { o1 }, :o1 => 'o1').should == 'o1'
   end
 
   it "should not resolve any unknown methods" do
-    lambda { @ev.lazy_eval(lambda { unknown }) }.should raise_error(NameError)
-    lambda { @ev.lazy_eval(lambda { m1 }) }.should raise_error(NameError)
-    lambda { @ev.lazy_eval(lambda { p1 }) }.should raise_error(NameError)
+    lambda { LE.eval(@obj, lambda { unknown }) }.should raise_error(NameError)
+    lambda { LE.eval(@obj, lambda { m1 }) }.should raise_error(NameError)
+    lambda { LE.eval(@obj, lambda { p1 }) }.should raise_error(NameError)
   end
 
   it "should not have a parent" do
-    @ev.lazy_eval(lambda { parent }).should be_nil
+    LE.eval(@obj, lambda { parent }).should be_nil
   end
 
   it "should not resolve #index" do
-    lambda { @ev.lazy_eval(lambda { index }) }.should raise_error(NoMethodError)
+    lambda { LE.eval(@obj, lambda { index }) }.should raise_error(NoMethodError)
   end
 end
 
@@ -65,51 +67,57 @@ describe BinData::LazyEvaluator, "with one parent" do
     parent_params  = {:p1 => 'Pp1', :com => 'PpC'}
     parent_obj = MockDataObject.new(parent_methods, parent_params)
 
+    def parent_obj.echo(a1, a2)
+      [a1, a2]
+    end
+
     methods = {:m1 => 'm1', :com => 'mC'}
     params  = {:p1 => 'p1', :com => 'pC'}
-    obj = MockDataObject.new(methods, params, parent_obj)
-
-    @ev = BinData::LazyEvaluator.new(obj)
+    @obj = MockDataObject.new(methods, params, parent_obj)
   end
 
   it "should evaluate raw value" do
-    @ev.lazy_eval(5).should == 5
+    LE.eval(@obj, 5).should == 5
   end
 
   it "should evaluate value" do
-    @ev.lazy_eval(lambda { 5 }).should == 5
+    LE.eval(@obj, lambda { 5 }).should == 5
   end
 
   it "should evaluate overrides before params" do
-    @ev.lazy_eval(lambda { p1 }, :p1 => 'o1').should == 'o1'
+    LE.eval(@obj, lambda { p1 }, :p1 => 'o1').should == 'o1'
   end
 
   it "should evaluate overrides before methods" do
-    @ev.lazy_eval(lambda { m1 }, :m1 => 'o1').should == 'o1'
+    LE.eval(@obj, lambda { m1 }, :m1 => 'o1').should == 'o1'
   end
 
   it "should not resolve any unknown methods" do
-    lambda { @ev.lazy_eval(lambda { unknown }) }.should raise_error(NameError)
+    lambda { LE.eval(@obj, lambda { unknown }) }.should raise_error(NameError)
   end
 
   it "should resolve parameters in the parent" do
-    @ev.lazy_eval(lambda { p1 }).should == 'Pp1'
+    LE.eval(@obj, lambda { p1 }).should == 'Pp1'
   end
 
   it "should resolve methods in the parent" do
-    @ev.lazy_eval(lambda { m1 }).should == 'Pm1'
+    LE.eval(@obj, lambda { m1 }).should == 'Pm1'
+  end
+
+  it "should invoke methods in the parent" do
+    LE.eval(@obj, lambda { echo(p1, m1) }).should == ['Pp1', 'Pm1']
   end
 
   it "should resolve parameters in preference to methods in the parent" do
-    @ev.lazy_eval(lambda { com }).should == 'PpC'
+    LE.eval(@obj, lambda { com }).should == 'PpC'
   end
 
   it "should have a parent" do
-    @ev.lazy_eval(lambda { parent }).should_not be_nil
+    LE.eval(@obj, lambda { parent }).should_not be_nil
   end
 
   it "should not resolve #index" do
-    lambda { @ev.lazy_eval(lambda { index }) }.should raise_error(NoMethodError)
+    lambda { LE.eval(@obj, lambda { index }) }.should raise_error(NoMethodError)
   end
 end
 
@@ -119,58 +127,80 @@ describe BinData::LazyEvaluator, "with nested parents" do
     pparent_params  = {:p1 => 'PPp1', :p2 => 'PPp2', :com => 'PPpC'}
     pparent_obj = MockDataObject.new(pparent_methods, pparent_params)
 
+    def pparent_obj.echo(arg)
+      ["PP", arg]
+    end
+
+    def pparent_obj.echo2(arg)
+      ["PP2", arg]
+    end
+
     parent_methods = {:m1 => 'Pm1', :com => 'PmC', :sym1 => :m2, :sym2 => lambda { m2 }}
     parent_params  = {:p1 => 'Pp1', :com => 'PpC'}
     parent_obj = MockDataObject.new(parent_methods, parent_params, pparent_obj)
 
+    def parent_obj.echo(arg)
+      ["P", arg]
+    end
+
     methods = {:m1 => 'm1', :com => 'mC'}
     params  = {:p1 => 'p1', :com => 'pC'}
-    obj = MockDataObject.new(methods, params, parent_obj)
-
-    @ev = BinData::LazyEvaluator.new(obj)
+    @obj = MockDataObject.new(methods, params, parent_obj)
   end
 
   it "should accept symbols as a shortcut to lambdas" do
-    @ev.lazy_eval(:p1).should == 'Pp1'
-    @ev.lazy_eval(:p2).should == 'PPp2'
-    @ev.lazy_eval(:m1).should == 'Pm1'
-    @ev.lazy_eval(:m2).should == 'PPm2'
+    LE.eval(@obj, :p1).should == 'Pp1'
+    LE.eval(@obj, :p2).should == 'PPp2'
+    LE.eval(@obj, :m1).should == 'Pm1'
+    LE.eval(@obj, :m2).should == 'PPm2'
   end
 
   it "should not resolve any unknown methods" do
-    lambda { @ev.lazy_eval(lambda { unknown }) }.should raise_error(NameError)
+    lambda { LE.eval(@obj, lambda { unknown }) }.should raise_error(NameError)
   end
 
   it "should resolve parameters in the parent" do
-    @ev.lazy_eval(lambda { p1 }).should == 'Pp1'
+    LE.eval(@obj, lambda { p1 }).should == 'Pp1'
   end
 
   it "should resolve methods in the parent" do
-    @ev.lazy_eval(lambda { m1 }).should == 'Pm1'
+    LE.eval(@obj, lambda { m1 }).should == 'Pm1'
   end
 
   it "should resolve parameters in the parent's parent" do
-    @ev.lazy_eval(lambda { p2 }).should == 'PPp2'
+    LE.eval(@obj, lambda { p2 }).should == 'PPp2'
   end
 
   it "should resolve methods in the parent's parent" do
-    @ev.lazy_eval(lambda { m2 }).should == 'PPm2'
+    LE.eval(@obj, lambda { m2 }).should == 'PPm2'
+  end
+
+  it "should invoke methods in the parent" do
+    LE.eval(@obj, lambda { echo(m1) }).should == ['P', 'Pm1']
+  end
+
+  it "should invoke methods in the parent's parent" do
+    LE.eval(@obj, lambda { parent.echo(m1) }, { :m1 => 'o1'}).should == ['PP', 'o1']
+  end
+
+  it "should invoke methods in the parent's parent" do
+    LE.eval(@obj, lambda { echo2(m1) }).should == ['PP2', 'Pm1']
   end
 
   it "should resolve parameters in preference to methods in the parent" do
-    @ev.lazy_eval(lambda { com }).should == 'PpC'
+    LE.eval(@obj, lambda { com }).should == 'PpC'
   end
 
   it "should resolve methods in the parent explicitly" do
-    @ev.lazy_eval(lambda { parent.m1 }).should == 'PPm1'
+    LE.eval(@obj, lambda { parent.m1 }).should == 'PPm1'
   end
 
   it "should cascade lambdas " do
-    @ev.lazy_eval(lambda { sym1 }).should == 'PPm2'
-    @ev.lazy_eval(lambda { sym2 }).should == 'PPm2'
+    LE.eval(@obj, lambda { sym1 }).should == 'PPm2'
+    LE.eval(@obj, lambda { sym2 }).should == 'PPm2'
   end
 
   it "should not resolve #index" do
-    lambda { @ev.lazy_eval(lambda { index }) }.should raise_error(NoMethodError)
+    lambda { LE.eval(@obj, lambda { index }) }.should raise_error(NoMethodError)
   end
 end

@@ -92,7 +92,7 @@ module BinData
     # parameters given at object construction to be overridden.
     # Returns nil if +key+ does not refer to any parameter.
     def eval_parameter(key, overrides = nil)
-      LazyEvaluator.eval(get_parameter(key), self, overrides)
+      LazyEvaluator.eval(self, get_parameter(key), overrides)
     end
 
     # Returns the parameter referenced by +key+.

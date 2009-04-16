@@ -17,10 +17,10 @@ module BinData
     class << self
       # Lazily evaluates +val+ in the context of +obj+, with possibility of
       # +overrides+.
-      def eval(val, obj, overrides = nil)
+      def eval(obj, val, overrides = nil, *args)
         if can_eval?(val)
           env = self.new(obj)
-          env.lazy_eval(val, overrides)
+          env.lazy_eval(val, overrides, *args)
         else
           val
         end
@@ -47,12 +47,12 @@ module BinData
     # Evaluates +val+ in the context of this data object.  Evaluation
     # recurses until it yields a value that is not a symbol or lambda.
     # +overrides+ is an optional +obj.parameters+ like hash.
-    def lazy_eval(val, overrides = nil)
+    def lazy_eval(val, overrides = nil, *args)
       result = val
       @overrides = overrides if overrides
       if val.is_a? Symbol
         # treat :foo as lambda { foo }
-        result = __send__(val)
+        result = __send__(val, *args)
       elsif val.respond_to? :arity
         result = instance_eval(&val)
       end
@@ -111,7 +111,7 @@ module BinData
       end
 
       # recursively evaluate symbols
-      LazyEvaluator.eval(result, obj_parent)
+      LazyEvaluator.eval(obj_parent, result, nil, *args)
     end
   end
 end
