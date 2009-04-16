@@ -204,16 +204,6 @@ module BinData
       other == snapshot
     end
 
-    def eql?(other)
-      # double dispatch
-      other.eql?(snapshot)
-    end
-
-    def hash
-      snapshot.hash
-    end
-    # TODO test these
-
     #---------------
     private
 
