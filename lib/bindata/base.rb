@@ -91,7 +91,7 @@ module BinData
     # +overrides+ is an optional +parameters+ like hash that allow the
     # parameters given at object construction to be overridden.
     # Returns nil if +key+ does not refer to any parameter.
-    def eval_parameter(key, overrides = nil)
+    def eval_parameter(key, overrides = {})
       LazyEvaluator.eval(self, get_parameter(key), overrides)
     end
 
