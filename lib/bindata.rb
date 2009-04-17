@@ -19,5 +19,5 @@ require 'bindata/trace'
 # A declarative way to read and write structured binary data.
 # 
 module BinData
-  VERSION = "0.9.3"
+  VERSION = "0.10.0"
 end
