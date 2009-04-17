@@ -1,0 +1,59 @@
+= 0.10.0
+
+There are several new features in this release.  The major ones are:
+
+* Debugging declarations is now easier with the ability to trace values when
+  reading.
+
+      BinData::trace_reading(STDERR) do
+        obj_not_quite_working_correctly.read(io)
+      end
+
+  Will result in a debugging trace written to STDERR.
+
+* Support for arbitrary sized integers and bit fields.
+
+* Struct/Array field/element access now returns a BinData object, rather than
+  the underlying Fixnum or String.  The BinData object will behave like it's
+  underlying primitive so existing code should continue to work.  This allows
+  for an improved syntax in your declarations.
+
+  If your code requires access to the underlying primitive, you can access it
+  with the #value method.
+
+There are several deprecations and one backwards incompatible change in this
+release.  Turn on $VERBOSE mode (-w command line switch) to see warnings
+regarding these deprecations.
+
+== IMPORTANT - Ruby does not warn you about this change!
+
+* The #to_s method for getting the binary string representation of a data
+  object has been renamed to #to_binary_s.  If you use this method you must
+  manually change your code or you will get strange results.
+
+== Deprecations.  Ruby will warn you of these when in $VERBOSE mode.
+
+Code using these deprecated features will still work in this release but will
+fail to work in some future release.  Change your code now.
+
+* BinData::SingleValue has been renamed to BinData::Primitive.
+
+* BinData::MultiValue has been renamed to BinData::Record.
+
+* String :trim_value parameter has been renamed to :trim_padding.
+
+* Registry.instance should be replaced with RegisteredClasses.
+
+* struct.offset_of("field") should be replaced with struct.field.offset.
+
+* struct.clear("field") should be replaced with struct.field.clear.
+
+* struct.clear?("field") should be replaced with struct.field.clear?.
+
+* struct.num_bytes("field") should be replaced with struct.field.num_bytes.
+
+* array.clear(n) should be replaced with array[n].clear.
+
+* array.clear?(n) should be replaced with array[n].clear?.
+
+* array.num_bytes(n) should be replaced with array[n].num_bytes.
