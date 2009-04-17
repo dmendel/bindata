@@ -1,20 +1,26 @@
-* Think how offset_of should work.
+* Write a Rakefile
 
-    + perhaps #offset_of and #abs_offset_of methods?
-    + needed for struct and array
+* Registry should auto create integers and bits. (e.g. 24bit int, 191bit int)
 
-* Add ability to determine name of a data object.
-    e.g.  obj.a[4].c
+* Improve speed of Sanitizer for recursive records
+    rework it so that sanitizing is done during definition (before initialising).
 
-  This will be used when throwing exceptions to aid debugging.
-
-* Using the above names, add tracing capability when reading.
-
-* Clean up Array to make it as close to ruby Array as possible.
+* Write a detailed tutorial (probably as a web page).
 
 * Need more examples.
 
-* Refactor test cases.
-    add more comprehensive integration tests to serve as examples
+* Need wrapper to be able to define new wrapped classes - with parameters
 
-* Need better documentation.
+-----------------------------------------------------------------------------
+define_wrapped_class("MyInt", :uint32be, :initial_value => 3) #=> MyInt
+define_wrapped_class("ByteArray", :array, :type => :uint8) #=> ByteArray
+define_wrapped_class("MyInt", :uint32be, {:initial_value => :mult}, [], [], {:mult => 3}) #=> MyInt
+          # mandatory, optional, default
+-----------------------------------------------------------------------------
+
+
+
+
+
+refactor snapshot -> _snapshot et al
+

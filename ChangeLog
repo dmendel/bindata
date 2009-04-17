@@ -7,6 +7,16 @@
 * BinData::Array now behaves more like Ruby's Array.
 * Added debug_name
 * Added ability to trace reading
+* Primitives now behave as their value.  Calling #value is no longer needed.
+* Renamed #to_s -> #to_binary_s to avoid confusion with ruby's #to_s.
+* Added #assign as the generic way to assign values to objects.
+* Added :copy_on_change parameter to Choice.
+* Implement #offset for all objects.
+* Renamed Single -> BasePrimitive.
+* Renamed SingleValue -> Primitive.
+* Renamed MultiValue -> Record.
+* The :onlyif parameter now only applies to fields inside Structs.
+* LazyEvaluator can now supply arguments when invoking methods
 
 == Version 0.9.3 (2008-12-03)
 
