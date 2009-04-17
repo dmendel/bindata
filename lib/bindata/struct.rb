@@ -43,9 +43,8 @@ module BinData
   # Fields may have have extra parameters as listed below:
   #
   # [<tt>:onlyif</tt>]   Used to indicate a data object is optional.
-  #                      if false, calls to #read or #write will not
-  #                      perform any I/O, #num_bytes will return 0 and
-  #                      #snapshot will return nil.  Default is true.
+  #                      if +false+, this object will not be included in any
+  #                      calls to #read, #write, #num_bytes or #snapshot.
   class Struct < BinData::Base
 
     register(self.name, self)
@@ -276,16 +275,16 @@ module BinData
 
     def _do_read(io)
       instantiate_all_objs
-      @field_objs.each { |f| f.do_read(io) if use_obj(f) }
+      @field_objs.each { |f| f.do_read(io) if include_obj(f) }
     end
 
     def _done_read
-      @field_objs.each { |f| f.done_read if use_obj(f) }
+      @field_objs.each { |f| f.done_read if include_obj(f) }
     end
 
     def _do_write(io)
       instantiate_all_objs
-      @field_objs.each { |f| f.do_write(io) if use_obj(f) }
+      @field_objs.each { |f| f.do_write(io) if include_obj(f) }
     end
 
     def _do_num_bytes(name)
@@ -329,9 +328,7 @@ module BinData
       snapshot = Snapshot.new
       field_names.each do |name|
         obj = find_obj_for_name(name)
-        if use_obj(obj)
-          snapshot[name] = obj.snapshot
-        end
+        snapshot[name] = obj.snapshot if include_obj(obj)
       end
       snapshot
     end
@@ -344,7 +341,7 @@ module BinData
       sum = 0
       (0...index).each do |i|
         obj = @field_objs[i]
-        if use_obj(obj)
+        if include_obj(obj)
           nbytes = obj.do_num_bytes
           sum = ((::Integer === nbytes) ? sum.ceil : sum) + nbytes
         end
@@ -353,7 +350,7 @@ module BinData
       sum
     end
 
-    def use_obj(obj)
+    def include_obj(obj)
       not obj.has_parameter?(:onlyif) or obj.eval_parameter(:onlyif)
     end
   end

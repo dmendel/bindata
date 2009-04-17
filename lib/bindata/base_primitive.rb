@@ -2,10 +2,10 @@ require 'bindata/base'
 require 'bindata/trace'
 
 module BinData
-  # A BinData::BasePrimitive object is a container for a value that has a particular
-  # binary representation.  A value corresponds to a primitive type such as
-  # as integer, float or string.  Only one value can be contained by this
-  # object.  This value can be read from or written to an IO stream.
+  # A BinData::BasePrimitive object is a container for a value that has a
+  # particular binary representation.  A value corresponds to a primitive type
+  # such as as integer, float or string.  Only one value can be contained by
+  # this object.  This value can be read from or written to an IO stream.
   #
   #   require 'bindata'
   #
