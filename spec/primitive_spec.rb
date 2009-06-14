@@ -23,15 +23,6 @@ describe BinData::Primitive, "when subclassing" do
 end
 
 describe BinData::Primitive, "when defining" do
-  it "should allow inheriting from deprecated SingleValue" do
-    lambda {
-      eval <<-END
-        class SubclassSingleValue < BinData::SingleValue
-        end
-      END
-    }.should_not raise_error
-  end
-
   it "should fail on non registered types" do
     lambda {
       eval <<-END

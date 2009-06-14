@@ -79,8 +79,8 @@ describe BinData::Struct, "with multiple fields" do
   end
 
   it "should return num_bytes" do
-    @obj.num_bytes(:a).should == 1
-    @obj.num_bytes(:b).should == 1
+    @obj.a.num_bytes.should == 1
+    @obj.b.num_bytes.should == 1
     @obj.num_bytes.should     == 2
   end
 
@@ -103,9 +103,9 @@ describe BinData::Struct, "with multiple fields" do
   it "should clear individual elements" do
     @obj.a = 6
     @obj.b = 7
-    @obj.clear(:a)
-    @obj.should be_clear(:a)
-    @obj.should_not be_clear(:b)
+    @obj.a.clear
+    @obj.a.should be_clear
+    @obj.b.should_not be_clear
   end
 
   it "should write ordered" do
@@ -183,8 +183,8 @@ describe BinData::Struct, "with nested structs" do
   end
 
   it "should return num_bytes" do
-    @obj.num_bytes(:b).should == 2
-    @obj.num_bytes(:c).should == 2
+    @obj.b.num_bytes.should == 2
+    @obj.c.num_bytes.should == 2
     @obj.num_bytes.should == 5
   end
 

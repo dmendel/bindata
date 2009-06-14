@@ -21,14 +21,6 @@ describe BinData::String, "with mutually exclusive parameters" do
   end
 end
 
-describe BinData::String, "with deprecated parameters" do
-  it "should substitude :trim_padding for :trim_value" do
-    obj = BinData::String.new(:trim_value => true)
-    obj.value = "abc\0"
-    obj.value.should == "abc"
-  end
-end
-
 describe BinData::String, "when assigning" do
   before(:each) do
     @small = BinData::String.new(:length => 3, :pad_char => "A")

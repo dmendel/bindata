@@ -141,13 +141,4 @@ module BinData
       end
     end
   end
-
-  class MultiValue < Record
-    class << self
-      def inherited(subclass) #:nodoc:
-        warn "BinData::MultiValue is deprecated.  Replacing with BinData::Record"
-        super
-      end
-    end
-  end
 end

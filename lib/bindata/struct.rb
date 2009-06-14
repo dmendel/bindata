@@ -69,17 +69,6 @@ module BinData
     end
 
     class << self
-      #### DEPRECATION HACK to warn about inheriting from BinData::Struct
-      #
-      def inherited(subclass) #:nodoc:
-        if subclass != Record
-          # warn about deprecated method - remove before releasing 1.0
-          fail "error: inheriting from BinData::Struct has been deprecated. Inherit from BinData::Record instead."
-        end
-      end
-      #
-      #### DEPRECATION HACK to allow inheriting from BinData::Struct
-
 
       def sanitize_parameters!(sanitizer, params)
         ensure_valid_endian(params)
@@ -166,28 +155,12 @@ module BinData
       @field_objs  = []
     end
 
-    # Clears the field represented by +name+.  If no +name+
-    # is given, clears all fields in the struct.
-    def clear(name = nil)
-      if name.nil?
-        @field_objs.each { |f| f.clear unless f.nil? }
-      else
-        warn "'obj.clear(name)' is deprecated.  Replacing with 'obj.name.clear'"
-        obj = find_obj_for_name(name)
-        obj.clear unless obj.nil?
-      end
+    def clear
+      @field_objs.each { |f| f.clear unless f.nil? }
     end
 
-    # Returns if the field represented by +name+ is clear?.  If no +name+
-    # is given, returns whether all fields are clear.
-    def clear?(name = nil)
-      if name.nil?
-        @field_objs.inject(true) { |all_clear, f| all_clear and (f.nil? or f.clear?) }
-      else
-        warn "'obj.clear?(name)' is deprecated.  Replacing with 'obj.name.clear?'"
-        obj = find_obj_for_name(name)
-        obj.nil? ? true : obj.clear?
-      end
+    def clear?
+      @field_objs.inject(true) { |all_clear, f| all_clear and (f.nil? or f.clear?) }
     end
 
     # Returns a list of the names of all fields accessible through this
@@ -222,10 +195,6 @@ module BinData
     end
 
     def offset_of(child)
-      if child.class == ::String
-        fail "error: 'offset_of(\"fieldname\")' is deprecated.  Use 'fieldname.offset' instead"
-      end
-
       instantiate_all_objs
       sum = sum_num_bytes_below_index(find_index_of(child))
       child_offset = (::Integer === child.do_num_bytes) ? sum.ceil : sum.floor
@@ -287,15 +256,9 @@ module BinData
       @field_objs.each { |f| f.do_write(io) if include_obj(f) }
     end
 
-    def _do_num_bytes(name)
-      if name.nil?
-        instantiate_all_objs
-        sum_num_bytes_for_all_fields.ceil
-      else
-        warn "'obj.num_bytes(name)' is deprecated.  Replacing with 'obj.name.num_bytes'"
-        obj = find_obj_for_name(name)
-        obj.nil? ? 0 : obj.do_num_bytes
-      end
+    def _do_num_bytes(deprecated)
+      instantiate_all_objs
+      sum_num_bytes_for_all_fields.ceil
     end
 
     def _assign(val)

@@ -142,13 +142,13 @@ module BinData
     protected :do_write
 
     # Returns the number of bytes it will take to write this data.
-    def num_bytes(what = nil)
-      num = do_num_bytes(what)
+    def num_bytes(deprecated = nil)
+      num = do_num_bytes(deprecated)
       num.ceil
     end
 
-    def do_num_bytes(what = nil)
-      _do_num_bytes(what)
+    def do_num_bytes(deprecated = nil)
+      _do_num_bytes(deprecated)
     end
     protected :do_num_bytes
 
@@ -253,7 +253,7 @@ module BinData
     end
 
     # Returns true if the object has not been changed since creation.
-    def clear?(*args)
+    def clear?
       raise NotImplementedError
     end
 
@@ -285,7 +285,7 @@ module BinData
     end
 
     # Returns the number of bytes it will take to write this data.
-    def _do_num_bytes(what)
+    def _do_num_bytes(deprecated)
       raise NotImplementedError
     end
 
@@ -303,12 +303,6 @@ module BinData
     # Set visibility requirements of methods to implement
     public :clear, :clear?, :debug_name_of, :offset_of
     private :_do_read, :_done_read, :_do_write, :_do_num_bytes, :_assign, :_snapshot
-
-def single_value?
-  warn "#single_value? is deprecated.  It should no longer be needed"
-  false
-end
-public :single_value?
 
     # End To be implemented by subclasses
     ###########################################################################

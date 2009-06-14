@@ -194,13 +194,4 @@ module BinData
     # To be implemented by subclasses
     ###########################################################################
   end
-
-  class SingleValue < Primitive
-    class << self
-      def inherited(subclass) #:nodoc:
-        warn "BinData::BasePrimitiveValue is deprecated.  Replacing with BinData::Primitive"
-        super
-      end
-    end
-  end
 end

@@ -4,15 +4,6 @@ require File.expand_path(File.dirname(__FILE__)) + '/spec_common'
 require 'bindata'
 
 describe BinData::Record, "when defining" do
-  it "should allow inheriting from deprecated MultiValue" do
-    lambda {
-      eval <<-END
-        class SubclassMultiValue < BinData::MultiValue
-        end
-      END
-    }.should_not raise_error
-  end
-
   it "should fail on non registered types" do
     lambda {
       eval <<-END
@@ -119,8 +110,8 @@ describe BinData::Record, "with multiple fields" do
   end
 
   it "should return num_bytes" do
-    @obj.num_bytes(:a).should == 1
-    @obj.num_bytes(:b).should == 1
+    @obj.a.num_bytes.should == 1
+    @obj.b.num_bytes.should == 1
     @obj.num_bytes.should     == 2
   end
 
@@ -138,9 +129,9 @@ describe BinData::Record, "with multiple fields" do
   it "should clear individual elements" do
     @obj.a = 6
     @obj.b = 7
-    @obj.clear(:a)
-    @obj.should be_clear(:a)
-    @obj.should_not be_clear(:b)
+    @obj.a.clear
+    @obj.a.should be_clear
+    @obj.b.should_not be_clear
   end
 
   it "should write ordered" do

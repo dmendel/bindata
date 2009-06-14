@@ -92,29 +92,12 @@ module BinData
       @element_params  = el_params
     end
 
-    # Returns if the element at position +index+ is clear?.  If +index+
-    # is not given, then returns whether all elements are clear.
-    def clear?(index = nil)
-      if index.nil?
-        @element_list.nil? or elements.inject(true) { |all_clear, f| all_clear and f.clear? }
-      elsif index < elements.length
-        warn "'obj.clear?(n)' is deprecated.  Replacing with 'obj[n].clear?'"
-        elements[index].clear?
-      else
-        true
-      end
+    def clear?
+      @element_list.nil? or elements.inject(true) { |all_clear, f| all_clear and f.clear? }
     end
 
-    # Clears the element at position +index+.  If +index+ is not given, then
-    # the internal state of the array is reset to that of a newly created
-    # object.
-    def clear(index = nil)
-      if index.nil?
-        @element_list = nil
-      elsif index < elements.length
-        warn "'obj.clear(n)' is deprecated.  Replacing with 'obj[n].clear'"
-        elements[index].clear
-      end
+    def clear
+      @element_list = nil
     end
 
     # Returns the first index of +obj+ in self.
@@ -161,16 +144,6 @@ module BinData
       extend_array(index - 1)
       elements.insert(index, *to_storage_formats(objs))
       self
-    end
-
-    def append(value = nil)
-      warn "#append is deprecated, use push or slice instead"
-      if value.nil?
-        slice(length)
-      else
-        push(value)
-      end
-      self.last
     end
 
     # Returns the element at +index+.
@@ -343,15 +316,8 @@ module BinData
       elements.each { |f| f.do_write(io) }
     end
 
-    def _do_num_bytes(index)
-      if index.nil?
-        sum_num_bytes_for_all_elements.ceil
-      elsif index < elements.length
-        warn "'obj.num_bytes(n)' is deprecated.  Replacing with 'obj[n].num_bytes'"
-        elements[index].do_num_bytes
-      else
-        0
-      end
+    def _do_num_bytes(deprecated)
+      sum_num_bytes_for_all_elements.ceil
     end
 
     def _assign(array)

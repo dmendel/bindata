@@ -135,7 +135,7 @@ describe BinData::Array, "with several elements" do
   end
 
   it "should have correct num_bytes for individual elements" do
-    @data.num_bytes(0).should == ExampleSingle.new.num_bytes
+    @data[0].num_bytes.should == ExampleSingle.new.num_bytes
   end
 
   it "should be able to directly access elements" do
@@ -163,7 +163,7 @@ describe BinData::Array, "with several elements" do
 
   it "should clear a single element" do
     @data[1] = 8
-    @data.clear(1)
+    @data[1].clear
     @data[1].should == 2
   end
 
@@ -173,14 +173,14 @@ describe BinData::Array, "with several elements" do
 
   it "should be clear if all elements are clear" do
     @data[1] = 8
-    @data.clear(1)
+    @data[1].clear
     @data.should be_clear
   end
 
   it "should test clear status of individual elements" do
     @data[1] = 8
-    @data.clear?(0).should be_true
-    @data.clear?(1).should be_false
+    @data[0].should be_clear
+    @data[1].should_not be_clear
   end
 
   it "should symmetrically read and write" do
@@ -266,21 +266,6 @@ describe BinData::Array, "when accessing elements" do
 
   it "should not extend on [range]" do
     @data[9 .. 10].should be_nil
-    @data.length.should == 5
-  end
-
-  it "should not extend on clear" do
-    @data.clear(9)
-    @data.length.should == 5
-  end
-
-  it "should not extend on clear?" do
-    @data.clear?(9).should be_true
-    @data.length.should == 5
-  end
-
-  it "should not extend on num_bytes" do
-    @data.num_bytes(9).should == 0
     @data.length.should == 5
   end
 
