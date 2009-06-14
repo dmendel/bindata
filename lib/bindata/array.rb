@@ -93,7 +93,8 @@ module BinData
     end
 
     def clear?
-      @element_list.nil? or elements.inject(true) { |all_clear, f| all_clear and f.clear? }
+      @element_list.nil? or
+        elements.inject(true) { |all_clear, f| all_clear and f.clear? }
     end
 
     def clear

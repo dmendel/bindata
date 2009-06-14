@@ -89,6 +89,15 @@ module BinData
       end
     end
 
+    def eql?(other)
+      # double dispatch
+      other.eql?(snapshot)
+    end
+
+    def hash
+      snapshot.hash
+    end
+
     #---------------
     private
 

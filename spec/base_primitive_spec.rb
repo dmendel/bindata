@@ -124,6 +124,15 @@ describe ExampleSingle do
     @data.should == 5
     5.should == @data
   end
+
+  it "should work as hash keys" do
+    hash = {5 => 17}
+
+    obj = ExampleSingle.new
+    obj.value = 5
+
+    hash[obj].should == 17
+  end
 end
 
 describe BinData::BasePrimitive, "after initialisation" do
