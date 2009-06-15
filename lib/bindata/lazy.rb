@@ -71,12 +71,10 @@ module BinData
     def index
       return @overrides[:index] if @overrides.has_key?(:index)
 
-      bindata_array_class = BinData.const_defined?("Array") ? 
-                              BinData.const_get("Array") : nil
       child = @obj
       parent = @obj.parent
       while parent
-        if parent.class == bindata_array_class
+        if parent.respond_to?(:find_index_of)
           return parent.find_index_of(child)
         end
         child = parent
