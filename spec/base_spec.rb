@@ -56,6 +56,18 @@ describe BinData::Base, "when subclassing" do
   end
 end
 
+describe BinData::Base, "with parameters" do
+  it "should raise error if parameter has nil value" do
+    lambda { BaseStub.new(:a => nil) }.should raise_error(ArgumentError)
+  end
+
+  it "should convert keys to symbols" do
+    obj = BaseStub.new('a' => 3)
+    obj.should have_parameter(:a)
+    obj.get_parameter(:a).should == 3
+  end
+end
+
 describe BinData::Base, "with mandatory parameters" do
   before(:all) do
     eval <<-END
