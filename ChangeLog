@@ -1,5 +1,7 @@
 = BinData Changelog
 
+* Sanitizing code was refactored for speed.
+
 == Version
 
 * Arbitrary byte sized integers are now supported (e.g. 24bit, 808bit).

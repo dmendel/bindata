@@ -1,3 +1,5 @@
+require 'bindata/lazy'
+
 module BinData
   # BinData objects accept parameters when initializing.  AcceptedParameters
   # allow a BinData class to declaratively identify accepted parameters as
@@ -7,12 +9,6 @@ module BinData
       def define_all_accessors(obj_class, param_name)
         all_accessors = [:mandatory, :optional, :default, :mutually_exclusive]
         all_accessors.each do |accessor|
-          define_accessor(obj_class, param_name, accessor)
-        end
-      end
-
-      def define_accessors(obj_class, param_name, *accessors)
-        accessors.each do |accessor|
           define_accessor(obj_class, param_name, accessor)
         end
       end
@@ -73,6 +69,7 @@ module BinData
 
     def mandatory(*args)
       if not args.empty?
+        ensure_valid_names(args)
         @mandatory.concat(args.collect { |a| a.to_sym })
         @mandatory.uniq!
       end
@@ -81,6 +78,7 @@ module BinData
 
     def optional(*args)
       if not args.empty?
+        ensure_valid_names(args)
         @optional.concat(args.collect { |a| a.to_sym })
         @optional.uniq!
       end
@@ -89,6 +87,7 @@ module BinData
 
     def default(args = {})
       if not args.empty?
+        ensure_valid_names(args.keys)
         args.each_pair do |k,v|
           @default[k.to_sym] = v
         end
@@ -137,6 +136,18 @@ module BinData
         if params.has_key?(param1) and params.has_key?(param2)
           raise ArgumentError, "params ':#{param1}' and ':#{param2}' " +
                                "are mutually exclusive"
+        end
+      end
+    end
+
+    def ensure_valid_names(names)
+      invalid_names = LazyEvaluator.instance_methods(true) +
+                        Kernel.methods - ["type"]
+      names.each do |name|
+        name = name.to_s
+        if invalid_names.include?(name)
+          raise NameError.new("Rename parameter '#{name}' " +
+                              "as it shadows an existing method.", name)
         end
       end
     end

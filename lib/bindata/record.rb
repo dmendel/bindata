@@ -1,4 +1,4 @@
-require 'bindata/registry'
+require 'bindata/sanitize'
 require 'bindata/struct'
 
 module BinData
@@ -51,11 +51,6 @@ module BinData
         register(subclass.name, subclass)
       end
 
-      def recursive?
-        # A Record can self reference itself.
-        true
-      end
-
       def endian(endian = nil)
         @endian ||= nil
         if [:little, :big].include?(endian)
@@ -79,16 +74,13 @@ module BinData
         name = name.to_s
         params ||= {}
 
-        ensure_type_exists(type)
-        ensure_valid_name(name)
-
         append_field(type, name, params)
       end
 
       def sanitize_parameters!(sanitizer, params)
-        merge_endian!(params)
-        merge_fields!(params)
-        merge_hide!(params)
+        params[:fields] = fields
+        params[:endian] = endian unless endian.nil?
+        params[:hide]   = hide   unless hide.empty?
 
         super(sanitizer, params)
       end
@@ -96,48 +88,34 @@ module BinData
       #-------------
       private
 
-      def ensure_type_exists(type)
-        unless RegisteredClasses.is_registered?(type, endian)
-          raise TypeError, "unknown type '#{type}' for #{self}", caller(2)
+      def fields
+        unless defined? @fields
+          sanitizer = Sanitizer.new
+          @fields = sanitizer.create_sanitized_fields(endian)
         end
-      end
-
-      def ensure_valid_name(name)
-        @fields ||= []
-        @fields.each do |t, n, p|
-          if n == name
-            raise SyntaxError, "duplicate field '#{name}' in #{self}", caller(4)
-          end
-        end
-        if self.instance_methods.include?(name)
-          raise NameError.new("", name),
-                "field '#{name}' shadows an existing method", caller(2)
-        end
-        if self::RESERVED.include?(name)
-          raise NameError.new("", name),
-                "field '#{name}' is a reserved name", caller(2)
-        end
+        @fields
       end
 
       def append_field(type, name, params)
-        @fields ||= []
-        @fields.push([type, name, params])
+        ensure_valid_name(name)
+
+        fields.add_field(type, name, params)
+      rescue TypeError
+        raise TypeError, "unknown type '#{type}' for #{self}", caller(2)
       end
 
-      def merge_endian!(params)
-        endian = params[:endian] || self.endian
-        params[:endian] = endian unless endian.nil?
-      end
-
-      def merge_fields!(params)
-        @fields ||= []
-        fields = params[:fields] || @fields || []
-        params[:fields] = fields
-      end
-
-      def merge_hide!(params)
-        hide = params[:hide] || self.hide
-        params[:hide] = hide
+      def ensure_valid_name(name)
+        if fields.field_names.include?(name)
+          raise SyntaxError, "duplicate field '#{name}' in #{self}", caller(3)
+        end
+        if self.instance_methods.include?(name)
+          raise NameError.new("", name),
+                "field '#{name}' shadows an existing method", caller(3)
+        end
+        if self::RESERVED.include?(name)
+          raise NameError.new("", name),
+                "field '#{name}' is a reserved name", caller(3)
+        end
       end
     end
   end

@@ -3,7 +3,7 @@ require 'forwardable'
 
 module BinData
 
-  # A BinData object accepts arbitrary parameters.  This class only contains
+  # A BinData object accepts arbitrary parameters.  This class identifies
   # parameters that have been sanitized.
   class SanitizedParameters
     extend Forwardable
@@ -19,11 +19,26 @@ module BinData
 
         @parameters[k] = v
       end
+
+      @all_sanitized = false
     end
 
     attr_reader :parameters
 
-    def_delegators :@parameters, :[], :has_key?, :include?, :keys
+    def_delegators :@parameters, :[], :[]=, :has_key?, :include?, :keys, :each, :delete, :collect
+
+    def needs_sanitizing?(k)
+#      p "testing #{k} #{self[k].class if has_key?(k)}"
+      has_key?(k) and not self[k].is_a?(SanitizedParameter)
+    end
+
+    def all_sanitized?
+      @all_sanitized
+    end
+
+    def done_sanitizing
+      @all_sanitized = true
+    end
   end
 
   # The Sanitizer sanitizes the parameters that are passed when creating a
@@ -36,18 +51,45 @@ module BinData
       # Sanitize +params+ for +the_class+.
       # Returns sanitized parameters.
       def sanitize(the_class, params)
-        if SanitizedParameters === params
+        if params.is_a?(SanitizedParameters) and params.all_sanitized?
           params
         else
           sanitizer = self.new
-          sanitizer.sanitized_params(the_class, params)
+          sanitizer.create_sanitized_params(the_class, params)
         end
       end
     end
 
     def initialize
       @endian = nil
-      @seen   = []
+    end
+
+    def create_sanitized_params(the_class, params)
+      params ||= {}
+
+      sparams = SanitizedParameters.new(the_class, params)
+      # TODO: call base default
+      the_class.sanitize_parameters!(self, sparams)
+      # TODO: call base mandatory and mutex
+      sparams.done_sanitizing
+
+      sparams
+    end
+
+    def create_sanitized_endian(endian)
+      SanitizedEndian.new(endian)
+    end
+
+    def create_sanitized_choices(choices)
+      SanitizedChoices.new(self, choices)
+    end
+
+    def create_sanitized_fields(endian)
+      SanitizedFields.new(self, endian)
+    end
+
+    def create_sanitized_object_prototype(obj_class, obj_params)
+      SanitizedPrototype.new(self, obj_class, obj_params)
     end
 
     # Executes the given block with +endian+ set as the current endian.
@@ -70,53 +112,91 @@ module BinData
       registered_class
     end
 
-    def sanitized_params(the_class, params)
-      new_params = params.nil? ? {} : params.dup
-
-      if can_sanitize_parameters?(the_class)
-        get_sanitized_params(the_class, new_params)
-      else
-        store_current_endian!(the_class, new_params)
-        new_params
-      end
-    end
-
     #---------------
     private
 
-    def can_sanitize_parameters?(the_class)
-      not need_to_delay_sanitizing?(the_class)
+  end
+
+  class SanitizedParameter
+  end
+
+  class SanitizedPrototype < SanitizedParameter
+    def initialize(sanitizer, obj_type, obj_params)
+      @obj_class = sanitizer.lookup_class(obj_type)
+      @obj_params = sanitizer.create_sanitized_params(@obj_class, obj_params)
     end
 
-    def need_to_delay_sanitizing?(the_class)
-      the_class.recursive? and @seen.include?(the_class)
+    def instantiate(parent = nil)
+      @obj_class.new(@obj_params, parent)
+    end
+  end
+
+  class SanitizedField < SanitizedParameter
+    def initialize(sanitizer, name, field_type, field_params)
+      @name = name.to_s
+      @prototype = sanitizer.create_sanitized_object_prototype(field_type, field_params)
+    end
+    attr_reader :name
+
+    def instantiate(parent = nil)
+      @prototype.instantiate(parent)
+    end
+  end
+
+  class SanitizedFields < SanitizedParameter
+    def initialize(sanitizer, endian)
+      @sanitizer = sanitizer
+      @endian = endian.is_a?(SanitizedEndian) ? endian.endian : endian
+      @fields = []
     end
 
-    def get_sanitized_params(the_class, params)
-      result = nil
-      with_class_to_sanitize(the_class) do
-        the_class.sanitize_parameters!(self, params)
-        result = SanitizedParameters.new(the_class, params)
+    def add_field(type, name, params)
+      @sanitizer.with_endian(@endian) do
+        @fields << SanitizedField.new(@sanitizer, name, type, params)
       end
-      result
     end
 
-    def with_class_to_sanitize(the_class, &block)
-      @seen.push(the_class)
-      yield
-      @seen.pop
+    def [](idx)
+      @fields[idx]
     end
 
-    def store_current_endian!(the_class, params)
-      if can_store_endian?(the_class, params)
-        params[:endian] = @endian 
+    def field_names
+      @fields.collect { |f| f.name }
+    end
+  end
+
+  class SanitizedChoices < SanitizedParameter
+    def initialize(sanitizer, choices)
+      @choices = {}
+      choices.each_pair do |key, val|
+        type, param = val
+        prototype = sanitizer.create_sanitized_object_prototype(type, param)
+        @choices[key] = prototype
       end
     end
 
-    def can_store_endian?(the_class, params)
-      (@endian != nil and 
-       the_class.accepted_internal_parameters.include?(:endian) and
-       not params.has_key?(:endian))
+    def [](key)
+      @choices[key]
     end
+  end
+
+  class SanitizedValue < SanitizedParameter
+    def initialize(value)
+      @value = value
+    end
+
+    attr_reader :value
+  end
+
+  class SanitizedEndian < SanitizedParameter
+    def initialize(endian)
+      unless [:little, :big].include?(endian)
+        raise ArgumentError, "unknown value for endian '#{endian}'"
+      end
+
+      @endian = endian
+    end
+
+    attr_reader :endian
   end
 end

@@ -85,9 +85,9 @@ describe BinData::Struct, "with multiple fields" do
   end
 
   it "should identify accepted parameters" do
-    BinData::Struct.accepted_internal_parameters.should include(:fields)
-    BinData::Struct.accepted_internal_parameters.should include(:hide)
-    BinData::Struct.accepted_internal_parameters.should include(:endian)
+    BinData::Struct.accepted_parameters.should include(:fields)
+    BinData::Struct.accepted_parameters.should include(:hide)
+    BinData::Struct.accepted_parameters.should include(:endian)
   end
 
   it "should return field names" do
@@ -136,6 +136,11 @@ describe BinData::Struct, "with multiple fields" do
     @obj.assign("a" => 3, "b" => 4)
     @obj.a.should == 3
     @obj.b.should == 4
+  end
+
+  it "should assign from nil" do
+    @obj.assign(nil)
+    @obj.should be_clear
   end
 
   it "should assign from Struct" do

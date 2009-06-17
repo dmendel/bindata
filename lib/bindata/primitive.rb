@@ -68,11 +68,6 @@ module BinData
         register(subclass.name, subclass)
       end
 
-      def recursive?
-        # A Primitive can possibly self reference itself.
-        true
-      end
-
       def endian(endian = nil)
         @endian ||= nil
         if [:little, :big].include?(endian)
@@ -90,9 +85,6 @@ module BinData
         name = name.to_s
         params ||= {}
 
-        ensure_type_exists(type)
-        ensure_valid_name(name) unless name.nil?
-
         append_field(type, name, params)
       end
 
@@ -109,30 +101,30 @@ module BinData
       #-------------
       private
 
-      def ensure_type_exists(type)
-        unless RegisteredClasses.is_registered?(type, endian)
-          raise TypeError, "unknown type '#{type}' for #{self}", caller(2)
+      def fields
+        unless defined? @fields
+          sanitizer = Sanitizer.new
+          @fields = sanitizer.create_sanitized_fields(endian)
         end
-      end
-
-      def ensure_valid_name(name)
-        fields.each do |t, n, p|
-          if n == name
-            raise SyntaxError, "duplicate field '#{name}' in #{self}", caller(4)
-          end
-        end
-        if self.instance_methods.include?(name)
-          raise NameError.new("", name),
-                "field '#{name}' shadows an existing method", caller(2)
-        end
+        @fields
       end
 
       def append_field(type, name, params)
-        fields.push([type, name, params])
+        ensure_valid_name(name)
+
+        fields.add_field(type, name, params)
+      rescue TypeError
+        raise TypeError, "unknown type '#{type}' for #{self}", caller(2)
       end
 
-      def fields
-        @fields ||= []
+      def ensure_valid_name(name)
+        if fields.field_names.include?(name)
+          raise SyntaxError, "duplicate field '#{name}' in #{self}", caller(3)
+        end
+        if self.instance_methods.include?(name)
+          raise NameError.new("", name),
+                "field '#{name}' shadows an existing method", caller(3)
+        end
       end
     end
 
@@ -145,11 +137,7 @@ module BinData
     end
 
     def method_missing(symbol, *args, &block)
-      if @struct.respond_to?(symbol)
-        @struct.__send__(symbol, *args, &block)
-      else
-        super
-      end
+      @struct.__send__(symbol, *args, &block)
     end
 
     def debug_name_of(child)

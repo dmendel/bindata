@@ -65,10 +65,10 @@ module BinData
     class << self
 
       def sanitize_parameters!(sanitizer, params)
-        if params.has_key?(:choices)
+        if params.needs_sanitizing?(:choices)
           choices = choices_as_hash(params[:choices])
           ensure_valid_keys(choices)
-          params[:choices] = sanitized_choices(sanitizer, choices)
+          params[:choices] = sanitizer.create_sanitized_choices(choices)
         end
 
         super(sanitizer, params)
@@ -100,17 +100,6 @@ module BinData
         if choices.keys.detect { |k| Symbol === k }
           raise ArgumentError, ":choices hash may not have symbols for keys"
         end
-      end
-
-      def sanitized_choices(sanitizer, choices)
-        result = {}
-        choices.each_pair do |key, val|
-          type, param = val
-          the_class = sanitizer.lookup_class(type)
-          sanitized_params = sanitizer.sanitized_params(the_class, param)
-          result[key] = [the_class, sanitized_params]
-        end
-        result
       end
     end
 
@@ -236,11 +225,11 @@ module BinData
     end
 
     def instantiate_choice(selection)
-      choice_class, choice_params = get_parameter(:choices)[selection]
-      if choice_class.nil?
+      prototype = get_parameter(:choices)[selection]
+      if prototype.nil?
         raise IndexError, "selection '#{selection}' does not exist in :choices for #{debug_name}"
       end
-      choice_class.new(choice_params, self)
+      prototype.instantiate(self)
     end
 
     def copy_previous_value_if_required(selection, obj)

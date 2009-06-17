@@ -71,18 +71,9 @@ module BinData
     class << self
 
       def sanitize_parameters!(sanitizer, params)
-        ensure_valid_endian(params)
-
-        if params.has_key?(:fields)
-          sfields = sanitized_fields(sanitizer, params[:fields], params[:endian])
-          field_names = sanitized_field_names(sfields)
-          hfield_names = hidden_field_names(params[:hide])
-
-          ensure_field_names_are_valid(field_names)
-
-          params[:fields] = sfields
-          params[:hide]   = (hfield_names & field_names)
-        end
+        sanitize_endian(sanitizer, params)
+        sanitize_fields(sanitizer, params)
+        sanitize_hide(sanitizer, params)
 
         super(sanitizer, params)
       end
@@ -90,34 +81,37 @@ module BinData
       #-------------
       private
 
-      def ensure_valid_endian(params)
-        if params.has_key?(:endian)
-          endian = params[:endian]
-          unless [:little, :big].include?(endian)
-            raise ArgumentError, "unknown value for endian '#{endian}'"
-          end
+      def sanitize_endian(sanitizer, params)
+        if params.needs_sanitizing?(:endian)
+          params[:endian] = sanitizer.create_sanitized_endian(params[:endian])
         end
       end
 
-      def sanitized_fields(sanitizer, fields, endian)
-        result = nil
-        sanitizer.with_endian(endian) do
-          result = fields.collect do |ftype, fname, fparams|
-            sanitized_field(sanitizer, ftype, fname, fparams)
+      def sanitize_fields(sanitizer, params)
+        if params.needs_sanitizing?(:fields)
+          fields = params[:fields]
+
+          params[:fields] = sanitizer.create_sanitized_fields(params[:endian])
+          fields.each do |ftype, fname, fparams|
+            params[:fields].add_field(ftype, fname, fparams)
           end
+
+          field_names = sanitized_field_names(params[:fields])
+          ensure_field_names_are_valid(field_names)
         end
-        result
       end
 
-      def sanitized_field(sanitizer, ftype, fname, fparams)
-        fname = fname.to_s
-        fclass = sanitizer.lookup_class(ftype)
-        sanitized_fparams = sanitizer.sanitized_params(fclass, fparams)
-        [fclass, fname, sanitized_fparams]
+      def sanitize_hide(sanitizer, params)
+        if params.needs_sanitizing?(:hide) and params.has_key?(:fields)
+          field_names = sanitized_field_names(params[:fields])
+          hfield_names = hidden_field_names(params[:hide])
+
+          params[:hide]   = (hfield_names & field_names)
+        end
       end
 
       def sanitized_field_names(sanitized_fields)
-        sanitized_fields.collect { |fclass, fname, fparams| fname }
+        sanitized_fields.field_names
       end
 
       def hidden_field_names(hidden)
@@ -151,7 +145,7 @@ module BinData
     def initialize(params = {}, parent = nil)
       super(params, parent)
 
-      @field_names = get_parameter(:fields).collect { |c, n, p| n }
+      @field_names = get_parameter(:fields).field_names
       @field_objs  = []
     end
 
@@ -170,7 +164,7 @@ module BinData
       if include_hidden
         @field_names.dup
       else
-        hidden = get_parameter(:hide)
+        hidden = get_parameter(:hide) || []
         @field_names - hidden
       end
     end
@@ -237,8 +231,8 @@ module BinData
 
     def instantiate_obj_at(index)
       if @field_objs[index].nil?
-        fclass, fname, fparams = get_parameter(:fields)[index]
-        @field_objs[index] = fclass.new(fparams, self)
+        field = get_parameter(:fields)[index]
+        @field_objs[index] = field.instantiate(self)
       end
     end
 

@@ -61,6 +61,16 @@ describe BinData::Base, "with parameters" do
     lambda { BaseStub.new(:a => nil) }.should raise_error(ArgumentError)
   end
 
+  it "should raise error if parameter name is invalid" do
+    lambda {
+      eval <<-END
+        class InvalidParameterNameBase < BinData::Base
+          optional_parameter :eval # i.e. Kernel#eval
+        end
+      END
+    }.should raise_error(NameError)
+  end
+
   it "should convert keys to symbols" do
     obj = BaseStub.new('a' => 3)
     obj.should have_parameter(:a)
@@ -151,7 +161,7 @@ describe BinData::Base, "with multiple parameters" do
   end
 
   it "should identify internally accepted parameters" do
-    accepted = WithParamBase.accepted_internal_parameters
+    accepted = WithParamBase.accepted_parameters
     accepted.should include(:p1)
     accepted.should include(:p2)
     accepted.should include(:p3)

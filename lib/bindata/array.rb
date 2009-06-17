@@ -71,11 +71,9 @@ module BinData
 
         warn_replacement_parameter(params, :read_length, :initial_length)
 
-        if params.has_key?(:type)
-          type, el_params = params[:type]
-          klass = sanitizer.lookup_class(type)
-          sanitized_params = sanitizer.sanitized_params(klass, el_params)
-          params[:type] = [klass, sanitized_params]
+        if params.needs_sanitizing?(:type)
+          el_type, el_params = params[:type]
+          params[:type] = sanitizer.create_sanitized_object_prototype(el_type, el_params)
         end
 
         super(sanitizer, params)
@@ -85,11 +83,10 @@ module BinData
     def initialize(params = {}, parent = nil)
       super(params, parent)
 
-      el_class, el_params = get_parameter(:type)
+      el_factory = get_parameter(:type)
 
       @element_list    = nil
-      @element_class   = el_class
-      @element_params  = el_params
+      @element_factory = el_factory
     end
 
     def clear?
@@ -350,7 +347,7 @@ module BinData
     end
 
     def new_element
-      @element_class.new(@element_params, self)
+      @element_factory.instantiate(self)
     end
 
     def sum_num_bytes_for_all_elements

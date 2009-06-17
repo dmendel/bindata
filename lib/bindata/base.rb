@@ -39,14 +39,9 @@ module BinData
         data
       end
 
-      def recursive?
-        # data objects do not self reference by default
-        false
-      end
-
       AcceptedParameters.define_all_accessors(self, :internal)
 
-      def accepted_internal_parameters
+      def accepted_parameters
         internal = AcceptedParameters.get(self, :internal)
         internal.all
       end

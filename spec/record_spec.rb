@@ -116,8 +116,8 @@ describe BinData::Record, "with multiple fields" do
   end
 
   it "should identify accepted parameters" do
-    BinData::Record.accepted_internal_parameters.should include(:hide)
-    BinData::Record.accepted_internal_parameters.should include(:endian)
+    BinData::Record.accepted_parameters.should include(:hide)
+    BinData::Record.accepted_parameters.should include(:endian)
   end
 
   it "should clear" do
