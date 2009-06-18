@@ -83,33 +83,19 @@ module BinData
     def initialize(params = {}, parent = nil)
       super(params, parent)
 
-      el_factory = get_parameter(:type)
-
-      @element_list    = nil
-      @element_factory = el_factory
+      @element_list      = nil
+      @element_prototype = get_parameter(:type)
     end
 
     def clear?
       @element_list.nil? or
-        elements.inject(true) { |all_clear, f| all_clear and f.clear? }
+        elements.inject(true) { |all_clear, el| all_clear and el.clear? }
     end
 
     def clear
       @element_list = nil
     end
 
-    # Returns the first index of +obj+ in self.
-    #
-    # a = BinData::String.new; a.value = "a"
-    # b = BinData::String.new; b.value = "b"
-    # c = BinData::String.new; c.value = "c"
-    #
-    # arr = BinData::Array.new(:type => :string)
-    # arr.push(a, b, c)
-    #
-    # arr.find_index("b") #=> 1
-    # arr.find_index(c) #=> 2
-    #
     def find_index(obj)
       elements.find_index(obj)
     end
@@ -211,13 +197,11 @@ module BinData
       end
     end
 
-    # The number of elements in this array.
     def length
       elements.length
     end
     alias_method :size, :length
 
-    # Returns true if self array contains no elements.
     def empty?
       length.zero?
     end
@@ -227,7 +211,6 @@ module BinData
       collect { |el| el }
     end
 
-    # Iterate over each element in the array.
     def each
       elements.each { |el| yield el }
     end
@@ -268,7 +251,7 @@ module BinData
 
     def _do_read(io)
       if has_parameter?(:initial_length)
-        elements.each { |f| f.do_read(io) }
+        elements.each { |el| el.do_read(io) }
       elsif has_parameter?(:read_until)
         read_until(io)
       end
@@ -307,11 +290,11 @@ module BinData
     end
 
     def _done_read
-      elements.each { |f| f.done_read }
+      elements.each { |el| el.done_read }
     end
 
     def _do_write(io)
-      elements.each { |f| f.do_write(io) }
+      elements.each { |el| el.do_write(io) }
     end
 
     def _do_num_bytes(deprecated)
@@ -325,7 +308,7 @@ module BinData
     end
 
     def _snapshot
-      elements.collect { |e| e.snapshot }
+      elements.collect { |el| el.snapshot }
     end
 
     def elements
@@ -347,7 +330,7 @@ module BinData
     end
 
     def new_element
-      @element_factory.instantiate(self)
+      @element_prototype.instantiate(self)
     end
 
     def sum_num_bytes_for_all_elements
