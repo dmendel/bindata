@@ -39,15 +39,15 @@ module BinData
         data
       end
 
-      AcceptedParameters.define_all_accessors(self, :internal)
+      AcceptedParameters.define_all_accessors(self)
 
       def accepted_parameters
-        internal = AcceptedParameters.get(self, :internal)
+        internal = AcceptedParameters.get(self)
         internal.all
       end
 
       def sanitize_parameters!(sanitizer, params)
-        internal = AcceptedParameters.get(self, :internal)
+        internal = AcceptedParameters.get(self)
         internal.sanitize_parameters!(sanitizer, params)
       end
 

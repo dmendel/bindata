@@ -6,30 +6,29 @@ module BinData
   # mandatory, optional, default or mutually exclusive.
   class AcceptedParameters
     class << self
-      def define_all_accessors(obj_class, param_name)
+      def define_all_accessors(obj_class)
         all_accessors = [:mandatory, :optional, :default, :mutually_exclusive]
         all_accessors.each do |accessor|
-          define_accessor(obj_class, param_name, accessor)
+          define_accessor(obj_class, accessor)
         end
       end
 
-      def get(obj_class, param_name)
-        obj_class.__send__(internal_storage_method_name(param_name))
+      def get(obj_class)
+        obj_class.__send__(internal_storage_method_name)
       end
 
       #-------------
       private
 
-      def define_accessor(obj_class, param_name, accessor)
+      def define_accessor(obj_class, accessor)
         singular_name = accessor_method_name(accessor)
         plural_name = singular_name + "s"
-        internal_storage_method = internal_storage_method_name(param_name)
 
-        ensure_parameter_storage_exists(obj_class, internal_storage_method)
+        ensure_parameter_storage_exists(obj_class, internal_storage_method_name)
 
         obj_class.class_eval <<-END
           def #{singular_name}(*args)
-            #{internal_storage_method}.#{accessor}(*args)
+            #{internal_storage_method_name}.#{accessor}(*args)
           end
           alias_method :#{plural_name}, :#{singular_name}
         END
@@ -39,8 +38,8 @@ module BinData
         "#{accessor}_parameter"
       end
 
-      def internal_storage_method_name(param_name)
-        "_bindata_accepted_parameters_#{param_name}"
+      def internal_storage_method_name
+        "_bindata_accepted_parameters_"
       end
 
       def ensure_parameter_storage_exists(obj_class, method_name)
@@ -132,6 +131,8 @@ module BinData
     end
 
     def ensure_mutual_exclusion_of_parameters(params)
+      return if params.length < 2
+
       @mutually_exclusive.each do |param1, param2|
         if params.has_key?(param1) and params.has_key?(param2)
           raise ArgumentError, "params ':#{param1}' and ':#{param2}' " +
