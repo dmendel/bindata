@@ -1,6 +1,5 @@
 require 'forwardable'
 require 'bindata/base'
-require 'bindata/sanitize'
 require 'bindata/trace'
 
 module BinData

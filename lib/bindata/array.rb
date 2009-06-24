@@ -1,5 +1,4 @@
 require 'bindata/base'
-require 'bindata/sanitize'
 
 module BinData
   # An Array is a list of data objects of the same type.

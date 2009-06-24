@@ -1,5 +1,4 @@
 require 'bindata/base_primitive'
-require 'bindata/registry'
 require 'bindata/struct'
 
 module BinData

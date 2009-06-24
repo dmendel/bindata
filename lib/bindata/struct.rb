@@ -1,5 +1,4 @@
 require 'bindata/base'
-require 'bindata/sanitize'
 
 module BinData
   # A Struct is an ordered collection of named data objects.
