@@ -1,4 +1,3 @@
-require 'forwardable'
 require 'bindata/base'
 require 'bindata/trace'
 
@@ -54,7 +53,6 @@ module BinData
   #                            selection to the current selection whenever the
   #                            selection changes.  Default is false.
   class Choice < BinData::Base
-    extend Forwardable
 
     register(self.name, self)
 
@@ -121,9 +119,9 @@ module BinData
     # If you really *must* be able to programmatically adjust the selection
     # then try something like the following.
     #
-    #   class ProgrammaticChoice < BinData::Record
-    #     choice :data, :choices => :choices, :selection => :selection
-    #     attrib_accessor :selection
+    #   class ProgrammaticChoice < BinData::Wrapper
+    #     choice :selection => :selection
+    #     attr_accessor :selection
     #   end
     #
     #   type1 = [:string, {:value => "Type1"}]
@@ -133,26 +131,20 @@ module BinData
     #   pc = ProgrammaticChoice.new(:choices => choices)
     #
     #   pc.selection = 5
-    #   pc.data #=> "Type1"
+    #   pc #=> "Type1"
     #
     #   pc.selection = 17
-    #   pc.data #=> "Type2"
+    #   pc #=> "Type2"
     def selection=(v)
       raise NoMethodError
     end
 
-    def_delegators :current_choice, :clear, :clear?
-
-    def respond_to?(symbol, include_private = false)
-      super || current_choice.respond_to?(symbol, include_private)
+    def clear
+      current_choice.clear
     end
 
-    def method_missing(symbol, *args, &block)
-      if current_choice.respond_to?(symbol)
-        current_choice.__send__(symbol, *args, &block)
-      else
-        super
-      end
+    def clear?
+      current_choice.clear?
     end
 
     def debug_name_of(child)
@@ -161,6 +153,14 @@ module BinData
 
     def offset_of(child)
       offset
+    end
+
+    def respond_to?(symbol, include_private = false)
+      super || current_choice.respond_to?(symbol, include_private)
+    end
+
+    def method_missing(symbol, *args, &block)
+      current_choice.__send__(symbol, *args, &block)
     end
 
     #---------------
