@@ -27,8 +27,7 @@ module BinData
   end
 
   def trace_message(&block) #:nodoc:
-    return if @tracer.nil?
-    block.call(@tracer)
+    yield @tracer if @tracer
   end
 
   module_function :trace_reading, :trace_message
