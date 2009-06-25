@@ -9,24 +9,20 @@ module BinData
     end
 
     def register(name, class_to_register)
-      formatted_name = underscore_name(name)
+      formatted_name = lookup_key(name)
       warn_if_name_is_already_registered(formatted_name, class_to_register)
 
       @registry[formatted_name] = class_to_register
     end
 
     def lookup(name, endian = nil)
-      key = underscore_name(name.to_s)
+      key = lookup_key(name, endian)
 
-      result = @registry[key]
-      if result.nil?
-        result = @registry[merge_key_and_endian(key, endian)]
-      end
-      result
+      @registry[key] || lookup_int(key)
     end
 
     def is_registered?(name, endian = nil)
-      lookup(name, endian) != nil
+      @registry.has_key?(lookup_key(name, endian))
     end
 
     # Convert camelCase +name+ to underscore style.
@@ -41,16 +37,39 @@ module BinData
     #---------------
     private
 
-    def merge_key_and_endian(key, endian)
-      result = key
+    def lookup_key(name, endian = nil)
+      name = underscore_name(name)
+
+      result = name
       if endian != nil
-        if /^u?int\d+$/ =~ key
-          result = key + ((endian == :little) ? "le" : "be")
-        elsif /^(float|double)$/ =~ key
-          result = key + ((endian == :little) ? "_le" : "_be")
+        if /^u?int\d+$/ =~ name
+          result = name + ((endian == :little) ? "le" : "be")
+        elsif /^(float|double)$/ =~ name
+          result = name + ((endian == :little) ? "_le" : "_be")
         end
       end
       result
+    end
+
+    def lookup_int(key)
+      if /^(u?)int(\d+)(le|be)$/ =~ key
+        signed = $1 == "u" ? :unsigned : :signed
+        nbits  = $2.to_i
+        endian = $3 == "le" ? :little : :big
+        if nbits > 0 and (nbits % 8) == 0
+          if BinData.const_defined?(:Integer)
+            BinData::Integer.define_class(nbits, endian, signed)
+          end
+        end
+      elsif /^bit(\d+)(le)?$/ =~ key
+        nbits  = $1.to_i
+        endian = $2 == "le" ? :little : :big
+        if BinData.const_defined?(:BitField)
+          BinData::BitField.define_class(nbits, endian)
+        end
+      end
+
+      @registry[key]
     end
 
     def warn_if_name_is_already_registered(name, class_to_register)

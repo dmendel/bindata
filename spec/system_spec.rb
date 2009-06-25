@@ -64,7 +64,7 @@ describe "lambdas with parent" do
   end
 end
 
-describe "Records with choice field" do
+describe BinData::Record, "with choice field" do
   before(:all) do
     eval <<-END
       class TupleRecord < BinData::Record
@@ -287,5 +287,20 @@ describe "Evaluating custom parameters" do
   it "should recursively evaluate parameter" do
     obj = CustomParameterRecord.new(:zz => 5)
     obj.c.eval_parameter(:custom).should == 5
+  end
+end
+
+describe BinData::Record, "with custom sized integers" do
+  before(:all) do
+    eval <<-END
+      class CustomIntRecord < BinData::Record
+        int40be :a
+      end
+    END
+  end
+
+  it "should read as expected" do
+    str = "\x00\x00\x00\x00\x05"
+    CustomIntRecord.read(str).should == {"a" => 5}
   end
 end

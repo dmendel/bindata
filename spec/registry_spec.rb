@@ -1,6 +1,8 @@
 #!/usr/bin/env ruby
 
 require File.expand_path(File.dirname(__FILE__)) + '/spec_common'
+require 'bindata/bits'
+require 'bindata/int'
 require 'bindata/registry'
 
 describe BinData::Registry do
@@ -57,32 +59,50 @@ describe BinData::Registry do
   end
 
   it "should lookup integers with endian" do
-#    @r.register("Int24be", A)
-#    @r.register("Int24le", B)
-#    @r.register("Uint24be", C)
-#    @r.register("Uint24le", D)
-#
-#    @r.lookup("int24", :big).should == A
-#    @r.lookup("int24", :little).should == B
-#    @r.lookup("uint24", :big).should == C
-#    @r.lookup("uint24", :little).should == D
+    @r.register("Int24be", A)
+    @r.register("Int24le", B)
+    @r.register("Uint24be", C)
+    @r.register("Uint24le", D)
+
+    @r.lookup("int24", :big).should == A
+    @r.lookup("int24", :little).should == B
+    @r.lookup("uint24", :big).should == C
+    @r.lookup("uint24", :little).should == D
   end
 
   it "should not lookup integers without endian" do
-#    @r.register("Int24be", A)
+    @r.register("Int24be", A)
 
-#    @r.lookup("int24").should be_nil
+    @r.lookup("int24").should be_nil
   end
 
   it "should lookup floats with endian" do
-#    @r.register("FloatBe", A)
-#    @r.register("FloatLe", B)
-#    @r.register("DoubleBe", C)
-#    @r.register("DoubleLe", D)
-#
-#    @r.lookup("float", :big).should == A
-#    @r.lookup("float", :little).should == B
-#    @r.lookup("double", :big).should == C
-#    @r.lookup("double", :little).should == D
+    @r.register("FloatBe", A)
+    @r.register("FloatLe", B)
+    @r.register("DoubleBe", C)
+    @r.register("DoubleLe", D)
+
+    @r.lookup("float", :big).should == A
+    @r.lookup("float", :little).should == B
+    @r.lookup("double", :big).should == C
+    @r.lookup("double", :little).should == D
+  end
+
+  it "should automatically create classes for integers" do
+    BinData.const_defined?(:Uint40be).should be_false
+    @r.lookup("uint40be")
+    BinData.const_defined?(:Uint40be).should be_true
+  end
+
+  it "should automatically create classes for big endian bits" do
+    BinData.const_defined?(:Bit801).should be_false
+    @r.lookup("bit801")
+    BinData.const_defined?(:Bit801).should be_true
+  end
+
+  it "should automatically create classes for little endian bits" do
+    BinData.const_defined?(:Bit802le).should be_false
+    @r.lookup("bit802le")
+    BinData.const_defined?(:Bit802le).should be_true
   end
 end
