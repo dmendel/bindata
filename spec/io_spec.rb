@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-require File.expand_path(File.dirname(__FILE__)) + '/spec_common'
+require File.expand_path(File.join(File.dirname(__FILE__), "spec_common"))
 require 'bindata/io'
 
 describe BinData::IO do
