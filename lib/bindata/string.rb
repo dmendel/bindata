@@ -56,15 +56,13 @@ module BinData
 
     class << self
 
-      def sanitize_parameters!(sanitizer, params)
+      def sanitize_parameters!(params, sanitizer)
         warn_replacement_parameter(params, :initial_length, :read_length)
 
-        if params.has_key?(:pad_char)
+        if params.has_parameter?(:pad_char)
           ch = params[:pad_char]
           params[:pad_char] = sanitized_pad_char(ch)
         end
-
-        super(sanitizer, params)
       end
 
       #-------------

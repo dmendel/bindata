@@ -77,12 +77,12 @@ module BinData
         append_field(type, name, params)
       end
 
-      def sanitize_parameters!(sanitizer, params)
+      def sanitize_parameters!(params, sanitizer)
         params[:fields] = fields
         params[:endian] = endian unless endian.nil?
         params[:hide]   = hide   unless hide.empty?
 
-        super(sanitizer, params)
+        super(params, sanitizer)
       end
 
       #-------------

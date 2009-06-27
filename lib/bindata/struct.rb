@@ -69,24 +69,22 @@ module BinData
 
     class << self
 
-      def sanitize_parameters!(sanitizer, params)
-        sanitize_endian(sanitizer, params)
-        sanitize_fields(sanitizer, params)
-        sanitize_hide(sanitizer, params)
-
-        super(sanitizer, params)
+      def sanitize_parameters!(params, sanitizer)
+        sanitize_endian(params, sanitizer)
+        sanitize_fields(params, sanitizer)
+        sanitize_hide(params, sanitizer)
       end
 
       #-------------
       private
 
-      def sanitize_endian(sanitizer, params)
+      def sanitize_endian(params, sanitizer)
         if params.needs_sanitizing?(:endian)
           params[:endian] = sanitizer.create_sanitized_endian(params[:endian])
         end
       end
 
-      def sanitize_fields(sanitizer, params)
+      def sanitize_fields(params, sanitizer)
         if params.needs_sanitizing?(:fields)
           fields = params[:fields]
 
@@ -100,8 +98,8 @@ module BinData
         end
       end
 
-      def sanitize_hide(sanitizer, params)
-        if params.needs_sanitizing?(:hide) and params.has_key?(:fields)
+      def sanitize_hide(params, sanitizer)
+        if params.needs_sanitizing?(:hide) and params.has_parameter?(:fields)
           field_names = sanitized_field_names(params[:fields])
           hfield_names = hidden_field_names(params[:hide])
 

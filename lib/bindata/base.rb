@@ -39,23 +39,45 @@ module BinData
         data
       end
 
-      AcceptedParameters.define_all_accessors(self)
-
-      def accepted_parameters
-        internal = AcceptedParameters.get(self)
-        internal.all
+      def mandatory_parameters(*args)
+        accepted_parameters.mandatory(*args)
       end
 
-      def sanitize_parameters!(sanitizer, params)
-        internal = AcceptedParameters.get(self)
-        internal.sanitize_parameters!(sanitizer, params)
+      def optional_parameters(*args)
+        accepted_parameters.optional(*args)
+      end
+
+      def default_parameters(*args)
+        accepted_parameters.default(*args)
+      end
+
+      def mutually_exclusive_parameters(*args)
+        accepted_parameters.mutually_exclusive(*args)
+      end
+
+      alias_method :mandatory_parameter, :mandatory_parameters
+      alias_method :optional_parameter, :optional_parameters
+      alias_method :default_parameter, :default_parameters
+
+      def accepted_parameters
+        unless defined? @accepted_parameters
+          ancestor = ancestors[1..-1].find { |cls|
+                                        cls.respond_to?(:accepted_parameters)
+                                       }
+          ancestor_params = ancestor.nil? ? nil : ancestor.accepted_parameters
+          @accepted_parameters = AcceptedParameters.new(ancestor_params)
+        end
+        @accepted_parameters
+      end
+
+      def sanitize_parameters!(params, sanitizer)
       end
 
       #-------------
       private
 
       def warn_replacement_parameter(params, bad_key, suggested_key)
-        if params.has_key?(bad_key)
+        if params.has_parameter?(bad_key)
           warn ":#{bad_key} is not used with #{self}.  " +
                "You probably want to change this to :#{suggested_key}"
         end
@@ -76,7 +98,7 @@ module BinData
     # parent data object (e.g. struct, array, choice) this object resides
     # under.
     def initialize(params = {}, parent = nil)
-      @params = Sanitizer.sanitize(self.class, params)
+      @params = Sanitizer.sanitize(params, self.class)
       @parent = parent
     end
 
@@ -99,7 +121,7 @@ module BinData
 
     # Returns whether +key+ exists in the +parameters+ hash.
     def has_parameter?(key)
-      @params.has_key?(key)
+      @params.has_parameter?(key)
     end
 
     # Reads data into this data object.

@@ -80,16 +80,16 @@ module BinData
   class String < BinData::BasePrimitive
     class << self
       def deprecate!(params, old_key, new_key) #:nodoc:
-        if params.has_key?(old_key)
+        if params.has_parameter?(old_key)
           warn ":#{old_key} is deprecated. Replacing with :#{new_key}"
           params[new_key] = params.delete(old_key)
         end
       end
 
       alias_method :orig_sanitize_parameters!, :sanitize_parameters!
-      def sanitize_parameters!(sanitizer, params) #:nodoc:
+      def sanitize_parameters!(params, sanitizer) #:nodoc:
         deprecate!(params, :trim_value, :trim_padding)
-        orig_sanitize_parameters!(sanitizer, params)
+        orig_sanitize_parameters!(params, sanitizer)
       end
     end
   end

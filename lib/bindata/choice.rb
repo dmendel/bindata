@@ -61,14 +61,12 @@ module BinData
 
     class << self
 
-      def sanitize_parameters!(sanitizer, params)
+      def sanitize_parameters!(params, sanitizer)
         if params.needs_sanitizing?(:choices)
           choices = choices_as_hash(params[:choices])
           ensure_valid_keys(choices)
           params[:choices] = sanitizer.create_sanitized_choices(choices)
         end
-
-        super(sanitizer, params)
       end
 
       #-------------
@@ -94,7 +92,7 @@ module BinData
         if choices.has_key?(nil)
           raise ArgumentError, ":choices hash may not have nil key"
         end
-        if choices.keys.detect { |k| Symbol === k }
+        if choices.keys.detect { |key| Symbol === key }
           raise ArgumentError, ":choices hash may not have symbols for keys"
         end
       end

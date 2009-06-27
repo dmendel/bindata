@@ -87,14 +87,12 @@ module BinData
         append_field(type, name, params)
       end
 
-      def sanitize_parameters!(sanitizer, params)
+      def sanitize_parameters!(params, sanitizer)
         struct_params = {}
         struct_params[:fields] = fields
         struct_params[:endian] = endian unless endian.nil?
         
         params[:struct_params] = struct_params
-
-        super(sanitizer, params)
       end
 
       #-------------

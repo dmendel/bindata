@@ -62,8 +62,9 @@ module BinData
 
     class << self
 
-      def sanitize_parameters!(sanitizer, params)
-        unless params.has_key?(:initial_length) or params.has_key?(:read_until)
+      def sanitize_parameters!(params, sanitizer)
+        unless params.has_parameter?(:initial_length) or
+                 params.has_parameter?(:read_until)
           # ensure one of :initial_length and :read_until exists
           params[:initial_length] = 0
         end
@@ -74,8 +75,6 @@ module BinData
           el_type, el_params = params[:type]
           params[:type] = sanitizer.create_sanitized_object_prototype(el_type, el_params)
         end
-
-        super(sanitizer, params)
       end
     end
 
@@ -265,26 +264,24 @@ module BinData
     end
 
     def read_until_eof(io)
-      finished = false
-      while not finished
+      loop do
         element = append_new_element
         begin
           element.do_read(io)
         rescue
           elements.pop
-          finished = true
+          break
         end
       end
     end
 
     def read_until_condition(io)
-      finished = false
-      while not finished
+      loop do
         element = append_new_element
         element.do_read(io)
         variables = { :index => self.length - 1, :element => self.last,
                       :array => self }
-        finished = eval_parameter(:read_until, variables)
+        break if eval_parameter(:read_until, variables)
       end
     end
 
