@@ -1,8 +1,12 @@
 = BinData Changelog
 
-* Sanitizing code was refactored for speed.
+== Version 0.11.0 (2009-06-28)
 
-== Version
+* Sanitizing code was refactored for speed.
+* Arbitrary sized integers and bit fields are now automatically instantiated.
+* Add ability to wrap existing types and override their parameters.
+
+== Version 0.10.0 (2009-04-17)
 
 * Arbitrary byte sized integers are now supported (e.g. 24bit, 808bit).
 * Renamed String :trim_value parameter to :trim_padding.
