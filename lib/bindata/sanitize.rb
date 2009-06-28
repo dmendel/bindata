@@ -63,6 +63,10 @@ module BinData
       end
     end
 
+    def delete(param)
+      @parameters.delete(param)
+    end
+
     #---------------
     private
 
