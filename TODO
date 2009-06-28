@@ -1,26 +1,5 @@
-* Write a Rakefile
-
-* Registry should auto create integers and bits. (e.g. 24bit int, 191bit int)
-
-* Improve speed of Sanitizer for recursive records
-    rework it so that sanitizing is done during definition (before initialising).
-
 * Write a detailed tutorial (probably as a web page).
 
 * Need more examples.
 
-* Need wrapper to be able to define new wrapped classes - with parameters
-
------------------------------------------------------------------------------
-define_wrapped_class("MyInt", :uint32be, :initial_value => 3) #=> MyInt
-define_wrapped_class("ByteArray", :array, :type => :uint8) #=> ByteArray
-define_wrapped_class("MyInt", :uint32be, {:initial_value => :mult}, [], [], {:mult => 3}) #=> MyInt
-          # mandatory, optional, default
------------------------------------------------------------------------------
-
-
-
-
-
-refactor snapshot -> _snapshot et al
-
+* Perhaps refactor snapshot -> _snapshot et al
