@@ -1,3 +1,7 @@
+This package is designed to be installed with rubygems.  If you don't
+have rubygems installed on your system, the older setup.rb is
+included as a convenience.
+
   ($ su)
   # ruby setup.rb
 
