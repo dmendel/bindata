@@ -2,7 +2,6 @@
 
 require File.expand_path(File.join(File.dirname(__FILE__), "spec_common"))
 require 'bindata'
-require 'bindata/wrapper'
 
 describe BinData::Wrapper, "with errors" do
   it "should not wrap more than one type" do
@@ -80,5 +79,23 @@ describe BinData::Wrapper, "around a Choice" do
   it "should forward parameters" do
     obj = WrappedChoice.new(:selection => 'b')
     obj.num_bytes.should == 2
+  end
+end
+
+describe BinData::Wrapper, "inside a struct" do
+  before(:all) do
+    eval <<-END
+      class WrappedUint32le < BinData::Wrapper
+        uint32le
+      end
+    END
+  end
+
+  it "should handle onlyif" do
+    field1 = [:wrapped_uint32le, :a, {:onlyif => false, :value => 1 }]
+    field2 = [:wrapped_uint32le, :b, {:onlyif => true, :value => 2 }]
+
+    obj = BinData::Struct.new(:fields => [field1, field2])
+    obj.should == {'b' => 2}
   end
 end

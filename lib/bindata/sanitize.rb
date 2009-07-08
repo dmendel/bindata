@@ -58,6 +58,7 @@ module BinData
       unless @all_sanitized
         unused_keys = @parameters.keys - @the_class.accepted_parameters.all
         unused_keys.each do |param|
+          next if param == :onlyif
           dest[param] = @parameters.delete(param)
         end
       end
