@@ -188,7 +188,7 @@ module BinData
     def offset_of(child)
       instantiate_all_objs
       sum = sum_num_bytes_below_index(find_index_of(child))
-      child_offset = (::Integer === child.do_num_bytes) ? sum.ceil : sum.floor
+      child_offset = child.do_num_bytes.is_a?(Integer) ? sum.ceil : sum.floor
 
       offset + child_offset
     end
@@ -297,7 +297,7 @@ module BinData
         obj = @field_objs[i]
         if include_obj(obj)
           nbytes = obj.do_num_bytes
-          sum = ((::Integer === nbytes) ? sum.ceil : sum) + nbytes
+          sum = (nbytes.is_a?(Integer) ? sum.ceil : sum) + nbytes
         end
       end
 

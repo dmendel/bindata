@@ -92,7 +92,7 @@ module BinData
         if choices.has_key?(nil)
           raise ArgumentError, ":choices hash may not have nil key"
         end
-        if choices.keys.detect { |key| Symbol === key }
+        if choices.keys.detect { |key| key.is_a?(Symbol) }
           raise ArgumentError, ":choices hash may not have symbols for keys"
         end
       end
