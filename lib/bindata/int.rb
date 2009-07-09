@@ -4,49 +4,58 @@ module BinData
   # Defines a number of classes that contain an integer.  The integer
   # is defined by endian, signedness and number of bytes.
 
-  module Integer #:nodoc: all
+  module Int #:nodoc: all
     class << self
       def define_class(nbits, endian, signed)
-        endian_str = (endian == :big) ? "be" : "le"
-        if signed == :signed
-          name = "Int#{nbits}#{endian_str}"
-          creation_method = "create_int_methods"
-        else
-          name = "Uint#{nbits}#{endian_str}"
-          creation_method = "create_uint_methods"
-        end
+        name = class_name(nbits, endian, signed)
+        return if BinData.const_defined?(name)
+
+        int_type = (signed == :signed) ? 'int' : 'uint'
+        creation_method = "create_#{int_type}_methods"
 
         BinData.module_eval <<-END
           class #{name} < BinData::BasePrimitive
             register(self.name, self)
-            Integer.#{creation_method}(self, #{nbits}, :#{endian.to_s})
+            Int.#{creation_method}(self, #{nbits}, :#{endian.to_s})
           end
         END
       end
 
+      def class_name(nbits, endian, signed)
+        endian_str = (endian == :big) ? "be" : "le"
+        base = (signed == :signed) ? "Int" : "Uint"
+
+        "#{base}#{nbits}#{endian_str}"
+      end
+
       def create_uint_methods(int_class, nbits, endian)
+        raise "nbits must be divisible by 8" unless (nbits % 8).zero?
+
         min = 0
         max = (1 << nbits) - 1
 
         clamp = create_clamp_code(min, max)
         read = create_read_code(nbits, endian)
-        to_s = create_to_s_code(nbits, endian)
+        to_binary_s = create_to_binary_s_code(nbits, endian)
 
-        define_methods(int_class, nbits / 8, clamp, read, to_s)
+        define_methods(int_class, nbits / 8, clamp, read, to_binary_s)
       end
 
       def create_int_methods(int_class, nbits, endian)
+        raise "nbits must be divisible by 8" unless (nbits % 8).zero?
+
         max = (1 << (nbits - 1)) - 1
         min = -(max + 1)
 
         clamp = create_clamp_code(min, max)
         read = create_read_code(nbits, endian)
-        to_s = create_to_s_code(nbits, endian)
+        to_binary_s = create_to_binary_s_code(nbits, endian)
 
         int2uint = create_int2uint_code(nbits)
         uint2int = create_uint2int_code(nbits)
 
-        define_methods(int_class, nbits / 8, clamp, read, to_s, int2uint, uint2int)
+        define_methods(int_class, nbits / 8, clamp, read, to_binary_s,
+                         int2uint, uint2int)
       end
 
       def create_clamp_code(min, max)
@@ -65,8 +74,6 @@ module BinData
       end
 
       def create_read_code(nbits, endian)
-        raise "nbits must be divisible by 8" unless (nbits % 8).zero?
-
         # determine "word" size and unpack directive
         if (nbits % 32).zero?
           bytes_per_word = 4
@@ -97,9 +104,7 @@ module BinData
         "(#{unpack_str}; #{assemble_str})"
       end
 
-      def create_to_s_code(nbits, endian)
-        raise "nbits must be divisible by 8" unless (nbits % 8).zero?
-
+      def create_to_binary_s_code(nbits, endian)
         # special case 8bit integers for speed
         return "val.chr" if nbits == 8
 
@@ -130,8 +135,8 @@ module BinData
         "#{array_str}.pack('#{d * nwords}')"
       end
 
-      def define_methods(int_class, nbytes, clamp, read, to_s,
-                              int2uint = nil, uint2int = nil)
+      def define_methods(int_class, nbytes, clamp, read, to_binary_s,
+                           int2uint = nil, uint2int = nil)
         int_class.module_eval <<-END
           #---------------
           private
@@ -152,7 +157,7 @@ module BinData
           def value_to_binary_string(val)
             #{clamp}
             #{int2uint unless int2uint.nil?}
-            #{to_s}
+            #{to_binary_s}
           end
 
           def read_and_return_value(io)
@@ -168,20 +173,20 @@ module BinData
   # Unsigned 1 byte integer.
   class Uint8 < BinData::BasePrimitive
     register(self.name, self)
-    Integer.create_uint_methods(self, 8, :little)
+    Int.create_uint_methods(self, 8, :little)
   end
 
   # Signed 1 byte integer.
   class Int8 < BinData::BasePrimitive
     register(self.name, self)
-    Integer.create_int_methods(self, 8, :little)
+    Int.create_int_methods(self, 8, :little)
   end
 
   # Create commonly used integers
   [8, 16, 32, 64, 128].each do |nbits|
-    Integer.define_class(nbits, :little, :unsigned)
-    Integer.define_class(nbits, :little, :signed)
-    Integer.define_class(nbits, :big, :unsigned)
-    Integer.define_class(nbits, :big, :signed)
+    Int.define_class(nbits, :little, :unsigned)
+    Int.define_class(nbits, :little, :signed)
+    Int.define_class(nbits, :big, :unsigned)
+    Int.define_class(nbits, :big, :signed)
   end
 end

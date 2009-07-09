@@ -57,8 +57,8 @@ module BinData
         nbits  = $2.to_i
         endian = $3 == "le" ? :little : :big
         if nbits > 0 and (nbits % 8) == 0
-          if BinData.const_defined?(:Integer)
-            BinData::Integer.define_class(nbits, endian, signed)
+          if BinData.const_defined?(:Int)
+            BinData::Int.define_class(nbits, endian, signed)
           end
         end
       elsif /^bit(\d+)(le)?$/ =~ key

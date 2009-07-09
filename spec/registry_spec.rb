@@ -58,6 +58,7 @@ describe BinData::Registry do
     @r.underscore_name('A::B::C').should == 'c'
   end
 
+=begin
   it "should lookup integers with endian" do
     @r.register("Int24be", A)
     @r.register("Int24le", B)
@@ -105,4 +106,5 @@ describe BinData::Registry do
     @r.lookup("bit802le")
     BinData.const_defined?(:Bit802le).should be_true
   end
+=end
 end

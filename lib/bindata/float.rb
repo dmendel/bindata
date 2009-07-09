@@ -7,10 +7,10 @@ module BinData
   module FloatingPoint #:nodoc: all
     def self.create_float_methods(float_class, precision, endian)
       read = create_read_code(precision, endian)
-      to_s = create_to_s_code(precision, endian)
+      to_binary_s = create_to_binary_s_code(precision, endian)
       nbytes = (precision == :single) ? 4 : 8
 
-      define_methods(float_class, nbytes, read, to_s)
+      define_methods(float_class, nbytes, read, to_binary_s)
     end
 
     def self.create_read_code(precision, endian)
@@ -25,7 +25,7 @@ module BinData
       "io.readbytes(#{nbytes}).unpack('#{unpack}').at(0)"
     end
 
-    def self.create_to_s_code(precision, endian)
+    def self.create_to_binary_s_code(precision, endian)
       if precision == :single
         pack = (endian == :little) ? 'e' : 'g'
       else # double_precision
@@ -35,7 +35,7 @@ module BinData
       "[val].pack('#{pack}')"
     end
 
-    def self.define_methods(float_class, nbytes, read, to_s)
+    def self.define_methods(float_class, nbytes, read, to_binary_s)
       float_class.module_eval <<-END
         def _do_num_bytes(ignored)
           #{nbytes}
@@ -49,7 +49,7 @@ module BinData
         end
 
         def value_to_binary_string(val)
-          #{to_s}
+          #{to_binary_s}
         end
 
         def read_and_return_value(io)
