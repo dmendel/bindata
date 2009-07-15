@@ -95,7 +95,7 @@ module BinData
     end
 
     def find_index(obj)
-      elements.find_index(obj)
+      elements.index(obj)
     end
     alias_method :index, :find_index
 
@@ -103,7 +103,7 @@ module BinData
     #
     # Uses equal? for the comparator.
     def find_index_of(obj)
-      elements.find_index { |el| el.equal?(obj) }
+      elements.index { |el| el.equal?(obj) }
     end
 
     def push(*args)

@@ -208,12 +208,12 @@ module BinData
     end
 
     def find_index_of(obj)
-      @field_objs.find_index { |el| el.equal?(obj) }
+      @field_objs.index { |el| el.equal?(obj) }
     end
 
     def find_obj_for_name(name)
       field_name = name.to_s.chomp("=")
-      index = @field_names.find_index(field_name)
+      index = @field_names.index(field_name)
       if index
         instantiate_obj_at(index)
         @field_objs[index]

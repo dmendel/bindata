@@ -3,6 +3,8 @@
 == Version 0.11.1
 
 * Allow wrapped types to work with struct's :onlyif parameter
+* Use Array#index instead of #find_index for compatibility with ruby 1.8.6
+  (patch courtesy of Joe Rozner).
 
 == Version 0.11.0 (2009-06-28)
 
