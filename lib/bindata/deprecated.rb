@@ -139,8 +139,8 @@ module BinData
 
     alias_method :orig_offset_of, :offset_of
     def offset_of(child)
-      if child.class == ::String
-        fail "error: 'offset_of(\"fieldname\")' is deprecated.  Use 'fieldname.offset' instead"
+      if child.is_a?(::String) or child.is_a?(Symbol)
+        fail "error: 'offset_of(#{child.inspect})' is deprecated.  Use '#{child.to_s}.offset' instead"
       end
       orig_offset_of(child)
     end
