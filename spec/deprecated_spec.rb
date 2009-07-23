@@ -7,10 +7,8 @@ require 'bindata'
 describe BinData::SingleValue, "when defining" do
   it "should allow inheriting from deprecated SingleValue" do
     lambda {
-      eval <<-END
-        class SubclassSingleValue < BinData::SingleValue
-        end
-      END
+      class SubclassSingleValue < BinData::SingleValue
+      end
     }.should_not raise_error
   end
 end
@@ -18,10 +16,8 @@ end
 describe BinData::MultiValue, "when defining" do
   it "should allow inheriting from deprecated MultiValue" do
     lambda {
-      eval <<-END
-        class SubclassMultiValue < BinData::MultiValue
-        end
-      END
+      class SubclassMultiValue < BinData::MultiValue
+      end
     }.should_not raise_error
   end
 end

@@ -6,69 +6,55 @@ require 'bindata'
 describe BinData::Record, "when defining" do
   it "should fail on non registered types" do
     lambda {
-      eval <<-END
-        class BadTypeRecord < BinData::Record
-          non_registerd_type :a
-        end
-      END
+      class BadTypeRecord < BinData::Record
+        non_registerd_type :a
+      end
     }.should raise_error(TypeError)
   end
 
   it "should fail on duplicate names" do
     lambda {
-      eval <<-END
-        class DuplicateNameRecord < BinData::Record
-          int8 :a
-          int8 :b
-          int8 :a
-        end
-      END
+      class DuplicateNameRecord < BinData::Record
+        int8 :a
+        int8 :b
+        int8 :a
+      end
     }.should raise_error(SyntaxError)
   end
 
   it "should fail on reserved names" do
     lambda {
-      eval <<-END
-        class ReservedNameRecord < BinData::Record
-          int8 :a
-          int8 :invert # from Hash.instance_methods
-        end
-      END
+      class ReservedNameRecord < BinData::Record
+        int8 :a
+        int8 :invert # from Hash.instance_methods
+      end
     }.should raise_error(NameError)
   end
 
   it "should fail when field name shadows an existing method" do
     lambda {
-      eval <<-END
-        class ExistingNameRecord < BinData::Record
-          int8 :object_id
-        end
-      END
+      class ExistingNameRecord < BinData::Record
+        int8 :object_id
+      end
     }.should raise_error(NameError)
   end
 
   it "should fail on unknown endian" do
     lambda {
-      eval <<-END
-        class BadEndianRecord < BinData::Record
-          endian 'a bad value'
-        end
-      END
+      class BadEndianRecord < BinData::Record
+        endian 'a bad value'
+      end
     }.should raise_error(ArgumentError)
   end
 end
 
 describe BinData::Record, "with hidden fields" do
-  before(:all) do
-    eval <<-END
-      class HiddenRecord < BinData::Record
-        hide :b, 'c'
-        int8 :a
-        int8 'b', :initial_value => 10
-        int8 :c
-        int8 :d, :value => :b
-      end
-    END
+  class HiddenRecord < BinData::Record
+    hide :b, 'c'
+    int8 :a
+    int8 'b', :initial_value => 10
+    int8 :c
+    int8 :d, :value => :b
   end
 
   before(:each) do
@@ -94,13 +80,9 @@ describe BinData::Record, "with hidden fields" do
 end
 
 describe BinData::Record, "with multiple fields" do
-  before(:all) do
-    eval <<-END
-      class MultiFieldRecord < BinData::Record
-        int8 :a
-        int8 :b
-      end
-    END
+  class MultiFieldRecord < BinData::Record
+    int8 :a
+    int8 :b
   end
 
   before(:each) do
@@ -162,24 +144,20 @@ describe BinData::Record, "with multiple fields" do
 end
 
 describe BinData::Record, "with nested structs" do
-  before(:all) do
-    eval <<-END
-      class Inner1Record < BinData::Record
-        int8 :w, :initial_value => 3
-        int8 :x, :value => :the_val
-      end
+  class Inner1Record < BinData::Record
+    int8 :w, :initial_value => 3
+    int8 :x, :value => :the_val
+  end
 
-      class Inner2Record < BinData::Record
-        int8 :y, :value => lambda { parent.b.w }
-        int8 :z
-      end
+  class Inner2Record < BinData::Record
+    int8 :y, :value => lambda { parent.b.w }
+    int8 :z
+  end
 
-      class RecordOuter < BinData::Record
-        int8               :a, :initial_value => 6
-        inner1_record :b, :the_val => :a
-        inner2_record :c
-      end
-    END
+  class RecordOuter < BinData::Record
+    int8               :a, :initial_value => 6
+    inner1_record :b, :the_val => :a
+    inner2_record :c
   end
 
   before(:each) do
@@ -206,19 +184,15 @@ describe BinData::Record, "with nested structs" do
 end
 
 describe BinData::Record, "with an endian defined" do
-  before(:all) do
-    eval <<-END
-      class RecordWithEndian < BinData::Record
-        endian :little
+  class RecordWithEndian < BinData::Record
+    endian :little
 
-        uint16 :a
-        float  :b
-        array  :c, :type => :int8, :initial_length => 2
-        choice :d, :choices => [ [:uint16], [:uint32] ], :selection => 1
-        struct :e, :fields => [ [:uint16, :f], [:uint32be, :g] ]
-        struct :h, :fields => [ [:struct, :i, {:fields => [[:uint16, :j]]}] ]
-      end
-    END
+    uint16 :a
+    float  :b
+    array  :c, :type => :int8, :initial_length => 2
+    choice :d, :choices => [ [:uint16], [:uint32] ], :selection => 1
+    struct :e, :fields => [ [:uint16, :f], [:uint32be, :g] ]
+    struct :h, :fields => [ [:struct, :i, {:fields => [[:uint16, :j]]}] ]
   end
 
   before(:each) do
@@ -242,15 +216,11 @@ describe BinData::Record, "with an endian defined" do
 end
 
 describe BinData::Record, "defined recursively" do
-  before(:all) do
-    eval <<-END
-      class RecursiveRecord < BinData::Record
-        endian  :big
-        uint16  :val
-        uint8   :has_nxt, :value => lambda { nxt.clear? ? 0 : 1 }
-        recursive_record :nxt, :onlyif => lambda { has_nxt > 0 }
-      end
-    END
+  class RecursiveRecord < BinData::Record
+    endian  :big
+    uint16  :val
+    uint8   :has_nxt, :value => lambda { nxt.clear? ? 0 : 1 }
+    recursive_record :nxt, :onlyif => lambda { has_nxt > 0 }
   end
 
   it "should be able to be created" do
@@ -282,14 +252,10 @@ describe BinData::Record, "defined recursively" do
 end
 
 describe BinData::Record, "with custom mandatory parameters" do
-  before(:all) do
-    eval <<-END
-      class MandatoryRecord < BinData::Record
-        mandatory_parameter :arg1
+  class MandatoryRecord < BinData::Record
+    mandatory_parameter :arg1
 
-        uint8 :a, :value => :arg1
-      end
-    END
+    uint8 :a, :value => :arg1
   end
 
   it "should raise error if mandatory parameter is not supplied" do
@@ -303,14 +269,10 @@ describe BinData::Record, "with custom mandatory parameters" do
 end
 
 describe BinData::Record, "with custom default parameters" do
-  before(:all) do
-    eval <<-END
-      class DefaultRecord < BinData::Record
-        default_parameter :arg1 => 5
+  class DefaultRecord < BinData::Record
+    default_parameter :arg1 => 5
 
-        uint8 :a, :value => :arg1
-      end
-    END
+    uint8 :a, :value => :arg1
   end
 
   it "should not raise error if default parameter is not supplied" do
@@ -329,14 +291,10 @@ describe BinData::Record, "with custom default parameters" do
 end
 
 describe BinData::Record, "with :onlyif" do
-  before(:all) do
-    eval <<-END
-      class OnlyIfRecord < BinData::Record
-        uint8 :a, :initial_value => 3
-        uint8 :b, :initial_value => 5, :onlyif => lambda { a == 3 }
-        uint8 :c, :initial_value => 7, :onlyif => lambda { a != 3 }
-      end
-    END
+  class OnlyIfRecord < BinData::Record
+    uint8 :a, :initial_value => 3
+    uint8 :b, :initial_value => 5, :onlyif => lambda { a == 3 }
+    uint8 :c, :initial_value => 7, :onlyif => lambda { a != 3 }
   end
 
   before(:each) do

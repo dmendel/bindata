@@ -6,25 +6,19 @@ require 'bindata'
 describe BinData::Wrapper, "with errors" do
   it "should not wrap more than one type" do
     lambda {
-      eval <<-END
-        class WrappedMultipleTypes < BinData::Wrapper
-          uint8
-          uint8
-        end
-      END
+      class WrappedMultipleTypes < BinData::Wrapper
+        uint8
+        uint8
+      end
     }.should raise_error(SyntaxError)
   end
 end
 
 describe BinData::Wrapper, "around a Primitive" do
-  before(:all) do
-    eval <<-END
-      class WrappedPrimitive < BinData::Wrapper
-        default_parameter :a => 3
+  class WrappedPrimitive < BinData::Wrapper
+    default_parameter :a => 3
 
-        uint8 :initial_value => :a
-      end
-    END
+    uint8 :initial_value => :a
   end
 
   it "should access custom parameter" do
@@ -45,14 +39,10 @@ describe BinData::Wrapper, "around a Primitive" do
 end
 
 describe BinData::Wrapper, "around an Array" do
-  before(:all) do
-    eval <<-END
-      class WrappedIntArray < BinData::Wrapper
-        endian :big
-        default_parameter :initial_element_value => 0
-        array :type => [:uint16, {:initial_value => :initial_element_value}]
-      end
-    END
+  class WrappedIntArray < BinData::Wrapper
+    endian :big
+    default_parameter :initial_element_value => 0
+    array :type => [:uint16, {:initial_value => :initial_element_value}]
   end
 
   it "should forward parameters" do
@@ -67,13 +57,9 @@ describe BinData::Wrapper, "around an Array" do
 end
 
 describe BinData::Wrapper, "around a Choice" do
-  before(:all) do
-    eval <<-END
-      class WrappedChoice < BinData::Wrapper
-        endian :big
-        choice :choices => { 'a' => :uint8, 'b' => :uint16 }
-      end
-    END
+  class WrappedChoice < BinData::Wrapper
+    endian :big
+    choice :choices => { 'a' => :uint8, 'b' => :uint16 }
   end
 
   it "should forward parameters" do
@@ -83,12 +69,8 @@ describe BinData::Wrapper, "around a Choice" do
 end
 
 describe BinData::Wrapper, "inside a struct" do
-  before(:all) do
-    eval <<-END
-      class WrappedUint32le < BinData::Wrapper
-        uint32le
-      end
-    END
+  class WrappedUint32le < BinData::Wrapper
+    uint32le
   end
 
   it "should handle onlyif" do

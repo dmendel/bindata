@@ -4,12 +4,8 @@ require File.expand_path(File.join(File.dirname(__FILE__), "spec_common"))
 require 'bindata'
 
 describe BinData::Primitive, "when subclassing" do
-  before(:all) do
-    eval <<-END
-      class SubClassOfPrimitive < BinData::Primitive
-        expose_methods_for_testing
-      end
-    END
+  class SubClassOfPrimitive < BinData::Primitive
+    expose_methods_for_testing
   end
 
   before(:each) do
@@ -25,57 +21,45 @@ end
 describe BinData::Primitive, "when defining" do
   it "should fail on non registered types" do
     lambda {
-      eval <<-END
-        class BadTypePrimitive < BinData::Primitive
-          non_registered_type :a
-        end
-      END
+      class BadTypePrimitive < BinData::Primitive
+        non_registered_type :a
+      end
     }.should raise_error(TypeError)
   end
 
   it "should fail on duplicate names" do
     lambda {
-      eval <<-END
-        class DuplicateNamePrimitive < BinData::Primitive
-          int8 :a
-          int8 :b
-          int8 :a
-        end
-      END
+      class DuplicateNamePrimitive < BinData::Primitive
+        int8 :a
+        int8 :b
+        int8 :a
+      end
     }.should raise_error(SyntaxError)
   end
 
   it "should fail when field name shadows an existing method" do
     lambda {
-      eval <<-END
-        class ExistingNamePrimitive < BinData::Primitive
-          int8 :object_id
-        end
-      END
+      class ExistingNamePrimitive < BinData::Primitive
+        int8 :object_id
+      end
     }.should raise_error(NameError)
   end
 
   it "should fail on unknown endian" do
     lambda {
-      eval <<-END
-        class BadEndianPrimitive < BinData::Primitive
-          endian 'a bad value'
-        end
-      END
+      class BadEndianPrimitive < BinData::Primitive
+        endian 'a bad value'
+      end
     }.should raise_error(ArgumentError)
   end
 end
 
 describe BinData::Primitive do
-  before(:all) do
-    eval <<-END
-      class PrimitiveWithEndian < BinData::Primitive
-        endian :little
-        int16 :a
-        def get; self.a; end
-        def set(v); self.a = v; end
-      end
-    END
+  class PrimitiveWithEndian < BinData::Primitive
+    endian :little
+    int16 :a
+    def get; self.a; end
+    def set(v); self.a = v; end
   end
 
   before(:each) do
@@ -114,14 +98,10 @@ describe BinData::Primitive do
 end
 
 describe BinData::Primitive, "requiring custom parameters" do
-  before(:all) do
-    eval <<-END
-      class PrimitiveWithCustom < BinData::Primitive
-        int8 :a, :initial_value => :iv
-        def get; self.a; end
-        def set(v); self.a = v; end
-      end
-    END
+  class PrimitiveWithCustom < BinData::Primitive
+    int8 :a, :initial_value => :iv
+    def get; self.a; end
+    def set(v); self.a = v; end
   end
 
   it "should pass parameters correctly" do
@@ -131,16 +111,12 @@ describe BinData::Primitive, "requiring custom parameters" do
 end
 
 describe BinData::Primitive, "with custom mandatory parameters" do
-  before(:all) do
-    eval <<-END
-      class MandatoryPrimitive < BinData::Primitive
-        mandatory_parameter :arg1
+  class MandatoryPrimitive < BinData::Primitive
+    mandatory_parameter :arg1
 
-        uint8 :a, :value => :arg1
-        def get; self.a; end
-        def set(v); self.a = v; end
-      end
-    END
+    uint8 :a, :value => :arg1
+    def get; self.a; end
+    def set(v); self.a = v; end
   end
 
   it "should raise error if mandatory parameter is not supplied" do
@@ -154,16 +130,12 @@ describe BinData::Primitive, "with custom mandatory parameters" do
 end
 
 describe BinData::Primitive, "with custom default parameters" do
-  before(:all) do
-    eval <<-END
-      class DefaultPrimitive < BinData::Primitive
-        default_parameter :arg1 => 5
+  class DefaultPrimitive < BinData::Primitive
+    default_parameter :arg1 => 5
 
-        uint8 :a, :value => :arg1
-        def get; self.a; end
-        def set(v); self.a = v; end
-      end
-    END
+    uint8 :a, :value => :arg1
+    def get; self.a; end
+    def set(v); self.a = v; end
   end
 
   it "should not raise error if default parameter is not supplied" do

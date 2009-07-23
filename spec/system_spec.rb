@@ -5,12 +5,8 @@ require File.expand_path(File.join(File.dirname(__FILE__), "example"))
 require 'bindata'
 
 describe "lambdas with index" do
-  before(:all) do
-    eval <<-END
-      class NestedLambdaWithIndex < BinData::Record
-        uint8 :a, :value => lambda { index * 10 }
-      end
-    END
+  class NestedLambdaWithIndex < BinData::Record
+    uint8 :a, :value => lambda { index * 10 }
   end
 
   it "should use index of containing array" do
@@ -65,27 +61,23 @@ describe "lambdas with parent" do
 end
 
 describe BinData::Record, "with choice field" do
-  before(:all) do
-    eval <<-END
-      class TupleRecord < BinData::Record
-        uint8 :a, :value => 3
-        uint8 :b, :value => 5
-      end
+  class TupleRecord < BinData::Record
+    uint8 :a, :value => 3
+    uint8 :b, :value => 5
+  end
 
-      class RecordWithChoiceField < BinData::Record
-        choice :x, :choices => [[:tuple_record]], :selection => 0
-      end
+  class RecordWithChoiceField < BinData::Record
+    choice :x, :choices => [[:tuple_record]], :selection => 0
+  end
 
-      class RecordWithNestedChoiceField < BinData::Record
-        choice :x, :choices => [
-                      [:choice, {
-                          :choices => [[:tuple_record]],
-                          :selection => 0}
-                      ]
-                   ],
-                   :selection => 0
-      end
-    END
+  class RecordWithNestedChoiceField < BinData::Record
+    choice :x, :choices => [
+                  [:choice, {
+                      :choices => [[:tuple_record]],
+                      :selection => 0}
+                  ]
+               ],
+               :selection => 0
   end
 
   it "should treat choice object transparently " do
@@ -216,13 +208,9 @@ describe "Tracing"  do
 end
 
 describe "Forward referencing with Single" do
-  before(:all) do
-    eval <<-END
-      class FRSingle < BinData::Record
-        uint8  :len, :value => lambda { data.length }
-        string :data, :read_length => :len
-      end
-    END
+  class FRSingle < BinData::Record
+    uint8  :len, :value => lambda { data.length }
+    string :data, :read_length => :len
   end
 
   it "should initialise" do
@@ -244,13 +232,9 @@ describe "Forward referencing with Single" do
 end
 
 describe "Forward referencing with Array" do
-  before(:all) do
-    eval <<-END
-      class FRArray < BinData::Record
-        uint8  :len, :value => lambda { data.length }
-        array :data, :type => :uint8, :initial_length => :len
-      end
-    END
+  class FRArray < BinData::Record
+    uint8  :len, :value => lambda { data.length }
+    array :data, :type => :uint8, :initial_length => :len
   end
 
   it "should initialise" do
@@ -272,16 +256,12 @@ describe "Forward referencing with Array" do
 end
 
 describe "Evaluating custom parameters" do
-  before(:all) do
-    eval <<-END
-      class CustomParameterRecord < BinData::Record
-        mandatory_parameter :zz
+  class CustomParameterRecord < BinData::Record
+    mandatory_parameter :zz
 
-        uint8 :a, :value => :zz
-        uint8 :b, :value => :a
-        uint8 :c, :custom => :b
-      end
-    END
+    uint8 :a, :value => :zz
+    uint8 :b, :value => :a
+    uint8 :c, :custom => :b
   end
 
   it "should recursively evaluate parameter" do
@@ -291,12 +271,8 @@ describe "Evaluating custom parameters" do
 end
 
 describe BinData::Record, "with custom sized integers" do
-  before(:all) do
-    eval <<-END
-      class CustomIntRecord < BinData::Record
-        int40be :a
-      end
-    END
+  class CustomIntRecord < BinData::Record
+    int40be :a
   end
 
   it "should read as expected" do

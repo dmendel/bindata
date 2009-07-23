@@ -30,12 +30,8 @@ class MockBaseStub < BaseStub
 end
 
 describe BinData::Base, "when subclassing" do
-  before(:all) do
-    eval <<-END
-      class SubClassOfBase < BinData::Base
-        expose_methods_for_testing
-      end
-    END
+  class SubClassOfBase < BinData::Base
+    expose_methods_for_testing
   end
 
   before(:each) do
@@ -63,11 +59,9 @@ describe BinData::Base, "with parameters" do
 
   it "should raise error if parameter name is invalid" do
     lambda {
-      eval <<-END
-        class InvalidParameterNameBase < BinData::Base
-          optional_parameter :eval # i.e. Kernel#eval
-        end
-      END
+      class InvalidParameterNameBase < BinData::Base
+        optional_parameter :eval # i.e. Kernel#eval
+      end
     }.should raise_error(NameError)
   end
 
@@ -79,13 +73,9 @@ describe BinData::Base, "with parameters" do
 end
 
 describe BinData::Base, "with mandatory parameters" do
-  before(:all) do
-    eval <<-END
-      class MandatoryBase < BaseStub
-        mandatory_parameter :p1
-        mandatory_parameter :p2
-      end
-    END
+  class MandatoryBase < BaseStub
+    mandatory_parameter :p1
+    mandatory_parameter :p2
   end
 
   it "should ensure that all mandatory parameters are present" do
@@ -104,12 +94,8 @@ describe BinData::Base, "with mandatory parameters" do
 end
 
 describe BinData::Base, "with default parameters" do
-  before(:all) do
-    eval <<-END
-      class DefaultBase < BaseStub
-        default_parameter :p1 => "a"
-      end
-    END
+  class DefaultBase < BaseStub
+    default_parameter :p1 => "a"
   end
 
   it "should use default parameters when not specified" do
@@ -126,13 +112,9 @@ describe BinData::Base, "with default parameters" do
 end
 
 describe BinData::Base, "with mutually exclusive parameters" do
-  before(:all) do
-    eval <<-END
-      class MutexParamBase < BaseStub
-        optional_parameters :p1, :p2
-        mutually_exclusive_parameters :p1, :p2
-      end
-    END
+  class MutexParamBase < BaseStub
+    optional_parameters :p1, :p2
+    mutually_exclusive_parameters :p1, :p2
   end
 
   it "should not fail when neither of those parameters are present" do
@@ -150,14 +132,10 @@ describe BinData::Base, "with mutually exclusive parameters" do
 end
 
 describe BinData::Base, "with multiple parameters" do
-  before(:all) do
-    eval <<-END
-      class WithParamBase < BaseStub
-        mandatory_parameter :p1
-        optional_parameter  :p2
-        default_parameter   :p3 => 3
-      end
-    END
+  class WithParamBase < BaseStub
+    mandatory_parameter :p1
+    optional_parameter  :p2
+    default_parameter   :p3 => 3
   end
 
   it "should identify internally accepted parameters" do
@@ -220,16 +198,12 @@ describe BinData::Base, "with multiple parameters" do
 end
 
 describe BinData::Base, "with :check_offset" do
-  before(:all) do
-    eval <<-END
-      class TenByteOffsetBase < BaseStub
-        def do_read(io)
-          # advance the io position before checking offset
-          io.seekbytes(10)
-          super(io)
-        end
-      end
-    END
+  class TenByteOffsetBase < BaseStub
+    def do_read(io)
+      # advance the io position before checking offset
+      io.seekbytes(10)
+      super(io)
+    end
   end
 
   before(:each) do
@@ -262,16 +236,12 @@ describe BinData::Base, "with :check_offset" do
 end
 
 describe BinData::Base, "with :adjust_offset" do
-  before(:all) do
-    eval <<-END
-      class TenByteAdjustingOffsetBase < BaseStub
-        def do_read(io)
-          # advance the io position before checking offset
-          io.seekbytes(10)
-          super(io)
-        end
-      end
-    END
+  class TenByteAdjustingOffsetBase < BaseStub
+    def do_read(io)
+      # advance the io position before checking offset
+      io.seekbytes(10)
+      super(io)
+    end
   end
 
   before(:each) do

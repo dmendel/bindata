@@ -6,12 +6,10 @@ require 'bindata/int'
 require 'bindata/registry'
 
 describe BinData::Registry do
-  before(:all) do
-    A = Class.new
-    B = Class.new
-    C = Class.new
-    D = Class.new
-  end
+  A = Class.new
+  B = Class.new
+  C = Class.new
+  D = Class.new
 
   before(:each) do
     @r = BinData::Registry.new

@@ -13,16 +13,12 @@ class ExampleSingle
 end
 
 describe BinData::BasePrimitive, "when subclassing" do
-  before(:all) do
-    eval <<-END
-      class SubClassOfSingle < BinData::BasePrimitive
-        expose_methods_for_testing
-      end
-    END
+  class SubClassOfBasePrimitive < BinData::BasePrimitive
+    expose_methods_for_testing
   end
 
   before(:each) do
-    @obj = SubClassOfSingle.new
+    @obj = SubClassOfBasePrimitive.new
   end
 
   it "should raise errors on unimplemented methods" do
