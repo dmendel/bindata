@@ -158,7 +158,7 @@ describe BinData::Array, "with several elements" do
   it "should clear" do
     @data[1] = 8
     @data.clear
-    @data.collect.should == [1, 2, 3, 4, 5]
+    @data.should == [1, 2, 3, 4, 5]
   end
 
   it "should clear a single element" do
