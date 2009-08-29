@@ -1,5 +1,22 @@
+== Documentation
+
 * Write a detailed tutorial (probably as a web page).
 
 * Need more examples.
 
+== Pending refactorings
+
+* Refactor registry into registry and numeric registry
+    update specs accordingly
+
 * Perhaps refactor snapshot -> _snapshot et al
+
+== Bugs
+
+class A < BinData::Record
+  array :a, :type => :unknown
+end
+
+should give correct error message
+
+
