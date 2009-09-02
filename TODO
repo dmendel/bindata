@@ -10,13 +10,3 @@
     update specs accordingly
 
 * Perhaps refactor snapshot -> _snapshot et al
-
-== Bugs
-
-class A < BinData::Record
-  array :a, :type => :unknown
-end
-
-should give correct error message
-
-

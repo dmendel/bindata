@@ -32,7 +32,8 @@ module BinData
         if [:little, :big].include?(endian)
           @endian = endian
         elsif endian != nil
-          raise ArgumentError, "unknown value for endian '#{endian}'", caller(1)
+          raise ArgumentError,
+                  "unknown value for endian '#{endian}' in #{self}", caller(1)
         end
         @endian
       end

@@ -56,7 +56,8 @@ module BinData
         if [:little, :big].include?(endian)
           @endian = endian
         elsif endian != nil
-          raise ArgumentError, "unknown value for endian '#{endian}'", caller(1)
+          raise ArgumentError,
+                  "unknown value for endian '#{endian}' in #{self}", caller(1)
         end
         @endian
       end
@@ -100,8 +101,8 @@ module BinData
         ensure_valid_name(name)
 
         fields.add_field(type, name, params)
-      rescue TypeError
-        raise TypeError, "unknown type '#{type}' for #{self}", caller(2)
+      rescue UnknownTypeError => err
+        raise TypeError, "unknown type '#{err.message}' for #{self}", caller(2)
       end
 
       def ensure_valid_name(name)
@@ -110,11 +111,11 @@ module BinData
         end
         if self.instance_methods.collect { |meth| meth.to_s }.include?(name)
           raise NameError.new("", name),
-                "field '#{name}' shadows an existing method", caller(3)
+                "field '#{name}' shadows an existing method in #{self}", caller(3)
         end
         if self::RESERVED.include?(name)
           raise NameError.new("", name),
-                "field '#{name}' is a reserved name", caller(3)
+                "field '#{name}' is a reserved name in #{self}", caller(3)
         end
       end
     end

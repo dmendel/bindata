@@ -20,12 +20,12 @@ describe BinData::Choice, "when instantiating" do
 
   it "should fail if a given type is unknown" do
     args = {:choices => [:does_not_exist], :selection => 0}
-    lambda { BinData::Choice.new(args) }.should raise_error(TypeError)
+    lambda { BinData::Choice.new(args) }.should raise_error(BinData::UnknownTypeError)
   end
 
   it "should fail if a given type is unknown" do
     args = {:choices => {0 => :does_not_exist}, :selection => 0}
-    lambda { BinData::Choice.new(args) }.should raise_error(TypeError)
+    lambda { BinData::Choice.new(args) }.should raise_error(BinData::UnknownTypeError)
   end
 
   it "should fail if :choices Hash has a symbol as key" do

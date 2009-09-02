@@ -3,48 +3,71 @@
 require File.expand_path(File.join(File.dirname(__FILE__), "spec_common"))
 require 'bindata'
 
+def capture_exception(exception_type, &block)
+  block.call
+rescue Exception => err
+  err.class.should == exception_type
+  return err
+else
+  lambda {}.should raise_error(exception_type)
+end
+
 describe BinData::Record, "when defining" do
   it "should fail on non registered types" do
-    lambda {
+    err = capture_exception(TypeError) {
       class BadTypeRecord < BinData::Record
-        non_registerd_type :a
+        non_registered_type :a
       end
-    }.should raise_error(TypeError)
+    }
+    err.message.should == "unknown type 'non_registered_type' for #{BadTypeRecord}"
+  end
+
+  it "should give correct error message for non registered nested types" do
+    err = capture_exception(TypeError) {
+      class BadNestedTypeRecord < BinData::Record
+        array :a, :type => :non_registered_type
+      end
+    }
+    err.message.should == "unknown type 'non_registered_type' for #{BadNestedTypeRecord}"
   end
 
   it "should fail on duplicate names" do
-    lambda {
+    err = capture_exception(SyntaxError) {
       class DuplicateNameRecord < BinData::Record
         int8 :a
         int8 :b
         int8 :a
       end
-    }.should raise_error(SyntaxError)
+    }
+    err.message.should == "duplicate field 'a' in #{DuplicateNameRecord}"
   end
 
   it "should fail on reserved names" do
-    lambda {
+    err = capture_exception(NameError) {
       class ReservedNameRecord < BinData::Record
         int8 :a
         int8 :invert # from Hash.instance_methods
       end
-    }.should raise_error(NameError)
+    }
+    err.message.should == "field 'invert' is a reserved name in #{ReservedNameRecord}"
   end
 
   it "should fail when field name shadows an existing method" do
-    lambda {
+    err = capture_exception(NameError) {
       class ExistingNameRecord < BinData::Record
         int8 :object_id
       end
-    }.should raise_error(NameError)
+    }
+    err.message.should == "field 'object_id' shadows an existing method in #{ExistingNameRecord}"
   end
 
   it "should fail on unknown endian" do
-    lambda {
+    err = capture_exception(ArgumentError) {
       class BadEndianRecord < BinData::Record
         endian 'a bad value'
       end
-    }.should raise_error(ArgumentError)
+    }
+    err.message.should == "unknown value for endian 'a bad value' in #{BadEndianRecord}"
   end
 end
 

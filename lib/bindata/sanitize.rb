@@ -2,6 +2,8 @@ require 'bindata/registry'
 
 module BinData
 
+  class UnknownTypeError < StandardError ; end
+
   # A BinData object accepts arbitrary parameters.  This class sanitizes
   # those parameters so they can be used by the BinData object.
   class SanitizedParameters
@@ -169,7 +171,7 @@ module BinData
     def lookup_class(type)
       registered_class = RegisteredClasses.lookup(type, @endian)
       if registered_class.nil?
-        raise TypeError, "unknown type '#{type}'"
+        raise UnknownTypeError, type.to_s
       end
       registered_class
     end
