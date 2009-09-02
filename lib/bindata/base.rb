@@ -3,7 +3,6 @@ require 'bindata/lazy'
 require 'bindata/params'
 require 'bindata/registry'
 require 'bindata/sanitize'
-require 'stringio'
 
 module BinData
   # Error raised when unexpected results occur when reading data from IO.
@@ -182,7 +181,7 @@ module BinData
 
     # Returns the string representation of this data object.
     def to_binary_s
-      io = StringIO.new
+      io = BinData::IO.create_string_io
       write(io)
       io.rewind
       io.read

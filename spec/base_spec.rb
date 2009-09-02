@@ -207,7 +207,7 @@ describe BinData::Base, "with :check_offset" do
   end
 
   before(:each) do
-    @io = StringIO.new("12345678901234567890")
+    @io = BinData::IO.create_string_io("12345678901234567890")
   end
 
   it "should fail if offset is incorrect" do
@@ -245,7 +245,7 @@ describe BinData::Base, "with :adjust_offset" do
   end
 
   before(:each) do
-    @io = StringIO.new("12345678901234567890")
+    @io = BinData::IO.create_string_io("12345678901234567890")
   end
 
   it "should be mutually exclusive with :check_offset" do
@@ -317,7 +317,7 @@ describe BinData::Base, "as black box" do
     end
 
     obj = WriteToSBase.new
-    io = StringIO.new
+    io = BinData::IO.create_string_io
     obj.write(io)
     io.rewind
     written = io.read

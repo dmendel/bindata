@@ -1,7 +1,17 @@
+require 'stringio'
+
 module BinData
   # A wrapper around an IO object.  The wrapper provides a consistent
   # interface for BinData objects to use when accessing the IO.
   class IO
+
+    # Creates a StringIO around +str+.
+    def self.create_string_io(str = "")
+      if RUBY_VERSION >= "1.9"
+        str = str.dup.force_encoding(Encoding::BINARY)
+      end
+      StringIO.new(str)
+    end
 
     # Create a new IO wrapper around +io+.  +io+ must support #read if used
     # for reading, #write if used for writing, #pos if reading the current
@@ -25,7 +35,7 @@ module BinData
 
       # wrap strings in a StringIO
       if io.respond_to?(:to_str)
-        io = StringIO.new(io)
+        io = BinData::IO.create_string_io(io.to_str)
       end
 
       @raw_io = io

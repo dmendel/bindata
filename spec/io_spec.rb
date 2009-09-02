@@ -172,7 +172,7 @@ end
 
 class BitWriterHelper
   def initialize
-    @stringio = StringIO.new
+    @stringio = BinData::IO.create_string_io
     @io = BinData::IO.new(@stringio)
   end
 
