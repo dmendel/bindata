@@ -1,7 +1,7 @@
 require "bindata/base_primitive"
 
 module BinData
-  # A String is a sequence of bytes.  This is the same as strings in Ruby.
+  # A String is a sequence of bytes.  This is the same as strings in Ruby 1.8.
   # The issue of character encoding is ignored by this class.
   #
   #   require 'bindata'
