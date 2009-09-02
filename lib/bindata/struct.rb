@@ -49,7 +49,7 @@ module BinData
     register(self.name, self)
 
     # These reserved words may not be used as field names
-    RESERVED = (::Hash.instance_methods + 
+    RESERVED = (::Hash.instance_methods.collect { |meth| meth.to_s } + 
                 %w{alias and begin break case class def defined do else elsif
                    end ensure false for if in module next nil not or redo
                    rescue retry return self super then true undef unless until
@@ -116,7 +116,7 @@ module BinData
       end
 
       def ensure_field_names_are_valid(field_names)
-        instance_methods = self.instance_methods
+        instance_methods = self.instance_methods.collect { |meth| meth.to_s }
         reserved_names = RESERVED
 
         field_names.each do |name|

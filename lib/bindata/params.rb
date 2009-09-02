@@ -6,6 +6,16 @@ module BinData
   # mandatory, optional, default or mutually exclusive.
   class AcceptedParameters
 
+    def self.invalid_parameter_names
+      unless defined? @@invalid_names
+        all_names = LazyEvaluator.instance_methods(true) + Kernel.methods
+        all_names.collect! { |name| name.to_s }
+        reserved_names = ["type"]
+        @@invalid_names = all_names - reserved_names
+      end
+      @@invalid_names
+    end
+
     def initialize(ancestor_params = nil)
       @mandatory = ancestor_params ? ancestor_params.mandatory : []
       @optional  = ancestor_params ? ancestor_params.optional  : []
@@ -59,8 +69,7 @@ module BinData
     private
 
     def ensure_valid_names(names)
-      invalid_names = LazyEvaluator.instance_methods(true) +
-                        Kernel.methods - ["type"]
+      invalid_names = self.class.invalid_parameter_names
       names.each do |name|
         name = name.to_s
         if invalid_names.include?(name)
