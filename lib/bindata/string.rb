@@ -69,7 +69,7 @@ module BinData
       private
 
       def sanitized_pad_char(ch)
-        result = ch.respond_to?(:chr) ? ch.chr : ch.to_s
+        result = ch.is_a?(Integer) ? ch.chr : ch.to_s
         if result.length > 1
           raise ArgumentError, ":pad_char must not contain more than 1 char"
         end
