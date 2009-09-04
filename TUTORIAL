@@ -80,71 +80,6 @@ binary representation of the data.
 
 -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-== Primitive Types
-
-BinData provides support for the most commonly used primitive types that
-are used when working with binary data.  Namely:
-
-* fixed size strings
-* zero terminated strings
-* byte based integers - signed or unsigned, big or little endian and of
-  any size
-* bit based integers - unsigned big or little endian integers of any size
-* floating point numbers - single or double precision floats in either
-  big or little endian
-
-Primitives may be manipulated individually, but is more common to work
-with them as part of a record.
-
-Examples of individual usage:
-
-  int16 = BinData::Int16be.new
-  int16.value = 941
-  int16.to_binary_s #=> "\003\255"
-
-  fl = BinData::FloatBe.read("\100\055\370\124") #=> 2.71828174591064
-  fl.num_bytes #=> 4
-
-  fl * int16 #=> 2557.90320057996
-
-There are several parameters that are specific to primitives.
-
-:initial_value
-
-This contains the initial value that the primitive will contain after
-initialization.  This is useful for setting default values.
-
-  obj = BinData::String.new(:initial_value => "hello ")
-  obj + "world" #=> "hello world"
-
-  obj.assign("good-bye " )
-  obj + "world" #=> "good-bye world"
-
-:value
-
-The primitive will always contain this value.  Reading or assigning will
-not change the value.  This parameter is used to define constants or
-dependent fields.
-
-  pi = BinData::FloatLe.new(:value => Math::PI)
-  pi.assign(3)
-  puts pi #=> 3.14159265358979
-
-:check_value
-
-When reading, will raise a ValidityError if the value read does not match
-the value of this parameter.
-
-  obj = BinData::String.new(:check_value => lambda { /aaa/ =~ value })
-  obj.read("baaa!") #=> "baaa!"
-  obj.read("bbb") #=> raises ValidityError
-
-  obj = BinData::String.new(:check_value => "foo")
-  obj.read("foo") #=> "foo"
-  obj.read("bar") #=> raises ValidityError
-
--=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-
 == Common Operations
 
 There are operations common to all BinData types, including user defined
@@ -423,6 +358,71 @@ length afterwards.
 
 -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
+== Primitive Types
+
+BinData provides support for the most commonly used primitive types that
+are used when working with binary data.  Namely:
+
+* fixed size strings
+* zero terminated strings
+* byte based integers - signed or unsigned, big or little endian and of
+  any size
+* bit based integers - unsigned big or little endian integers of any size
+* floating point numbers - single or double precision floats in either
+  big or little endian
+
+Primitives may be manipulated individually, but is more common to work
+with them as part of a record.
+
+Examples of individual usage:
+
+  int16 = BinData::Int16be.new
+  int16.value = 941
+  int16.to_binary_s #=> "\003\255"
+
+  fl = BinData::FloatBe.read("\100\055\370\124") #=> 2.71828174591064
+  fl.num_bytes #=> 4
+
+  fl * int16 #=> 2557.90320057996
+
+There are several parameters that are specific to primitives.
+
+:initial_value
+
+This contains the initial value that the primitive will contain after
+initialization.  This is useful for setting default values.
+
+  obj = BinData::String.new(:initial_value => "hello ")
+  obj + "world" #=> "hello world"
+
+  obj.assign("good-bye " )
+  obj + "world" #=> "good-bye world"
+
+:value
+
+The primitive will always contain this value.  Reading or assigning will
+not change the value.  This parameter is used to define constants or
+dependent fields.
+
+  pi = BinData::FloatLe.new(:value => Math::PI)
+  pi.assign(3)
+  puts pi #=> 3.14159265358979
+
+:check_value
+
+When reading, will raise a ValidityError if the value read does not match
+the value of this parameter.
+
+  obj = BinData::String.new(:check_value => lambda { /aaa/ =~ value })
+  obj.read("baaa!") #=> "baaa!"
+  obj.read("bbb") #=> raises ValidityError
+
+  obj = BinData::String.new(:check_value => "foo")
+  obj.read("foo") #=> "foo"
+  obj.read("bar") #=> raises ValidityError
+
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
 == Numerics
 
 There are three kinds of numeric types that are supported by BinData.
@@ -610,204 +610,6 @@ bytes terminated by a null ("\0") character.
 
 -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-== Arrays
-
-A BinData array is a list of data objects of the same type.  It behaves
-much the same as the standard Ruby array, supporting most of the common
-methods.
-
-When instantiating an array, the type of object it contains must be
-specified.
-
-  arr = BinData::Array.new(:type => :uint8)
-  arr[3] = 5
-  arr.snapshot #=> [0, 0, 0, 5]
-
-Parameters can be passed to this object with a slightly clumsy syntax.
-
-  arr = BinData::Array.new(:type => [:uint8, {:initial_value => :index}])
-  arr[3] = 5
-  arr.snapshot #=> [0, 1, 2, 5]
-
-There are two different parameters that specify the length of the array.
-
-:initial_length
-
-  obj = BinData::Array.new(:type => :int8, :initial_length => 4)
-  obj.read("\002\003\004\005\006\007")
-  obj.snapshot #=> [2, 3, 4, 5]
-
-:read_until
-
-  While reading, elements are read until this condition is true.  This is
-  typically used to read an array until a sentinel value is found.  The
-  variables +index+, +element+ and +array+ are made available to any lambda
-  assigned to this parameter.  If the value of this parameter is the symbol
-  :eof, then the array will read as much data from the stream as possible.
-  
-    obj = BinData::Array.new(:type => :int8,
-                             :read_until => lambda { index == 1 })
-    obj.read("\002\003\004\005\006\007")
-    obj.snapshot #=> [2, 3]
-
-    obj = BinData::Array.new(:type => :int8,
-                             :read_until => lambda { element >= 3.5 })
-    obj.read("\002\003\004\005\006\007")
-    obj.snapshot #=> [2, 3, 4]
-
-    obj = BinData::Array.new(:type => :int8,
-            :read_until => lambda { array[index] + array[index - 1] == 9 })
-    obj.read("\002\003\004\005\006\007")
-    obj.snapshot #=> [2, 3, 4, 5]
-
-    obj = BinData::Array.new(:type => :int8, :read_until => :eof)
-    obj.read("\002\003\004\005\006\007")
-    obj.snapshot #=> [2, 3, 4, 5, 6, 7]
-
--=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-
-== Offset checking / adjustment
-
-TODO
--=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-
-== Choices
-
-A Choice is a collection of data objects of which only one is active at any
-particular time.  Method calls will be delegated to the active choice.
-The possible types of objects that a choice contains is controlled by the
-:choices parameter, while the :selection parameter specifies the active
-choice.
-
-:choices
-
-  Either an array or a hash specifying the possible data objects.  The
-  format of the array/hash.values is a list of symbols representing the
-  data object type.  If a choice is to have params passed to it, then it
-  should be provided as [type_symbol, hash_params].  An implementation
-  constraint is that the hash may not contain symbols as keys.
-
-:selection
-
-  An index/key into the :choices array/hash which specifies the currently
-  active choice.
-
-:copy_on_change
-
-  If set to true, copy the value of the previous selection to the current
-  selection whenever the selection changes.  Default is false.
-
-Examples
-
-  type1 = [:string, {:value => "Type1"}]
-  type2 = [:string, {:value => "Type2"}]
-  
-  choices = {5 => type1, 17 => type2}
-  obj = BinData::Choice.new(:choices => choices, :selection => 5)
-  obj.value # => "Type1"
-
-  choices = [ type1, type2 ]
-  obj = BinData::Choice.new(:choices => choices, :selection => 1)
-  obj.value # => "Type2"
-
-  choices = [ nil, nil, nil, type1, nil, type2 ]
-  obj = BinData::Choice.new(:choices => choices, :selection => 3)
-  obj.value # => "Type1"
-
-  class MyNumber < BinData::Record
-    int8 :is_big_endian
-    choice :data, :choices => { true => :int32be, false => :int32le },
-                  :selection => lambda { is_big_endian != 0 },
-                  :copy_on_change => true
-  end
-
-  obj = MyNumber.new
-  obj.is_big_endian = 1
-  obj.data = 5
-  obj.to_binary_s #=> "\001\000\000\000\005"
-
-  obj.is_big_endian = 0
-  obj.to_binary_s #=> "\000\005\000\000\000"
-
--=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-
-== Wrappers
-
-Sometimes you wish to create a new type that is simply an existing type
-with some predefined parameters.  Examples could be an array with a
-specified type, or an integer with an initial value.
-
-This can be achieved with a wrapper.  A wrapper creates a new type based on
-an existing type which has predefined parameters.  These parameters can of
-course be overridden at initialisation time.
-Here we define an array that contains big endian 16 bit integers.  The
-array has a preferred initial length.
-
-  class IntArray < BinData::Wrapper
-    endian :big
-    array :type => :uint16, :initial_length => 5
-  end
-
-  arr = IntArray.new
-  arr.size #=> 5
-
-The initial length can be overridden at initialisation time.
-
-  arr = IntArray.new(:initial_length => 8)
-  arr.size #=> 8
-
--=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-
-== Parameterizing User Defined Types
-
-All BinData types have parameters that allow the behaviour of an object to
-be specified at initialization time.  User defined types may also specify
-parameters.  There are two types of parameters - mandatory and default.
-
-=== Mandatory Parameters
-
-Mandatory parameters must be specified when creating an instance of the
-type.  The :type parameter of Array is an example of a mandatory type.
-
-  class IntArray < BinData::Wrapper
-    mandatory_parameter :half_count
-
-    array :type => :uint8, :initial_length => lambda { half_count * 2 }
-  end
-
-  arr = IntArray.new #=> raises ArgumentError: parameter 'half_count' must
-be specified in IntArray
-
-  arr = IntArray.new(:half_count => lambda { 1 + 2 })
-  arr.snapshot #=> [0, 0, 0, 0, 0, 0]
-
-=== Default Parameters
-
-Default parameters are optional.  These parameters have a default value
-that may be overridden when an instance of the type is created.
-
-  class Phrase < BinData::Primitive
-    default_parameter :number => "three"
-    default_parameter :adjective => "blind"
-    default_parameter :noun => "mice"
-
-    stringz :a, :initial_value => :number
-    stringz :b, :initial_value => :adjective
-    stringz :c, :initial_value => :noun
-
-    def get; "#{a} #{b} #{c}"; end
-    def set(v)
-      if /(.*) (.*) (.*)/ =~ v
-        self.a, self.b, self.c = $1, $2, $3
-      end
-    end
-  end
-
-  obj = Phrase.new(:number => "two", :adjective => "deaf")
-  obj.to_s #=> "two deaf mice"
-
--=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-
 == User Defined Primitive Types
 
 Most user defined types will be Records, but occasionally we'd like to
@@ -905,10 +707,209 @@ implement the following three methods:
 
 -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
+== Arrays
+
+A BinData array is a list of data objects of the same type.  It behaves
+much the same as the standard Ruby array, supporting most of the common
+methods.
+
+When instantiating an array, the type of object it contains must be
+specified.
+
+  arr = BinData::Array.new(:type => :uint8)
+  arr[3] = 5
+  arr.snapshot #=> [0, 0, 0, 5]
+
+Parameters can be passed to this object with a slightly clumsy syntax.
+
+  arr = BinData::Array.new(:type => [:uint8, {:initial_value => :index}])
+  arr[3] = 5
+  arr.snapshot #=> [0, 1, 2, 5]
+
+There are two different parameters that specify the length of the array.
+
+:initial_length
+
+  obj = BinData::Array.new(:type => :int8, :initial_length => 4)
+  obj.read("\002\003\004\005\006\007")
+  obj.snapshot #=> [2, 3, 4, 5]
+
+:read_until
+
+  While reading, elements are read until this condition is true.  This is
+  typically used to read an array until a sentinel value is found.  The
+  variables +index+, +element+ and +array+ are made available to any lambda
+  assigned to this parameter.  If the value of this parameter is the symbol
+  :eof, then the array will read as much data from the stream as possible.
+  
+    obj = BinData::Array.new(:type => :int8,
+                             :read_until => lambda { index == 1 })
+    obj.read("\002\003\004\005\006\007")
+    obj.snapshot #=> [2, 3]
+
+    obj = BinData::Array.new(:type => :int8,
+                             :read_until => lambda { element >= 3.5 })
+    obj.read("\002\003\004\005\006\007")
+    obj.snapshot #=> [2, 3, 4]
+
+    obj = BinData::Array.new(:type => :int8,
+            :read_until => lambda { array[index] + array[index - 1] == 9 })
+    obj.read("\002\003\004\005\006\007")
+    obj.snapshot #=> [2, 3, 4, 5]
+
+    obj = BinData::Array.new(:type => :int8, :read_until => :eof)
+    obj.read("\002\003\004\005\006\007")
+    obj.snapshot #=> [2, 3, 4, 5, 6, 7]
+
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+== Choices
+
+A Choice is a collection of data objects of which only one is active at any
+particular time.  Method calls will be delegated to the active choice.
+The possible types of objects that a choice contains is controlled by the
+:choices parameter, while the :selection parameter specifies the active
+choice.
+
+:choices
+
+  Either an array or a hash specifying the possible data objects.  The
+  format of the array/hash.values is a list of symbols representing the
+  data object type.  If a choice is to have params passed to it, then it
+  should be provided as [type_symbol, hash_params].  An implementation
+  constraint is that the hash may not contain symbols as keys.
+
+:selection
+
+  An index/key into the :choices array/hash which specifies the currently
+  active choice.
+
+:copy_on_change
+
+  If set to true, copy the value of the previous selection to the current
+  selection whenever the selection changes.  Default is false.
+
+Examples
+
+  type1 = [:string, {:value => "Type1"}]
+  type2 = [:string, {:value => "Type2"}]
+  
+  choices = {5 => type1, 17 => type2}
+  obj = BinData::Choice.new(:choices => choices, :selection => 5)
+  obj.value # => "Type1"
+
+  choices = [ type1, type2 ]
+  obj = BinData::Choice.new(:choices => choices, :selection => 1)
+  obj.value # => "Type2"
+
+  choices = [ nil, nil, nil, type1, nil, type2 ]
+  obj = BinData::Choice.new(:choices => choices, :selection => 3)
+  obj.value # => "Type1"
+
+  class MyNumber < BinData::Record
+    int8 :is_big_endian
+    choice :data, :choices => { true => :int32be, false => :int32le },
+                  :selection => lambda { is_big_endian != 0 },
+                  :copy_on_change => true
+  end
+
+  obj = MyNumber.new
+  obj.is_big_endian = 1
+  obj.data = 5
+  obj.to_binary_s #=> "\001\000\000\000\005"
+
+  obj.is_big_endian = 0
+  obj.to_binary_s #=> "\000\005\000\000\000"
+
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+== Advanced Topics
+
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+== Wrappers
+
+Sometimes you wish to create a new type that is simply an existing type
+with some predefined parameters.  Examples could be an array with a
+specified type, or an integer with an initial value.
+
+This can be achieved with a wrapper.  A wrapper creates a new type based on
+an existing type which has predefined parameters.  These parameters can of
+course be overridden at initialisation time.
+Here we define an array that contains big endian 16 bit integers.  The
+array has a preferred initial length.
+
+  class IntArray < BinData::Wrapper
+    endian :big
+    array :type => :uint16, :initial_length => 5
+  end
+
+  arr = IntArray.new
+  arr.size #=> 5
+
+The initial length can be overridden at initialisation time.
+
+  arr = IntArray.new(:initial_length => 8)
+  arr.size #=> 8
+
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+== Parameterizing User Defined Types
+
+All BinData types have parameters that allow the behaviour of an object to
+be specified at initialization time.  User defined types may also specify
+parameters.  There are two types of parameters - mandatory and default.
+
+=== Mandatory Parameters
+
+Mandatory parameters must be specified when creating an instance of the
+type.  The :type parameter of Array is an example of a mandatory type.
+
+  class IntArray < BinData::Wrapper
+    mandatory_parameter :half_count
+
+    array :type => :uint8, :initial_length => lambda { half_count * 2 }
+  end
+
+  arr = IntArray.new #=> raises ArgumentError: parameter 'half_count' must
+be specified in IntArray
+
+  arr = IntArray.new(:half_count => lambda { 1 + 2 })
+  arr.snapshot #=> [0, 0, 0, 0, 0, 0]
+
+=== Default Parameters
+
+Default parameters are optional.  These parameters have a default value
+that may be overridden when an instance of the type is created.
+
+  class Phrase < BinData::Primitive
+    default_parameter :number => "three"
+    default_parameter :adjective => "blind"
+    default_parameter :noun => "mice"
+
+    stringz :a, :initial_value => :number
+    stringz :b, :initial_value => :adjective
+    stringz :c, :initial_value => :noun
+
+    def get; "#{a} #{b} #{c}"; end
+    def set(v)
+      if /(.*) (.*) (.*)/ =~ v
+        self.a, self.b, self.c = $1, $2, $3
+      end
+    end
+  end
+
+  obj = Phrase.new(:number => "two", :adjective => "deaf")
+  obj.to_s #=> "two deaf mice"
+
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
 == Debugging
 
-TODO
+BinData includes several features to make it easier to debug declarations.
+
 === Tracing
+
+BinData has the ability to trace the results of reading a data structure.
 
   class A < BinData::Record
     int8  :a
@@ -921,29 +922,138 @@ TODO
     A.read("\373\225\220")
   end
 
-obj.a => -5
-obj.b => 9
-obj.c => 1
-obj.d[0] => 0
-obj.d[1] => 1
-obj.d[2] => 1
-obj.d[3] => 0
-obj.d[4] => 0
-obj.d[5] => 1
+Results in the following being written to STDERR.
+
+  obj.a => -5
+  obj.b => 9
+  obj.c => 1
+  obj.d[0] => 0
+  obj.d[1] => 1
+  obj.d[2] => 1
+  obj.d[3] => 0
+  obj.d[4] => 0
+  obj.d[5] => 1
 
 === Rest
 
+The rest keyword will consume the input stream from the current position to the
+end of the stream.
+
+  class A < BinData::Record
+    string :a, :read_length => 5
+    rest   :rest
+  end
+
+  obj = A.read("abcdefghij")
+  obj.a #=> "abcde"
+  obj.rest #=" "fghij"
+
 === Hidden fields
+
+The typical way to view the contents of a BinData record is to call #snapshot
+or #inspect.  This gives all fields and their values.  The hide keyword can be
+used to prevent certain fields from appearing in this output.  This removes
+clutter and allows the developer to focus on what they are currently interested
+in.
+
+  class Testing < BinData::Record
+    hide :a, :b
+    string :a, :read_length => 10
+    string :b, :read_length => 10
+    string :c, :read_length => 10
+  end
+
+  obj = Testing.read(("a" * 10) + ("b" * 10) + ("c" * 10))
+  obj.snapshot #=> {"c"=>"cccccccccc"}
+  obj.to_binary_s #=> "aaaaaaaaaabbbbbbbbbbcccccccccc"
 
 -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 == Comparison
 
-TODO
+There are several alternatives to BinData.  Below is a comparison between
+BinData and its alternatives.
+
+The results are that if speed is very important and the binary formats are
+simple then BitStruct may be a good choice.  Though if speed is important,
+perhaps you should investigate a language other than Ruby.  For all other
+cases BinData is the best choice.
+
+=== BitStruct
+http://rubyforge.org/projects/bit-struct/
+
+BitStruct is the most complete of all the alternatives.  It is declarative and
+supports all the same primitive types as BinData.  In addition it includes a
+self documenting feature to make it easy to write reports.
+
+The major limitation of BitStruct is that it does not support variable length
+fields and dependent fields.  The simple PascalString example used previously
+is not possible with BitStruct.  This limitation is due to the design choice to favour speed over flexibility.
+
+Most non trivial file formats rely on dependent and variable length fields.  It
+is difficult to use BitStruct with these formats as code must be written to
+explicitly handle the dependencies.
+
+BitStruct does not currently support little endian bit fields, or bitfields
+that span more than 2 bytes.  BitStruct is actively maintained so these
+limitations may be removed in a future release.
+
+If speed is important and you are only dealing with simple binary data types
+then BitStruct is a good choice.  For non trivial data types, BinData is the
+better choice.
+
+=== BinaryParse
+http://rubyforge.org/projects/binaryparse
+
+BinaryParse is a declarative style packer / unpacker.  It provides the same
+primitives as Ruby's #pack, with the addition of date and time.  Like
+BitStruct, it doesn't provide dependent or variable length fields.
+
+=== BinStruct
+http://rubyforge.org/projects/metafuzz/
+
+BinStruct is an imperative approach to unpacking binary data.  It does provide
+some declarative style syntax sugar.  It provides support for the most common
+primitive types, as well as arbitary length bitfields.
+
+It's main focus is as a binary fuzzer, rather than as a generic decoding /
+encoding library.
+
+=== Packable
 http://github.com/marcandre/packable/tree/master
-http://metafuzz.rubyforge.org/binstruct/
+
+Packable makes it much nicer to use Ruby's #pack and #unpack methods.  Instead
+of having to remember that, for example "n" is the code to pack a 16 bit big
+endian integer, packable provides many convenient shortcuts.  In the case of
+"n", {:bytes => 2, :endian => :big} may be used instead.
+
+Using Packable improves the readability of #pack and #unpack methods, but
+explicity calls to #pack and #unpack aren't as readable as a declarative
+approach.
+
+=== Bitpack
 http://rubyforge.org/projects/bitpack/
-http://binaryparse.rubyforge.org/
-http://redshift.sourceforge.net/bit-struct/
+
+Bitpack provides methods to extract big endian integers of arbitary bit length
+from an octet stream.
+
+The extraction code is written in C, so if speed is important and bit
+manipulation is all the functionality you require then this may be an
+alternative.
 
 -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+== Overview
+== Common Operations
+== Records
+  == Handling dependencies between fields
+== Primitive Types
+  == Numerics
+  == Strings
+  == User Defined Primitive Types
+== Arrays
+== Choices
+== Advanced Topics
+  == Wrappers
+  == Parameterizing User Defined Types
+  == Debugging
+== Alternatives
