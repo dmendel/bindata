@@ -34,6 +34,11 @@ module BinData
     #---------------
     private
 
+    def _assign(val)
+      val = val.dup.force_encoding(Encoding::BINARY) if RUBY_VERSION >= "1.9"
+      super(val)
+    end
+
     def _snapshot
       # override to always remove trailing zero bytes
       result = super
@@ -65,12 +70,12 @@ module BinData
     end
 
     def trim_and_zero_terminate(str)
-      str = truncate_at_first_zero_byte(str)
+      str = truncate_after_first_zero_byte(str)
       str = trim_to(str, eval_parameter(:max_length))
       append_zero_byte_if_needed(str)
     end
 
-    def truncate_at_first_zero_byte(str)
+    def truncate_after_first_zero_byte(str)
       str.sub(/([^\0]*\0).*/, '\1')
     end
 

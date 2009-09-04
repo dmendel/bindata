@@ -80,6 +80,11 @@ module BinData
     #---------------
     private
 
+    def _assign(val)
+      val = val.dup.force_encoding(Encoding::BINARY) if RUBY_VERSION >= "1.9"
+      super(val)
+    end
+
     def _snapshot
       # override to ensure length and optionally trim padding
       result = super
