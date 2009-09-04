@@ -7,13 +7,13 @@ module BinData
   class AcceptedParameters
 
     def self.invalid_parameter_names
-      unless defined? @@invalid_names
+      unless defined? @invalid_names
         all_names = LazyEvaluator.instance_methods(true) + Kernel.methods
         all_names.collect! { |name| name.to_s }
-        reserved_names = ["type"]
-        @@invalid_names = all_names - reserved_names
+        allowed_names = ["type"]
+        @invalid_names = all_names - allowed_names
       end
-      @@invalid_names
+      @invalid_names
     end
 
     def initialize(ancestor_params = nil)
