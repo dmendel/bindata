@@ -222,9 +222,7 @@ module BinData
       index = find_index_of(child)
       sum = sum_num_bytes_below_index(index)
 
-      child_offset = child.do_num_bytes.is_a?(Integer) ? sum.ceil : sum.floor
-
-      offset + child_offset
+      child.do_num_bytes.is_a?(Integer) ? sum.ceil : sum.floor
     end
 
     #---------------

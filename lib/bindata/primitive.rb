@@ -143,7 +143,7 @@ module BinData
     end
 
     def offset_of(child)
-      offset
+      @struct.offset_of(child)
     end
 
     #---------------

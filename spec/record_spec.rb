@@ -199,10 +199,19 @@ describe BinData::Record, "with nested structs" do
   end
 
   it "should return correct offset" do
+    @obj.offset.should == 0
     @obj.b.offset.should == 1
     @obj.b.w.offset.should == 1
     @obj.c.offset.should == 3
     @obj.c.z.offset.should == 4
+  end
+
+  it "should return correct rel_offset" do
+    @obj.rel_offset.should == 0
+    @obj.b.rel_offset.should == 1
+    @obj.b.w.rel_offset.should == 0
+    @obj.c.rel_offset.should == 3
+    @obj.c.z.rel_offset.should == 1
   end
 end
 

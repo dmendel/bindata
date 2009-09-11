@@ -209,6 +209,15 @@ module BinData
     # Returns the offset of this object wrt to its most distant ancestor.
     def offset
       if parent
+        parent.offset + parent.offset_of(self)
+      else
+        0
+      end
+    end
+
+    # Returns the offset of this object wrt to its parent.
+    def rel_offset
+      if parent
         parent.offset_of(self)
       else
         0
@@ -276,13 +285,13 @@ module BinData
     # Returns the debug name of +child+.  This only needs to be implemented
     # by objects that contain child objects.
     def debug_name_of(child)
-      raise NotImplementedError
+      debug_name
     end
 
     # Returns the offset of +child+.  This only needs to be implemented
     # by objects that contain child objects.
     def offset_of(child)
-      raise NotImplementedError
+      0
     end
 
     # Reads the data for this data object from +io+.

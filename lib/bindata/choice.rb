@@ -145,14 +145,6 @@ module BinData
       current_choice.clear?
     end
 
-    def debug_name_of(child)
-      debug_name
-    end
-
-    def offset_of(child)
-      offset
-    end
-
     def respond_to?(symbol, include_private = false)
       super || current_choice.respond_to?(symbol, include_private)
     end

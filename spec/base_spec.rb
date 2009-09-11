@@ -42,8 +42,6 @@ describe BinData::Base, "when subclassing" do
     lambda { @obj.clear }.should raise_error(NotImplementedError)
     lambda { @obj.clear? }.should raise_error(NotImplementedError)
     lambda { @obj.assign(nil) }.should raise_error(NotImplementedError)
-    lambda { @obj.debug_name_of(nil) }.should raise_error(NotImplementedError)
-    lambda { @obj.offset_of(nil) }.should raise_error(NotImplementedError)
     lambda { @obj._do_read(nil) }.should raise_error(NotImplementedError)
     lambda { @obj._done_read }.should raise_error(NotImplementedError)
     lambda { @obj._do_write(nil) }.should raise_error(NotImplementedError)
@@ -167,27 +165,6 @@ describe BinData::Base, "with multiple parameters" do
   it "should not allow parameters with nil values" do
     lambda { WithParamBase.new(:p1 => 1, :p2 => nil) }.should raise_error(ArgumentError)
   end
-
-=begin
-# TODO: how should we evaluate internal parameters? think about this
-  it "should only recall mandatory, default and optional parameters" do
-    obj = WithParamBase.new(:p1 => 1, :p3 => 3, :p4 => 4, :p5 => 5)
-    obj.should     have_param(:p1)
-    obj.should_not have_param(:p2)
-    obj.should     have_param(:p3)
-    obj.should_not have_param(:p4)
-    obj.should_not have_param(:p5)
-  end
-
-  it "should evaluate mandatory, default and optional parameters" do
-    obj = WithParamBase.new(:p1 => 1, :p3 => lambda {1 + 2}, :p4 => 4, :p5 => 5)
-    obj.eval_parameter(:p1).should == 1
-    obj.eval_parameter(:p2).should be_nil
-    obj.eval_parameter(:p3).should == 3
-    obj.eval_parameter(:p4).should be_nil
-    obj.eval_parameter(:p5).should be_nil
-  end
-=end
 
   it "should be able to access without evaluating" do
     obj = WithParamBase.new(:p1 => :asym, :p3 => lambda {1 + 2})
