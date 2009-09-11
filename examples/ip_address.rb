@@ -19,5 +19,5 @@ end
 ip = IPAddr.new
 ip.value = "127.0.0.1"
 
-puts "human readable value:  #{ip}"
-puts "binary representation: #{ip.to_binary_s.inspect}"
+puts "human readable value:  #{ip}"                     #=> 127.0.0.1
+puts "binary representation: #{ip.to_binary_s.inspect}" #=> "\177\000\000\001"
