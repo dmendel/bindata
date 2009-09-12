@@ -22,15 +22,15 @@ rescue LoadError
 end
 
 unless load_failed
-  file "index.html" => ["README", "index.haml"] do |t|
+  file "manual.html" => ["README", "manual.haml"] do |t|
     require 'haml/exec'
 
-    opts = Haml::Exec::Haml.new(["index.haml", "index.html"])
+    opts = Haml::Exec::Haml.new(["manual.haml", "manual.html"])
     opts.parse!
   end
 
-  CLOBBER.include("index.html")
+  CLOBBER.include("manual.html")
 
   desc "Build the reference manual"
-  task :doc => "index.html"
+  task :manual => "manual.html"
 end
