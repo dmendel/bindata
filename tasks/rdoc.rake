@@ -1,8 +1,8 @@
 require 'rake/rdoctask'
 
 Rake::RDocTask.new() do |rdoc|
-  rdoc.main = "README"
-  rdoc.rdoc_files.include("README", "NEWS")
+  rdoc.main = "NEWS"
+  rdoc.rdoc_files.include("NEWS")
   rdoc.rdoc_files.include("lib/**/*.rb")
 end
 

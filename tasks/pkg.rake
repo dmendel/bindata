@@ -13,8 +13,8 @@ begin
     s.rubyforge_project = 'bindata'
     s.require_path = 'lib'
     s.has_rdoc = true
-    s.extra_rdoc_files = ['README']
-    s.rdoc_options << '--main' << 'README'
+    s.extra_rdoc_files = ['NEWS']
+    s.rdoc_options << '--main' << 'NEWS'
     s.files = PKG_FILES
   end
 
