@@ -1,9 +1,16 @@
 = BinData Changelog
 
-== Version 0.11.1
+== Version 1.0.0
+
+* Is now compatible with Ruby 1.9
+* Added reference manual.
+* Added #rel_offset to Base.
+* Removed support for deprecated functionality.
+
+== Version 0.11.1 (2009-08-28)
 
 * Allow wrapped types to work with struct's :onlyif parameter
-* Use Array#index instead of #find_index for compatibility with ruby 1.8.6
+* Use Array#index instead of #find_index for compatibility with Ruby 1.8.6
   (patch courtesy of Joe Rozner).
 
 == Version 0.11.0 (2009-06-28)
@@ -20,7 +27,7 @@
 * Added debug_name
 * Added ability to trace reading
 * Primitives now behave as their value.  Calling #value is no longer needed.
-* Renamed #to_s -> #to_binary_s to avoid confusion with ruby's #to_s.
+* Renamed #to_s -> #to_binary_s to avoid confusion with Ruby's #to_s.
 * Added #assign as the generic way to assign values to objects.
 * Added :copy_on_change parameter to Choice.
 * Implement #offset for all objects.
@@ -75,7 +82,7 @@
 * Prevent warnings about method redefinition.
 * Allow Struct to masquerade as one of its fields.
 * Renamed String param :initial_length to :read_length.
-* BinData::Array now behaves more like the internal ruby array.
+* BinData::Array now behaves more like the internal Ruby array.
 
 == Version 0.7.0 (2007-08-26)
 
