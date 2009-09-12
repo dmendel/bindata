@@ -37,7 +37,7 @@ module BinData
 
     def self.define_methods(float_class, nbytes, read, to_binary_s)
       float_class.module_eval <<-END
-        def _do_num_bytes(ignored)
+        def _do_num_bytes
           #{nbytes}
         end
 

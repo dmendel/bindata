@@ -291,7 +291,7 @@ module BinData
       elements.each { |el| el.do_write(io) }
     end
 
-    def _do_num_bytes(deprecated)
+    def _do_num_bytes
       sum_num_bytes_for_all_elements.ceil
     end
 

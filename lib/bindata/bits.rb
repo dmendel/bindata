@@ -45,7 +45,7 @@ module BinData
           io.writebits(_value, #{nbits}, :#{endian})
         end
 
-        def _do_num_bytes(ignored)
+        def _do_num_bytes
           #{nbits} / 8.0
         end
 

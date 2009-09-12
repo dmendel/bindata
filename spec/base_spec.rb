@@ -10,7 +10,7 @@ class BaseStub < BinData::Base
   def _do_read(io) end
   def _done_read; end
   def _do_write(io) end
-  def _do_num_bytes(x) end
+  def _do_num_bytes; end
   def _assign(x); end
   def _snapshot; end
 
@@ -24,7 +24,7 @@ class MockBaseStub < BaseStub
   def _do_read(io)     mock._do_read(io); end
   def _done_read;      mock._done_read; end
   def _do_write(io)    mock._do_write(io); end
-  def _do_num_bytes(x) mock._do_num_bytes(x) end
+  def _do_num_bytes;   mock._do_num_bytes; end
   def _assign(x);      mock._assign(x); end
   def _snapshot;       mock._snapshot; end
 end
@@ -45,7 +45,7 @@ describe BinData::Base, "when subclassing" do
     lambda { @obj._do_read(nil) }.should raise_error(NotImplementedError)
     lambda { @obj._done_read }.should raise_error(NotImplementedError)
     lambda { @obj._do_write(nil) }.should raise_error(NotImplementedError)
-    lambda { @obj._do_num_bytes(nil) }.should raise_error(NotImplementedError)
+    lambda { @obj._do_num_bytes }.should raise_error(NotImplementedError)
     lambda { @obj._snapshot }.should raise_error(NotImplementedError)
   end
 end

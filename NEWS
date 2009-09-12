@@ -1,3 +1,14 @@
+= 1.0.0
+
+Version 1.0.0 removes all deprecated features.  If you are upgrading from a
+version prior to 0.10.0 you will need to make changes to your code before it
+will work with BinData 1.0.0 or later.
+
+It is recommended to first upgrade to 0.11.1, and run your code with the -w
+command line switch.  This will turn on warning messages that should give you
+hints about which parts of your code need changing.  See the NEWS for 0.10.0
+for details of the deprecated features.
+
 = 0.10.0
 
 There are several new features in this release.  The major ones are:

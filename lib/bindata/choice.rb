@@ -180,8 +180,8 @@ module BinData
       current_choice.do_write(io)
     end
 
-    def _do_num_bytes(deprecated)
-      current_choice.do_num_bytes(deprecated)
+    def _do_num_bytes
+      current_choice.do_num_bytes
     end
 
     def _assign(val)

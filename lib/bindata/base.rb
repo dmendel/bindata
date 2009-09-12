@@ -158,13 +158,12 @@ module BinData
     protected :do_write
 
     # Returns the number of bytes it will take to write this data.
-    def num_bytes(deprecated = nil)
-      num = do_num_bytes(deprecated)
-      num.ceil
+    def num_bytes
+      do_num_bytes.ceil
     end
 
-    def do_num_bytes(deprecated = nil) #:nodoc:
-      _do_num_bytes(deprecated)
+    def do_num_bytes #:nodoc:
+      _do_num_bytes
     end
     protected :do_num_bytes
 
@@ -310,7 +309,7 @@ module BinData
     end
 
     # Returns the number of bytes it will take to write this data.
-    def _do_num_bytes(deprecated)
+    def _do_num_bytes
       raise NotImplementedError
     end
 

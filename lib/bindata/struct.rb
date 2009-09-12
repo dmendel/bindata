@@ -245,7 +245,7 @@ module BinData
       @field_objs.each { |f| f.do_write(io) if include_obj(f) }
     end
 
-    def _do_num_bytes(deprecated)
+    def _do_num_bytes
       instantiate_all_objs
       sum_num_bytes_for_all_fields.ceil
     end

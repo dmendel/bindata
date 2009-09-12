@@ -144,7 +144,7 @@ module BinData
       io.writebytes(value_to_binary_string(_value))
     end
 
-    def _do_num_bytes(ignored)
+    def _do_num_bytes
       value_to_binary_string(_value).length
     end
 

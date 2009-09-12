@@ -117,8 +117,8 @@ module BinData
       wrapped.do_write(io)
     end
 
-    def _do_num_bytes(deprecated)
-      wrapped.do_num_bytes(deprecated)
+    def _do_num_bytes
+      wrapped.do_num_bytes
     end
 
     def _assign(val)
