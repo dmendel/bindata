@@ -1,300 +1,1143 @@
-= BinData
+Title: BinData Reference Manual
+
+{:ruby: lang=ruby html_use_syntax=true}
+
+# BinData
 
 A declarative way to read and write structured binary data.
 
-== What is it for?
+## What is it for?
 
 Do you ever find yourself writing code like this?
 
-  io = File.open(...)
-  len = io.read(2).unpack("v")
-  name = io.read(len)
-  width, height = io.read(8).unpack("VV")
-  puts "Rectangle #{name} is #{width} x #{height}"
+    io = File.open(...)
+    len = io.read(2).unpack("v")[0]
+    name = io.read(len)
+    width, height = io.read(8).unpack("VV")
+    puts "Rectangle #{name} is #{width} x #{height}"
+{:ruby}
 
 It's ugly, violates DRY and feels like you're writing Perl, not Ruby.
+
 There is a better way.
 
-  class Rectangle < BinData::Record
-    uint16le :len
-    string   :name, :read_length => :len
-    uint32le :width
-    uint32le :height
-  end
+    class Rectangle < BinData::Record
+      endian :little
+      uint16 :len
+      string :name, :read_length => :len
+      uint32 :width
+      uint32 :height
+    end
 
-  io = File.open(...)
-  r = Rectangle.read(io)
-  puts "Rectangle #{r.name} is #{r.width} x #{r.height}"
+    io = File.open(...)
+    r = Rectangle.read(io)
+    puts "Rectangle #{r.name} is #{r.width} x #{r.height}"
+{:ruby}
 
 BinData makes it easy to specify the structure of the data you are
 manipulating.
 
 Read on for the tutorial, or go straight to the
-download[http://rubyforge.org/frs/?group_id=3252] page.
+[download](http://rubyforge.org/frs/?group_id=3252) page.
 
-== Syntax
+## License
+
+BinData is released under the same license as Ruby.
+
+Copyright &copy; 2007 - 2009 Dion Mendel
+
+---------------------------------------------------------------------------
+
+# Overview
 
 BinData declarations are easy to read.  Here's an example.
 
-  class MyFancyFormat < BinData::Record
-    stringz :comment
-    uint8   :count, :check_value => lambda { (value % 2) == 0 }
-    array   :some_ints, :type => :int32be, :initial_length => :count
-  end
+    class MyFancyFormat < BinData::Record
+      stringz :comment
+      uint8   :num_ints, :check_value => lambda { value.even? }
+      array   :some_ints, :type => :int32be, :initial_length => :num_ints
+    end
+{:ruby}
 
-The structure of the data in this example is
-1. A zero terminated string
-2. An unsigned 8bit integer which must by even
-3. A sequence of unsigned 32bit integers in big endian form, the total
-   number of which is determined by the value of the 8bit integer.
+This fancy format describes the following collection of data:
 
-The BinData declaration matches the english description closely.  Just for
-fun, lets look at how we'd implement this using #pack and #unpack.  Here's
-the writing code, have a go at the reading code.
+1.  A zero terminated string
+2.  An unsigned 8bit integer which must by even
+3.  A sequence of unsigned 32bit integers in big endian form, the total
+    number of which is determined by the value of the 8bit integer.
 
-  comment = "this is a comment"
-  some_ints = [2, 3, 8, 9, 1, 8]
-  File.open(...) do |io|
-    io.write([comment, some_ints.size, *some_ints].pack("Z*CN*"))
-  end
+The BinData declaration matches the English description closely.
+Compare the above declaration with the equivalent `#unpack` code to read
+such a data record.
 
+    def read_fancy_format(io)
+      comment, num_ints, rest = io.read.unpack("Z*Ca*")
+      raise ArgumentError, "ints must be even" unless num_ints.even?
+      some_ints = rest.unpack("N#{num_ints}")
+      {:comment => comment, :num_ints => num_ints, :some_ints => *some_ints}
+    end
+{:ruby}
 
-The general format of a BinData declaration is a class containing one or more
-fields.
+The BinData declaration clearly shows the structure of the record.  The
+`#unpack` code makes this structure opaque.
 
-  class MyName < BinData::Record
-    type field_name, :param1 => "foo", :param2 => bar, ...
-    ...
-  end
+The general usage of BinData is to declare a structured collection of
+data as a user defined record.  This record can be instantiated, read,
+written and manipulated without the user having to be concerned with the
+underlying binary representation of the data.
 
-*type* is the name of a supplied type (e.g. <tt>uint32be</tt>,  +string+)
-or a user defined type.  For user defined types, convert the class name
-from CamelCase to lowercase underscore_style.
+---------------------------------------------------------------------------
 
-*field_name* is the name by which you can access the data.  Use either a
-String or a Symbol.
+# Common Operations
 
-Each field may have *parameters* for how to process the data.  The
-parameters are passed as a Hash using Symbols for keys.
+There are operations common to all BinData types, including user defined
+ones.  These are summarised here.
 
-== Handling dependencies between fields
+## Reading and writing
 
-A common occurance in binary file formats is one field depending upon the
-value of another.  e.g. A string preceded by it's length.
+`::read(io)`
 
-As an example, let's assume a Pascal style string where the byte preceding
-the string contains the string's length.
+:   Creates a BinData object and reads its value from the given string
+    or `IO`.  The newly created object is returned.
 
-  # reading
-  io = File.open(...)
-  len = io.getc
-  str = io.read(len)
-  puts "string is " + str
+        str = BinData::Stringz::read("string1\0string2")
+        str.snapshot #=> "string1"
+    {:ruby}
 
-  # writing
-  io = File.open(...)
-  str = "this is a string"
-  io.putc(str.length)
-  io.write(str)
+`#read(io)`
+
+:   Reads and assigns binary data read from `io`.
+
+        obj = BinData::Uint16be.new
+        obj.read("\022\064")
+        obj.value #=> 4660
+    {:ruby}
+
+`#write(io)`
+
+:   Writes the binary representation of the object to `io`.
+
+        File.open("...", "wb") do |io|
+          obj = BinData::Uint64be.new
+          obj.value = 568290145640170
+          obj.write(io)
+        end
+    {:ruby}
+
+`#to_binary_s`
+
+:   Returns the binary representation of this object as a string.
+
+        obj = BinData::Uint16be.new
+        obj.assign(4660)
+        obj.to_binary_s #=> "\022\064"
+    {:ruby}
+
+## Manipulating
+
+`#assign(value)`
+
+:   Assigns the given value to this object.  `value` can be of the same
+    format as produced by `#snapshot`, or it can be a compatible data
+    object.
+  
+        arr = BinData::Array.new(:type => :uint8)
+        arr.assign([1, 2, 3, 4])
+        arr.snapshot #=> [1, 2, 3, 4]
+    {:ruby}
+
+`#clear`
+
+:   Resets this object to its initial state.
+
+        obj = BinData::Int32be.new(:initial_value => 42)
+        obj.assign(50)
+        obj.clear
+        obj.value #=> 42
+    {:ruby}
+
+`#clear?`
+
+:   Returns whether this object is in its initial state.
+
+        arr = BinData::Array.new(:type => :uint16be, :initial_length => 5)
+        arr[3] = 42
+        arr.clear? #=> false
+
+        arr[3].clear
+        arr.clear? #=> true
+    {:ruby}
+
+## Inspecting
+
+`#num_bytes`
+
+:   Returns the number of bytes required for the binary representation
+    of this object.
+
+        arr = BinData::Array.new(:type => :uint16be, :initial_length => 5)
+        arr[0].num_bytes #=> 2
+        arr.num_bytes #=> 10
+    {:ruby}
+
+`#snapshot`
+
+:   Returns the value of this object as primitive Ruby objects
+    (numerics, strings, arrays and hashs).  The output of `#snapshot`
+    may be useful for serialization or as a reduced memory usage
+    representation.
+
+        obj = BinData::Uint8.new
+        obj.assign(3)
+        obj + 3 #=> 6
+
+        obj.snapshot #=> 3
+        obj.snapshot.class #=> Fixnum
+    {:ruby}
+
+`#offset`
+
+:   Returns the offset of this object with respect to the most distant
+    ancestor structure it is contained within.  This is most likely to
+    be used with arrays and records.
+
+        class Tuple < BinData::Record
+          int8 :a
+          int8 :b
+        end
+
+        arr = BinData::Array.new(:type => :tuple, :initial_length => 3)
+        arr[2].b.offset #=> 5
+    {:ruby}
+
+`#rel_offset`
+
+:   Returns the offset of this object with respect to the parent
+    structure it is contained within.  Compare this to `#offset`.
+
+        class Tuple < BinData::Record
+          int8 :a
+          int8 :b
+        end
+
+        arr = BinData::Array.new(:type => :tuple, :initial_length => 3)
+        arr[2].b.rel_offset #=> 1
+    {:ruby}
+
+`#inspect`
+
+:   Returns a human readable representation of this object.  This is a
+    shortcut to #snapshot.inspect.
+
+---------------------------------------------------------------------------
+
+# Records
+
+The general format of a BinData record declaration is a class containing
+one or more fields.
+
+    class MyName < BinData::Record
+      type field_name, :param1 => "foo", :param2 => bar, ...
+      ...
+    end
+{:ruby}
+
+`type`
+:   is the name of a supplied type (e.g. `uint32be`, `string`, `array`)
+    or a user defined type.  For user defined types, the class name is
+    converted from `CamelCase` to lowercased `underscore_style`.
+
+`field_name`
+:   is the name by which you can access the data.  Use either a
+    `String` or a `Symbol`.
+
+Each field may have optional *parameters* for how to process the data.
+The parameters are passed as a `Hash` with `Symbols` for keys.
+Parameters are designed to be lazily evaluated, possibly multiple times.
+This means that any parameter value must not have side effects.
+
+Here are some examples of legal values for parameters.
+
+*   `:param => 5`
+*   `:param => lambda { 5 + 2 }`
+*   `:param => lambda { foo + 2 }`
+*   `:param => :foo`
+
+The simplest case is when the value is a literal value, such as `5`.
+
+If the value is not a literal, it is expected to be a lambda.  The
+lambda will be evaluated in the context of the parent, in this case the
+parent is an instance of `MyName`.
+
+If the value is a symbol, it is taken as syntactic sugar for a lambda
+containing the value of the symbol.
+e.g `:param => :foo` is `:param => lambda { foo }`
+
+## Specifying default endian
+
+The endianess of numeric types must be explicitly defined so that the
+code produced is independent of architecture.  However, explicitly
+specifying the endian for each numeric field can result in a bloated
+declaration that can be difficult to read.
+
+    class A < BinData::Record
+      int16be  :a
+      int32be  :b
+      int16le  :c  # <-- Note little endian!
+      int32be  :d
+      float_be :e
+      array    :f, :type => :uint32be
+    end
+{:ruby}
+
+The `endian` keyword can be used to set the default endian.  This makes
+the declaration easier to read.  Any numeric field that doesn't use the
+default endian can explicitly override it.
+
+    class A < BinData::Record
+      endian :big
+
+      int16   :a
+      int32   :b
+      int16le :c   # <-- Note how this little endian now stands out
+      int32   :d
+      float   :e
+      array   :f, :type => :uint32
+    end
+{:ruby}
+
+The increase in clarity can be seen with the above example.  The
+`endian` keyword will cascade to nested types, as illustrated with the
+array in the above example.
+
+## Optional fields
+
+A record may contain optional fields.  The optional state of a field is
+decided by the `:onlyif` parameter.  If the value of this parameter is
+`false`, then the field will be as if it didn't exist in the record.
+
+    class RecordWithOptionalField < BinData::Record
+      ...
+      uint8  :comment_flag
+      string :comment, :length => 20, :onlyif => :has_comment?
+
+      def has_comment?
+        comment_flag.nonzero?
+      end
+    end
+{:ruby}
+
+In the above example, the `comment` field is only included in the record
+if the value of the `comment_flag` field is non zero.
+
+## Handling dependencies between fields
+
+A common occurence in binary file formats is one field depending upon
+the value of another.  e.g. A string preceded by its length.
+
+As an example, let's assume a Pascal style string where the byte
+preceding the string contains the string's length.
+
+    # reading
+    io = File.open(...)
+    len = io.getc
+    str = io.read(len)
+    puts "string is " + str
+
+    # writing
+    io = File.open(...)
+    str = "this is a string"
+    io.putc(str.length)
+    io.write(str)
+{:ruby}
 
 Here's how we'd implement the same example with BinData.
 
-  class PascalString < BinData::Record
-    uint8  :len,  :value => lambda { data.length }
-    string :data, :read_length => :len
-  end
+    class PascalString < BinData::Record
+      uint8  :len,  :value => lambda { data.length }
+      string :data, :read_length => :len
+    end
 
-  # reading
-  io = File.open(...)
-  ps = PascalString.new
-  ps.read(io)
-  puts "string is " + ps.data
+    # reading
+    io = File.open(...)
+    ps = PascalString.new
+    ps.read(io)
+    puts "string is " + ps.data
 
-  # writing
-  io = File.open(...)
-  ps = PascalString.new
-  ps.data = "this is a string"
-  ps.write(io)
+    # writing
+    io = File.open(...)
+    ps = PascalString.new
+    ps.data = "this is a string"
+    ps.write(io)
+{:ruby}
 
 This syntax needs explaining.  Let's simplify by examining reading and
 writing separately.
 
-  class PascalStringReader < BinData::Record
-    uint8  :len
-    string :data, :read_length => :len
-  end
+    class PascalStringReader < BinData::Record
+      uint8  :len
+      string :data, :read_length => :len
+    end
+{:ruby}
 
-This states that when reading the string, the initial length of the string
-(and hence the number of bytes to read) is determined by the value of the
-+len+ field.
+This states that when reading the string, the initial length of the
+string (and hence the number of bytes to read) is determined by the
+value of the `len` field.
 
-Note that <tt>:read_length => :len</tt> is syntactic sugar for
-<tt>:read_length => lambda { len }</tt>, but more on that later.
+Note that `:read_length => :len` is syntactic sugar for
+`:read_length => lambda { len }`, as described previously.
 
-  class PascalStringWriter < BinData::Record
-    uint8  :len, :value => lambda { data.length }
-    string :data
-  end
+    class PascalStringWriter < BinData::Record
+      uint8  :len, :value => lambda { data.length }
+      string :data
+    end
+{:ruby}
 
-This states that the value of +len+ is always equal to the length of +data+.
-+len+ may not be manually modified.
+This states that the value of `len` is always equal to the length of
+`data`.  `len` may not be manually modified.
 
-Combining these two definitions gives the definition for +PascalString+ as
-previously defined.
+Combining these two definitions gives the definition for `PascalString`
+as previously defined.
 
-Once thing to note with dependencies, is that a field can only depend on one
-before it.  You can't have a string which has the characters first and the
-length afterwards.
+It is important to note with dependencies, that a field can only depend
+on one before it.  You can't have a string which has the characters
+first and the length afterwards.
 
-== Predefined Types
+---------------------------------------------------------------------------
 
-These are the predefined types.  Custom types can be created by composing
-these types.
+# Primitive Types
 
-BinData::String::   A sequence of bytes.
-BinData::Stringz::  A zero terminated sequence of bytes.
+BinData provides support for the most commonly used primitive types that
+are used when working with binary data.  Namely:
 
-BinData::Array::    A list of objects of the same type.
-BinData::Choice::   A choice between several objects.
-BinData::Struct::   An ordered collection of named objects.
+*   fixed size strings
+*   zero terminated strings
+*   byte based integers - signed or unsigned, big or little endian and
+    of any size
+*   bit based integers - unsigned big or little endian integers of any
+    size
+*   floating point numbers - single or double precision floats in either
+    big or little endian
 
-BinData::Int8::     Signed  8 bit integer.
-BinData::Int16le::  Signed 16 bit integer (little endian).
-BinData::Int16be::  Signed 16 bit integer (big endian).
-BinData::Int32le::  Signed 32 bit integer (little endian).
-BinData::Int32be::  Signed 32 bit integer (big endian).
-BinData::Int64le::  Signed 64 bit integer (little endian).
-BinData::Int64be::  Signed 64 bit integer (big endian).
+Primitives may be manipulated individually, but is more common to work
+with them as part of a record.
 
-BinData::Uint8::    Unsigned  8 bit integer.
-BinData::Uint16le:: Unsigned 16 bit integer (little endian).
-BinData::Uint16be:: Unsigned 16 bit integer (big endian).
-BinData::Uint32le:: Unsigned 32 bit integer (little endian).
-BinData::Uint32be:: Unsigned 32 bit integer (big endian).
-BinData::Uint64le:: Unsigned 64 bit integer (little endian).
-BinData::Uint64be:: Unsigned 64 bit integer (big endian).
+Examples of individual usage:
 
-BinData::Bit1::     1 bit unsigned integer (big endian).
-BinData::Bit2::     2 bit unsigned integer (big endian).
-...
-BinData::Bit63::    63 bit unsigned integer (big endian).
+    int16 = BinData::Int16be.new
+    int16.value = 941
+    int16.to_binary_s #=> "\003\255"
 
-BinData::Bit1le::   1 bit unsigned integer (little endian).
-BinData::Bit2le::   2 bit unsigned integer (little endian).
-...
-BinData::Bit63le::  63 bit unsigned integer (little endian).
+    fl = BinData::FloatBe.read("\100\055\370\124") #=> 2.71828174591064
+    fl.num_bytes #=> 4
 
-BinData::FloatLe::  Single precision floating point number (little endian).
-BinData::FloatBe::  Single precision floating point number (big endian).
-BinData::DoubleLe:: Double precision floating point number (little endian).
-BinData::DoubleBe:: Double precision floating point number (big endian).
+    fl * int16 #=> 2557.90320057996
+{:ruby}
 
-BinData::Rest::     Consumes the rest of the input stream.
+There are several parameters that are specific to primitives.
 
-== Parameters
+`:initial_value`
 
-  class PascalStringWriter < BinData::Record
-    uint8  :len, :value => lambda { data.length }
-    string :data
-  end
+:   This contains the initial value that the primitive will contain
+    after initialization.  This is useful for setting default values.
 
-Revisiting the Pascal string writer, we see that a field can take
-parameters.  Parameters are passed as a Hash, where the key is a symbol.
-It should be noted that parameters are designed to be lazily evaluated,
-possibly multiple times.  This means that any parameter value must not have
-side effects.
+        obj = BinData::String.new(:initial_value => "hello ")
+        obj + "world" #=> "hello world"
 
-Here are some examples of legal values for parameters.
+        obj.assign("good-bye " )
+        obj + "world" #=> "good-bye world"
+    {:ruby}
 
-  * :param => 5
-  * :param => lambda { 5 + 2 }
-  * :param => lambda { foo + 2 }
-  * :param => :foo
+`:value`
 
-The simplest case is when the value is a literal value, such as 5.
+:   The primitive will always contain this value.  Reading or assigning
+    will not change the value.  This parameter is used to define
+    constants or dependent fields.
 
-If the value is not a literal, it is expected to be a lambda.  The lambda
-will be evaluated in the context of the parent, in this case the parent is
-an instance of +PascalStringWriter+.
+        pi = BinData::FloatLe.new(:value => Math::PI)
+        pi.assign(3)
+        puts pi #=> 3.14159265358979
+    {:ruby}
 
-If the value is a symbol, it is taken as syntactic sugar for a lambda
-containing the value of the symbol.
-e.g <tt>:param => :foo</tt> is <tt>:param => lambda { foo }</tt>
+`:check_value`
 
-== Saving Typing
+:   When reading, will raise a `ValidityError` if the value read does
+    not match the value of this parameter.
 
-The endianess of numeric types must be explicitly defined so that the code
-produced is independent of architecture.  Explicitly specifying the
-endianess of each numeric type can become tedious, so the following
-shortcut is provided.
+        obj = BinData::String.new(:check_value => lambda { /aaa/ =~ value })
+        obj.read("baaa!") #=> "baaa!"
+        obj.read("bbb") #=> raises ValidityError
 
-  class A < BinData::Record
-    endian :little
+        obj = BinData::String.new(:check_value => "foo")
+        obj.read("foo") #=> "foo"
+        obj.read("bar") #=> raises ValidityError
+    {:ruby}
 
-    uint16   :a
-    uint32   :b
-    double   :c
-    uint32be :d
-    array    :e, :type => :int16
-  end
+## Numerics
 
-is equivalent to:
+There are three kinds of numeric types that are supported by BinData.
 
-  class A < BinData::Record
-    uint16le  :a
-    uint32le  :b
-    double_le :c
-    uint32be  :d
-    array     :e, :type => :int16le
-  end
+### Byte based integers
 
-Using the endian keyword improves the readability of the declaration as well
-as reducing the amount of typing necessary.  Note that the endian keyword will
-cascade to nested types, as illustrated with the array in the above example.
+These are the common integers that are used in most low level
+programming languages (C, C++, Java etc).  These integers can be signed
+or unsigned.  The endian must be specified so that the conversion is
+independent of architecture.  The bit size of these integers must be a
+multiple of 8.  Examples of byte based integers are:
 
-== Creating custom types
+`uint16be`
+:   unsigned 16 bit big endian integer
 
-Custom types should be created by subclassing BinData::Record or
-BinData::Primitive.  Ocassionally it may be useful to subclass
-BinData::BasePrimitive.  Subclassing other classes may have unexpected results
-and is unsupported.
+`int8`
+:   signed 8 bit integer
+
+`int32le`
+:   signed 32 bit little endian integer
+
+`uint40be`
+:   unsigned 40 bit big endian integer
+
+The `be` | `le` suffix may be omitted if the `endian` keyword is in use.
+
+### Bit based integers
+
+These unsigned integers are used to define bitfields in records.
+Bitfields are big endian by default but little endian may be specified
+explicitly.  Little endian bitfields are rare, but do occur in older
+file formats (e.g.  The file allocation table for FAT12 filesystems is
+stored as an array of 12bit little endian integers).
+
+An array of bit based integers will be packed according to their endian.
+
+In a record, adjacent bitfields will be packed according to their
+endian.  All other fields are byte aligned.
+
+Examples of bit based integers are:
+
+`bit1`
+:   1 bit big endian integer (may be used as boolean)
+
+`bit4_le`
+:   4 bit little endian integer
+
+`bit32`
+:   32 bit big endian integer
+
+The difference between byte and bit base integers of the same number of
+bits (e.g. `uint8` vs `bit8`) is one of alignment.
+
+This example is packed as 3 bytes
+
+    class A < BinData::Record
+      bit4  :a
+      uint8 :b
+      bit4  :c
+    end
+
+    Data is stored as: AAAA0000 BBBBBBBB CCCC0000
+{:ruby}
+
+Whereas this example is packed into only 2 bytes
+
+    class B < BinData::Record
+      bit4 :a
+      bit8 :b
+      bit4 :c
+    end
+
+    Data is stored as: AAAABBBB BBBBCCCC
+{:ruby}
+
+### Floating point numbers
+
+BinData supports 32 and 64 bit floating point numbers, in both big and
+little endian format.  These types are:
+
+`float_le`
+:   single precision 32 bit little endian float
+
+`float_be`
+:   single precision 32 bit big endian float
+
+`double_le`
+:   double precision 64 bit little endian float
+
+`double_be`
+:   double precision 64 bit big endian float
+
+The `_be` | `_le` suffix may be omitted if the `endian` keyword is in use.
+
+### Example
+
+Here is an example declaration for an Internet Protocol network packet.
+
+    class IP_PDU < BinData::Record
+      endian :big
+
+      bit4   :version, :value => 4
+      bit4   :header_length
+      uint8  :tos
+      uint16 :total_length
+      uint16 :ident
+      bit3   :flags
+      bit13  :frag_offset
+      uint8  :ttl
+      uint8  :protocol
+      uint16 :checksum
+      uint32 :src_addr
+      uint32 :dest_addr
+      string :options, :read_length => :options_length_in_bytes
+      string :data, :read_length => lambda { total_length - header_length_in_bytes }
+
+      def header_length_in_bytes
+        header_length * 4
+      end
+
+      def options_length_in_bytes
+        header_length_in_bytes - 20
+      end
+    end
+{:ruby}
+
+Three of the fields have parameters.
+*   The version field always has the value 4, as per the standard.
+*   The options field is read as a raw string, but not processed.
+*   The data field contains the payload of the packet.  Its length is
+    calculated as the total length of the packet minus the length of
+    the header.
+
+## Strings
+
+BinData supports two types of strings - fixed size and zero terminated.
+Strings are treated as a sequence of 8bit bytes.  This is the same as
+strings in Ruby 1.8.  The issue of character encoding is ignored by
+BinData.
+
+### Fixed Sized Strings
+
+Fixed sized strings may have a set length.  If an assigned value is
+shorter than this length, it will be padded to this length.  If no
+length is set, the length is taken to be the length of the assigned
+value.
+
+There are several parameters that are specific to fixed sized strings.
+
+`:read_length`
+
+:   The length to use when reading a value.
+
+        obj = BinData::String.new(:read_length => 5)
+        obj.read("abcdefghij")
+        obj.value #=> "abcde"
+    {:ruby}
+
+`:length`
+
+:   The fixed length of the string.  If a shorter string is set, it
+    will be padded to this length.  Longer strings will be truncated.
+
+        obj = BinData::String.new(:length => 6)
+        obj.read("abcdefghij")
+        obj.value #=> "abcdef"
+
+        obj = BinData::String.new(:length => 6)
+        obj.value = "abcd"
+        obj.value #=> "abcd\000\000"
+
+        obj = BinData::String.new(:length => 6)
+        obj.value = "abcdefghij"
+        obj.value #=> "abcdef"
+    {:ruby}
+
+`:pad_char`
+
+:   The character to use when padding a string to a set length.  Valid
+    values are `Integers` and `Strings` of length 1.
+    `"\0"` is the default.
+
+        obj = BinData::String.new(:length => 6, :pad_char => 'A')
+        obj.value = "abcd"
+        obj.value #=> "abcdAA"
+        obj.to_binary_s #=> "abcdAA"
+    {:ruby}
+
+`:trim_padding`
+
+:   Boolean, default `false`.  If set, the value of this string will
+    have all pad_chars trimmed from the end of the string.  The value
+    will not be trimmed when writing.
+
+        obj = BinData::String.new(:length => 6, :trim_value => true)
+        obj.value = "abcd"
+        obj.value #=> "abcd"
+        obj.to_binary_s #=> "abcd\000\000"
+    {:ruby}
+
+### Zero Terminated Strings
+
+These strings are modelled on the C style of string - a sequence of
+bytes terminated by a null (`"\0"`) character.
+
+    obj = BinData::Stringz.new
+    obj.read("abcd\000efgh")
+    obj.value #=> "abcd"
+    obj.num_bytes #=> 5
+    obj.to_binary_s #=> "abcd\000"
+{:ruby}
+
+## User Defined Primitive Types
+
+Most user defined types will be Records, but occasionally we'd like to
+create a custom type of primitive.
 
 Let us revisit the Pascal String example.
 
-  class PascalString < BinData::Record
-    uint8  :len,  :value => lambda { data.length }
-    string :data, :read_length => :len
-  end
+    class PascalString < BinData::Record
+      uint8  :len,  :value => lambda { data.length }
+      string :data, :read_length => :len
+    end
+{:ruby}
 
-We'd like to make PascalString a custom type that behaves like a
-BinData::BasePrimitive object so we can use :initial_value etc.  Here's an
-example usage of what we'd like:
+We'd like to make `PascalString` a user defined type that behaves like a
+`BinData::BasePrimitive` object so we can use `:initial_value` etc.
+Here's an example usage of what we'd like:
 
-  class Favourites < BinData::Record
-    pascal_string :language, :initial_value => "ruby"
-    pascal_string :os,       :initial_value => "unix"
-  end
+    class Favourites < BinData::Record
+      pascal_string :language, :initial_value => "ruby"
+      pascal_string :os,       :initial_value => "unix"
+    end
 
-  f = Favourites.new
-  f.os = "freebsd"
-  f.to_binary_s #=> "\004ruby\007freebsd"
+    f = Favourites.new
+    f.os = "freebsd"
+    f.to_binary_s #=> "\004ruby\007freebsd"
+{:ruby}
 
-We create this type of custom string by inheriting from BinData::Primitive
-and implementing the #get and #set methods.
+We create this type of custom string by inheriting from
+`BinData::Primitive` (instead of `BinData::Record`) and implementing the
+`#get` and `#set` methods.
 
-  class PascalString < BinData::Primitive
-    uint8  :len,  :value => lambda { data.length }
-    string :data, :read_length => :len
+    class PascalString < BinData::Primitive
+      uint8  :len,  :value => lambda { data.length }
+      string :data, :read_length => :len
 
-    def get;   self.data; end
-    def set(v) self.data = v; end
-  end
+      def get;   self.data; end
+      def set(v) self.data = v; end
+    end
+{:ruby}
 
-If the type we are creating represents a primitive value then inherit from
-BinData::Primitive, otherwise inherit from BinData::Record.
+### Advanced User Defined Primitive Types
 
-== License
+Sometimes a user defined primitive type can not easily be declaratively
+defined.  In this case you should inherit from `BinData::BasePrimitive`
+and implement the following three methods:
 
-BinData is released under the same license as Ruby.
+*   `value_to_binary_string(value)`
+*   `read_and_return_value(io)`
+*   `sensible_default()`
 
-Copyright (c) 2007 - 2009 Dion Mendel
+Here is an example of a big integer implementation.
+
+    # A custom big integer format.  Binary format is:
+    #   1 byte  : 0 for positive, non zero for negative
+    #   x bytes : Little endian stream of 7 bit bytes representing the
+    #             positive form of the integer.  The upper bit of each byte
+    #             is set when there are more bytes in the stream.
+    class BigInteger < BinData::BasePrimitive
+      def value_to_binary_string(value)
+        negative = (value < 0) ? 1 : 0
+        value = value.abs
+        bytes = [negative]
+        loop do
+          seven_bit_byte = value & 0x7f
+          value >>= 7
+          has_more = value.nonzero? ? 0x80 : 0
+          byte = has_more | seven_bit_byte
+          bytes.push(byte)
+
+          break if has_more.zero?
+        end
+
+        bytes.collect { |b| b.chr }.join
+      end
+
+      def read_and_return_value(io)
+        negative = read_uint8(io).nonzero?
+        value = 0
+        bit_shift = 0
+        loop do
+          byte = read_uint8(io)
+          has_more = byte & 0x80
+          seven_bit_byte = byte & 0x7f
+          value |= seven_bit_byte << bit_shift
+          bit_shift += 7
+
+          break if has_more.zero?
+        end
+
+        negative ? -value : value
+      end
+
+      def sensible_default
+        0
+      end
+
+      def read_uint8(io)
+        io.readbytes(1).unpack("C").at(0)
+      end
+    end
+{:ruby}
+
+---------------------------------------------------------------------------
+
+# Arrays
+
+A BinData array is a list of data objects of the same type.  It behaves
+much the same as the standard Ruby array, supporting most of the common
+methods.
+
+When instantiating an array, the type of object it contains must be
+specified.
+
+    arr = BinData::Array.new(:type => :uint8)
+    arr[3] = 5
+    arr.snapshot #=> [0, 0, 0, 5]
+{:ruby}
+
+Parameters can be passed to this object with a slightly clumsy syntax.
+
+    arr = BinData::Array.new(:type => [:uint8, {:initial_value => :index}])
+    arr[3] = 5
+    arr.snapshot #=> [0, 1, 2, 5]
+{:ruby}
+
+There are two different parameters that specify the length of the array.
+
+`:initial_length`
+
+:    Specifies the initial length of a newly instantiated array.
+     The array may grow as elements are inserted.
+
+        obj = BinData::Array.new(:type => :int8, :initial_length => 4)
+        obj.read("\002\003\004\005\006\007")
+        obj.snapshot #=> [2, 3, 4, 5]
+    {:ruby}
+
+`:read_until`
+
+:   While reading, elements are read until this condition is true.  This
+    is typically used to read an array until a sentinel value is found.
+    The variables `index`, `element` and `array` are made available to
+    any lambda assigned to this parameter.  If the value of this
+    parameter is the symbol `:eof`, then the array will read as much
+    data from the stream as possible.
+  
+        obj = BinData::Array.new(:type => :int8,
+                                 :read_until => lambda { index == 1 })
+        obj.read("\002\003\004\005\006\007")
+        obj.snapshot #=> [2, 3]
+
+        obj = BinData::Array.new(:type => :int8,
+                                 :read_until => lambda { element >= 3.5 })
+        obj.read("\002\003\004\005\006\007")
+        obj.snapshot #=> [2, 3, 4]
+
+        obj = BinData::Array.new(:type => :int8,
+                :read_until => lambda { array[index] + array[index - 1] == 9 })
+        obj.read("\002\003\004\005\006\007")
+        obj.snapshot #=> [2, 3, 4, 5]
+
+        obj = BinData::Array.new(:type => :int8, :read_until => :eof)
+        obj.read("\002\003\004\005\006\007")
+        obj.snapshot #=> [2, 3, 4, 5, 6, 7]
+    {:ruby}
+
+---------------------------------------------------------------------------
+
+# Choices
+
+A Choice is a collection of data objects of which only one is active at
+any particular time.  Method calls will be delegated to the active
+choice.  The possible types of objects that a choice contains is
+controlled by the `:choices` parameter, while the `:selection` parameter
+specifies the active choice.
+
+`:choices`
+
+:   Either an array or a hash specifying the possible data objects.  The
+    format of the array/hash.values is a list of symbols representing
+    the data object type.  If a choice is to have params passed to it,
+    then it should be provided as `[type_symbol, hash_params]`.  An
+    implementation constraint is that the hash may not contain symbols
+    as keys.
+
+`:selection`
+
+:   An index/key into the `:choices` array/hash which specifies the
+    currently active choice.
+
+`:copy_on_change`
+
+:   If set to `true`, copy the value of the previous selection to the
+    current selection whenever the selection changes.  Default is
+    `false`.
+
+Examples
+
+    type1 = [:string, {:value => "Type1"}]
+    type2 = [:string, {:value => "Type2"}]
+    
+    choices = {5 => type1, 17 => type2}
+    obj = BinData::Choice.new(:choices => choices, :selection => 5)
+    obj.value # => "Type1"
+
+    choices = [ type1, type2 ]
+    obj = BinData::Choice.new(:choices => choices, :selection => 1)
+    obj.value # => "Type2"
+
+    choices = [ nil, nil, nil, type1, nil, type2 ]
+    obj = BinData::Choice.new(:choices => choices, :selection => 3)
+    obj.value # => "Type1"
+
+    class MyNumber < BinData::Record
+      int8 :is_big_endian
+      choice :data, :choices => { true => :int32be, false => :int32le },
+                    :selection => lambda { is_big_endian != 0 },
+                    :copy_on_change => true
+    end
+
+    obj = MyNumber.new
+    obj.is_big_endian = 1
+    obj.data = 5
+    obj.to_binary_s #=> "\001\000\000\000\005"
+
+    obj.is_big_endian = 0
+    obj.to_binary_s #=> "\000\005\000\000\000"
+{:ruby}
+
+---------------------------------------------------------------------------
+
+# Advanced Topics
+
+## Wrappers
+
+Sometimes you wish to create a new type that is simply an existing type
+with some predefined parameters.  Examples could be an array with a
+specified type, or an integer with an initial value.
+
+This can be achieved with a wrapper.  A wrapper creates a new type based
+on an existing type which has predefined parameters.  These parameters
+can of course be overridden at initialisation time.
+
+Here we define an array that contains big endian 16 bit integers.  The
+array has a preferred initial length.
+
+    class IntArray < BinData::Wrapper
+      endian :big
+      array :type => :uint16, :initial_length => 5
+    end
+
+    arr = IntArray.new
+    arr.size #=> 5
+{:ruby}
+
+The initial length can be overridden at initialisation time.
+
+    arr = IntArray.new(:initial_length => 8)
+    arr.size #=> 8
+{:ruby}
+
+## Parameterizing User Defined Types
+
+All BinData types have parameters that allow the behaviour of an object
+to be specified at initialization time.  User defined types may also
+specify parameters.  There are two types of parameters: mandatory and
+default.
+
+### Mandatory Parameters
+
+Mandatory parameters must be specified when creating an instance of the
+type.  The `:type` parameter of `Array` is an example of a mandatory
+type.
+
+    class IntArray < BinData::Wrapper
+      mandatory_parameter :half_count
+
+      array :type => :uint8, :initial_length => lambda { half_count * 2 }
+    end
+
+    arr = IntArray.new
+        #=> raises ArgumentError: parameter 'half_count' must be specified in IntArray
+
+    arr = IntArray.new(:half_count => lambda { 1 + 2 })
+    arr.snapshot #=> [0, 0, 0, 0, 0, 0]
+{:ruby}
+
+### Default Parameters
+
+Default parameters are optional.  These parameters have a default value
+that may be overridden when an instance of the type is created.
+
+    class Phrase < BinData::Primitive
+      default_parameter :number => "three"
+      default_parameter :adjective => "blind"
+      default_parameter :noun => "mice"
+
+      stringz :a, :initial_value => :number
+      stringz :b, :initial_value => :adjective
+      stringz :c, :initial_value => :noun
+
+      def get; "#{a} #{b} #{c}"; end
+      def set(v)
+        if /(.*) (.*) (.*)/ =~ v
+          self.a, self.b, self.c = $1, $2, $3
+        end
+      end
+    end
+
+    obj = Phrase.new(:number => "two", :adjective => "deaf")
+    obj.to_s #=> "two deaf mice"
+{:ruby}
+
+## Debugging
+
+BinData includes several features to make it easier to debug
+declarations.
+
+### Tracing
+
+BinData has the ability to trace the results of reading a data
+structure.
+
+    class A < BinData::Record
+      int8  :a
+      bit4  :b
+      bit2  :c
+      array :d, :initial_length => 6, :type => :bit1
+    end
+
+    BinData::trace_reading do
+      A.read("\373\225\220")
+    end
+{:ruby}
+
+Results in the following being written to `STDERR`.
+
+    obj.a => -5
+    obj.b => 9
+    obj.c => 1
+    obj.d[0] => 0
+    obj.d[1] => 1
+    obj.d[2] => 1
+    obj.d[3] => 0
+    obj.d[4] => 0
+    obj.d[5] => 1
+{:ruby}
+
+### Rest
+
+The rest keyword will consume the input stream from the current position
+to the end of the stream.
+
+    class A < BinData::Record
+      string :a, :read_length => 5
+      rest   :rest
+    end
+
+    obj = A.read("abcdefghij")
+    obj.a #=> "abcde"
+    obj.rest #=" "fghij"
+{:ruby}
+
+### Hidden fields
+
+The typical way to view the contents of a BinData record is to call
+`#snapshot` or `#inspect`.  This gives all fields and their values.  The
+`hide` keyword can be used to prevent certain fields from appearing in
+this output.  This removes clutter and allows the developer to focus on
+what they are currently interested in.
+
+    class Testing < BinData::Record
+      hide :a, :b
+      string :a, :read_length => 10
+      string :b, :read_length => 10
+      string :c, :read_length => 10
+    end
+
+    obj = Testing.read(("a" * 10) + ("b" * 10) + ("c" * 10))
+    obj.snapshot #=> {"c"=>"cccccccccc"}
+    obj.to_binary_s #=> "aaaaaaaaaabbbbbbbbbbcccccccccc"
+{:ruby}
+
+---------------------------------------------------------------------------
+
+# Alternatives
+
+There are several alternatives to BinData.  Below is a comparison
+between BinData and its alternatives.
+
+The short form is that BinData is the best choice for most cases.  If
+decoding / encoding speed is very important and the binary formats are
+simple then BitStruct may be a good choice.  (Though if speed is
+important, perhaps you should investigate a language other than Ruby.)
+
+### [BitStruct](http://rubyforge.org/projects/bit-struct)
+
+BitStruct is the most complete of all the alternatives.  It is
+declarative and supports all the same primitive types as BinData.  In
+addition it includes a self documenting feature to make it easy to write
+reports.
+
+The major limitation of BitStruct is that it does not support variable
+length fields and dependent fields.  The simple PascalString example
+used previously is not possible with BitStruct.  This limitation is due
+to the design choice to favour speed over flexibility.
+
+Most non trivial file formats rely on dependent and variable length
+fields.  It is difficult to use BitStruct with these formats as code
+must be written to explicitly handle the dependencies.
+
+BitStruct does not currently support little endian bit fields, or
+bitfields that span more than 2 bytes.  BitStruct is actively maintained
+so these limitations may be removed in a future release.
+
+If speed is important and you are only dealing with simple binary data
+types then BitStruct is a good choice.  For non trivial data types,
+BinData is the better choice.
+
+### [BinaryParse](http://rubyforge.org/projects/binaryparse)
+
+BinaryParse is a declarative style packer / unpacker.  It provides the
+same primitives as Ruby's `#pack`, with the addition of date and time.
+Like BitStruct, it doesn't provide dependent or variable length fields.
+
+### [BinStruct](http://rubyforge.org/projects/metafuzz)
+
+BinStruct is an imperative approach to unpacking binary data.  It does
+provide some declarative style syntax sugar.  It provides support for
+the most common primitive types, as well as arbitrary length bitfields.
+
+It's main focus is as a binary fuzzer, rather than as a generic decoding
+/ encoding library.
+
+### [Packable](http://github.com/marcandre/packable/tree/master)
+
+Packable makes it much nicer to use Ruby's `#pack` and `#unpack`
+methods.  Instead of having to remember that, for example `"n"` is the
+code to pack a 16 bit big endian integer, packable provides many
+convenient shortcuts.  In the case of `"n"`, `{:bytes => 2, :endian => :big}`
+may be used instead.
+
+Using Packable improves the readability of `#pack` and `#unpack`
+methods, but explicitly calls to `#pack` and `#unpack` aren't as
+readable as a declarative approach.
+
+### [Bitpack](http://rubyforge.org/projects/bitpack)
+
+Bitpack provides methods to extract big endian integers of arbitrary bit
+length from an octet stream.
+
+The extraction code is written in `C`, so if speed is important and bit
+manipulation is all the functionality you require then this may be an
+alternative.
+
+---------------------------------------------------------------------------
