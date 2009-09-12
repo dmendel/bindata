@@ -1,9 +1,3 @@
-== Documentation
-
-* Write a detailed tutorial (probably as a web page).
-
-* Need more examples.
-
 == Pending refactorings
 
 * Refactor registry into registry and numeric registry
