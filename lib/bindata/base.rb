@@ -196,6 +196,11 @@ module BinData
       snapshot.to_s
     end
 
+    # Work with Ruby's pretty-printer library.
+    def pretty_print(pp) #:nodoc:
+      pp.pp(snapshot)
+    end
+
     # Returns a user friendly name of this object for debugging purposes.
     def debug_name
       if parent
