@@ -62,7 +62,7 @@ module BinData
 
     class << self
 
-      def sanitize_parameters!(params, sanitizer)
+      def sanitize_parameters!(params, sanitizer) #:nodoc:
         unless params.has_parameter?(:initial_length) or
                  params.has_parameter?(:read_until)
           # ensure one of :initial_length and :read_until exists
@@ -213,12 +213,12 @@ module BinData
       elements.each { |el| yield el }
     end
 
-    def debug_name_of(child)
+    def debug_name_of(child) #:nodoc:
       index = find_index_of(child)
       "#{debug_name}[#{index}]"
     end
 
-    def offset_of(child)
+    def offset_of(child) #:nodoc:
       index = find_index_of(child)
       sum = sum_num_bytes_below_index(index)
 

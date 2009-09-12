@@ -68,7 +68,7 @@ module BinData
         @hide
       end
 
-      def method_missing(symbol, *args)
+      def method_missing(symbol, *args) #:nodoc:
         name, params = args
 
         type = symbol
@@ -78,7 +78,7 @@ module BinData
         append_field(type, name, params)
       end
 
-      def sanitize_parameters!(params, sanitizer)
+      def sanitize_parameters!(params, sanitizer) #:nodoc:
         params[:fields] = fields
         params[:endian] = endian unless endian.nil?
         params[:hide]   = hide   unless hide.empty?

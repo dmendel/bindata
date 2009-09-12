@@ -38,14 +38,14 @@ module BinData
         @endian
       end
 
-      def method_missing(symbol, *args)
+      def method_missing(symbol, *args) #:nodoc:
         type = symbol
         params = args.length == 0 ? {} : args[0]
 
         set_wrapped(type, params)
       end
 
-      def sanitize_parameters!(params, sanitizer)
+      def sanitize_parameters!(params, sanitizer) #:nodoc:
         raise "Nothing to wrap" unless defined? @wrapped
 
         wrapped_type, wrapped_params = @wrapped
@@ -82,19 +82,19 @@ module BinData
       @wrapped = prototype.instantiate(self)
     end
 
-    def clear
+    def clear #:nodoc:
       wrapped.clear
     end
 
-    def clear?
+    def clear? #:nodoc:
       wrapped.clear?
     end
 
-    def respond_to?(symbol, include_private = false)
+    def respond_to?(symbol, include_private = false) #:nodoc:
       super || wrapped.respond_to?(symbol, include_private)
     end
 
-    def method_missing(symbol, *args, &block)
+    def method_missing(symbol, *args, &block) #:nodoc:
       wrapped.__send__(symbol, *args, &block)
     end
 

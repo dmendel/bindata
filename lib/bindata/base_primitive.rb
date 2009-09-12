@@ -58,12 +58,12 @@ module BinData
       @in_read = false
     end
 
-    def clear
+    def clear #:nodoc:
       @value = nil
       @in_read = false
     end
 
-    def clear?
+    def clear? #:nodoc:
       @value.nil?
     end
 
@@ -77,11 +77,11 @@ module BinData
       assign(val)
     end
 
-    def respond_to?(symbol, include_private=false)
+    def respond_to?(symbol, include_private=false) #:nodoc:
       super || value.respond_to?(symbol, include_private)
     end
 
-    def method_missing(symbol, *args, &block)
+    def method_missing(symbol, *args, &block) #:nodoc:
       if value.respond_to?(symbol)
         value.__send__(symbol, *args, &block)
       else

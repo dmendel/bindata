@@ -61,7 +61,7 @@ module BinData
 
     class << self
 
-      def sanitize_parameters!(params, sanitizer)
+      def sanitize_parameters!(params, sanitizer) #:nodoc:
         if params.needs_sanitizing?(:choices)
           choices = choices_as_hash(params[:choices])
           ensure_valid_keys(choices)
@@ -137,19 +137,19 @@ module BinData
       raise NoMethodError
     end
 
-    def clear
+    def clear #:nodoc:
       current_choice.clear
     end
 
-    def clear?
+    def clear? #:nodoc:
       current_choice.clear?
     end
 
-    def respond_to?(symbol, include_private = false)
+    def respond_to?(symbol, include_private = false) #:nodoc:
       super || current_choice.respond_to?(symbol, include_private)
     end
 
-    def method_missing(symbol, *args, &block)
+    def method_missing(symbol, *args, &block) #:nodoc:
       current_choice.__send__(symbol, *args, &block)
     end
 

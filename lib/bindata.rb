@@ -20,6 +20,14 @@ require 'bindata/deprecated'
 # 
 # A declarative way to read and write structured binary data.
 # 
+# A full reference manual is available online at
+# http://bindata.rubyforge.org.
+#
+# == License
+#
+# BinData is released under the same license as Ruby.
+#
+# Copyright (c) 2007 - 2009 Dion Mendel.
 module BinData
   VERSION = "0.11.0"
 end

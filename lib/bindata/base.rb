@@ -69,7 +69,7 @@ module BinData
         @accepted_parameters
       end
 
-      def sanitize_parameters!(params, sanitizer)
+      def sanitize_parameters!(params, sanitizer) #:nodoc:
       end
 
       #-------------
@@ -132,13 +132,13 @@ module BinData
       self
     end
 
-    def do_read(io)
+    def do_read(io) #:nodoc:
       check_or_adjust_offset(io)
       clear
       _do_read(io)
     end
 
-    def done_read
+    def done_read #:nodoc:
       _done_read
     end
     protected :do_read, :done_read
@@ -152,7 +152,7 @@ module BinData
       self
     end
 
-    def do_write(io)
+    def do_write(io) #:nodoc:
       _do_write(io)
     end
     protected :do_write
@@ -163,7 +163,7 @@ module BinData
       num.ceil
     end
 
-    def do_num_bytes(deprecated = nil)
+    def do_num_bytes(deprecated = nil) #:nodoc:
       _do_num_bytes(deprecated)
     end
     protected :do_num_bytes
@@ -224,7 +224,7 @@ module BinData
       end
     end
 
-    def ==(other)
+    def ==(other) #:nodoc:
       # double dispatch
       other == snapshot
     end
@@ -284,13 +284,13 @@ module BinData
 
     # Returns the debug name of +child+.  This only needs to be implemented
     # by objects that contain child objects.
-    def debug_name_of(child)
+    def debug_name_of(child) #:nodoc:
       debug_name
     end
 
     # Returns the offset of +child+.  This only needs to be implemented
     # by objects that contain child objects.
-    def offset_of(child)
+    def offset_of(child) #:nodoc:
       0
     end
 

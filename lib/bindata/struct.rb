@@ -69,7 +69,7 @@ module BinData
 
     class << self
 
-      def sanitize_parameters!(params, sanitizer)
+      def sanitize_parameters!(params, sanitizer) #:nodoc:
         sanitize_endian(params, sanitizer)
         sanitize_fields(params, sanitizer)
         sanitize_hide(params, sanitizer)
@@ -146,11 +146,11 @@ module BinData
       @field_objs  = []
     end
 
-    def clear
+    def clear #:nodoc:
       @field_objs.each { |f| f.clear unless f.nil? }
     end
 
-    def clear?
+    def clear? #:nodoc:
       @field_objs.inject(true) { |all_clear, f| all_clear and (f.nil? or f.clear?) }
     end
 
@@ -166,12 +166,12 @@ module BinData
       end
     end
 
-    def respond_to?(symbol, include_private = false)
+    def respond_to?(symbol, include_private = false) #:nodoc:
       super(symbol, include_private) ||
         field_names(true).include?(symbol.to_s.chomp("="))
     end
 
-    def method_missing(symbol, *args, &block)
+    def method_missing(symbol, *args, &block) #:nodoc:
       obj = find_obj_for_name(symbol)
       if obj
         invoke_field(obj, symbol, args)
@@ -180,12 +180,12 @@ module BinData
       end
     end
 
-    def debug_name_of(child)
+    def debug_name_of(child) #:nodoc:
       field_name = @field_names[find_index_of(child)]
       "#{debug_name}.#{field_name}"
     end
 
-    def offset_of(child)
+    def offset_of(child) #:nodoc:
       instantiate_all_objs
       sum = sum_num_bytes_below_index(find_index_of(child))
       child.do_num_bytes.is_a?(Integer) ? sum.ceil : sum.floor

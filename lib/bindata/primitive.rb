@@ -78,7 +78,7 @@ module BinData
         @endian
       end
 
-      def method_missing(symbol, *args)
+      def method_missing(symbol, *args) #:nodoc:
         name, params = args
 
         type = symbol
@@ -88,7 +88,7 @@ module BinData
         append_field(type, name, params)
       end
 
-      def sanitize_parameters!(params, sanitizer)
+      def sanitize_parameters!(params, sanitizer) #:nodoc:
         struct_params = {}
         struct_params[:fields] = fields
         struct_params[:endian] = endian unless endian.nil?
@@ -134,15 +134,15 @@ module BinData
       @struct = BinData::Struct.new(get_parameter(:struct_params), self)
     end
 
-    def method_missing(symbol, *args, &block)
+    def method_missing(symbol, *args, &block) #:nodoc:
       @struct.__send__(symbol, *args, &block)
     end
 
-    def debug_name_of(child)
+    def debug_name_of(child) #:nodoc:
       debug_name + "-internal-"
     end
 
-    def offset_of(child)
+    def offset_of(child) #:nodoc:
       @struct.offset_of(child)
     end
 
