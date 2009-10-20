@@ -207,7 +207,7 @@ module BinData
 
   class SanitizedField < SanitizedParameter
     def initialize(sanitizer, name, field_type, field_params)
-      @name = name.to_s
+      @name = (name != nil and name != "") ? name.to_s : nil
       @prototype = sanitizer.create_sanitized_object_prototype(field_type, field_params)
     end
     attr_reader :name

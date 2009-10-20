@@ -41,6 +41,32 @@ describe BinData::Struct, "when initializing" do
   end
 end
 
+describe BinData::Struct, "with anonymous fields" do
+  before(:each) do
+    @params = { :fields => [
+                   [:int8, :a, {:initial_value => 10}],
+                   [:int8, nil],
+                   [:int8, '', {:value => :a}]] }
+    @obj = BinData::Struct.new(@params)
+  end
+
+  it "should only show non anonymous fields" do
+    @obj.field_names.should == ["a"]
+  end
+
+  it "should not include anonymous fields in snapshot" do
+    @obj.a = 5
+    @obj.snapshot.should == {"a" => 5}
+  end
+
+  it "should write anonymous fields" do
+    str = "\001\002\003"
+    @obj.read(str)
+    @obj.a.clear
+    @obj.to_binary_s.should == "\012\002\012"
+  end
+end
+
 describe BinData::Struct, "with hidden fields" do
   before(:each) do
     @params = { :hide => [:b, 'c'],

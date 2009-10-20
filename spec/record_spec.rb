@@ -71,6 +71,34 @@ describe BinData::Record, "when defining" do
   end
 end
 
+describe BinData::Record, "with anonymous fields" do
+  class AnonymousRecord < BinData::Record
+    int8 'a', :initial_value => 10
+    int8 ''
+    int8 :value => :a
+  end
+
+  before(:each) do
+    @obj = AnonymousRecord.new
+  end
+
+  it "should only show non anonymous fields" do
+    @obj.field_names.should == ["a"]
+  end
+
+  it "should not include anonymous fields in snapshot" do
+    @obj.a = 5
+    @obj.snapshot.should == {"a" => 5}
+  end
+
+  it "should write anonymous fields" do
+    str = "\001\002\003"
+    @obj.read(str)
+    @obj.a.clear
+    @obj.to_binary_s.should == "\012\002\012"
+  end
+end
+
 describe BinData::Record, "with hidden fields" do
   class HiddenRecord < BinData::Record
     hide :b, 'c'

@@ -81,6 +81,11 @@ module BinData
       def method_missing(symbol, *args) #:nodoc:
         name, params = args
 
+        if name.is_a?(Hash)
+          params = name
+          name = nil
+        end
+
         type = symbol
         name = name.to_s
         params ||= {}

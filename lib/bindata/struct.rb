@@ -28,7 +28,8 @@ module BinData
   #                      params].  Type is a symbol representing a registered
   #                      type.  Name is the name of this field.  Params is an
   #                      optional hash of parameters to pass to this field
-  #                      when instantiating it.
+  #                      when instantiating it.  If name is "" or nil, then
+  #                      that field is anonymous and behaves as a hidden field.
   # <tt>:hide</tt>::     A list of the names of fields that are to be hidden
   #                      from the outside world.  Hidden fields don't appear
   #                      in #snapshot or #field_names but are still accessible
@@ -108,7 +109,7 @@ module BinData
       end
 
       def sanitized_field_names(sanitized_fields)
-        sanitized_fields.field_names
+        sanitized_fields.field_names.compact
       end
 
       def hidden_field_names(hidden)
@@ -159,10 +160,10 @@ module BinData
     # in the listing.
     def field_names(include_hidden = false)
       if include_hidden
-        @field_names.dup
+        @field_names.compact
       else
         hidden = get_parameter(:hide) || []
-        @field_names - hidden
+        @field_names.compact - hidden
       end
     end
 

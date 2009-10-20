@@ -248,8 +248,10 @@ one or more fields.
     converted from `CamelCase` to lowercased `underscore_style`.
 
 `field_name`
-:   is the name by which you can access the data.  Use either a
-    `String` or a `Symbol`.
+:   is the name by which you can access the field.  Use either a
+    `String` or a `Symbol`.  If name is nil or the empty string, then
+    this particular field is anonymous.  An anonymous field is still
+    read and written, but will not appear in `#snapshot`.
 
 Each field may have optional *parameters* for how to process the data.
 The parameters are passed as a `Hash` with `Symbols` for keys.
