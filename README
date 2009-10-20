@@ -48,6 +48,18 @@ Copyright &copy; 2007 - 2009 [Dion Mendel](mailto:dion@lostrealm.com)
 
 ---------------------------------------------------------------------------
 
+# Installation
+
+You can install BinData via rubygems.
+
+    gem install bindata
+
+Alternatively, visit the 
+[download](http://rubyforge.org/frs/?group_id=3252) page and download
+BinData as a tar file.
+
+---------------------------------------------------------------------------
+
 # Overview
 
 BinData declarations are easy to read.  Here's an example.
@@ -928,22 +940,22 @@ Say you are interested in 50 bytes of data located 10 megabytes into the
 stream.  One way of accessing this useful data is:
 
     class MyData < BinData::Record
-      string :irrelevant, :length => 10 * 1024 * 1024
+      string :length => 10 * 1024 * 1024
       string :data, :length => 50
     end
 {:ruby}
 
 The advantage of this method is that the irrelevant data is preserved
-when writing the record.  The disadvantage is that if you don't care
-about preserving this irrelevant data, it occupies memory anyway.
+when writing the record.  The disadvantage is that even if you don't care
+about preserving this irrelevant data, it still occupies memory.
 
-If you don't care about preserving this data, an alternative is to use
+If you don't need to preserve this data, an alternative is to use
 `skip` instead of `string`.  When reading it will seek over the irrelevant
 data and won't consume space in memory.  When writing it will write
 `:length` number of zero bytes.
 
     class MyData < BinData::Record
-      skip :irrelevant, :length => 10 * 1024 * 1024
+      skip :length => 10 * 1024 * 1024
       string :data, :length => 50
     end
 {:ruby}
