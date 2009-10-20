@@ -3,6 +3,44 @@
 require File.expand_path(File.join(File.dirname(__FILE__), "spec_common"))
 require 'bindata/io'
 
+describe BinData::IO, "reading from non seekable stream" do
+  before(:each) do
+    @rd, @wr = IO::pipe
+    if fork
+      # parent
+      @wr.close
+      @io = BinData::IO.new(@rd)
+    else
+      # child
+      begin
+        @rd.close
+        @wr.write "a" * 5000
+        @wr.write "b" * 5000
+        @wr.close
+      rescue Exception
+        # ignore it
+      ensure
+        exit!
+      end
+    end
+  end
+
+  after(:each) do
+    @rd.close
+    Process.wait
+  end
+
+  it "should always have an offset of 0" do
+    @io.readbytes(10)
+    @io.offset.should == 0
+  end
+
+  it "should seek" do
+    @io.seekbytes(4999)
+    @io.readbytes(5).should == "abbbb"
+  end
+end
+
 describe BinData::IO do
   it "should wrap strings in StringIO" do
     io = BinData::IO.new("abcd")

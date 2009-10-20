@@ -69,7 +69,10 @@ module BinData
 
     # Seek +n+ bytes from the current position in the io stream.
     def seekbytes(n)
+      reset_read_bits
       @raw_io.seek(n, ::IO::SEEK_CUR)
+    rescue Errno::ESPIPE, Errno::EPIPE
+      skipbytes(n)
     end
 
     # Reads exactly +n+ bytes from +io+.
@@ -78,9 +81,7 @@ module BinData
     #
     # If the data read is too short an IOError is raised.
     def readbytes(n)
-      raise "Internal state error nbits = #{@rnbits}" if @rnbits >= 8
-      @rnbits = 0
-      @rval   = 0
+      reset_read_bits
 
       str = @raw_io.read(n)
       raise EOFError, "End of file reached" if str.nil?
@@ -90,10 +91,7 @@ module BinData
 
     # Reads all remaining bytes from the stream.
     def read_all_bytes
-      raise "Internal state error nbits = #{@rnbits}" if @rnbits >= 8
-      @rnbits = 0
-      @rval   = 0
-
+      reset_read_bits
       @raw_io.read
     end
 
@@ -102,8 +100,7 @@ module BinData
     def readbits(nbits, endian)
       if @rendian != endian
         # don't mix bits of differing endian
-        @rnbits  = 0
-        @rval    = 0
+        reset_read_bits
         @rendian = endian
       end
 
@@ -126,7 +123,6 @@ module BinData
       if @wendian != endian
         # don't mix bits of differing endian
         flushbits
-
         @wendian = endian
       end
 
@@ -162,6 +158,21 @@ module BinData
         end
       end
       @positioning_supported
+    end
+
+    def reset_read_bits
+      raise "Internal state error nbits = #{@rnbits}" if @rnbits >= 8
+      @rnbits = 0
+      @rval   = 0
+    end
+
+    def skipbytes(n)
+      # skip over data in 8k blocks
+      while n > 0
+        bytes_to_read = [n, 8192].min
+        @raw_io.read(bytes_to_read)
+        n -= bytes_to_read
+      end
     end
 
     def read_big_endian_bits(nbits)
