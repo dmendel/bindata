@@ -918,6 +918,34 @@ Examples
 
 # Advanced Topics
 
+## Skipping over unused data
+
+Some binary structures contain data that is irrelevant to your purposes.  
+
+Say you are interested in 50 bytes of data located 10 megabytes into the
+stream.  One way of accessing this useful data is:
+
+    class MyData < BinData::Record
+      string :irrelevant, :length => 10 * 1024 * 1024
+      string :data, :length => 50
+    end
+{:ruby}
+
+The advantage of this method is that the irrelevant data is preserved
+when writing the record.  The disadvantage is that if you don't care
+about preserving this irrelevant data, it occupies memory anyway.
+
+If you don't care about preserving this data, an alternative is to use
+`skip` instead of `string`.  When reading it will seek over the irrelevant
+data and won't consume space in memory.  When writing it will write
+`:length` number of zero bytes.
+
+    class MyData < BinData::Record
+      skip :irrelevant, :length => 10 * 1024 * 1024
+      string :data, :length => 50
+    end
+{:ruby}
+
 ## Wrappers
 
 Sometimes you wish to create a new type that is simply an existing type
