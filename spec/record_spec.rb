@@ -378,3 +378,24 @@ describe BinData::Record, "with :onlyif" do
     @obj.to_binary_s.should == "\x03\x05"
   end
 end
+
+describe BinData::Record, "derived classes" do
+  class ParentDerivedRecord < BinData::Record
+    uint8 :a
+  end
+
+  class ChildDerivedRecord < ParentDerivedRecord
+    uint8 :b
+  end
+
+  it "should not affect parent" do
+    parent = ParentDerivedRecord.new
+    parent.field_names.should == ["a"]
+  end
+
+  it "should inherit fields" do
+    child = ChildDerivedRecord.new
+    child.field_names.should == ["a", "b"]
+  end
+end
+

@@ -152,3 +152,20 @@ describe BinData::Primitive, "with custom default parameters" do
     obj.value.should == 7
   end
 end
+
+describe BinData::Primitive, "derived classes" do
+  class ParentDerivedPrimitive < BinData::Primitive
+    uint16be :a
+    def get; self.a; end
+    def set(v); self.a = v; end
+  end
+
+  class ChildDerivedPrimitive < ParentDerivedPrimitive
+  end
+
+  it "should derive" do
+    a = ChildDerivedPrimitive.new
+    a.value = 7
+    a.to_binary_s.should == "\000\007"
+  end
+end

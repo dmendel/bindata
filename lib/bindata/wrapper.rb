@@ -28,7 +28,7 @@ module BinData
       end
 
       def endian(endian = nil)
-        @endian ||= nil
+        @endian ||= default_endian
         if [:little, :big].include?(endian)
           @endian = endian
         elsif endian != nil
@@ -38,17 +38,31 @@ module BinData
         @endian
       end
 
+      def wrapped(*args)
+        @wrapped ||= default_wrapped
+        if args.length == 2
+          type, params = *args
+          ensure_type_exists(type)
+
+          if wrapped != nil
+            raise SyntaxError, "#{self} can only wrap one type", caller(2)
+          end
+          @wrapped = [type, params]
+        end
+        @wrapped
+      end
+
       def method_missing(symbol, *args) #:nodoc:
         type = symbol
         params = args.length == 0 ? {} : args[0]
 
-        set_wrapped(type, params)
+        wrapped(type, params)
       end
 
       def sanitize_parameters!(params, sanitizer) #:nodoc:
-        raise "Nothing to wrap" unless defined? @wrapped
+        raise "Nothing to wrap" if wrapped.nil?
 
-        wrapped_type, wrapped_params = @wrapped
+        wrapped_type, wrapped_params = wrapped
         wrapped_params = wrapped_params.dup
 
         params.move_unknown_parameters_to(wrapped_params)
@@ -59,13 +73,20 @@ module BinData
       #-------------
       private
 
-      def set_wrapped(type, params)
-        ensure_type_exists(type)
+      def parent_wrapper
+        ancestors[1..-1].find { |cls|
+          cls.ancestors[1..-1].include?(BinData::Wrapper)
+        }
+      end
 
-        if defined? @wrapped
-          raise SyntaxError, "#{self} can only wrap one type", caller(2)
-        end
-        @wrapped = [type, params]
+      def default_endian
+        wrap = parent_wrapper
+        wrap ? wrap.endian : nil
+      end
+
+      def default_wrapped
+        wrap = parent_wrapper
+        wrap ? wrap.wrapped : nil
       end
 
       def ensure_type_exists(type)

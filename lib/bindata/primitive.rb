@@ -68,7 +68,7 @@ module BinData
       end
 
       def endian(endian = nil)
-        @endian ||= nil
+        @endian ||= default_endian
         if [:little, :big].include?(endian)
           @endian = endian
         elsif endian != nil
@@ -76,6 +76,10 @@ module BinData
                   "unknown value for endian '#{endian}' in #{self}", caller(1)
         end
         @endian
+      end
+
+      def fields #:nodoc:
+        @fields ||= default_fields
       end
 
       def method_missing(symbol, *args) #:nodoc:
@@ -104,18 +108,30 @@ module BinData
       #-------------
       private
 
-      def fields
-        unless defined? @fields
-          sanitizer = Sanitizer.new
-          @fields = sanitizer.create_sanitized_fields(endian)
+      def parent_primitive
+        ancestors[1..-1].find { |cls|
+          cls.ancestors[1..-1].include?(BinData::Primitive)
+        }
+      end
+
+      def default_endian
+        prim = parent_primitive
+        prim ? prim.endian : nil
+      end
+
+      def default_fields
+        prim = parent_primitive
+        if prim
+          Sanitizer.new.clone_sanitized_fields(prim.fields)
+        else
+          Sanitizer.new.create_sanitized_fields
         end
-        @fields
       end
 
       def append_field(type, name, params)
         ensure_valid_name(name)
 
-        fields.add_field(type, name, params)
+        fields.add_field(type, name, params, endian)
       rescue UnknownTypeError => err
         raise TypeError, "unknown type '#{err.message}' for #{self}", caller(2)
       end

@@ -89,9 +89,9 @@ module BinData
         if params.needs_sanitizing?(:fields)
           fields = params[:fields]
 
-          params[:fields] = sanitizer.create_sanitized_fields(params[:endian])
+          params[:fields] = sanitizer.create_sanitized_fields
           fields.each do |ftype, fname, fparams|
-            params[:fields].add_field(ftype, fname, fparams)
+            params[:fields].add_field(ftype, fname, fparams, params[:endian])
           end
 
           field_names = sanitized_field_names(params[:fields])

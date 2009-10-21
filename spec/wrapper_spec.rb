@@ -81,3 +81,17 @@ describe BinData::Wrapper, "inside a struct" do
     obj.should == {'b' => 2}
   end
 end
+
+describe BinData::Wrapper, "derived classes" do
+  class ParentDerivedWrapper < BinData::Wrapper
+    uint32le
+  end
+
+  class ChildDerivedWrapper < ParentDerivedWrapper
+  end
+
+  it "should wrap" do
+    a = ChildDerivedWrapper.new
+    a.num_bytes.should == 4
+  end
+end

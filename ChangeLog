@@ -4,6 +4,7 @@
 
 * Allow anonymous fields in Records and Primitives.
 * Add the ability to skip over unused data.
+* Allow Records, Primitives and Wrappers to be derived from.
 
 == Version 1.0.0 (2009-09-13)
 

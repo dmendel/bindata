@@ -149,8 +149,14 @@ module BinData
       SanitizedChoices.new(self, choices)
     end
 
-    def create_sanitized_fields(endian = nil)
-      SanitizedFields.new(self, endian)
+    def create_sanitized_fields
+      SanitizedFields.new(self)
+    end
+
+    def clone_sanitized_fields(fields)
+      new_fields = SanitizedFields.new(self)
+      new_fields.copy_fields(fields)
+      new_fields
     end
 
     def create_sanitized_object_prototype(obj_type, obj_params, endian = nil)
@@ -192,7 +198,7 @@ module BinData
   class SanitizedParameter; end
 
   class SanitizedPrototype < SanitizedParameter
-    def initialize(sanitizer, obj_type, obj_params, endian = nil)
+    def initialize(sanitizer, obj_type, obj_params, endian)
       sanitizer.with_endian(endian) do
         @obj_class = sanitizer.lookup_class(obj_type)
         @obj_params = sanitizer.create_sanitized_params(obj_params, @obj_class)
@@ -206,9 +212,9 @@ module BinData
   #----------------------------------------------------------------------------
 
   class SanitizedField < SanitizedParameter
-    def initialize(sanitizer, name, field_type, field_params)
+    def initialize(sanitizer, name, field_type, field_params, endian)
       @name = (name != nil and name != "") ? name.to_s : nil
-      @prototype = sanitizer.create_sanitized_object_prototype(field_type, field_params)
+      @prototype = sanitizer.create_sanitized_object_prototype(field_type, field_params, endian)
     end
     attr_reader :name
 
@@ -219,16 +225,13 @@ module BinData
   #----------------------------------------------------------------------------
 
   class SanitizedFields < SanitizedParameter
-    def initialize(sanitizer, endian)
+    def initialize(sanitizer)
       @sanitizer = sanitizer
-      @endian = endian
       @fields = []
     end
 
-    def add_field(type, name, params)
-      @sanitizer.with_endian(@endian) do
-        @fields << SanitizedField.new(@sanitizer, name, type, params)
-      end
+    def add_field(type, name, params, endian)
+      @fields << SanitizedField.new(@sanitizer, name, type, params, endian)
     end
 
     def [](idx)
@@ -237,6 +240,11 @@ module BinData
 
     def field_names
       @fields.collect { |field| field.name }
+    end
+
+    def copy_fields(other)
+      other_fields = other.instance_variable_get(:@fields)
+      @fields.concat(other_fields)
     end
   end
   #----------------------------------------------------------------------------
