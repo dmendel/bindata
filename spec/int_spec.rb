@@ -149,7 +149,6 @@ share_examples_for "All Integers" do
     (1 .. 20).each do |nbytes|
       nbits = nbytes * 8
       class_name = "#{base}#{nbits}#{endian_str}"
-      BinData::Int.define_class(nbits, endian, signed_sym)
       result[BinData.const_get(class_name)] = nbytes
     end
 
@@ -200,19 +199,19 @@ end
 describe "Custom defined integers" do
   it "should fail unless bits are a multiple of 8" do
     lambda {
-      BinData::Int.define_class(7, :little, :unsigned)
+      BinData::Uint7le
     }.should raise_error
 
     lambda {
-      BinData::Int.define_class(7, :big, :unsigned)
+      BinData::Uint7be
     }.should raise_error
 
     lambda {
-      BinData::Int.define_class(7, :little, :signed)
+      BinData::Int7le
     }.should raise_error
 
     lambda {
-      BinData::Int.define_class(7, :big, :signed)
+      BinData::Int7be
     }.should raise_error
   end
 end

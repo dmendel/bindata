@@ -5,6 +5,7 @@
 * Allow anonymous fields in Records and Primitives.
 * Add the ability to skip over unused data.
 * Allow Records, Primitives and Wrappers to be derived from.
+* Classes for integers are now defined on demand.
 
 == Version 1.0.0 (2009-09-13)
 

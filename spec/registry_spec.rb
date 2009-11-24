@@ -3,6 +3,7 @@
 require File.expand_path(File.join(File.dirname(__FILE__), "spec_common"))
 require 'bindata/bits'
 require 'bindata/int'
+require 'bindata/float'
 require 'bindata/registry'
 
 describe BinData::Registry do
@@ -55,54 +56,46 @@ describe BinData::Registry do
   it "should ignore the outer nestings of classes" do
     @r.underscore_name('A::B::C').should == 'c'
   end
+end
 
-=begin
+describe BinData::Registry, "with numerics" do
+  before(:each) do
+    @r = BinData::RegisteredClasses
+  end
+
   it "should lookup integers with endian" do
-    @r.register("Int24be", A)
-    @r.register("Int24le", B)
-    @r.register("Uint24be", C)
-    @r.register("Uint24le", D)
-
-    @r.lookup("int24", :big).should == A
-    @r.lookup("int24", :little).should == B
-    @r.lookup("uint24", :big).should == C
-    @r.lookup("uint24", :little).should == D
+    @r.lookup("int24", :big).to_s.should == "BinData::Int24be"
+    @r.lookup("int24", :little).to_s.should == "BinData::Int24le"
+    @r.lookup("uint24", :big).to_s.should == "BinData::Uint24be"
+    @r.lookup("uint24", :little).to_s.should == "BinData::Uint24le"
   end
 
   it "should not lookup integers without endian" do
-    @r.register("Int24be", A)
-
     @r.lookup("int24").should be_nil
   end
 
+  it "should not lookup non byte based integers" do
+    @r.lookup("int3").should be_nil
+    @r.lookup("int3", :big).should be_nil
+    @r.lookup("int3", :little).should be_nil
+  end
+
   it "should lookup floats with endian" do
-    @r.register("FloatBe", A)
-    @r.register("FloatLe", B)
-    @r.register("DoubleBe", C)
-    @r.register("DoubleLe", D)
-
-    @r.lookup("float", :big).should == A
-    @r.lookup("float", :little).should == B
-    @r.lookup("double", :big).should == C
-    @r.lookup("double", :little).should == D
+    @r.lookup("float", :big).to_s.should == "BinData::FloatBe"
+    @r.lookup("float", :little).to_s.should == "BinData::FloatLe"
+    @r.lookup("double", :big).to_s.should == "BinData::DoubleBe"
+    @r.lookup("double", :little).to_s.should == "BinData::DoubleLe"
   end
 
-  it "should automatically create classes for integers" do
-    BinData.const_defined?(:Uint40be).should be_false
-    @r.lookup("uint40be")
-    BinData.const_defined?(:Uint40be).should be_true
+  it "should lookup bits" do
+    @r.lookup("bit5").to_s.should == "BinData::Bit5"
+    @r.lookup("bit6le").to_s.should == "BinData::Bit6le"
   end
 
-  it "should automatically create classes for big endian bits" do
-    BinData.const_defined?(:Bit801).should be_false
-    @r.lookup("bit801")
-    BinData.const_defined?(:Bit801).should be_true
+  it "should lookup bits by ignoring endian" do
+    @r.lookup("bit2", :big).to_s.should == "BinData::Bit2"
+    @r.lookup("bit3le", :big).to_s.should == "BinData::Bit3le"
+    @r.lookup("bit2", :little).to_s.should == "BinData::Bit2"
+    @r.lookup("bit3le", :little).to_s.should == "BinData::Bit3le"
   end
-
-  it "should automatically create classes for little endian bits" do
-    BinData.const_defined?(:Bit802le).should be_false
-    @r.lookup("bit802le")
-    BinData.const_defined?(:Bit802le).should be_true
-  end
-=end
 end

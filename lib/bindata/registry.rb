@@ -9,6 +9,8 @@ module BinData
     end
 
     def register(name, class_to_register)
+      return if class_to_register.nil?
+
       formatted_name = lookup_key(name)
       warn_if_name_is_already_registered(formatted_name, class_to_register)
 
@@ -17,15 +19,16 @@ module BinData
 
     def lookup(name, endian = nil)
       key = lookup_key(name, endian)
+      try_registering_key(key) unless @registry.has_key?(key)
 
-      @registry[key] || lookup_int(key)
+      @registry[key]
     end
 
     def is_registered?(name, endian = nil)
-      @registry.has_key?(lookup_key(name, endian))
+      lookup(name, endian) != nil
     end
 
-    # Convert camelCase +name+ to underscore style.
+    # Convert CamelCase +name+ to underscore style.
     def underscore_name(name)
       name.to_s.sub(/.*::/, "").
                 gsub(/([A-Z]+)([A-Z][a-z])/,'\1_\2').
@@ -51,29 +54,18 @@ module BinData
       result
     end
 
-    def lookup_int(key)
-      if /^(u?)int(\d+)(le|be)$/ =~ key
-        signed = $1 == "u" ? :unsigned : :signed
-        nbits  = $2.to_i
-        endian = $3 == "le" ? :little : :big
-        if nbits > 0 and (nbits % 8) == 0
-          if BinData.const_defined?(:Int)
-            BinData::Int.define_class(nbits, endian, signed)
-          end
-        end
-      elsif /^bit(\d+)(le)?$/ =~ key
-        nbits  = $1.to_i
-        endian = $2 == "le" ? :little : :big
-        if BinData.const_defined?(:BitField)
-          BinData::BitField.define_class(nbits, endian)
+    def try_registering_key(key)
+      if /^u?int\d+(le|be)$/ =~ key or /^bit\d+(le)?$/ =~ key
+        class_name = key.gsub(/(?:^|_)(.)/) { $1.upcase }
+        begin
+          register(key, BinData::const_get(class_name))
+        rescue NameError
         end
       end
-
-      @registry[key]
     end
 
     def warn_if_name_is_already_registered(name, class_to_register)
-      if $VERBOSE and @registry.has_key?(name)
+      if $VERBOSE and @registry[name] != class_to_register
         prev_class = @registry[name]
         warn "warning: replacing registered class #{prev_class} " +
              "with #{class_to_register}"

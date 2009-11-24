@@ -8,17 +8,18 @@ module BinData
     class << self
       def define_class(nbits, endian, signed)
         name = class_name(nbits, endian, signed)
-        return if BinData.const_defined?(name)
+        unless BinData.const_defined?(name)
+          int_type = (signed == :signed) ? 'int' : 'uint'
+          creation_method = "create_#{int_type}_methods"
 
-        int_type = (signed == :signed) ? 'int' : 'uint'
-        creation_method = "create_#{int_type}_methods"
-
-        BinData.module_eval <<-END
-          class #{name} < BinData::BasePrimitive
-            register(self.name, self)
-            Int.#{creation_method}(self, #{nbits}, :#{endian.to_s})
-          end
-        END
+          BinData.module_eval <<-END
+            class #{name} < BinData::BasePrimitive
+              register(self.name, self)
+              Int.#{creation_method}(self, #{nbits}, :#{endian.to_s})
+            end
+          END
+        end
+        BinData.const_get(name)
       end
 
       def class_name(nbits, endian, signed)
@@ -182,11 +183,29 @@ module BinData
     Int.create_int_methods(self, 8, :little)
   end
 
-  # Create commonly used integers
-  [8, 16, 32, 64, 128].each do |nbits|
-    Int.define_class(nbits, :little, :unsigned)
-    Int.define_class(nbits, :little, :signed)
-    Int.define_class(nbits, :big, :unsigned)
-    Int.define_class(nbits, :big, :signed)
+  # Create classes on demand
+  class << self
+    alias_method :const_missing_without_int, :const_missing
+    def const_missing_with_int(name)
+      name = name.to_s
+      mappings = {
+        /^Uint(\d+)be$/ => [:big, :unsigned],
+        /^Uint(\d+)le$/ => [:little, :unsigned],
+        /^Int(\d+)be$/ => [:big, :signed],
+        /^Int(\d+)le$/ => [:little, :signed],
+      }
+
+      mappings.each_pair do |regex, args|
+        if regex =~ name
+          nbits = $1.to_i
+          if (nbits % 8).zero?
+            return Int.define_class(nbits, *args)
+          end
+        end
+      end
+
+      const_missing_without_int(name)
+    end
+    alias_method :const_missing, :const_missing_with_int
   end
 end

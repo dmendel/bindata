@@ -8,13 +8,15 @@ module BinData
     def self.define_class(nbits, endian)
       name = "Bit#{nbits}"
       name += "le" if endian == :little
-
-      BinData.module_eval <<-END
-        class #{name} < BinData::BasePrimitive
-          register(self.name, self)
-          BitField.create_methods(self, #{nbits}, :#{endian.to_s})
-        end
-      END
+      unless BinData.const_defined?(name)
+        BinData.module_eval <<-END
+          class #{name} < BinData::BasePrimitive
+            register(self.name, self)
+            BitField.create_methods(self, #{nbits}, :#{endian.to_s})
+          end
+        END
+      end
+      BinData.const_get(name)
     end
 
     def self.create_methods(bit_class, nbits, endian)
@@ -60,9 +62,25 @@ module BinData
     end
   end
 
-  # Create commonly used bit based integers
-  (1 .. 63).each do |nbits|
-    BitField.define_class(nbits, :little)
-    BitField.define_class(nbits, :big)
+  # Create classes on demand
+  class << self
+    alias_method :const_missing_without_bits, :const_missing
+    def const_missing_with_bits(name)
+      name = name.to_s
+      mappings = {
+        /^Bit(\d+)$/ => :big,
+        /^Bit(\d+)le$/ => :little
+      }
+
+      mappings.each_pair do |regex, endian|
+        if regex =~ name
+          nbits = $1.to_i
+          return BitField.define_class(nbits, endian)
+        end
+      end
+
+      const_missing_without_bits(name)
+    end
+    alias_method :const_missing, :const_missing_with_bits
   end
 end
