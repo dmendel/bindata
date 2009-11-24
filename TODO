@@ -1,6 +1,3 @@
 == Pending refactorings
 
-* Refactor registry into registry and numeric registry
-    update specs accordingly
-
 * Perhaps refactor snapshot -> _snapshot et al

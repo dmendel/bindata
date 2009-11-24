@@ -1,6 +1,6 @@
 = BinData Changelog
 
-== Version 1.1.0 (2009-xx-xx)
+== Version 1.1.0 (2009-11-24)
 
 * Allow anonymous fields in Records and Primitives.
 * Add the ability to skip over unused data.
