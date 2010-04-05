@@ -4,16 +4,25 @@ module BinData
 
   class UnknownTypeError < StandardError ; end
 
-  # A BinData object accepts arbitrary parameters.  This class sanitizes
-  # those parameters so they can be used by the BinData object.
+  # When a BinData object is instantiated, it can be supplied parameters to
+  # determine its behaviour.  These parameters must be sanitized to ensure
+  # their values are valid.  When instantiating many objects, such as an array
+  # of records, there is much duplicated validation.
+  #
+  # The purpose of the sanitizing code is to eliminate the duplicated
+  # validation.
+  #
+  # SanitizedParameters is a hash-like collection of parameters.  Its purpose
+  # it to recursively sanitize the parameters of an entire BinData object chain
+  # at a single time.
   class SanitizedParameters
 
-    def initialize(params, the_class)
+    def initialize(parameters, the_class)
       @all_sanitized = false
       @the_class = the_class
 
       @parameters = {}
-      params.each { |param, value| @parameters[param.to_sym] = value }
+      parameters.each { |key, value| @parameters[key.to_sym] = value }
 
       ensure_no_nil_values
     end
@@ -23,20 +32,20 @@ module BinData
     end
     alias_method :size, :length
 
-    def [](param)
-      @parameters[param]
+    def [](key)
+      @parameters[key]
     end
 
-    def []=(param, value)
-      @parameters[param] = value unless @all_sanitized
+    def []=(key, value)
+      @parameters[key] = value unless @all_sanitized
     end
 
-    def has_parameter?(param)
-      @parameters.has_key?(param)
+    def has_parameter?(key)
+      @parameters.has_key?(key)
     end
 
-    def needs_sanitizing?(param)
-      has_parameter?(param) and not self[param].is_a?(SanitizedParameter)
+    def needs_sanitizing?(key)
+      has_parameter?(key) and not self[key].is_a?(SanitizedParameter)
     end
 
     def all_sanitized?
@@ -58,41 +67,40 @@ module BinData
 
     def move_unknown_parameters_to(dest)
       unless @all_sanitized
-        unused_keys = @parameters.keys - @the_class.accepted_parameters.all
-        unused_keys.each do |param|
-          next if param == :onlyif
-          dest[param] = @parameters.delete(param)
+        unused_keys = @parameters.keys - @the_class.accepted_parameters.all - [:onlyif]
+        unused_keys.each do |key|
+          dest[key] = @parameters.delete(key)
         end
       end
     end
 
-    def delete(param)
-      @parameters.delete(param)
+    def delete(key)
+      @parameters.delete(key)
     end
 
     #---------------
     private
 
     def ensure_no_nil_values
-      @parameters.each do |param, value|
+      @parameters.each do |key, value|
         if value.nil?
           raise ArgumentError,
-                "parameter '#{param}' has nil value in #{@the_class}"
+                "parameter '#{key}' has nil value in #{@the_class}"
         end
       end
     end
 
     def merge_default_parameters!
-      @the_class.default_parameters.each do |param, value|
-        self[param] ||= value
+      @the_class.default_parameters.each do |key, value|
+        self[key] ||= value
       end
     end
 
     def ensure_mandatory_parameters_exist
-      @the_class.mandatory_parameters.each do |param|
-        unless has_parameter?(param)
+      @the_class.mandatory_parameters.each do |key|
+        unless has_parameter?(key)
           raise ArgumentError,
-                  "parameter '#{param}' must be specified in #{@the_class}"
+                  "parameter '#{key}' must be specified in #{@the_class}"
         end
       end
     end
@@ -100,9 +108,9 @@ module BinData
     def ensure_mutual_exclusion_of_parameters
       return if length < 2
 
-      @the_class.mutually_exclusive_parameters.each do |param1, param2|
-        if has_parameter?(param1) and has_parameter?(param2)
-          raise ArgumentError, "params '#{param1}' and '#{param2}' " +
+      @the_class.mutually_exclusive_parameters.each do |key1, key2|
+        if has_parameter?(key1) and has_parameter?(key2)
+          raise ArgumentError, "params '#{key1}' and '#{key2}' " +
                                "are mutually exclusive in #{@the_class}"
         end
       end

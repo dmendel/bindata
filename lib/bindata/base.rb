@@ -13,7 +13,7 @@ module BinData
   # == Parameters
   #
   # Parameters may be provided at initialisation to control the behaviour of
-  # an object.  These params are:
+  # an object.  These parameters are:
   #
   # [<tt>:check_offset</tt>]  Raise an error if the current IO offset doesn't
   #                           meet this criteria.  A boolean return indicates
@@ -38,18 +38,23 @@ module BinData
         data
       end
 
+      # Mandatory parameters must be present when instantiating a data object.
       def mandatory_parameters(*args)
         accepted_parameters.mandatory(*args)
       end
 
+      # Optional parameters may be present when instantiating a data object.
       def optional_parameters(*args)
         accepted_parameters.optional(*args)
       end
 
+      # Default parameters can be overridden when instantiating a data object.
       def default_parameters(*args)
         accepted_parameters.default(*args)
       end
 
+      # Mutually exclusive parameters may not all be present when
+      # instantiating a data object.
       def mutually_exclusive_parameters(*args)
         accepted_parameters.mutually_exclusive(*args)
       end
@@ -58,7 +63,7 @@ module BinData
       alias_method :optional_parameter, :optional_parameters
       alias_method :default_parameter, :default_parameters
 
-      def accepted_parameters
+      def accepted_parameters #:nodoc:
         unless defined? @accepted_parameters
           ancestor = ancestors[1..-1].find { |cls|
                                         cls.respond_to?(:accepted_parameters)
@@ -92,12 +97,12 @@ module BinData
 
     # Creates a new data object.
     #
-    # +params+ is a hash containing symbol keys.  Some params may
+    # +parameters+ is a hash containing symbol keys.  Some parameters may
     # reference callable objects (methods or procs).  +parent+ is the
     # parent data object (e.g. struct, array, choice) this object resides
     # under.
-    def initialize(params = {}, parent = nil)
-      @params = Sanitizer.sanitize(params, self.class)
+    def initialize(parameters = {}, parent = nil)
+      @params = Sanitizer.sanitize(parameters, self.class)
       @parent = parent
     end
 
@@ -143,7 +148,7 @@ module BinData
     end
     protected :do_read, :done_read
 
-    # Writes the value for this data to +io+.
+    # Writes the value for this data object to +io+.
     def write(io)
       io = BinData::IO.new(io) unless BinData::IO === io
 
@@ -157,7 +162,7 @@ module BinData
     end
     protected :do_write
 
-    # Returns the number of bytes it will take to write this data.
+    # Returns the number of bytes it will take to write this data object.
     def num_bytes
       do_num_bytes.ceil
     end

@@ -48,7 +48,7 @@ module BinData
         end
 
         def _do_num_bytes
-          #{nbits} / 8.0
+          #{nbits / 8.0}
         end
 
         def read_and_return_value(io)

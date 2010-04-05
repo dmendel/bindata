@@ -44,7 +44,7 @@ Read on for the tutorial, or go straight to the
 
 BinData is released under the same license as Ruby.
 
-Copyright &copy; 2007 - 2009 [Dion Mendel](mailto:dion@lostrealm.com)
+Copyright &copy; 2007 - 2010 [Dion Mendel](mailto:dion@lostrealm.com)
 
 ---------------------------------------------------------------------------
 
@@ -1158,7 +1158,7 @@ BinStruct is an imperative approach to unpacking binary data.  It does
 provide some declarative style syntax sugar.  It provides support for
 the most common primitive types, as well as arbitrary length bitfields.
 
-It's main focus is as a binary fuzzer, rather than as a generic decoding
+Its main focus is as a binary fuzzer, rather than as a generic decoding
 / encoding library.
 
 ### [Packable](http://github.com/marcandre/packable/tree/master)
