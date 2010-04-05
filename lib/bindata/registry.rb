@@ -65,8 +65,8 @@ module BinData
     end
 
     def warn_if_name_is_already_registered(name, class_to_register)
-      if $VERBOSE and @registry[name] != class_to_register
-        prev_class = @registry[name]
+      prev_class = @registry[name]
+      if $VERBOSE and prev_class and prev_class != class_to_register
         warn "warning: replacing registered class #{prev_class} " +
              "with #{class_to_register}"
       end
