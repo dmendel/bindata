@@ -54,7 +54,7 @@ module BinData
   #                            selection changes.  Default is false.
   class Choice < BinData::Base
 
-    register(self.name, self)
+    register_self
 
     mandatory_parameters :choices, :selection
     optional_parameter   :copy_on_change

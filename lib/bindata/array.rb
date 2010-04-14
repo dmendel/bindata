@@ -54,7 +54,7 @@ module BinData
   class Array < BinData::Base
     include Enumerable
 
-    register(self.name, self)
+    register_self
 
     mandatory_parameter :type
     optional_parameters :initial_length, :read_until

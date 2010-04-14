@@ -11,7 +11,7 @@ module BinData
       unless BinData.const_defined?(name)
         BinData.module_eval <<-END
           class #{name} < BinData::BasePrimitive
-            register(self.name, self)
+            register_self
             BitField.create_methods(self, #{nbits}, :#{endian.to_s})
           end
         END

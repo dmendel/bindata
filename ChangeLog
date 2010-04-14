@@ -1,5 +1,9 @@
 = BinData Changelog
 
+== Version 1.2.0 (2010-xx-xx)
+
+* Deprecated Base#register. Use #register_self or #register_subclasses instead.
+
 == Version 1.1.0 (2009-11-24)
 
 * Allow anonymous fields in Records and Primitives.

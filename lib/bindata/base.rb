@@ -87,8 +87,20 @@ module BinData
         end
       end
 
-      def register(name, class_to_register)
-        RegisteredClasses.register(name, class_to_register)
+      def register_self
+        register_class(self)
+      end
+
+      def register_subclasses
+        class << self
+          define_method(:inherited) do |subclass|
+            register_class(subclass)
+          end
+        end
+      end
+
+      def register_class(class_to_register)
+        RegisteredClasses.register(class_to_register.name, class_to_register)
       end
     end
 

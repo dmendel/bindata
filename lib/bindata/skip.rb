@@ -24,7 +24,8 @@ module BinData
   # <tt>:length</tt>:: The number of bytes to skip.
   #
   class Skip < BinData::BasePrimitive
-    register(self.name, self)
+
+    register_self
 
     mandatory_parameter :length
 

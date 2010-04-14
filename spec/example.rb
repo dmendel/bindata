@@ -1,7 +1,7 @@
 require 'bindata/base_primitive'
 
 class ExampleSingle < BinData::BasePrimitive
-  register(self.name, self)
+  register_self
 
   private
 

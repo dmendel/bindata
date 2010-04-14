@@ -21,3 +21,26 @@ describe BinData::MultiValue, "when defining" do
     }.should raise_error
   end
 end
+
+describe BinData::Base, "when defining" do
+  it "should handle deprecated #register method" do
+    lambda {
+      class DeprecatedRegisterBase < BinData::Base
+        register(self.name, self)
+      end
+    }.should_not raise_error
+  end
+
+  it "should handle deprecated #register method for subclasses" do
+    lambda {
+      class DeprecatedSuperBase < BinData::Base
+        def self.inherited(subclass)
+          register(subclass.name, subclass)                                                                                                                                      
+        end                                                                                                                                                                      
+      end
+
+      class DeprecatedSubBase < DeprecatedSuperBase
+      end
+    }.should_not raise_error
+  end
+end

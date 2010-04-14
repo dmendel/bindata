@@ -44,12 +44,9 @@ module BinData
   #                      nested data objects.
   class Record < BinData::Struct
 
-    class << self
+    register_subclasses
 
-      def inherited(subclass) #:nodoc:
-        # Register the names of all subclasses of this class.
-        register(subclass.name, subclass)
-      end
+    class << self
 
       def endian(endian = nil)
         @endian ||= default_endian

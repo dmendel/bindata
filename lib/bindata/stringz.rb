@@ -27,7 +27,7 @@ module BinData
   #                        byte.
   class Stringz < BinData::BasePrimitive
 
-    register(self.name, self)
+    register_self
 
     optional_parameters :max_length
 

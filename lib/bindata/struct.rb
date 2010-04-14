@@ -47,7 +47,10 @@ module BinData
   #                      calls to #read, #write, #num_bytes or #snapshot.
   class Struct < BinData::Base
 
-    register(self.name, self)
+    register_self
+
+    mandatory_parameter :fields
+    optional_parameters :endian, :hide
 
     # These reserved words may not be used as field names
     RESERVED = (::Hash.instance_methods.collect { |meth| meth.to_s } + 
@@ -136,9 +139,6 @@ module BinData
         end
       end
     end
-
-    mandatory_parameter :fields
-    optional_parameters :endian, :hide
 
     def initialize(params = {}, parent = nil)
       super(params, parent)

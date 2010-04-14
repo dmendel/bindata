@@ -14,7 +14,7 @@ module BinData
 
           BinData.module_eval <<-END
             class #{name} < BinData::BasePrimitive
-              register(self.name, self)
+              register_self
               Int.#{creation_method}(self, #{nbits}, :#{endian.to_s})
             end
           END
@@ -173,13 +173,13 @@ module BinData
 
   # Unsigned 1 byte integer.
   class Uint8 < BinData::BasePrimitive
-    register(self.name, self)
+    register_self
     Int.create_uint_methods(self, 8, :little)
   end
 
   # Signed 1 byte integer.
   class Int8 < BinData::BasePrimitive
-    register(self.name, self)
+    register_self
     Int.create_int_methods(self, 8, :little)
   end
 

@@ -47,7 +47,7 @@ module BinData
   #                            not be trimmed when writing.
   class String < BinData::BasePrimitive
 
-    register(self.name, self)
+    register_self
 
     optional_parameters :read_length, :length, :trim_padding
     default_parameters  :pad_char => "\0"
