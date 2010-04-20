@@ -15,7 +15,7 @@ module BinData
           BinData.module_eval <<-END
             class #{name} < BinData::BasePrimitive
               register_self
-              Int.#{creation_method}(self, #{nbits}, :#{endian.to_s})
+              Int.#{creation_method}(self, #{nbits}, :#{endian})
             end
           END
         end

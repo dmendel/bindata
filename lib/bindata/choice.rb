@@ -98,8 +98,8 @@ module BinData
       end
     end
 
-    def initialize(params = {}, parent = nil)
-      super(params, parent)
+    def initialize(parameters = {}, parent = nil)
+      super
 
       @choices = {}
       @last_selection = nil
@@ -146,7 +146,7 @@ module BinData
     end
 
     def respond_to?(symbol, include_private = false) #:nodoc:
-      super || current_choice.respond_to?(symbol, include_private)
+      current_choice.respond_to?(symbol, include_private) || super
     end
 
     def method_missing(symbol, *args, &block) #:nodoc:

@@ -51,8 +51,8 @@ module BinData
     optional_parameters :initial_value, :value, :check_value
     mutually_exclusive_parameters :initial_value, :value
 
-    def initialize(params = {}, parent = nil)
-      super(params, parent)
+    def initialize(parameters = {}, parent = nil)
+      super
 
       @value   = nil
       @in_read = false
@@ -78,7 +78,7 @@ module BinData
     end
 
     def respond_to?(symbol, include_private=false) #:nodoc:
-      super || value.respond_to?(symbol, include_private)
+      value.respond_to?(symbol, include_private) || super
     end
 
     def method_missing(symbol, *args, &block) #:nodoc:

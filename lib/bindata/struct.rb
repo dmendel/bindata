@@ -63,7 +63,7 @@ module BinData
     # A hash that can be accessed via attributes.
     class Snapshot < Hash #:nodoc:
       def respond_to?(symbol, include_private = false)
-        has_key?(symbol.to_s) || super(symbol, include_private)
+        has_key?(symbol.to_s) || super
       end
 
       def method_missing(symbol, *args)
@@ -140,8 +140,8 @@ module BinData
       end
     end
 
-    def initialize(params = {}, parent = nil)
-      super(params, parent)
+    def initialize(parameters = {}, parent = nil)
+      super
 
       @field_names = get_parameter(:fields).field_names
       @field_objs  = []
@@ -152,7 +152,7 @@ module BinData
     end
 
     def clear? #:nodoc:
-      @field_objs.inject(true) { |all_clear, f| all_clear and (f.nil? or f.clear?) }
+      @field_objs.all? { |f| f.nil? or f.clear? }
     end
 
     # Returns a list of the names of all fields accessible through this
@@ -168,8 +168,7 @@ module BinData
     end
 
     def respond_to?(symbol, include_private = false) #:nodoc:
-      super(symbol, include_private) ||
-        field_names(true).include?(symbol.to_s.chomp("="))
+      field_names(true).include?(symbol.to_s.chomp("=")) || super
     end
 
     def method_missing(symbol, *args, &block) #:nodoc:

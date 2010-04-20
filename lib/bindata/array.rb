@@ -78,16 +78,15 @@ module BinData
       end
     end
 
-    def initialize(params = {}, parent = nil)
-      super(params, parent)
+    def initialize(parameters = {}, parent = nil)
+      super
 
       @element_list      = nil
       @element_prototype = get_parameter(:type)
     end
 
     def clear?
-      @element_list.nil? or
-        elements.inject(true) { |all_clear, el| all_clear and el.clear? }
+      @element_list.nil? or elements.all? { |el| el.clear? }
     end
 
     def clear
