@@ -164,11 +164,7 @@ module BinData
     def trace_selection
       BinData::trace_message do |tracer|
         selection_string = eval_parameter(:selection).inspect
-        if selection_string.length > 30
-          selection_string = selection_string.slice(0 .. 30) + "..."
-        end
-
-        tracer.trace("#{debug_name}-selection- => #{selection_string}")
+        tracer.trace_obj("#{debug_name}-selection-", selection_string)
       end
     end
 

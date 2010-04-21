@@ -115,11 +115,7 @@ module BinData
     def trace_value
       BinData::trace_message do |tracer|
         value_string = _value.inspect
-        if value_string.length > 30
-          value_string = value_string.slice(0 .. 30) + "..."
-        end
-
-        tracer.trace("#{debug_name} => #{value_string}")
+        tracer.trace_obj(debug_name, value_string)
       end
     end
 

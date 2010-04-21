@@ -69,7 +69,7 @@ module BinData
           params[:initial_length] = 0
         end
 
-        warn_replacement_parameter(params, :read_length, :initial_length)
+        params.warn_replacement_parameter(:read_length, :initial_length)
 
         if params.needs_sanitizing?(:type)
           el_type, el_params = params[:type]

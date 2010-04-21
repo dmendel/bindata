@@ -10,6 +10,14 @@ module BinData
     def trace(msg)
       @trace_io.puts(msg)
     end
+
+    def trace_obj(obj_name, val)
+      if val.length > 30
+        val = val.slice(0 .. 30) + "..."
+      end
+
+      trace "#{obj_name} => #{val}"
+    end
   end
 
   # Turn on trace information when reading a BinData object.

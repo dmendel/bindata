@@ -57,7 +57,7 @@ module BinData
     class << self
 
       def sanitize_parameters!(params, sanitizer) #:nodoc:
-        warn_replacement_parameter(params, :initial_length, :read_length)
+        params.warn_replacement_parameter(:initial_length, :read_length)
 
         if params.has_parameter?(:pad_char)
           ch = params[:pad_char]

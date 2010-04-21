@@ -27,6 +27,11 @@ module BinData
   #                           <tt>:check_offset</tt>, except that it will
   #                           adjust the IO offset instead of raising an error.
   class Base
+    include AcceptedParametersMixin
+
+    optional_parameters :check_offset, :adjust_offset
+    optional_parameter  :onlyif                            # Used by Struct
+    mutually_exclusive_parameters :check_offset, :adjust_offset
 
     class << self
 
@@ -38,59 +43,12 @@ module BinData
         data
       end
 
-      # Mandatory parameters must be present when instantiating a data object.
-      def mandatory_parameters(*args)
-        accepted_parameters.mandatory(*args)
-      end
-
-      # Optional parameters may be present when instantiating a data object.
-      def optional_parameters(*args)
-        accepted_parameters.optional(*args)
-      end
-
-      # Default parameters can be overridden when instantiating a data object.
-      def default_parameters(*args)
-        accepted_parameters.default(*args)
-      end
-
-      # Mutually exclusive parameters may not all be present when
-      # instantiating a data object.
-      def mutually_exclusive_parameters(*args)
-        accepted_parameters.mutually_exclusive(*args)
-      end
-
-      alias_method :mandatory_parameter, :mandatory_parameters
-      alias_method :optional_parameter, :optional_parameters
-      alias_method :default_parameter, :default_parameters
-
-      def accepted_parameters #:nodoc:
-        unless defined? @accepted_parameters
-          ancestor = ancestors[1..-1].find { |cls|
-                                        cls.respond_to?(:accepted_parameters)
-                                       }
-          ancestor_params = ancestor.nil? ? nil : ancestor.accepted_parameters
-          @accepted_parameters = AcceptedParameters.new(ancestor_params)
-        end
-        @accepted_parameters
-      end
-
-      def sanitize_parameters!(params, sanitizer) #:nodoc:
-      end
-
-      #-------------
-      private
-
-      def warn_replacement_parameter(params, bad_key, suggested_key)
-        if params.has_parameter?(bad_key)
-          warn ":#{bad_key} is not used with #{self}.  " +
-               "You probably want to change this to :#{suggested_key}"
-        end
-      end
-
+      # Registers this class for use.
       def register_self
         register_class(self)
       end
 
+      # Registers all subclasses of this class for use
       def register_subclasses
         class << self
           define_method(:inherited) do |subclass|
@@ -99,20 +57,20 @@ module BinData
         end
       end
 
-      def register_class(class_to_register)
+      def register_class(class_to_register) #:nodoc:
         RegisteredClasses.register(class_to_register.name, class_to_register)
       end
-    end
 
-    optional_parameters :check_offset, :adjust_offset
-    mutually_exclusive_parameters :check_offset, :adjust_offset
+      private :register_self, :register_subclasses, :register_class
+    end
 
     # Creates a new data object.
     #
     # +parameters+ is a hash containing symbol keys.  Some parameters may
-    # reference callable objects (methods or procs).  +parent+ is the
-    # parent data object (e.g. struct, array, choice) this object resides
-    # under.
+    # reference callable objects (methods or procs).
+    #
+    # +parent+ is the parent data object (e.g. struct, array, choice) this
+    # object resides under.
     def initialize(parameters = {}, parent = nil)
       @params = Sanitizer.sanitize(parameters, self.class)
       @parent = parent
@@ -121,8 +79,10 @@ module BinData
     attr_reader :parent
 
     # Returns the result of evaluating the parameter identified by +key+.
+    #
     # +overrides+ is an optional +parameters+ like hash that allow the
     # parameters given at object construction to be overridden.
+    #
     # Returns nil if +key+ does not refer to any parameter.
     def eval_parameter(key, overrides = {})
       LazyEvaluator.eval(self, get_parameter(key), overrides)
@@ -292,6 +252,11 @@ module BinData
 
     ###########################################################################
     # To be implemented by subclasses
+
+    # Performs sanity checks on the given parameters.  This method converts
+    # the parameters to the form expected by this data object.
+    def self.sanitize_parameters!(parameters, sanitizer) #:nodoc:
+    end
 
     # Resets the internal state to that of a newly created object.
     def clear
