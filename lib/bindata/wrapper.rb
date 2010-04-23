@@ -93,8 +93,8 @@ module BinData
       end
     end
 
-    def initialize(params = {}, parent = nil)
-      super(params, parent)
+    def initialize(parameters = {}, parent = nil)
+      super
 
       prototype = get_parameter(:wrapped)
       @wrapped = prototype.instantiate(self)
@@ -109,7 +109,7 @@ module BinData
     end
 
     def respond_to?(symbol, include_private = false) #:nodoc:
-      super || wrapped.respond_to?(symbol, include_private)
+      wrapped.respond_to?(symbol, include_private) || super
     end
 
     def method_missing(symbol, *args, &block) #:nodoc:

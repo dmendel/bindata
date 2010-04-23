@@ -77,7 +77,7 @@ module BinData
       assign(val)
     end
 
-    def respond_to?(symbol, include_private=false) #:nodoc:
+    def respond_to?(symbol, include_private = false) #:nodoc:
       value.respond_to?(symbol, include_private) || super
     end
 

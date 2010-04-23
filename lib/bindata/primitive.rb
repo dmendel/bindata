@@ -1,4 +1,5 @@
 require 'bindata/base_primitive'
+require 'bindata/dsl'
 require 'bindata/struct'
 
 module BinData
@@ -59,101 +60,34 @@ module BinData
   # Primitive objects accept all the parameters that BinData::BasePrimitive do.
   #
   class Primitive < BasePrimitive
+    include DSLMixin
 
     register_subclasses
+    dsl_parser :multiple_fields, :optional_fieldnames
 
     class << self
-
-      def endian(endian = nil)
-        @endian ||= default_endian
-        if [:little, :big].include?(endian)
-          @endian = endian
-        elsif endian != nil
-          raise ArgumentError,
-                  "unknown value for endian '#{endian}' in #{self}", caller(1)
-        end
-        @endian
-      end
-
-      def fields #:nodoc:
-        @fields ||= default_fields
-      end
-
-      def method_missing(symbol, *args) #:nodoc:
-        name, params = args
-
-        if name.is_a?(Hash)
-          params = name
-          name = nil
-        end
-
-        type = symbol
-        name = name.to_s
-        params ||= {}
-
-        append_field(type, name, params)
-      end
-
       def sanitize_parameters!(params, sanitizer) #:nodoc:
-        struct_params = {}
-        struct_params[:fields] = fields
+        struct_params = {:fields => fields}
         struct_params[:endian] = endian unless endian.nil?
         
         params[:struct_params] = struct_params
-      end
-
-      #-------------
-      private
-
-      def parent_primitive
-        ancestors[1..-1].find { |cls|
-          cls.ancestors[1..-1].include?(BinData::Primitive)
-        }
-      end
-
-      def default_endian
-        prim = parent_primitive
-        prim ? prim.endian : nil
-      end
-
-      def default_fields
-        prim = parent_primitive
-        if prim
-          Sanitizer.new.clone_sanitized_fields(prim.fields)
-        else
-          Sanitizer.new.create_sanitized_fields
-        end
-      end
-
-      def append_field(type, name, params)
-        ensure_valid_name(name)
-
-        fields.add_field(type, name, params, endian)
-      rescue UnknownTypeError => err
-        raise TypeError, "unknown type '#{err.message}' for #{self}", caller(2)
-      end
-
-      def ensure_valid_name(name)
-        if fields.field_names.include?(name)
-          raise SyntaxError, "duplicate field '#{name}' in #{self}", caller(3)
-        end
-        if self.instance_methods.collect { |meth| meth.to_s }.include?(name)
-          raise NameError.new("", name),
-                "field '#{name}' shadows an existing method in #{self}", caller(3)
-        end
       end
     end
 
     mandatory_parameter :struct_params
 
-    def initialize(params = {}, parent = nil)
-      super(params, parent)
+    def initialize(parameters = {}, parent = nil)
+      super
 
       @struct = BinData::Struct.new(get_parameter(:struct_params), self)
     end
 
     def method_missing(symbol, *args, &block) #:nodoc:
       @struct.__send__(symbol, *args, &block)
+    end
+
+    def respond_to?(symbol, include_private = false) #:nodoc:
+      @struct.respond_to?(symbol, include_private) || super
     end
 
     def debug_name_of(child) #:nodoc:

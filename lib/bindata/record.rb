@@ -1,3 +1,4 @@
+require 'bindata/dsl'
 require 'bindata/sanitize'
 require 'bindata/struct'
 
@@ -43,103 +44,18 @@ module BinData
   #                      endian of any numerics in this struct, or in any
   #                      nested data objects.
   class Record < BinData::Struct
+    include DSLMixin
 
     register_subclasses
+    dsl_parser :multiple_fields, :optional_fieldnames, :hidden_fields
 
     class << self
-
-      def endian(endian = nil)
-        @endian ||= default_endian
-        if [:little, :big].include?(endian)
-          @endian = endian
-        elsif endian != nil
-          raise ArgumentError,
-                  "unknown value for endian '#{endian}' in #{self}", caller(1)
-        end
-        @endian
-      end
-
-      def hide(*args)
-        @hide ||= default_hide
-        @hide.concat(args.collect { |name| name.to_s })
-        @hide
-      end
-
-      def fields #:nodoc:
-        @fields ||= default_fields
-      end
-
-      def method_missing(symbol, *args) #:nodoc:
-        name, params = args
-
-        if name.is_a?(Hash)
-          params = name
-          name = nil
-        end
-
-        type = symbol
-        name = name.to_s
-        params ||= {}
-
-        append_field(type, name, params)
-      end
-
       def sanitize_parameters!(params, sanitizer) #:nodoc:
         params[:fields] = fields
         params[:endian] = endian unless endian.nil?
         params[:hide]   = hide   unless hide.empty?
 
         super(params, sanitizer)
-      end
-
-      #-------------
-      private
-
-      def parent_record
-        ancestors[1..-1].find { |cls|
-          cls.ancestors[1..-1].include?(BinData::Record)
-        }
-      end
-
-      def default_endian
-        rec = parent_record
-        rec ? rec.endian : nil
-      end
-
-      def default_hide
-        rec = parent_record
-        rec ? rec.hide.dup : []
-      end
-
-      def default_fields
-        rec = parent_record
-        if rec
-          Sanitizer.new.clone_sanitized_fields(rec.fields)
-        else
-          Sanitizer.new.create_sanitized_fields
-        end
-      end
-
-      def append_field(type, name, params)
-        ensure_valid_name(name)
-
-        fields.add_field(type, name, params, endian)
-      rescue UnknownTypeError => err
-        raise TypeError, "unknown type '#{err.message}' for #{self}", caller(2)
-      end
-
-      def ensure_valid_name(name)
-        if fields.field_names.include?(name)
-          raise SyntaxError, "duplicate field '#{name}' in #{self}", caller(3)
-        end
-        if self.instance_methods.collect { |meth| meth.to_s }.include?(name)
-          raise NameError.new("", name),
-                "field '#{name}' shadows an existing method in #{self}", caller(3)
-        end
-        if self::RESERVED.include?(name)
-          raise NameError.new("", name),
-                "field '#{name}' is a reserved name in #{self}", caller(3)
-        end
       end
     end
   end
