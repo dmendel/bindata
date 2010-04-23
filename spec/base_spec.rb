@@ -184,7 +184,7 @@ describe BinData::Base, "with :check_offset" do
   end
 
   before(:each) do
-    @io = BinData::IO.create_string_io("12345678901234567890")
+    @io = StringIO.new("12345678901234567890")
   end
 
   it "should fail if offset is incorrect" do
@@ -222,7 +222,7 @@ describe BinData::Base, "with :adjust_offset" do
   end
 
   before(:each) do
-    @io = BinData::IO.create_string_io("12345678901234567890")
+    @io = StringIO.new("12345678901234567890")
   end
 
   it "should be mutually exclusive with :check_offset" do
@@ -288,17 +288,30 @@ describe BinData::Base, "as black box" do
     obj.to_s.should == obj.snapshot.to_s
   end
 
+  it "should pretty print object as snapshot" do
+    class PPBase < BaseStub
+      def snapshot; [1, 2, 3]; end
+    end
+    obj = SnapshotBase.new
+    actual_io = StringIO.new
+    expected_io = StringIO.new
+
+    require 'pp'
+    PP.pp(obj, actual_io)
+    PP.pp(obj.snapshot, expected_io)
+
+    actual_io.value.should == expected_io.value
+  end
+
   it "should write the same as to_binary_s" do
     class WriteToSBase < BaseStub
       def _do_write(io) io.writebytes("abc"); end
     end
 
     obj = WriteToSBase.new
-    io = BinData::IO.create_string_io
+    io = StringIO.new
     obj.write(io)
-    io.rewind
-    written = io.read
-    obj.to_binary_s.should == written
+    io.value.should == obj.to_binary_s
   end
 end
 

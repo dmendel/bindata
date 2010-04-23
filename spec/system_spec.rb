@@ -174,10 +174,9 @@ describe "Tracing"  do
 
     io = StringIO.new
     BinData::trace_reading(io) { arr.read("\x01\x02\x03\x04\x05") }
-    io.rewind
 
     expected = (0..4).collect { |i| "obj[#{i}] => #{i + 1}\n" }.join("")
-    io.read.should == expected
+    io.value.should == expected
   end
 
   it "should trace custom single values" do
@@ -191,9 +190,8 @@ describe "Tracing"  do
 
     io = StringIO.new
     BinData::trace_reading(io) { obj.read("\x01") }
-    io.rewind
 
-    io.read.should == ["obj-internal-.ex => 1\n", "obj => 1\n"].join("")
+    io.value.should == ["obj-internal-.ex => 1\n", "obj => 1\n"].join("")
   end
 
   it "should trace choice selection" do
@@ -201,9 +199,17 @@ describe "Tracing"  do
 
     io = StringIO.new
     BinData::trace_reading(io) { obj.read("\x01") }
-    io.rewind
 
-    io.read.should == ["obj-selection- => 0\n", "obj => 1\n"].join("")
+    io.value.should == ["obj-selection- => 0\n", "obj => 1\n"].join("")
+  end
+
+  it "should trim long trace values" do
+    obj = BinData::String.new(:read_length => 40)
+
+    io = StringIO.new
+    BinData::trace_reading(io) { obj.read("0000000000111111111122222222223333333333") }
+
+    io.value.should == "obj => \"000000000011111111112222222222...\n"
   end
 end
 

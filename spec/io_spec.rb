@@ -106,8 +106,7 @@ describe BinData::IO do
     io = BinData::IO.new(stream)
     io.writebytes("abcd")
 
-    stream.rewind
-    stream.read.should == "abcd"
+    stream.value.should == "abcd"
   end
 
   it "should flush" do
@@ -116,8 +115,7 @@ describe BinData::IO do
     io.writebytes("abcd")
     io.flush
 
-    stream.rewind
-    stream.read.should == "abcd"
+    stream.value.should == "abcd"
   end
 
 end

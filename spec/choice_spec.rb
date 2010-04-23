@@ -50,6 +50,11 @@ share_examples_for "Choice initialized with array or hash" do
     @data.selection.should == 3
   end
 
+  it "should forward #snapshot" do
+    @chooser.choice = 3
+    @data.snapshot.should == 30
+  end
+
   it "should be able to change the choice" do
     @chooser.choice = 3
 

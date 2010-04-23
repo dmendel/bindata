@@ -107,7 +107,7 @@ describe BinData::Struct, "with multiple fields" do
   it "should return num_bytes" do
     @obj.a.num_bytes.should == 1
     @obj.b.num_bytes.should == 1
-    @obj.num_bytes.should     == 2
+    @obj.num_bytes.should   == 2
   end
 
   it "should identify accepted parameters" do

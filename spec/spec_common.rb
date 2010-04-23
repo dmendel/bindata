@@ -20,3 +20,11 @@ class Object
     cls.send(:public, *protected_method_names)
   end
 end
+
+class StringIO
+  # Returns the value that was written to the io
+  def value
+    rewind
+    read
+  end
+end

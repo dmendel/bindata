@@ -49,14 +49,14 @@ describe BinData::Stringz, "when reading" do
     io = StringIO.new("abcd\0xyz\0")
     @str.read(io)
     @str.value.should == "abcd"
-    io.read(1).should == "x"
+    io.pos.should == 5
   end
 
   it "should handle a zero length string" do
     io = StringIO.new("\0abcd")
     @str.read(io)
     @str.value.should == ""
-    io.read(1).should == "a"
+    io.pos.should == 1
   end
 
   it "should fail if no zero byte is found" do
@@ -64,7 +64,7 @@ describe BinData::Stringz, "when reading" do
   end
 end
 
-describe BinData::Stringz, " when setting the value" do
+describe BinData::Stringz, "when setting the value" do
   before(:each) do
     @str = BinData::Stringz.new
   end
@@ -116,7 +116,7 @@ describe BinData::Stringz, "with max_length" do
     io = StringIO.new("abcdefg\0xyz")
     @str.read(io)
     @str.value.should == "abcd"
-    io.read(1).should == "f"
+    io.pos.should == 5
   end
 
   it "should accept values less than max_length" do

@@ -123,7 +123,6 @@ describe BinData::String, "with :read_length and :initial_value" do
     @str.num_bytes.should == 5
     @str.value.should == "ABCDE"
   end
-
 end
 
 describe BinData::String, "with :read_length and :value" do

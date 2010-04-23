@@ -3,6 +3,10 @@ require 'bindata/base_primitive'
 class ExampleSingle < BinData::BasePrimitive
   register_self
 
+  def self.io_with_value(val)
+    BinData::IO.new([val].pack("V"))
+  end
+
   private
 
   def value_to_binary_string(val)

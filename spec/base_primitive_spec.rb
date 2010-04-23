@@ -36,7 +36,7 @@ describe BinData::BasePrimitive do
   end
 
   it "should conform to rule 2 for returning a value" do
-    io = BinData::IO.new([42].pack("V"))
+    io = ExampleSingle.io_with_value(42)
     data = ExampleSingle.new(:value => 5)
     data.expose_methods_for_testing
     data.do_read(io)
@@ -218,14 +218,14 @@ describe BinData::BasePrimitive, "with :value" do
   end
 
   it "should change during reading" do
-    io = BinData::IO.new([56].pack("V"))
+    io = ExampleSingle.io_with_value(56)
     @data.do_read(io)
     @data.value.should == 56
     @data.done_read
   end
 
   it "should not change after reading" do
-    io = BinData::IO.new([56].pack("V"))
+    io = ExampleSingle.io_with_value(56)
     @data.read(io)
     @data.value.should == 5
   end
@@ -238,7 +238,7 @@ end
 
 describe BinData::BasePrimitive, "with :check_value" do
   before(:each) do
-    @io = BinData::IO.new([34].pack("V"))
+    @io = ExampleSingle.io_with_value(34)
   end
 
   it "should succeed when check_value is non boolean and correct" do
