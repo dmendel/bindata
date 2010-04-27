@@ -20,7 +20,7 @@ begin
     s.add_development_dependency('haml')
     s.add_development_dependency('maruku')
     s.add_development_dependency('syntax')
-    s.description <<-END
+    s.description = <<-END.gsub(/^ +/, "")
       BinData provides an easy (and more readable) alternative to ruby's
       #pack and #unpack methods.
 
