@@ -22,7 +22,7 @@ rescue LoadError
 end
 
 unless load_failed
-  file "manual.html" => ["README", "manual.haml"] do |t|
+  file "manual.html" => ["manual.md", "manual.haml"] do |t|
     require 'haml/exec'
 
     opts = Haml::Exec::Haml.new(["manual.haml", "manual.html"])

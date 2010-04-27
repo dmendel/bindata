@@ -16,6 +16,19 @@ begin
     s.extra_rdoc_files = ['NEWS']
     s.rdoc_options << '--main' << 'NEWS'
     s.files = PKG_FILES
+    s.add_development_dependency('rspec')
+    s.add_development_dependency('haml')
+    s.add_development_dependency('maruku')
+    s.add_development_dependency('syntax')
+    s.description <<-END
+      BinData provides an easy (and more readable) alternative to ruby's
+      #pack and #unpack methods.
+
+      It does this by providing a declarative way of specifying structured
+      binary data.  This means the programmer specifies *what* the format
+      of the binary data is, and BinData works out *how* to read and write
+      data in this format.
+    END
   end
 
   Rake::GemPackageTask.new(SPEC) do |pkg|
