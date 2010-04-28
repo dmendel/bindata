@@ -163,8 +163,8 @@ module BinData
     end
 
     # The unmodified value of this data object.  Note that #value calls this
-    # method.  This is so that #value can be overridden in subclasses to 
-    # modify the value.
+    # method.  This indirection is so that #value can be overridden in
+    # subclasses to modify the value.
     def _value
       # Table of possible preconditions and expected outcome
       #   1. :value and !in_read          ->   :value

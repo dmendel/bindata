@@ -20,7 +20,7 @@ module BinData
   #   obj.value = "abcd"
   #   obj.value #=> "abcd\000\000"
   #
-  #   obj = BinData::String.new(:length => 6, :trim_value => true)
+  #   obj = BinData::String.new(:length => 6, :trim_padding => true)
   #   obj.value = "abcd"
   #   obj.value #=> "abcd"
   #   obj.to_binary_s #=> "abcd\000\000"

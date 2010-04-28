@@ -180,8 +180,8 @@ module BinData
 
     # Returns a user friendly name of this object for debugging purposes.
     def debug_name
-      if parent
-        parent.debug_name_of(self)
+      if @parent
+        @parent.debug_name_of(self)
       else
         "obj"
       end
@@ -189,8 +189,8 @@ module BinData
 
     # Returns the offset of this object wrt to its most distant ancestor.
     def offset
-      if parent
-        parent.offset + parent.offset_of(self)
+      if @parent
+        @parent.offset + @parent.offset_of(self)
       else
         0
       end
@@ -198,8 +198,8 @@ module BinData
 
     # Returns the offset of this object wrt to its parent.
     def rel_offset
-      if parent
-        parent.offset_of(self)
+      if @parent
+        @parent.offset_of(self)
       else
         0
       end

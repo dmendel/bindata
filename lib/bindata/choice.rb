@@ -133,7 +133,7 @@ module BinData
     #
     #   pc.selection = 17
     #   pc #=> "Type2"
-    def selection=(v)
+    def selection=(sel)
       raise NoMethodError
     end
 
