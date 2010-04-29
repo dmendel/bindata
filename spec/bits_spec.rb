@@ -116,7 +116,11 @@ share_examples_for "All bitfields" do
     mid = (min_value + max_value) / 2
     hi  = max_value - 1
 
-    [lo, mid, hi].find_all { |v| (min_value .. max_value).include?(v) }
+    [lo, mid, hi].select { |val| value_within_range?(val) }
+  end
+
+  def value_within_range?(val)
+    (min_value .. max_value).include?(val)
   end
 end
 

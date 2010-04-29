@@ -20,12 +20,12 @@ describe BinData::Choice, "when instantiating" do
 
   it "should fail if a given type is unknown" do
     args = {:choices => [:does_not_exist], :selection => 0}
-    lambda { BinData::Choice.new(args) }.should raise_error(BinData::UnknownTypeError)
+    lambda { BinData::Choice.new(args) }.should raise_error(BinData::UnRegisteredTypeError)
   end
 
   it "should fail if a given type is unknown" do
     args = {:choices => {0 => :does_not_exist}, :selection => 0}
-    lambda { BinData::Choice.new(args) }.should raise_error(BinData::UnknownTypeError)
+    lambda { BinData::Choice.new(args) }.should raise_error(BinData::UnRegisteredTypeError)
   end
 
   it "should fail if :choices Hash has a symbol as key" do
@@ -48,6 +48,12 @@ share_examples_for "Choice initialized with array or hash" do
   it "should show the current selection" do
     @chooser.choice = 3
     @data.selection.should == 3
+  end
+
+  it "should not be able to directly change the current selection" do
+    lambda {
+      @data.selection = 3
+    }.should raise_error(NoMethodError)
   end
 
   it "should forward #snapshot" do

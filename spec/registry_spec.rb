@@ -23,7 +23,9 @@ describe BinData::Registry do
   end
 
   it "should determine if a name is not registered" do
-    @r.is_registered?('xyz').should be_false
+    lambda {
+      @r.is_registered?('xyz')
+    }.should raise_error(BinData::UnRegisteredTypeError)
   end
 
   it "should lookup registered names" do
@@ -35,7 +37,9 @@ describe BinData::Registry do
   end
 
   it "should not lookup unregistered names" do
-    @r.lookup('a_non_existent_sub_class').should be_nil
+    lambda {
+      @r.lookup('a_non_existent_sub_class')
+    }.should raise_error(BinData::UnRegisteredTypeError)
   end
 
   it "should allow overriding of registered classes" do
@@ -71,13 +75,21 @@ describe BinData::Registry, "with numerics" do
   end
 
   it "should not lookup integers without endian" do
-    @r.lookup("int24").should be_nil
+    lambda {
+      @r.lookup("int24")
+    }.should raise_error(BinData::UnRegisteredTypeError)
   end
 
   it "should not lookup non byte based integers" do
-    @r.lookup("int3").should be_nil
-    @r.lookup("int3", :big).should be_nil
-    @r.lookup("int3", :little).should be_nil
+    lambda {
+      @r.lookup("int3")
+    }.should raise_error(BinData::UnRegisteredTypeError)
+    lambda {
+      @r.lookup("int3", :big)
+    }.should raise_error(BinData::UnRegisteredTypeError)
+    lambda {
+      @r.lookup("int3", :little)
+    }.should raise_error(BinData::UnRegisteredTypeError)
   end
 
   it "should lookup floats with endian" do

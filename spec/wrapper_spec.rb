@@ -10,7 +10,30 @@ describe BinData::Wrapper, "with errors" do
         uint8
         uint8
       end
-    }.should raise_error(SyntaxError)
+    }.should raise_error_on_line(SyntaxError, 3) { |err|
+      err.message.should == "attempting to wrap more than one type in #{WrappedMultipleTypes}"
+    }
+  end
+
+  it "should fail if wrapped type has a name" do
+    lambda {
+      class WrappedWithName < BinData::Wrapper
+        uint8 :a
+      end
+    }.should raise_error_on_line(SyntaxError, 2) { |err|
+      err.message.should == "field must not have a name in #{WrappedWithName}"
+    }
+  end
+
+  it "should fail if no types to wrap" do
+    class WrappedNoTypes < BinData::Wrapper
+    end
+
+    lambda {
+      WrappedNoTypes.new
+    }.should raise_error(RuntimeError) { |err|
+      err.message.should == "no wrapped type was specified in #{WrappedNoTypes}"
+    }
   end
 end
 
@@ -23,18 +46,43 @@ describe BinData::Wrapper, "around a Primitive" do
 
   it "should access custom parameter" do
     obj = WrappedPrimitive.new
-    obj.value.should == 3
+    obj.assign(3)
     obj.should == 3
   end
 
   it "should be able to override custom default parameter" do
     obj = WrappedPrimitive.new(:a => 5)
-    obj.value.should == 5
+    obj.should == 5
   end
 
   it "should be able to override parameter" do
     obj = WrappedPrimitive.new(:initial_value => 7)
-    obj.value.should == 7
+    obj.should == 7
+  end
+
+  it "should clear" do
+    obj = WrappedPrimitive.new
+    obj.assign(3)
+    obj.should_not be_clear
+
+    obj.clear
+    obj.should be_clear
+  end
+
+  it "should read" do
+    obj = WrappedPrimitive.new
+    obj.assign(3)
+    str = obj.to_binary_s
+
+    WrappedPrimitive.read(str).should == 3
+  end
+
+  it "should respond_to and forward messages to the wrapped object" do
+    obj = WrappedPrimitive.new
+    obj.assign(5)
+
+    obj.should respond_to(:value)
+    obj.value.should == 5
   end
 end
 

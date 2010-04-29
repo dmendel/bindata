@@ -3,71 +3,93 @@
 require File.expand_path(File.join(File.dirname(__FILE__), "spec_common"))
 require 'bindata'
 
-def capture_exception(exception_type, &block)
-  block.call
-rescue Exception => err
-  err.class.should == exception_type
-  return err
-else
-  lambda {}.should raise_error(exception_type)
-end
-
-describe BinData::Record, "when defining" do
+describe BinData::Record, "when defining with errors" do
   it "should fail on non registered types" do
-    err = capture_exception(TypeError) {
+    lambda {
       class BadTypeRecord < BinData::Record
         non_registered_type :a
       end
+    }.should raise_error_on_line(TypeError, 2) { |err|
+      err.message.should == "unknown type 'non_registered_type' in #{BadTypeRecord}"
     }
-    err.message.should == "unknown type 'non_registered_type' for #{BadTypeRecord}"
   end
 
   it "should give correct error message for non registered nested types" do
-    err = capture_exception(TypeError) {
+    lambda {
       class BadNestedTypeRecord < BinData::Record
         array :a, :type => :non_registered_type
       end
+    }.should raise_error_on_line(TypeError, 2) { |err|
+      err.message.should == "unknown type 'non_registered_type' in #{BadNestedTypeRecord}"
     }
-    err.message.should == "unknown type 'non_registered_type' for #{BadNestedTypeRecord}"
+  end
+
+  it "should give correct error message for non registered nested types in blocks" do
+    lambda {
+      class BadNestedTypeInBlockRecord < BinData::Record
+        array :a do
+          non_registered_type
+        end
+      end
+    }.should raise_error_on_line(TypeError, 3) { |err|
+      err.message.should == "unknown type 'non_registered_type' in #{BinData::Array}"
+    }
+  end
+
+  it "should fail on nested choice when missing names" do
+    lambda {
+      class MissingChoiceNamesRecord < BinData::Record
+        choice do
+          int8 :a
+          int8
+        end
+      end
+    }.should raise_error_on_line(SyntaxError, 4) { |err|
+      err.message.should == "fields must either all have names, or none must have names in BinData::Choice"
+    }
   end
 
   it "should fail on duplicate names" do
-    err = capture_exception(SyntaxError) {
+    lambda {
       class DuplicateNameRecord < BinData::Record
         int8 :a
         int8 :b
         int8 :a
       end
+    }.should raise_error_on_line(SyntaxError, 4) { |err|
+      err.message.should == "duplicate field 'a' in #{DuplicateNameRecord}"
     }
-    err.message.should == "duplicate field 'a' in #{DuplicateNameRecord}"
   end
 
   it "should fail on reserved names" do
-    err = capture_exception(NameError) {
+    lambda {
       class ReservedNameRecord < BinData::Record
         int8 :a
         int8 :invert # from Hash.instance_methods
       end
+    }.should raise_error_on_line(NameError, 3) { |err|
+      err.message.should == "field 'invert' is a reserved name in #{ReservedNameRecord}"
     }
-    err.message.should == "field 'invert' is a reserved name in #{ReservedNameRecord}"
   end
 
   it "should fail when field name shadows an existing method" do
-    err = capture_exception(NameError) {
+    lambda {
       class ExistingNameRecord < BinData::Record
         int8 :object_id
       end
+    }.should raise_error_on_line(NameError, 2) { |err|
+      err.message.should == "field 'object_id' shadows an existing method in #{ExistingNameRecord}"
     }
-    err.message.should == "field 'object_id' shadows an existing method in #{ExistingNameRecord}"
   end
 
   it "should fail on unknown endian" do
-    err = capture_exception(ArgumentError) {
+    lambda {
       class BadEndianRecord < BinData::Record
         endian 'a bad value'
       end
+    }.should raise_error_on_line(ArgumentError, 2) { |err|
+      err.message.should == "unknown value for endian 'a bad value' in #{BadEndianRecord}"
     }
-    err.message.should == "unknown value for endian 'a bad value' in #{BadEndianRecord}"
   end
 end
 
@@ -75,6 +97,7 @@ describe BinData::Record, "with anonymous fields" do
   class AnonymousRecord < BinData::Record
     int8 'a', :initial_value => 10
     int8 ''
+    int8
     int8 :value => :a
   end
 
@@ -92,10 +115,10 @@ describe BinData::Record, "with anonymous fields" do
   end
 
   it "should write anonymous fields" do
-    str = "\001\002\003"
+    str = "\001\002\003\004"
     @obj.read(str)
     @obj.a.clear
-    @obj.to_binary_s.should == "\012\002\012"
+    @obj.to_binary_s.should == "\012\002\003\012"
   end
 end
 
@@ -195,28 +218,29 @@ describe BinData::Record, "with multiple fields" do
 end
 
 describe BinData::Record, "with nested structs" do
-  class Inner1Record < BinData::Record
-    int8 :w, :initial_value => 3
-    int8 :x, :value => :the_val
-  end
-
-  class Inner2Record < BinData::Record
-    int8 :y, :value => lambda { parent.b.w }
-    int8 :z
-  end
-
-  class RecordOuter < BinData::Record
-    int8               :a, :initial_value => 6
-    inner1_record :b, :the_val => :a
-    inner2_record :c
+  class NestedStructRecord < BinData::Record
+    int8   :a, :initial_value => 6
+    struct :b, :the_val => :a do
+      hide :w
+      int8 :w, :initial_value => 3
+      int8 :x, :value => :the_val
+    end
+    struct :c do
+      int8 :y, :value => lambda { b.w }
+      int8 :z
+    end
   end
 
   before(:each) do
-    @obj = RecordOuter.new
+    @obj = NestedStructRecord.new
   end
 
   it "should included nested field names" do
     @obj.field_names.should == ["a", "b", "c"]
+  end
+
+  it "should hide nested field names" do
+    @obj.b.field_names.should == ["x"]
   end
 
   it "should access nested fields" do
@@ -243,16 +267,97 @@ describe BinData::Record, "with nested structs" do
   end
 end
 
+describe BinData::Record, "with nested array of primitives" do
+  class NestedPrimitiveArrayRecord < BinData::Record
+    array :a, :initial_length => 3 do
+      uint8 :value => lambda { index }
+    end
+  end
+
+  before(:each) do
+    @obj = NestedPrimitiveArrayRecord.new
+  end
+
+  it "should use block as :type" do
+    @obj.snapshot.should == {"a" => [0, 1, 2]}
+  end
+end
+
+describe BinData::Record, "with nested array of structs" do
+  class NestedStructArrayRecord < BinData::Record
+    array :a do
+      uint8 :b
+      uint8 :c
+    end
+  end
+
+  before(:each) do
+    @obj = NestedStructArrayRecord.new
+  end
+
+  it "should use block as struct for :type" do
+    @obj.a[0].b = 2
+    @obj.snapshot.should == {"a" => [{"b" => 2, "c" => 0}]}
+  end
+end
+
+describe BinData::Record, "with nested choice without names" do
+  class NestedChoiceRecord < BinData::Record
+    choice :a, :selection => 1 do
+      uint8 :value => 1
+      uint8 :value => 2
+    end
+  end
+
+  before(:each) do
+    @obj = NestedChoiceRecord.new
+  end
+
+  it "should select choices by index" do
+    @obj.a.should == 2
+  end
+end
+
+describe BinData::Record, "with nested choice with names" do
+  class NestedChoiceWithNamesRecord < BinData::Record
+    choice :a, :selection => "b" do
+      uint8 "b", :value => 1
+      uint8 "c", :value => 2
+    end
+  end
+
+  before(:each) do
+    @obj = NestedChoiceWithNamesRecord.new
+  end
+
+  it "should select choices by name" do
+    @obj.a.should == 1
+  end
+end
+
 describe BinData::Record, "with an endian defined" do
   class RecordWithEndian < BinData::Record
     endian :little
 
     uint16 :a
     float  :b
-    array  :c, :type => :int8, :initial_length => 2
-    choice :d, :choices => [ [:uint16], [:uint32] ], :selection => 1
-    struct :e, :fields => [ [:uint16, :f], [:uint32be, :g] ]
-    struct :h, :fields => [ [:struct, :i, {:fields => [[:uint16, :j]]}] ]
+    array  :c, :initial_length => 2 do
+      int8
+    end
+    choice :d, :selection => 1 do
+      uint16
+      uint32
+    end
+    struct :e do
+      uint16   :f
+      uint32be :g
+    end
+    struct :h do
+      endian :big
+      struct :i do
+        uint16 :j
+      end
+    end
   end
 
   before(:each) do
@@ -269,7 +374,7 @@ describe BinData::Record, "with an endian defined" do
     @obj.e.g = 7
     @obj.h.i.j = 8
 
-    expected = [1, 2.0, 3, 4, 5, 6, 7, 8].pack('veCCVvNv')
+    expected = [1, 2.0, 3, 4, 5, 6, 7, 8].pack('veCCVvNn')
 
     @obj.to_binary_s.should == expected
   end
@@ -398,4 +503,3 @@ describe BinData::Record, "derived classes" do
     child.field_names.should == ["a", "b"]
   end
 end
-

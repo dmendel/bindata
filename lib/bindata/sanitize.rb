@@ -2,8 +2,6 @@ require 'bindata/registry'
 
 module BinData
 
-  class UnknownTypeError < StandardError ; end
-
   # When a BinData object is instantiated, it can be supplied parameters to
   # determine its behaviour.  These parameters must be sanitized to ensure
   # their values are valid.  When instantiating many objects, such as an array
@@ -72,10 +70,6 @@ module BinData
           dest[key] = @parameters.delete(key)
         end
       end
-    end
-
-    def delete(key)
-      @parameters.delete(key)
     end
 
     def warn_replacement_parameter(bad_key, suggested_key)
@@ -164,13 +158,9 @@ module BinData
       SanitizedChoices.new(self, choices)
     end
 
-    def create_sanitized_fields
-      SanitizedFields.new(self)
-    end
-
-    def clone_sanitized_fields(fields)
+    def create_sanitized_fields(fields = nil)
       new_fields = SanitizedFields.new(self)
-      new_fields.copy_fields(fields)
+      new_fields.copy_fields(fields) if fields
       new_fields
     end
 
@@ -190,11 +180,7 @@ module BinData
     end
 
     def lookup_class(type)
-      registered_class = RegisteredClasses.lookup(type, @endian)
-      if registered_class.nil?
-        raise UnknownTypeError, type.to_s
-      end
-      registered_class
+      RegisteredClasses.lookup(type, @endian)
     end
 
     #---------------
@@ -244,6 +230,7 @@ module BinData
       @sanitizer = sanitizer
       @fields = []
     end
+    attr_reader :fields
 
     def add_field(type, name, params, endian)
       @fields << SanitizedField.new(@sanitizer, name, type, params, endian)
@@ -253,13 +240,16 @@ module BinData
       @fields[idx]
     end
 
+    def empty?
+      @fields.empty?
+    end
+
     def field_names
       @fields.collect { |field| field.name }
     end
 
     def copy_fields(other)
-      other_fields = other.instance_variable_get(:@fields)
-      @fields.concat(other_fields)
+      @fields.concat(other.fields)
     end
   end
   #----------------------------------------------------------------------------

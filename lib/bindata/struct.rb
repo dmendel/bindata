@@ -104,10 +104,10 @@ module BinData
 
       def sanitize_hide(params, sanitizer)
         if params.needs_sanitizing?(:hide) and params.has_parameter?(:fields)
-          field_names = sanitized_field_names(params[:fields])
+          field_names  = sanitized_field_names(params[:fields])
           hfield_names = hidden_field_names(params[:hide])
 
-          params[:hide]   = (hfield_names & field_names)
+          params[:hide] = (hfield_names & field_names)
         end
       end
 

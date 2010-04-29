@@ -15,7 +15,7 @@ describe BinData::Array, "when instantiating" do
 
   it "should fail if a given type is unknown" do
     args = {:type => :does_not_exist, :initial_length => 3}
-    lambda { BinData::Array.new(args) }.should raise_error(BinData::UnknownTypeError)
+    lambda { BinData::Array.new(args) }.should raise_error(BinData::UnRegisteredTypeError)
   end
 
   it "should not allow both :initial_length and :read_until" do

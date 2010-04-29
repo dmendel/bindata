@@ -1,5 +1,12 @@
 module BinData
+
+  class UnRegisteredTypeError < StandardError ; end
+
   # This registry contains a register of name -> class mappings.
+  #
+  # Numerics (integers and floating point numbers) have an endian property as
+  # part of their name (e.g. int32be, float_le).  The lookup can either be
+  # on the full name, or on the shortened name plus endian (e.g. "int32", :big)
   #
   # Names are stored in under_score_style, not camelCase.
   class Registry
@@ -21,7 +28,13 @@ module BinData
       key = lookup_key(name, endian)
       try_registering_key(key) unless @registry.has_key?(key)
 
-      @registry[key]
+      @registry[key] || raise(UnRegisteredTypeError, name.to_s)
+    end
+
+    def normalize_name(name, endian = nil)
+      if lookup(name, endian)
+        lookup_key(name, endian)
+      end
     end
 
     def is_registered?(name, endian = nil)

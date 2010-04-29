@@ -1,11 +1,5 @@
 $LOAD_PATH.unshift(File.expand_path(File.join(File.dirname(__FILE__), "..", "lib")))
 
-begin
-  require 'rubygems'
-  gem 'rspec', '> 1.2.2'
-rescue LoadError
-end
-
 require 'spec'
 require 'spec/autorun'
 require 'stringio'
@@ -28,3 +22,26 @@ class StringIO
     read
   end
 end
+
+def exception_line(ex)
+  idx = ex.backtrace.find_index { |bt| /:in `should'$/ =~ bt }
+
+  if idx
+    line_num_regex = /.*:(\d+)$/
+
+    err_line = line_num_regex.match(ex.backtrace[0])[1].to_i
+    ref_line = line_num_regex.match(ex.backtrace[idx + 1])[1].to_i
+
+    err_line - ref_line
+  else
+    raise "Required calling pattern is lambda { xxx }.should raise_error_on_line(...)"
+  end
+end
+
+def raise_error_on_line(exception, line, &block)
+  raise_exception(exception) do |err|
+    exception_line(err).should == line
+    block.call(err) if block_given?
+  end
+end
+

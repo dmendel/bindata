@@ -5,55 +5,146 @@ module BinData
     end
 
     module ClassMethods
+      # Defines the DSL Parser for this BinData object.  Allowed +args+ are:
+      #
+      # [<tt>:only_one_field</tt>]         Only one field may be declared.
+      # [<tt>:multiple_fields</tt>]        Multiple fields may be declared.
+      # [<tt>:hidden_fields</tt>]          Hidden fields are allowed.
+      # [<tt>:sanitize_fields</tt>]        Fields are to be sanitized.
+      # [<tt>:mandatory_fieldnames</tt>]   Fieldnames are mandatory.
+      # [<tt>:optional_fieldnames</tt>]    Fieldnames are optional.
+      # [<tt>:no_fieldnames</tt>]          Fieldnames are prohibited.
+      # [<tt>:all_or_none_fieldnames</tt>] All fields must have names, or
+      #                                    none may have names.
       def dsl_parser(*args)
         @dsl_parser ||= DSLParser.new(self, *args)
-        #:only_one_field, :multiple_fields, :mandatory_fieldnames, :optional_fieldnames, :no_fieldnames, :hidden_fields
       end
 
-      def method_missing(symbol, *args, &block)
+      def method_missing(symbol, *args, &block) #:nodoc:
         dsl_parser.__send__(symbol, *args, &block)
       end
     end
 
+    # An array containing a field definition of the form
+    # expected by BinData::Struct.
+    class UnSanitizedField < ::Array
+      def initialize(type, name, params)
+        super()
+        self << type << name << params
+      end
+      def type
+        self[0]
+      end
+      def name
+        self[1]
+      end
+      def params
+        self[2]
+      end
+      def to_type_params
+        [self.type, self.params]
+      end
+    end
+
+    class UnSanitizedFields < ::Array
+      def field_names
+        collect { |f| f.name }
+      end
+
+      def add_field(type, name, params, endian)
+        normalized_type = RegisteredClasses.normalize_name(type, endian)
+        self << UnSanitizedField.new(normalized_type, name, params)
+      end
+    end
+
+    # A DSLParser parses and accumulates field definitions of the form
+    #
+    #   type name, params
+    #
+    # where:
+    #   * +type+ is the under_scored name of a registered type
+    #   * +name+ is the (possible optional) name of the field
+    #   * +params+ is a hash containing any parameters
+    #
     class DSLParser
       def initialize(the_class, *options)
         @the_class = the_class
 
-        @options = parent_attribute(:options, []).dup
-
-        options.each do |opt|
-          case opt
-          when :only_one_field
-            @options.delete :multiple_fields
-          when :multiple_fields
-            @options.delete :only_one_field
-          when :mandatory_fieldnames
-            @options.delete :optional_fieldnames
-            @options.delete :no_fieldnames
-          when :optional_fieldnames
-            @options.delete :mandatory_fieldnames
-            @options.delete :no_fieldnames
-          when :no_fieldnames
-            @options.delete :mandatory_fieldnames
-            @options.delete :optional_fieldnames
-          end
-          @options << opt
-        end
+        @options = parent_options_plus_these(options)
 
         @endian = parent_attribute(:endian, nil)
 
-        if @options.include?(:hidden_fields)
+        if option?(:hidden_fields)
           @hide = parent_attribute(:hide, []).dup
         end
 
-        if @options.include?(:multiple_fields)
+        if option?(:sanitize_fields)
           fields = parent_attribute(:fields, nil)
-          if fields
-            @fields = Sanitizer.new.clone_sanitized_fields(fields)
-          else
-            @fields = Sanitizer.new.create_sanitized_fields
-          end
+          @fields = Sanitizer.new.create_sanitized_fields(fields)
+        else
+          fields = parent_attribute(:fields, UnSanitizedFields.new)
+          @fields = fields.dup
         end
+      end
+
+      attr_reader :options
+
+      def endian(endian = nil)
+        if [:little, :big].include?(endian)
+          @endian = endian
+        elsif endian != nil
+          dsl_raise ArgumentError, "unknown value for endian '#{endian}'"
+        end
+        @endian
+      end
+
+      def hide(*args)
+        if option?(:hidden_fields)
+          @hide.concat(args.collect { |name| name.to_s })
+          @hide
+        end
+      end
+
+      def fields
+        @fields
+      end
+
+      def field
+        @fields[0]
+      end
+
+      def to_struct_params
+        result = {:fields => fields}
+        if not endian.nil?
+          result[:endian] = endian
+        end
+        if option?(:hidden_fields) and not hide.empty?
+          result[:hide] = hide
+        end
+
+        result
+      end
+
+      def method_missing(symbol, *args, &block) #:nodoc:
+        type   = symbol
+        name   = name_from_field_declaration(args)
+        params = params_from_field_declaration(type, args, &block)
+
+        append_field(type, name, params)
+      end
+
+      #-------------
+      private
+
+      def dsl_raise(exception, message)
+        backtrace = caller
+        backtrace.shift while %r{bindata/dsl.rb} =~ backtrace.first
+
+        raise exception, message + " in #{@the_class}", backtrace
+      end
+
+      def option?(opt)
+        @options.include?(opt)
       end
 
       def parent_attribute(attr, default = nil)
@@ -65,66 +156,173 @@ module BinData
         end
       end
 
-      attr_reader :options
+      def parent_options_plus_these(options)
+        result = parent_attribute(:options, []).dup
 
-      def endian(endian = nil)
-        if [:little, :big].include?(endian)
-          @endian = endian
-        elsif endian != nil
-          raise ArgumentError,
-                  "unknown value for endian '#{endian}' in #{@the_class}", caller(1)
+        mutexes = [
+          [:only_one_field, :multiple_fields],
+          [:mandatory_fieldnames, :optional_fieldnames, :no_fieldnames, :all_or_none_fieldnames]
+        ]
+
+        options.each do |opt|
+          mutexes.each do |mutex|
+            if mutex.include?(opt)
+              result -= mutex
+            end
+          end
+
+          result << opt
         end
-        @endian
+
+        result
       end
 
-      def hide(*args)
-        @hide.concat(args.collect { |name| name.to_s })
-        @hide
-      end
-
-      def fields #:nodoc:
-        @fields
-      end
-
-      def method_missing(symbol, *args) #:nodoc:
+      def name_from_field_declaration(args)
         name, params = args
+        name = nil if name.is_a?(Hash)
 
-        if name.is_a?(Hash)
-          params = name
-          name = nil
-        end
-
-        type = symbol
-        name = name.to_s
-        params ||= {}
-
-        append_field(type, name, params)
+        name.to_s
       end
 
-      #-------------
-      private
+      def params_from_field_declaration(type, args, &block)
+        params = params_from_args(args)
+
+        if block_given? and BlockParsers.has_key?(type)
+          params.merge(BlockParsers[type].extract_params(endian, &block))
+        else
+          params
+        end
+      end
+
+      def params_from_args(args)
+        name, params = args
+        params = name if name.is_a?(Hash)
+
+        params || {}
+      end
 
       def append_field(type, name, params)
+        if too_many_fields?
+          dsl_raise SyntaxError, "attempting to wrap more than one type"
+        end
+
         ensure_valid_name(name)
 
         fields.add_field(type, name, params, endian)
-      rescue UnknownTypeError => err
-        raise TypeError, "unknown type '#{err.message}' for #{@the_class}", caller(2)
+      rescue UnRegisteredTypeError => err
+        dsl_raise TypeError, "unknown type '#{err.message}'"
       end
 
       def ensure_valid_name(name)
-        if fields.field_names.include?(name)
-          raise SyntaxError, "duplicate field '#{name}' in #{@the_class}", caller(3)
+        if must_not_have_a_name_failed?(name)
+          dsl_raise SyntaxError, "field must not have a name"
         end
-        if @the_class.instance_methods.collect { |meth| meth.to_s }.include?(name)
-          raise NameError.new("", name),
-                "field '#{name}' shadows an existing method in #{@the_class}", caller(3)
+
+        if all_or_none_names_failed?(name)
+          dsl_raise SyntaxError, "fields must either all have names, or none must have names"
         end
-        if BinData::Struct::RESERVED.include?(name)
-          raise NameError.new("", name),
-                "field '#{name}' is a reserved name in #{@the_class}", caller(3)
+
+        if must_have_a_name_failed?(name)
+          dsl_raise SyntaxError, "field must have a name"
+        end
+
+        if duplicate_name?(name)
+          dsl_raise SyntaxError, "duplicate field '#{name}'"
+        end
+
+        if name_shadows_method?(name)
+          dsl_raise NameError.new("", name), "field '#{name}' shadows an existing method"
+        end
+
+        if name_is_reserved?(name)
+          dsl_raise NameError.new("", name), "field '#{name}' is a reserved name"
+        end
+      end
+
+      def too_many_fields?
+        option?(:only_one_field) and not fields.empty?
+      end
+
+      def must_not_have_a_name_failed?(name)
+        option?(:no_fieldnames) and name != ""
+      end
+
+      def must_have_a_name_failed?(name)
+        option?(:mandatory_fieldnames) and name == ""
+      end
+
+      def all_or_none_names_failed?(name)
+        if option?(:all_or_none_fieldnames) and not fields.empty?
+          all_names_blank = fields.field_names.all? { |n| n == "" }
+          no_names_blank = fields.field_names.all? { |n| n != "" }
+
+          (name != "" and all_names_blank) or (name == "" and no_names_blank)
+        else
+          false
+        end
+      end
+
+      def duplicate_name?(name)
+        name != "" and fields.field_names.include?(name)
+      end
+
+      def name_shadows_method?(name)
+        name != "" and @the_class.instance_methods.detect { |meth| meth.to_s == name }
+      end
+
+      def name_is_reserved?(name)
+        name != "" and BinData::Struct::RESERVED.include?(name)
+      end
+    end
+
+    class StructBlockParser
+      def self.extract_params(endian, &block)
+        parser = DSLParser.new(BinData::Struct, :multiple_fields, :optional_fieldnames, :hidden_fields)
+        parser.endian endian
+        parser.instance_eval(&block)
+
+        parser.to_struct_params
+      end
+    end
+
+    class ArrayBlockParser
+      def self.extract_params(endian, &block)
+        parser = DSLParser.new(BinData::Array, :multiple_fields, :optional_fieldnames)
+        parser.endian endian
+        parser.instance_eval(&block)
+
+        if parser.fields.length == 1
+          {:type => parser.field.to_type_params}
+        else
+          {:type => [:struct, parser.to_struct_params]}
         end
       end
     end
+
+    class ChoiceBlockParser
+      def self.extract_params(endian, &block)
+        parser = DSLParser.new(BinData::Choice, :multiple_fields, :all_or_none_fieldnames)
+        parser.endian endian
+        parser.instance_eval(&block)
+
+        if all_blank?(parser.fields.field_names)
+          {:choices => parser.fields.collect { |f| f.to_type_params }}
+        else
+          choices = {}
+          parser.fields.each { |f| choices[f.name] = f.to_type_params }
+          {:choices => choices}
+        end
+      end
+
+      def self.all_blank?(array)
+        array.all? { |el| el == "" }
+      end
+    end
+
+    BlockParsers = {
+      :struct => StructBlockParser,
+      :array  => ArrayBlockParser,
+      :choice => ChoiceBlockParser,
+    }
   end
 end

@@ -43,4 +43,12 @@ describe BinData::Base, "when defining" do
       end
     }.should_not raise_error
   end
+
+  it "should handle deprecated #register method with custom calling" do
+    lambda {
+      class DeprecatedCustomBase < BinData::Base
+        register(name, Object)
+      end
+    }.should_not raise_error
+  end
 end

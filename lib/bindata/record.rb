@@ -7,22 +7,21 @@ module BinData
   #
   #    require 'bindata'
   #
-  #    class Tuple < BinData::Record
-  #      int8  :x
-  #      int8  :y
-  #      int8  :z
-  #    end
-  #
   #    class SomeDataType < BinData::Record
   #      hide 'a'
   #
   #      int32le :a
   #      int16le :b
-  #      tuple   :s
+  #      struct  :s do
+  #        int8  :x
+  #        int8  :y
+  #        int8  :z
+  #      end
   #    end
   #
   #    obj = SomeDataType.new
   #    obj.field_names   =># ["b", "s"]
+  #    obj.s.field_names =># ["x", "y", "z"]
   #
   #
   # == Parameters
@@ -47,7 +46,7 @@ module BinData
     include DSLMixin
 
     register_subclasses
-    dsl_parser :multiple_fields, :optional_fieldnames, :hidden_fields
+    dsl_parser :multiple_fields, :optional_fieldnames, :sanitize_fields, :hidden_fields
 
     class << self
       def sanitize_parameters!(params, sanitizer) #:nodoc:

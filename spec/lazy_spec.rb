@@ -6,8 +6,8 @@ require 'bindata/lazy'
 # A mock data object with customizable fields.
 class MockDataObject
   def initialize(methods = {}, params = {}, parent = nil)
+    meta = class << self ; self; end
     methods.each do |k,v|
-      meta = class << self ; self; end
       meta.send(:define_method, k.to_sym) { v }
     end
     @parameters = params
@@ -15,12 +15,12 @@ class MockDataObject
   end
   attr_accessor :parent
 
-  def has_parameter?(k)
-    @parameters.has_key?(k)
+  def has_parameter?(key)
+    @parameters.has_key?(key)
   end
 
-  def get_parameter(k)
-    @parameters[k]
+  def get_parameter(key)
+    @parameters[key]
   end
 end
 
@@ -32,6 +32,11 @@ describe BinData::LazyEvaluator, "with no parents" do
     methods = {:m1 => 'm1', :com => 'mC'}
     params  = {:p1 => 'p1', :com => 'pC'}
     @obj = MockDataObject.new(methods, params)
+  end
+
+  it "should evaluate raw value when instantiated" do
+    le = LE.new(@obj)
+    le.lazy_eval(5).should == 5
   end
 
   it "should evaluate raw value" do

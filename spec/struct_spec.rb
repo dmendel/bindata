@@ -8,7 +8,7 @@ describe BinData::Struct, "when initializing" do
     params = {:fields => [[:non_registered_type, :a]]}
     lambda {
       BinData::Struct.new(params)
-    }.should raise_error(BinData::UnknownTypeError)
+    }.should raise_error(BinData::UnRegisteredTypeError)
   end
 
   it "should fail on duplicate names" do

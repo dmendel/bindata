@@ -63,14 +63,11 @@ module BinData
     include DSLMixin
 
     register_subclasses
-    dsl_parser :multiple_fields, :optional_fieldnames
+    dsl_parser :multiple_fields, :optional_fieldnames, :sanitize_fields
 
     class << self
       def sanitize_parameters!(params, sanitizer) #:nodoc:
-        struct_params = {:fields => fields}
-        struct_params[:endian] = endian unless endian.nil?
-        
-        params[:struct_params] = struct_params
+        params[:struct_params] = sanitizer.create_sanitized_params(to_struct_params, BinData::Struct)
       end
     end
 
@@ -86,16 +83,8 @@ module BinData
       @struct.__send__(symbol, *args, &block)
     end
 
-    def respond_to?(symbol, include_private = false) #:nodoc:
-      @struct.respond_to?(symbol, include_private) || super
-    end
-
     def debug_name_of(child) #:nodoc:
       debug_name + "-internal-"
-    end
-
-    def offset_of(child) #:nodoc:
-      @struct.offset_of(child)
     end
 
     #---------------

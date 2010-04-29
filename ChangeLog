@@ -3,6 +3,8 @@
 == Version 1.2.0 (2010-xx-xx)
 
 * Deprecated Base#register. Use #register_self or #register_subclasses instead.
+* Syntax improvement.  Array, Structs and Choices can now use blocks to
+  specify fields.
 
 == Version 1.1.0 (2009-11-24)
 

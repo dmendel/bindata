@@ -1,4 +1,5 @@
 require 'bindata/base'
+require 'bindata/dsl'
 
 module BinData
   # A Wrapper allows the creation of new BinData types that
@@ -19,79 +20,25 @@ module BinData
   #   arr.snapshot #=> [3, 3, 3, 3 ,3]
   #   
   class Wrapper < BinData::Base
+    include DSLMixin
 
     register_subclasses
+    dsl_parser :only_one_field, :no_fieldnames
 
     class << self
-
-      def endian(endian = nil)
-        @endian ||= default_endian
-        if [:little, :big].include?(endian)
-          @endian = endian
-        elsif endian != nil
-          raise ArgumentError,
-                  "unknown value for endian '#{endian}' in #{self}", caller(1)
-        end
-        @endian
-      end
-
-      def wrapped(*args)
-        @wrapped ||= default_wrapped
-        if args.length == 2
-          type, params = *args
-          ensure_type_exists(type)
-
-          if wrapped != nil
-            raise SyntaxError, "#{self} can only wrap one type", caller(2)
-          end
-          @wrapped = [type, params]
-        end
-        @wrapped
-      end
-
-      def method_missing(symbol, *args) #:nodoc:
-        type = symbol
-        params = args.length == 0 ? {} : args[0]
-
-        wrapped(type, params)
-      end
-
       def sanitize_parameters!(params, sanitizer) #:nodoc:
-        raise "Nothing to wrap" if wrapped.nil?
+        raise "no wrapped type was specified in #{self}" if field.nil?
 
-        wrapped_type, wrapped_params = wrapped
-        wrapped_params = wrapped_params.dup
+        wrapped_type = field.type
+        wrapped_params = field.params.dup
 
         params.move_unknown_parameters_to(wrapped_params)
 
         params[:wrapped] = sanitizer.create_sanitized_object_prototype(wrapped_type, wrapped_params, endian)
       end
-
-      #-------------
-      private
-
-      def parent_wrapper
-        ancestors[1..-1].find { |cls|
-          cls.ancestors[1..-1].include?(BinData::Wrapper)
-        }
-      end
-
-      def default_endian
-        wrap = parent_wrapper
-        wrap ? wrap.endian : nil
-      end
-
-      def default_wrapped
-        wrap = parent_wrapper
-        wrap ? wrap.wrapped : nil
-      end
-
-      def ensure_type_exists(type)
-        unless RegisteredClasses.is_registered?(type, endian)
-          raise TypeError, "unknown type '#{type}' for #{self}", caller(3)
-        end
-      end
     end
+
+    mandatory_parameter :wrapped
 
     def initialize(parameters = {}, parent = nil)
       super

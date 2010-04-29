@@ -67,17 +67,17 @@ describe BinData::Record, "with choice field" do
   end
 
   class RecordWithChoiceField < BinData::Record
-    choice :x, :choices => [[:tuple_record]], :selection => 0
+    choice :x, :selection => 0 do
+      tuple_record
+    end
   end
 
   class RecordWithNestedChoiceField < BinData::Record
-    choice :x, :choices => [
-                  [:choice, {
-                      :choices => [[:tuple_record]],
-                      :selection => 0}
-                  ]
-               ],
-               :selection => 0
+    choice :x, :selection => 0 do
+      choice :selection => 0 do
+        tuple_record
+      end
+    end
   end
 
   it "should treat choice object transparently " do
@@ -213,25 +213,25 @@ describe "Tracing"  do
   end
 end
 
-describe "Forward referencing with Single" do
-  class FRSingle < BinData::Record
+describe "Forward referencing with Primitive" do
+  class FRPrimitive < BinData::Record
     uint8  :len, :value => lambda { data.length }
     string :data, :read_length => :len
   end
 
   it "should initialise" do
-    @obj = FRSingle.new
+    @obj = FRPrimitive.new
     @obj.snapshot.should == {"len" => 0, "data" => ""}
   end
 
   it "should read" do
-    @obj = FRSingle.new
+    @obj = FRPrimitive.new
     @obj.read("\x04test")
     @obj.snapshot.should == {"len" => 4, "data" => "test"}
   end
 
   it "should set value" do
-    @obj = FRSingle.new
+    @obj = FRPrimitive.new
     @obj.data = "hello"
     @obj.snapshot.should == {"len" => 5, "data" => "hello"}
   end
@@ -286,3 +286,4 @@ describe BinData::Record, "with custom sized integers" do
     CustomIntRecord.read(str).should == {"a" => 5}
   end
 end
+
