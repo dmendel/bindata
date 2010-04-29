@@ -5,57 +5,55 @@ module BinData
   # The float is defined by precision and endian.
 
   module FloatingPoint #:nodoc: all
-    def self.create_float_methods(float_class, precision, endian)
-      read = create_read_code(precision, endian)
-      to_binary_s = create_to_binary_s_code(precision, endian)
-      nbytes = (precision == :single) ? 4 : 8
+    class << self
+      def define_methods(float_class, precision, endian)
+        float_class.module_eval <<-END
+          def _do_num_bytes
+            #{create_num_bytes_code(precision)}
+          end
 
-      define_methods(float_class, nbytes, read, to_binary_s)
-    end
+          #---------------
+          private
 
-    def self.create_read_code(precision, endian)
-      if precision == :single
-        unpack = (endian == :little) ? 'e' : 'g'
-        nbytes = 4
-      else # double_precision
-        unpack = (endian == :little) ? 'E' : 'G'
-        nbytes = 8
+          def sensible_default
+            0.0
+          end
+
+          def value_to_binary_string(val)
+            #{create_to_binary_s_code(precision, endian)}
+          end
+
+          def read_and_return_value(io)
+            #{create_read_code(precision, endian)}
+          end
+        END
       end
 
-      "io.readbytes(#{nbytes}).unpack('#{unpack}').at(0)"
-    end
-
-    def self.create_to_binary_s_code(precision, endian)
-      if precision == :single
-        pack = (endian == :little) ? 'e' : 'g'
-      else # double_precision
-        pack = (endian == :little) ? 'E' : 'G'
+      def create_num_bytes_code(precision)
+        (precision == :single) ? 4 : 8
       end
 
-      "[val].pack('#{pack}')"
-    end
-
-    def self.define_methods(float_class, nbytes, read, to_binary_s)
-      float_class.module_eval <<-END
-        def _do_num_bytes
-          #{nbytes}
+      def create_read_code(precision, endian)
+        if precision == :single
+          unpack = (endian == :little) ? 'e' : 'g'
+          nbytes = 4
+        else # double_precision
+          unpack = (endian == :little) ? 'E' : 'G'
+          nbytes = 8
         end
 
-        #---------------
-        private
+        "io.readbytes(#{nbytes}).unpack('#{unpack}').at(0)"
+      end
 
-        def sensible_default
-          0.0
+      def create_to_binary_s_code(precision, endian)
+        if precision == :single
+          pack = (endian == :little) ? 'e' : 'g'
+        else # double_precision
+          pack = (endian == :little) ? 'E' : 'G'
         end
 
-        def value_to_binary_string(val)
-          #{to_binary_s}
-        end
-
-        def read_and_return_value(io)
-          #{read}
-        end
-      END
+        "[val].pack('#{pack}')"
+      end
     end
   end
 
@@ -63,24 +61,24 @@ module BinData
   # Single precision floating point number in little endian format
   class FloatLe < BinData::BasePrimitive
     register_self
-    FloatingPoint.create_float_methods(self, :single, :little)
+    FloatingPoint.define_methods(self, :single, :little)
   end
 
   # Single precision floating point number in big endian format
   class FloatBe < BinData::BasePrimitive
     register_self
-    FloatingPoint.create_float_methods(self, :single, :big)
+    FloatingPoint.define_methods(self, :single, :big)
   end
 
   # Double precision floating point number in little endian format
   class DoubleLe < BinData::BasePrimitive
     register_self
-    FloatingPoint.create_float_methods(self, :double, :little)
+    FloatingPoint.define_methods(self, :double, :little)
   end
 
   # Double precision floating point number in big endian format
   class DoubleBe < BinData::BasePrimitive
     register_self
-    FloatingPoint.create_float_methods(self, :double, :big)
+    FloatingPoint.define_methods(self, :double, :big)
   end
 end

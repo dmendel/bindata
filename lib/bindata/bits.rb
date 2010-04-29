@@ -5,60 +5,63 @@ module BinData
   # The integer is defined by endian and number of bits.
 
   module BitField #:nodoc: all
-    def self.define_class(nbits, endian)
-      name = "Bit#{nbits}"
-      name += "le" if endian == :little
-      unless BinData.const_defined?(name)
-        BinData.module_eval <<-END
-          class #{name} < BinData::BasePrimitive
-            register_self
-            BitField.create_methods(self, #{nbits}, :#{endian.to_s})
+    class << self
+      def define_class(nbits, endian)
+        name = "Bit#{nbits}"
+        name += "le" if endian == :little
+        unless BinData.const_defined?(name)
+          BinData.module_eval <<-END
+            class #{name} < BinData::BasePrimitive
+              register_self
+              BitField.define_methods(self, #{nbits}, :#{endian})
+            end
+          END
+        end
+
+        BinData.const_get(name)
+      end
+
+      def define_methods(bit_class, nbits, endian)
+        bit_class.module_eval <<-END
+          #---------------
+          private
+
+          def _assign(val)
+            #{create_clamp_code(nbits)}
+            super(val)
+          end
+
+          def _do_write(io)
+            raise "can't write whilst reading \#{debug_name}" if @in_read
+            io.writebits(_value, #{nbits}, :#{endian})
+          end
+
+          def _do_num_bytes
+            #{nbits / 8.0}
+          end
+
+          def read_and_return_value(io)
+            io.readbits(#{nbits}, :#{endian})
+          end
+
+          def sensible_default
+            0
           end
         END
       end
-      BinData.const_get(name)
-    end
 
-    def self.create_methods(bit_class, nbits, endian)
-      min = 0
-      max = (1 << nbits) - 1
-      clamp = "val = (val < #{min}) ? #{min} : (val > #{max}) ? #{max} : val"
+      def create_clamp_code(nbits)
+        min = 0
+        max = (1 << nbits) - 1
+        clamp = "val = (val < #{min}) ? #{min} : (val > #{max}) ? #{max} : val"
 
-      # allow single bits to be used as booleans
-      if nbits == 1
-        clamp = "val = (val == true) ? 1 : (not val) ? 0 : #{clamp}"
+        if nbits == 1
+          # allow single bits to be used as booleans
+          "val = (val == true) ? 1 : (not val) ? 0 : #{clamp}"
+        else
+          clamp
+        end
       end
-
-      define_methods(bit_class, nbits, endian.to_s, clamp)
-    end
-
-    def self.define_methods(bit_class, nbits, endian, clamp)
-      bit_class.module_eval <<-END
-        #---------------
-        private
-
-        def _assign(val)
-          #{clamp}
-          super(val)
-        end
-
-        def _do_write(io)
-          raise "can't write whilst reading \#{debug_name}" if @in_read
-          io.writebits(_value, #{nbits}, :#{endian})
-        end
-
-        def _do_num_bytes
-          #{nbits / 8.0}
-        end
-
-        def read_and_return_value(io)
-          io.readbits(#{nbits}, :#{endian})
-        end
-
-        def sensible_default
-          0
-        end
-      END
     end
   end
 

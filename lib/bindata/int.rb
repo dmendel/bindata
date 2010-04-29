@@ -9,16 +9,14 @@ module BinData
       def define_class(nbits, endian, signed)
         name = class_name(nbits, endian, signed)
         unless BinData.const_defined?(name)
-          int_type = (signed == :signed) ? 'int' : 'uint'
-          creation_method = "create_#{int_type}_methods"
-
           BinData.module_eval <<-END
             class #{name} < BinData::BasePrimitive
               register_self
-              Int.#{creation_method}(self, #{nbits}, :#{endian})
+              Int.define_methods(self, #{nbits}, :#{endian}, :#{signed})
             end
           END
         end
+
         BinData.const_get(name)
       end
 
@@ -29,37 +27,51 @@ module BinData
         "#{base}#{nbits}#{endian_str}"
       end
 
-      def create_uint_methods(int_class, nbits, endian)
+      def define_methods(int_class, nbits, endian, signed)
         raise "nbits must be divisible by 8" unless (nbits % 8).zero?
 
-        min = 0
-        max = (1 << nbits) - 1
+        int_class.module_eval <<-END
+          #---------------
+          private
 
-        clamp = create_clamp_code(min, max)
-        read = create_read_code(nbits, endian)
-        to_binary_s = create_to_binary_s_code(nbits, endian)
+          def _assign(val)
+            #{create_clamp_code(nbits, signed)}
+            super(val)
+          end
 
-        define_methods(int_class, nbits / 8, clamp, read, to_binary_s)
+          def _do_num_bytes
+            #{nbits / 8}
+          end
+
+          def sensible_default
+            0
+          end
+
+          def value_to_binary_string(val)
+            #{create_clamp_code(nbits, signed)}
+            #{create_int2uint_code(nbits) if signed == :signed}
+            #{create_to_binary_s_code(nbits, endian)}
+          end
+
+          def read_and_return_value(io)
+            val = #{create_read_code(nbits, endian)}
+            #{create_uint2int_code(nbits) if signed == :signed}
+          end
+        END
       end
 
-      def create_int_methods(int_class, nbits, endian)
-        raise "nbits must be divisible by 8" unless (nbits % 8).zero?
+      #-------------
+      private
 
-        max = (1 << (nbits - 1)) - 1
-        min = -(max + 1)
+      def create_clamp_code(nbits, signed)
+        if signed == :signed
+          max = (1 << (nbits - 1)) - 1
+          min = -(max + 1)
+        else
+          min = 0
+          max = (1 << nbits) - 1
+        end
 
-        clamp = create_clamp_code(min, max)
-        read = create_read_code(nbits, endian)
-        to_binary_s = create_to_binary_s_code(nbits, endian)
-
-        int2uint = create_int2uint_code(nbits)
-        uint2int = create_uint2int_code(nbits)
-
-        define_methods(int_class, nbits / 8, clamp, read, to_binary_s,
-                         int2uint, uint2int)
-      end
-
-      def create_clamp_code(min, max)
         "val = (val < #{min}) ? #{min} : (val > #{max}) ? #{max} : val"
       end
 
@@ -75,26 +87,12 @@ module BinData
       end
 
       def create_read_code(nbits, endian)
-        # determine "word" size and unpack directive
-        if (nbits % 32).zero?
-          bytes_per_word = 4
-          d = (endian == :big) ? 'N' : 'V'
-        elsif (nbits % 16).zero?
-          bytes_per_word = 2
-          d = (endian == :big) ? 'n' : 'v'
-        else
-          bytes_per_word = 1
-          d = 'C'
-        end
-
-        bits_per_word = bytes_per_word * 8
+        bits_per_word = bytes_per_word(nbits) * 8
         nwords        = nbits / bits_per_word
         nbytes        = nbits / 8
 
         idx = (0 ... nwords).to_a
         idx.reverse! if (endian == :big)
-
-        unpack_str = "a = io.readbytes(#{nbytes}).unpack('#{d * nwords}')"
 
         parts = (0 ... nwords).collect do |i|
                   if i.zero?
@@ -103,6 +101,8 @@ module BinData
                     "(a.at(#{idx[i]}) << #{bits_per_word * i})"
                   end
                 end
+
+        unpack_str = "a = io.readbytes(#{nbytes}).unpack('#{pack_directive(nbits, endian)}')"
         assemble_str = parts.join(" + ")
 
         "(#{unpack_str}; #{assemble_str})"
@@ -112,19 +112,7 @@ module BinData
         # special case 8bit integers for speed
         return "val.chr" if nbits == 8
 
-        # determine "word" size and pack directive
-        if (nbits % 32).zero?
-          bytes_per_word = 4
-          d = (endian == :big) ? 'N' : 'V'
-        elsif (nbits % 16).zero?
-          bytes_per_word = 2
-          d = (endian == :big) ? 'n' : 'v'
-        else
-          bytes_per_word = 1
-          d = 'C'
-        end
-
-        bits_per_word = bytes_per_word * 8
+        bits_per_word = bytes_per_word(nbits) * 8
         nwords        = nbits / bits_per_word
         mask          = (1 << bits_per_word) - 1
 
@@ -136,39 +124,26 @@ module BinData
         parts = (0 ... nwords).collect { |i| "#{vals[i]} & #{mask}" }
         array_str = "[" + parts.join(", ") + "]"
 
-        "#{array_str}.pack('#{d * nwords}')"
+        "#{array_str}.pack('#{pack_directive(nbits, endian)}')"
       end
 
-      def define_methods(int_class, nbytes, clamp, read, to_binary_s,
-                           int2uint = nil, uint2int = nil)
-        int_class.module_eval <<-END
-          #---------------
-          private
+      def bytes_per_word(nbits)
+        (nbits % 32).zero? ? 4 : (nbits % 16).zero? ? 2 : 1
+      end
 
-          def _assign(val)
-            #{clamp}
-            super(val)
-          end
+      def pack_directive(nbits, endian)
+        bits_per_word = bytes_per_word(nbits) * 8
+        nwords        = nbits / bits_per_word
 
-          def _do_num_bytes
-            #{nbytes}
-          end
+        if (nbits % 32).zero?
+          d = (endian == :big) ? 'N' : 'V'
+        elsif (nbits % 16).zero?
+          d = (endian == :big) ? 'n' : 'v'
+        else
+          d = 'C'
+        end
 
-          def sensible_default
-            0
-          end
-
-          def value_to_binary_string(val)
-            #{clamp}
-            #{int2uint unless int2uint.nil?}
-            #{to_binary_s}
-          end
-
-          def read_and_return_value(io)
-            val = #{read}
-            #{uint2int unless uint2int.nil?}
-          end
-        END
+        d * nwords
       end
     end
   end
@@ -177,13 +152,13 @@ module BinData
   # Unsigned 1 byte integer.
   class Uint8 < BinData::BasePrimitive
     register_self
-    Int.create_uint_methods(self, 8, :little)
+    Int.define_methods(self, 8, :little, :unsigned)
   end
 
   # Signed 1 byte integer.
   class Int8 < BinData::BasePrimitive
     register_self
-    Int.create_int_methods(self, 8, :little)
+    Int.define_methods(self, 8, :little, :signed)
   end
 
   # Create classes on demand
