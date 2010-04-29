@@ -97,8 +97,11 @@ module BinData
         unpack_str = "a = io.readbytes(#{nbytes}).unpack('#{d * nwords}')"
 
         parts = (0 ... nwords).collect do |i|
-                  i.zero? ? "a.at(#{idx[i]})" :
-                            "(a.at(#{idx[i]}) << #{bits_per_word * i})"
+                  if i.zero?
+                    "a.at(#{idx[i]})"
+                  else
+                    "(a.at(#{idx[i]}) << #{bits_per_word * i})"
+                  end
                 end
         assemble_str = parts.join(" + ")
 

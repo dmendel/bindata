@@ -134,7 +134,7 @@ module BinData
     #   pc.selection = 17
     #   pc #=> "Type2"
     def selection=(sel)
-      raise NoMethodError
+      raise NoMethodError, "See rdoc BinData::Choice.selection= for details"
     end
 
     def clear #:nodoc:
