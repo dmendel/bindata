@@ -35,7 +35,8 @@ module BinData
 
       def accepted_parameters #:nodoc:
         unless defined? @accepted_parameters
-          ancestor_params = superclass.respond_to?(:accepted_parameters) ? superclass.accepted_parameters : nil
+          ancestor_params = superclass.respond_to?(:accepted_parameters) ?
+                              superclass.accepted_parameters : nil
           @accepted_parameters = AcceptedParameters.new(ancestor_params)
         end
         @accepted_parameters
@@ -47,23 +48,12 @@ module BinData
     # mandatory, optional, default or mutually exclusive.
     class AcceptedParameters
 
-      def self.invalid_parameter_names
-        unless defined? @invalid_names
-          all_names = LazyEvaluator.instance_methods(true) + Kernel.methods
-          all_names.collect! { |name| name.to_s }
-          allowed_names = ["type"]
-          invalid_names = (all_names - allowed_names).uniq
-          @invalid_names = Hash[*invalid_names.collect { |key| [key, true] }.flatten]
-        end
-        @invalid_names
-      end
-
       def initialize(ancestor_parameters = nil)
         if ancestor_parameters
-          @mandatory = ancestor_parameters.mandatory
-          @optional  = ancestor_parameters.optional
-          @default   = ancestor_parameters.default
-          @mutually_exclusive = ancestor_parameters.mutually_exclusive
+          @mandatory = ancestor_parameters.mandatory.dup
+          @optional  = ancestor_parameters.optional.dup
+          @default   = ancestor_parameters.default.dup
+          @mutually_exclusive = ancestor_parameters.mutually_exclusive.dup
         else
           @mandatory = []
           @optional  = []
@@ -74,30 +64,28 @@ module BinData
 
       def mandatory(*args)
         if not args.empty?
-          ensure_valid_names(args)
-          @mandatory.concat(args.collect { |arg| arg.to_sym })
+          @mandatory.concat(to_syms(args))
           @mandatory.uniq!
         end
-        @mandatory.dup
+        @mandatory
       end
 
       def optional(*args)
         if not args.empty?
-          ensure_valid_names(args)
-          @optional.concat(args.collect { |arg| arg.to_sym })
+          @optional.concat(to_syms(args))
           @optional.uniq!
         end
-        @optional.dup
+        @optional
       end
 
       def default(args = {})
         if not args.empty?
-          ensure_valid_names(args.keys)
+          to_syms(args.keys)  # call for side effect of validating names
           args.each_pair do |param, value|
             @default[param.to_sym] = value
           end
         end
-        @default.dup
+        @default
       end
 
       def mutually_exclusive(*args)
@@ -106,7 +94,7 @@ module BinData
           @mutually_exclusive.push([arg1.to_sym, arg2.to_sym])
           @mutually_exclusive.uniq!
         end
-        @mutually_exclusive.dup
+        @mutually_exclusive
       end
 
       def all
@@ -116,15 +104,30 @@ module BinData
       #---------------
       private
 
+      def to_syms(args)
+        syms = args.collect { |el| el.to_sym }
+        ensure_valid_names(syms)
+        syms
+      end
+
       def ensure_valid_names(names)
         invalid_names = self.class.invalid_parameter_names
         names.each do |name|
-          name = name.to_s
           if invalid_names.include?(name)
             raise NameError.new("Rename parameter '#{name}' " +
                                 "as it shadows an existing method.", name)
           end
         end
+      end
+
+      def self.invalid_parameter_names
+        unless defined? @invalid_names
+          all_names = LazyEvaluator.instance_methods(true) + Kernel.methods
+          allowed_names = ["type", :type] # ruby 1.8 vs 1.9
+          invalid_names = (all_names - allowed_names).uniq
+          @invalid_names = Hash[*invalid_names.collect { |key| [key.to_sym, true] }.flatten]
+        end
+        @invalid_names
       end
     end
   end
