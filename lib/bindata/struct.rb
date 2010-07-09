@@ -123,11 +123,10 @@ module BinData
       end
 
       def ensure_field_names_are_valid(field_names)
-        instance_methods = self.instance_methods.collect { |meth| meth.to_s }
         reserved_names = RESERVED
 
         field_names.each do |name|
-          if instance_methods.include?(name)
+          if self.class.method_defined?(name)
             raise NameError.new("Rename field '#{name}' in #{self}, " +
                                 "as it shadows an existing method.", name)
           end
