@@ -53,12 +53,15 @@ module BinData
     optional_parameters :endian, :hide
 
     # These reserved words may not be used as field names
-    RESERVED = (::Hash.instance_methods.collect { |meth| meth.to_s } + 
-                %w{alias and begin break case class def defined do else elsif
-                   end ensure false for if in module next nil not or redo
-                   rescue retry return self super then true undef unless until
-                   when while yield} +
-                %w{array element index value} ).uniq
+    RESERVED = Hash[*
+                 (::Hash.instance_methods.collect { |meth| meth.to_s } + 
+                  %w{alias and begin break case class def defined do else elsif
+                     end ensure false for if in module next nil not or redo
+                     rescue retry return self super then true undef unless until
+                     when while yield} +
+                  %w{array element index value} ).
+                  uniq.collect { |key| [key, true] }.flatten
+               ]
 
     # A hash that can be accessed via attributes.
     class Snapshot < Hash #:nodoc:
