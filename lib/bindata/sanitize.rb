@@ -151,7 +151,14 @@ module BinData
     end
 
     def create_sanitized_endian(endian)
-      SanitizedEndian.new(endian)
+      # memoize return value to reduce memory usage
+      if endian == :big
+        @@sbe ||= SanitizedBigEndian.new
+      elsif endian == :little
+        @@sle ||= SanitizedLittleEndian.new
+      else
+        raise ArgumentError, "unknown value for endian '#{endian}'"
+      end
     end
 
     def create_sanitized_choices(choices)
@@ -171,7 +178,7 @@ module BinData
     def with_endian(endian, &block)
       if endian != nil
         saved_endian = @endian
-        @endian = endian.is_a?(SanitizedEndian) ? endian.endian : endian
+        @endian = endian.respond_to?(:endian) ? endian.endian : endian
         yield
         @endian = saved_endian
       else
@@ -229,10 +236,12 @@ module BinData
     def initialize(sanitizer)
       @sanitizer = sanitizer
       @fields = []
+      @field_names = nil
     end
     attr_reader :fields
 
     def add_field(type, name, params, endian)
+      @field_names = nil
       @fields << SanitizedField.new(@sanitizer, name, type, params, endian)
     end
 
@@ -245,10 +254,12 @@ module BinData
     end
 
     def field_names
-      @fields.collect { |field| field.name }
+      # memoize field names to reduce duplicate copies
+      @field_names ||= @fields.collect { |field| field.name }
     end
 
     def copy_fields(other)
+      @field_names = nil
       @fields.concat(other.fields)
     end
   end
@@ -270,15 +281,15 @@ module BinData
   end
   #----------------------------------------------------------------------------
 
-  class SanitizedEndian < SanitizedParameter
-    def initialize(endian)
-      unless [:little, :big].include?(endian)
-        raise ArgumentError, "unknown value for endian '#{endian}'"
-      end
-
-      @endian = endian
+  class SanitizedBigEndian < SanitizedParameter
+    def endian
+      :big
     end
+  end
 
-    attr_reader :endian
+  class SanitizedLittleEndian < SanitizedParameter
+    def endian
+      :little
+    end
   end
 end
