@@ -267,7 +267,7 @@ module BinData
       end
 
       def name_shadows_method?(name)
-        name != "" and @the_class.instance_methods.detect { |meth| meth.to_s == name }
+        name != "" and @the_class.method_defined?(name)
       end
 
       def name_is_reserved?(name)
