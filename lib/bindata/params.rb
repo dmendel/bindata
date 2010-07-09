@@ -53,7 +53,7 @@ module BinData
           all_names.collect! { |name| name.to_s }
           allowed_names = ["type"]
           invalid_names = (all_names - allowed_names).uniq
-	  @invalid_names = Hash[*invalid_names.collect { |key| [key, true] }.flatten]
+          @invalid_names = Hash[*invalid_names.collect { |key| [key, true] }.flatten]
         end
         @invalid_names
       end
