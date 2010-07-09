@@ -43,7 +43,9 @@ module BinData
     end
 
     def needs_sanitizing?(key)
-      has_parameter?(key) and not self[key].is_a?(SanitizedParameter)
+      parameter = @parameters[key]
+
+      parameter and not parameter.is_a?(SanitizedParameter)
     end
 
     def all_sanitized?
@@ -93,7 +95,7 @@ module BinData
 
     def merge_default_parameters!
       @the_class.default_parameters.each do |key, value|
-        self[key] ||= value
+        @parameters[key] ||= value
       end
     end
 

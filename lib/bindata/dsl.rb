@@ -52,7 +52,8 @@ module BinData
       end
 
       def add_field(type, name, params, endian)
-        normalized_type = RegisteredClasses.normalize_name(type, endian)
+        normalized_endian = endian.respond_to?(:endian) ? endian.endian : endian
+        normalized_type = RegisteredClasses.normalize_name(type, normalized_endian)
         self << UnSanitizedField.new(normalized_type, name, params)
       end
     end
@@ -90,12 +91,15 @@ module BinData
       attr_reader :options
 
       def endian(endian = nil)
-        if [:little, :big].include?(endian)
+        if endian.nil?
+          @endian
+        elsif endian.respond_to? :endian
           @endian = endian
-        elsif endian != nil
+        elsif [:little, :big].include?(endian)
+          @endian = Sanitizer.new.create_sanitized_endian(endian)
+        else
           dsl_raise ArgumentError, "unknown value for endian '#{endian}'"
         end
-        @endian
       end
 
       def hide(*args)
