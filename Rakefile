@@ -10,7 +10,7 @@ PKG_FILES = FileList[
   "{examples,spec,lib}/**/*.rb",
   "tasks/**/*.rake",
   "setup.rb",
-  "manual.haml",
+  "manual.haml"
 ]
 
 task :default => :spec

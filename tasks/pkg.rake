@@ -21,13 +21,12 @@ begin
     s.add_development_dependency('maruku')
     s.add_development_dependency('syntax')
     s.description = <<-END.gsub(/^ +/, "")
-      BinData provides an easy (and more readable) alternative to ruby's
-      #pack and #unpack methods.
+      BinData is a declarative way to read and write binary file formats.
 
-      It does this by providing a declarative way of specifying structured
-      binary data.  This means the programmer specifies *what* the format
-      of the binary data is, and BinData works out *how* to read and write
-      data in this format.
+      This means the programmer specifies *what* the format of the binary
+      data is, and BinData works out *how* to read and write data in this
+      format.  It is an easier ( and more readable ) alternative to
+      ruby's #pack and #unpack methods.
     END
   end
 
