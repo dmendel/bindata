@@ -1,5 +1,9 @@
 = BinData Changelog
 
+== Version 1.2.1 (2010-07-20)
+
+* Updated specs to be compatible with ruby 1.9.1
+
 == Version 1.2.0 (2010-07-09)
 
 * Deprecated Base#register. Use #register_self or #register_subclasses instead.
