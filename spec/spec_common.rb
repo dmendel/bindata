@@ -27,7 +27,7 @@ def exception_line(ex)
   idx = ex.backtrace.find_index { |bt| /:in `should'$/ =~ bt }
 
   if idx
-    line_num_regex = /.*:(\d+)$/
+    line_num_regex = /.*:(\d+)(:.*|$)/
 
     err_line = line_num_regex.match(ex.backtrace[0])[1].to_i
     ref_line = line_num_regex.match(ex.backtrace[idx + 1])[1].to_i

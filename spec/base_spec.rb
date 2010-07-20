@@ -289,7 +289,7 @@ describe BinData::Base, "as black box" do
   end
 
   it "should pretty print object as snapshot" do
-    class PPBase < BaseStub
+    class SnapshotBase < BaseStub
       def snapshot; [1, 2, 3]; end
     end
     obj = SnapshotBase.new
