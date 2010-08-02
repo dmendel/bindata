@@ -43,6 +43,11 @@ module BinData
         data
       end
 
+      # The name of this class as used by Records, Arrays etc.
+      def bindata_name
+        RegisteredClasses.underscore_name(self.name)
+      end
+
       # Registers this class for use.
       def register_self
         register_class(self)

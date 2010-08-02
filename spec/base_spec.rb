@@ -252,6 +252,10 @@ describe BinData::Base, "with :adjust_offset" do
 end
 
 describe BinData::Base, "as black box" do
+  it "should return bindata_name" do
+    BaseStub.bindata_name.should == "base_stub"
+  end
+
   it "should access parent" do
     parent = BaseStub.new
     child = BaseStub.new(nil, parent)

@@ -1,5 +1,9 @@
 = BinData Changelog
 
+== Version 1.2.2 (2010-xx-xx)
+
+* Added Base.bindata_name method.
+
 == Version 1.2.1 (2010-07-20)
 
 * Updated specs to be compatible with ruby 1.9.1
