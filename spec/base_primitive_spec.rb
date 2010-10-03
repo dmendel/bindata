@@ -5,13 +5,6 @@ require File.expand_path(File.join(File.dirname(__FILE__), "example"))
 require 'bindata/base_primitive'
 require 'bindata/io'
 
-class ExampleSingle
-  # reopen example to make @in_read public for testing
-  def in_read?
-    @in_read
-  end
-end
-
 describe BinData::BasePrimitive, "when subclassing" do
   class SubClassOfBasePrimitive < BinData::BasePrimitive
     expose_methods_for_testing
@@ -31,16 +24,15 @@ end
 describe BinData::BasePrimitive do
   it "should conform to rule 1 for returning a value" do
     data = ExampleSingle.new(:value => 5)
-    data.should_not be_in_read
     data.value.should == 5
   end
 
   it "should conform to rule 2 for returning a value" do
     io = ExampleSingle.io_with_value(42)
     data = ExampleSingle.new(:value => 5)
-    data.expose_methods_for_testing
-    data.do_read(io)
-    data.should be_in_read
+    data.read(io)
+
+    def data.reading?; true; end
     data.value.should == 42
   end
 
@@ -210,7 +202,6 @@ end
 describe BinData::BasePrimitive, "with :value" do
   before(:each) do
     @data = ExampleSingle.new(:value => 5)
-    @data.expose_methods_for_testing
   end
 
   it "should return that :value" do
@@ -219,9 +210,10 @@ describe BinData::BasePrimitive, "with :value" do
 
   it "should change during reading" do
     io = ExampleSingle.io_with_value(56)
-    @data.do_read(io)
+    @data.read(io)
+
+    def @data.reading?; true; end
     @data.value.should == 56
-    @data.done_read
   end
 
   it "should not change after reading" do

@@ -238,10 +238,6 @@ module BinData
       @field_objs.each { |f| f.do_read(io) if include_obj(f) }
     end
 
-    def _done_read
-      @field_objs.each { |f| f.done_read if include_obj(f) }
-    end
-
     def _do_write(io)
       instantiate_all_objs
       @field_objs.each { |f| f.do_write(io) if include_obj(f) }

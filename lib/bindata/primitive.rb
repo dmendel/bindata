@@ -95,7 +95,7 @@ module BinData
     end
 
     def read_and_return_value(io)
-      @struct.read(io)
+      @struct.do_read(io)
       get
     end
 

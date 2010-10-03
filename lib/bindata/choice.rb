@@ -168,10 +168,6 @@ module BinData
       end
     end
 
-    def _done_read
-      current_choice.done_read
-    end
-
     def _do_write(io)
       current_choice.do_write(io)
     end

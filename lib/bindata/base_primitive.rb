@@ -36,8 +36,7 @@ module BinData
   #                           either #read or explicitly set with #value=.
   # [<tt>:value</tt>]         The object will always have this value.
   #                           Calls to #value= are ignored when
-  #                           using this param.  In the interval between
-  #                           calls to #do_read and #done_read, #value
+  #                           using this param.  While reading, #value
   #                           will return the value of the data read from the
   #                           IO, not the result of the <tt>:value</tt> param.
   # [<tt>:check_value</tt>]   Raise an error unless the value read in meets
@@ -55,12 +54,10 @@ module BinData
       super
 
       @value   = nil
-      @in_read = false
     end
 
     def clear #:nodoc:
       @value = nil
-      @in_read = false
     end
 
     def clear? #:nodoc:
@@ -102,7 +99,6 @@ module BinData
     private
 
     def _do_read(io)
-      @in_read = true
       @value   = read_and_return_value(io)
 
       trace_value
@@ -131,12 +127,7 @@ module BinData
       end
     end
 
-    def _done_read
-      @in_read = false
-    end
-
     def _do_write(io)
-      raise "can't write whilst reading #{debug_name}" if @in_read
       io.writebytes(value_to_binary_string(_value))
     end
 
@@ -167,14 +158,14 @@ module BinData
     # subclasses to modify the value.
     def _value
       # Table of possible preconditions and expected outcome
-      #   1. :value and !in_read          ->   :value
-      #   2. :value and in_read           ->   @value
+      #   1. :value and !reading?         ->   :value
+      #   2. :value and reading?          ->   @value
       #   3. :initial_value and clear?    ->   :initial_value
       #   4. :initial_value and !clear?   ->   @value
       #   5. clear?                       ->   sensible_default
       #   6. !clear?                      ->   @value
 
-      if not @in_read and has_parameter?(:value)
+      if has_parameter?(:value) and not reading?
         # rule 1 above
         eval_parameter(:value)
       else

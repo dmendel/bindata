@@ -8,13 +8,10 @@ class BaseStub < BinData::Base
   def clear; end
   def clear?; end
   def _do_read(io) end
-  def _done_read; end
   def _do_write(io) end
   def _do_num_bytes; end
   def _assign(x); end
   def _snapshot; end
-
-  expose_methods_for_testing
 end
 
 class MockBaseStub < BaseStub
@@ -22,7 +19,6 @@ class MockBaseStub < BaseStub
   def clear;           mock.clear; end
   def clear?;          mock.clear?; end
   def _do_read(io)     mock._do_read(io); end
-  def _done_read;      mock._done_read; end
   def _do_write(io)    mock._do_write(io); end
   def _do_num_bytes;   mock._do_num_bytes; end
   def _assign(x);      mock._assign(x); end
@@ -43,7 +39,6 @@ describe BinData::Base, "when subclassing" do
     lambda { @obj.clear? }.should raise_error(NotImplementedError)
     lambda { @obj.assign(nil) }.should raise_error(NotImplementedError)
     lambda { @obj._do_read(nil) }.should raise_error(NotImplementedError)
-    lambda { @obj._done_read }.should raise_error(NotImplementedError)
     lambda { @obj._do_write(nil) }.should raise_error(NotImplementedError)
     lambda { @obj._do_num_bytes }.should raise_error(NotImplementedError)
     lambda { @obj._snapshot }.should raise_error(NotImplementedError)
@@ -328,7 +323,6 @@ describe BinData::Base, "as white box" do
   it "should forward read to _do_read" do
     @obj.mock.should_receive(:clear).ordered
     @obj.mock.should_receive(:_do_read).ordered
-    @obj.mock.should_receive(:_done_read).ordered
     @obj.read(nil)
   end
 

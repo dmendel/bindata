@@ -282,10 +282,6 @@ module BinData
       end
     end
 
-    def _done_read
-      elements.each { |el| el.done_read }
-    end
-
     def _do_write(io)
       elements.each { |el| el.do_write(io) }
     end

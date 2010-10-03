@@ -103,6 +103,15 @@ describe BinData::Primitive do
       @obj.does_not_exist
     }.should raise_error(NoMethodError)
   end
+
+  it "should use read value whilst reading" do
+    obj = PrimitiveWithEndian.new(:value => 2)
+    obj.read "\x05\x00"
+    obj.value.should == 2
+
+    def obj.reading?; true; end
+    obj.value.should == 5
+  end
 end
 
 describe BinData::Primitive, "requiring custom parameters" do

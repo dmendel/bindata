@@ -74,10 +74,6 @@ module BinData
       wrapped.do_read(io)
     end
 
-    def _done_read
-      wrapped.done_read
-    end
-
     def _do_write(io)
       wrapped.do_write(io)
     end

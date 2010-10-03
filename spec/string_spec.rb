@@ -128,7 +128,6 @@ end
 describe BinData::String, "with :read_length and :value" do
   before(:each) do
     @str = BinData::String.new(:read_length => 5, :value => "abcdefghij")
-    @str.expose_methods_for_testing
   end
 
   it "should not be affected by :read_length before value is read" do
@@ -148,12 +147,12 @@ describe BinData::String, "with :read_length and :value" do
     @str.value.should == "abcdefghij"
   end
 
-  it "should return read value before calling done_read" do
-    @str.do_read(BinData::IO.new("ABCDEFGHIJKLMNOPQRST"))
-    @str.value.should == "ABCDE"
+  it "should return read value while reading" do
+    @str.read("ABCDEFGHIJKLMNOPQRST")
 
-    @str.done_read
-    @str.value.should == "abcdefghij"
+    def @str.reading?; true; end
+
+    @str.value.should == "ABCDE"
   end
 end
 

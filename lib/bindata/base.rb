@@ -109,21 +109,30 @@ module BinData
     def read(io)
       io = BinData::IO.new(io) unless BinData::IO === io
 
+      @in_read = true
       do_read(io)
-      done_read
+      @in_read = false
+
       self
     end
+
+    #:nodoc:
+    attr_reader :in_read
+    protected   :in_read
 
     def do_read(io) #:nodoc:
       check_or_adjust_offset(io)
       clear
       _do_read(io)
     end
+    protected :do_read
 
-    def done_read #:nodoc:
-      _done_read
+    # Returns if this object is currently being read.  This is used
+    # internally by BasePrimitive.
+    def reading? #:nodoc:
+      furthest_ancestor.in_read
     end
-    protected :do_read, :done_read
+    protected :reading?
 
     # Writes the value for this data object to +io+.
     def write(io)
@@ -218,6 +227,16 @@ module BinData
     #---------------
     private
 
+    def furthest_ancestor
+      if parent.nil?
+        self
+      else
+        an = parent
+        an = an.parent while an.parent
+        an
+      end
+    end
+
     def check_or_adjust_offset(io)
       if has_parameter?(:check_offset)
         check_offset(io)
@@ -290,11 +309,6 @@ module BinData
       raise NotImplementedError
     end
 
-    # Trigger function that is called after #do_read.
-    def _done_read
-      raise NotImplementedError
-    end
-
     # Writes the value for this data to +io+.
     def _do_write(io)
       raise NotImplementedError
@@ -318,7 +332,7 @@ module BinData
 
     # Set visibility requirements of methods to implement
     public :clear, :clear?, :debug_name_of, :offset_of
-    private :_do_read, :_done_read, :_do_write, :_do_num_bytes, :_assign, :_snapshot
+    private :_do_read, :_do_write, :_do_num_bytes, :_assign, :_snapshot
 
     # End To be implemented by subclasses
     ###########################################################################
