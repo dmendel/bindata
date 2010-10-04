@@ -110,6 +110,7 @@ module BinData
       io = BinData::IO.new(io) unless BinData::IO === io
 
       @in_read = true
+      clear
       do_read(io)
       @in_read = false
 
@@ -122,7 +123,6 @@ module BinData
 
     def do_read(io) #:nodoc:
       check_or_adjust_offset(io)
-      clear
       _do_read(io)
     end
     protected :do_read
