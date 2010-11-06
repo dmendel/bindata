@@ -53,7 +53,7 @@ module BinData
     def initialize(parameters = {}, parent = nil)
       super
 
-      @value   = nil
+      @value = nil
     end
 
     def clear #:nodoc:
@@ -62,6 +62,24 @@ module BinData
 
     def clear? #:nodoc:
       @value.nil?
+    end
+
+    def assign(val)
+      raise ArgumentError, "can't set a nil value for #{debug_name}" if val.nil?
+
+      unless has_parameter?(:value)
+        raw_val = val.respond_to?(:snapshot) ? val.snapshot : val
+        @value = begin
+                   raw_val.dup
+                 rescue TypeError
+                   # can't dup Fixnums
+                   raw_val
+                 end
+      end
+    end
+
+    def snapshot
+      _value
     end
 
     def value
@@ -95,10 +113,7 @@ module BinData
       snapshot.hash
     end
 
-    #---------------
-    private
-
-    def _do_read(io)
+    def do_read(io) #:nodoc:
       @value   = read_and_return_value(io)
 
       trace_value
@@ -107,6 +122,17 @@ module BinData
         check_value(value)
       end
     end
+
+    def do_write(io) #:nodoc:
+      io.writebytes(value_to_binary_string(_value))
+    end
+
+    def do_num_bytes #:nodoc:
+      value_to_binary_string(_value).length
+    end
+
+    #---------------
+    private
 
     def trace_value
       BinData::trace_message do |tracer|
@@ -125,32 +151,6 @@ module BinData
               "value is '#{current_value}' but " +
               "expected '#{expected}' for #{debug_name}"
       end
-    end
-
-    def _do_write(io)
-      io.writebytes(value_to_binary_string(_value))
-    end
-
-    def _do_num_bytes
-      value_to_binary_string(_value).length
-    end
-
-    def _assign(val)
-      raise ArgumentError, "can't set a nil value for #{debug_name}" if val.nil?
-
-      unless has_parameter?(:value)
-        raw_val = val.respond_to?(:snapshot) ? val.snapshot : val
-        @value = begin
-                   raw_val.dup
-                 rescue TypeError
-                   # can't dup Fixnums
-                   raw_val
-                 end
-      end
-    end
-
-    def _snapshot
-      _value
     end
 
     # The unmodified value of this data object.  Note that #value calls this

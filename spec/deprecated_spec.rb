@@ -52,3 +52,39 @@ describe BinData::Base, "when defining" do
     }.should_not raise_error
   end
 end
+
+describe BinData::Base do
+  class DeprecatedBase < BinData::Base
+  end
+
+  before(:each) do
+    @obj = DeprecatedBase.new
+    @io = "abcde"
+  end
+
+  it "should forward _do_read to do_read" do
+    @obj.should_receive(:do_read).with(@io)
+    @obj._do_read(@io)
+  end
+
+  it "should forward _do_write to do_write" do
+    @obj.should_receive(:do_write).with(@io)
+    @obj._do_write(@io)
+  end
+
+  it "should forward _do_num_bytes to do_num_bytes" do
+    @obj.should_receive(:do_num_bytes)
+    @obj._do_num_bytes
+  end
+
+  it "should forward _assign to assign" do
+    val = 3
+    @obj.should_receive(:assign).with(val)
+    @obj._assign(val)
+  end
+
+  it "should forward _snapshot to snapshot" do
+    @obj.should_receive(:snapshot)
+    @obj._snapshot
+  end
+end

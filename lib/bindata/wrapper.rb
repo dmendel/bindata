@@ -48,46 +48,39 @@ module BinData
     end
 
     def clear #:nodoc:
-      wrapped.clear
+      @wrapped.clear
     end
 
     def clear? #:nodoc:
-      wrapped.clear?
+      @wrapped.clear?
+    end
+
+    def assign(val)
+      @wrapped.assign(val)
+    end
+
+    def snapshot
+      @wrapped.snapshot
     end
 
     def respond_to?(symbol, include_private = false) #:nodoc:
-      wrapped.respond_to?(symbol, include_private) || super
+      @wrapped.respond_to?(symbol, include_private) || super
     end
 
     def method_missing(symbol, *args, &block) #:nodoc:
-      wrapped.__send__(symbol, *args, &block)
+      @wrapped.__send__(symbol, *args, &block)
     end
 
-    #---------------
-    private
-
-    def wrapped
-      @wrapped
+    def do_read(io) #:nodoc:
+      @wrapped.do_read(io)
     end
 
-    def _do_read(io)
-      wrapped.do_read(io)
+    def do_write(io) #:nodoc
+      @wrapped.do_write(io)
     end
 
-    def _do_write(io)
-      wrapped.do_write(io)
-    end
-
-    def _do_num_bytes
-      wrapped.do_num_bytes
-    end
-
-    def _assign(val)
-      wrapped.assign(val)
-    end
-
-    def _snapshot
-      wrapped.snapshot
+    def do_num_bytes #:nodoc:
+      @wrapped.do_num_bytes
     end
   end
 end

@@ -157,6 +157,20 @@ module BinData
       @field_objs.all? { |f| f.nil? or f.clear? }
     end
 
+    def assign(val)
+      clear
+      assign_fields(as_snapshot(val))
+    end
+
+    def snapshot
+      snapshot = Snapshot.new
+      field_names.each do |name|
+        obj = find_obj_for_name(name)
+        snapshot[name] = obj.snapshot if include_obj(obj)
+      end
+      snapshot
+    end
+
     # Returns a list of the names of all fields accessible through this
     # object.  +include_hidden+ specifies whether to include hidden names
     # in the listing.
@@ -191,6 +205,21 @@ module BinData
       instantiate_all_objs
       sum = sum_num_bytes_below_index(find_index_of(child))
       child.do_num_bytes.is_a?(Integer) ? sum.ceil : sum.floor
+    end
+
+    def do_read(io) #:nodoc:
+      instantiate_all_objs
+      @field_objs.each { |f| f.do_read(io) if include_obj(f) }
+    end
+
+    def do_write(io) #:nodoc
+      instantiate_all_objs
+      @field_objs.each { |f| f.do_write(io) if include_obj(f) }
+    end
+
+    def do_num_bytes #:nodoc:
+      instantiate_all_objs
+      sum_num_bytes_for_all_fields.ceil
     end
 
     #---------------
@@ -233,26 +262,6 @@ module BinData
       end
     end
 
-    def _do_read(io)
-      instantiate_all_objs
-      @field_objs.each { |f| f.do_read(io) if include_obj(f) }
-    end
-
-    def _do_write(io)
-      instantiate_all_objs
-      @field_objs.each { |f| f.do_write(io) if include_obj(f) }
-    end
-
-    def _do_num_bytes
-      instantiate_all_objs
-      sum_num_bytes_for_all_fields.ceil
-    end
-
-    def _assign(val)
-      clear
-      assign_fields(as_snapshot(val))
-    end
-
     def as_snapshot(val)
       if val.class == Hash
         snapshot = Snapshot.new
@@ -272,15 +281,6 @@ module BinData
           obj.assign(snapshot.__send__(name))
         end
       end
-    end
-
-    def _snapshot
-      snapshot = Snapshot.new
-      field_names.each do |name|
-        obj = find_obj_for_name(name)
-        snapshot[name] = obj.snapshot if include_obj(obj)
-      end
-      snapshot
     end
 
     def sum_num_bytes_for_all_fields

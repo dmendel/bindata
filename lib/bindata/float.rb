@@ -8,7 +8,7 @@ module BinData
     class << self
       def define_methods(float_class, precision, endian)
         float_class.module_eval <<-END
-          def _do_num_bytes
+          def do_num_bytes
             #{create_num_bytes_code(precision)}
           end
 

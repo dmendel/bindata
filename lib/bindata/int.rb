@@ -31,17 +31,17 @@ module BinData
         raise "nbits must be divisible by 8" unless (nbits % 8).zero?
 
         int_class.module_eval <<-END
-          #---------------
-          private
-
-          def _assign(val)
+          def assign(val)
             #{create_clamp_code(nbits, signed)}
             super(val)
           end
 
-          def _do_num_bytes
+          def do_num_bytes
             #{nbits / 8}
           end
+
+          #---------------
+          private
 
           def sensible_default
             0

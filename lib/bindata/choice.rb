@@ -145,6 +145,14 @@ module BinData
       current_choice.clear?
     end
 
+    def assign(val)
+      current_choice.assign(val)
+    end
+
+    def snapshot
+      current_choice.snapshot
+    end
+
     def respond_to?(symbol, include_private = false) #:nodoc:
       current_choice.respond_to?(symbol, include_private) || super
     end
@@ -153,35 +161,27 @@ module BinData
       current_choice.__send__(symbol, *args, &block)
     end
 
-    #---------------
-    private
-
-    def _do_read(io)
+    def do_read(io) #:nodoc:
       trace_selection
       current_choice.do_read(io)
     end
+
+    def do_write(io) #:nodoc:
+      current_choice.do_write(io)
+    end
+
+    def do_num_bytes #:nodoc:
+      current_choice.do_num_bytes
+    end
+
+    #---------------
+    private
 
     def trace_selection
       BinData::trace_message do |tracer|
         selection_string = eval_parameter(:selection).inspect
         tracer.trace_obj("#{debug_name}-selection-", selection_string)
       end
-    end
-
-    def _do_write(io)
-      current_choice.do_write(io)
-    end
-
-    def _do_num_bytes
-      current_choice.do_num_bytes
-    end
-
-    def _assign(val)
-      current_choice.assign(val)
-    end
-
-    def _snapshot
-      current_choice.snapshot
     end
 
     def current_choice

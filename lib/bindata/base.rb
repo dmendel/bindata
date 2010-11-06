@@ -79,6 +79,8 @@ module BinData
     def initialize(parameters = {}, parent = nil)
       @params = Sanitizer.sanitize(parameters, self.class)
       @parent = parent
+
+      prepare_for_read_with_offset
     end
 
     attr_reader :parent
@@ -121,12 +123,6 @@ module BinData
     attr_reader :in_read
     protected   :in_read
 
-    def do_read(io) #:nodoc:
-      check_or_adjust_offset(io)
-      _do_read(io)
-    end
-    protected :do_read
-
     # Returns if this object is currently being read.  This is used
     # internally by BasePrimitive.
     def reading? #:nodoc:
@@ -143,30 +139,9 @@ module BinData
       self
     end
 
-    def do_write(io) #:nodoc:
-      _do_write(io)
-    end
-    protected :do_write
-
     # Returns the number of bytes it will take to write this data object.
     def num_bytes
       do_num_bytes.ceil
-    end
-
-    def do_num_bytes #:nodoc:
-      _do_num_bytes
-    end
-    protected :do_num_bytes
-
-    # Assigns the value of +val+ to this data object.  Note that +val+ will
-    # always be deep copied to ensure no aliasing problems can occur.
-    def assign(val)
-      _assign(val)
-    end
-
-    # Returns a snapshot of this data object.
-    def snapshot
-      _snapshot
     end
 
     # Returns the string representation of this data object.
@@ -237,6 +212,21 @@ module BinData
       end
     end
 
+    def prepare_for_read_with_offset
+      if has_parameter?(:check_offset) or has_parameter?(:adjust_offset)
+        class << self
+          alias_method :do_read_without_offset, :do_read
+          alias_method :do_read, :do_read_with_offset
+          protected :do_read
+        end
+      end
+    end
+
+    def do_read_with_offset(io) #:nodoc:
+      check_or_adjust_offset(io)
+      do_read_without_offset(io)
+    end
+
     def check_or_adjust_offset(io)
       if has_parameter?(:check_offset)
         check_offset(io)
@@ -292,6 +282,17 @@ module BinData
       raise NotImplementedError
     end
 
+    # Assigns the value of +val+ to this data object.  Note that +val+ will
+    # always be deep copied to ensure no aliasing problems can occur.
+    def assign(val)
+      raise NotImplementedError
+    end
+
+    # Returns a snapshot of this data object.
+    def snapshot
+      raise NotImplementedError
+    end
+
     # Returns the debug name of +child+.  This only needs to be implemented
     # by objects that contain child objects.
     def debug_name_of(child) #:nodoc:
@@ -305,34 +306,23 @@ module BinData
     end
 
     # Reads the data for this data object from +io+.
-    def _do_read(io)
+    def do_read(io) #:nodoc:
       raise NotImplementedError
     end
 
     # Writes the value for this data to +io+.
-    def _do_write(io)
+    def do_write(io) #:nodoc:
       raise NotImplementedError
     end
 
     # Returns the number of bytes it will take to write this data.
-    def _do_num_bytes
-      raise NotImplementedError
-    end
-
-    # Assigns the value of +val+ to this data object.  Note that +val+ will
-    # always be deep copied to ensure no aliasing problems can occur.
-    def _assign(val)
-      raise NotImplementedError
-    end
-
-    # Returns a snapshot of this data object.
-    def _snapshot
+    def do_num_bytes #:nodoc:
       raise NotImplementedError
     end
 
     # Set visibility requirements of methods to implement
-    public :clear, :clear?, :debug_name_of, :offset_of
-    private :_do_read, :_do_write, :_do_num_bytes, :_assign, :_snapshot
+    public :clear, :clear?, :assign, :snapshot, :debug_name_of, :offset_of
+    protected :do_read, :do_write, :do_num_bytes
 
     # End To be implemented by subclasses
     ###########################################################################

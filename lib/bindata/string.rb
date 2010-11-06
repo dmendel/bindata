@@ -77,15 +77,12 @@ module BinData
       end
     end
 
-    #---------------
-    private
-
-    def _assign(val)
+    def assign(val)
       val = val.dup.force_encoding(Encoding::BINARY) if RUBY_VERSION >= "1.9"
       super(val)
     end
 
-    def _snapshot
+    def snapshot
       # override to ensure length and optionally trim padding
       result = super
       if has_parameter?(:length)
@@ -96,6 +93,9 @@ module BinData
       end
       result
     end
+
+    #---------------
+    private
 
     def truncate_or_pad_to_length(str)
       len = eval_parameter(:length) || str.length

@@ -93,6 +93,16 @@ module BinData
       @element_list = nil
     end
 
+    def assign(array)
+      raise ArgumentError, "can't set a nil value for #{debug_name}" if array.nil?
+
+      @element_list = to_storage_formats(array.to_ary)
+    end
+
+    def snapshot
+      elements.collect { |el| el.snapshot }
+    end
+
     def find_index(obj)
       elements.index(obj)
     end
@@ -224,6 +234,22 @@ module BinData
       child.do_num_bytes.is_a?(Integer) ? sum.ceil : sum.floor
     end
 
+    def do_read(io) #:nodoc:
+      if has_parameter?(:initial_length)
+        elements.each { |el| el.do_read(io) }
+      elsif has_parameter?(:read_until)
+        read_until(io)
+      end
+    end
+
+    def do_write(io) #:nodoc:
+      elements.each { |el| el.do_write(io) }
+    end
+
+    def do_num_bytes #:nodoc:
+      sum_num_bytes_for_all_elements.ceil
+    end
+
     #---------------
     private
 
@@ -242,14 +268,6 @@ module BinData
       element = new_element
       element.assign(obj)
       element
-    end
-
-    def _do_read(io)
-      if has_parameter?(:initial_length)
-        elements.each { |el| el.do_read(io) }
-      elsif has_parameter?(:read_until)
-        read_until(io)
-      end
     end
 
     def read_until(io)
@@ -280,24 +298,6 @@ module BinData
                       :array => self }
         break if eval_parameter(:read_until, variables)
       end
-    end
-
-    def _do_write(io)
-      elements.each { |el| el.do_write(io) }
-    end
-
-    def _do_num_bytes
-      sum_num_bytes_for_all_elements.ceil
-    end
-
-    def _assign(array)
-      raise ArgumentError, "can't set a nil value for #{debug_name}" if array.nil?
-
-      @element_list = to_storage_formats(array.to_ary)
-    end
-
-    def _snapshot
-      elements.collect { |el| el.snapshot }
     end
 
     def elements

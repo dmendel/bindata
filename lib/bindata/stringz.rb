@@ -31,19 +31,19 @@ module BinData
 
     optional_parameters :max_length
 
-    #---------------
-    private
-
-    def _assign(val)
+    def assign(val)
       val = val.dup.force_encoding(Encoding::BINARY) if RUBY_VERSION >= "1.9"
       super(val)
     end
 
-    def _snapshot
+    def snapshot
       # override to always remove trailing zero bytes
       result = super
       trim_and_zero_terminate(result).chomp("\0")
     end
+
+    #---------------
+    private
 
     def value_to_binary_string(val)
       trim_and_zero_terminate(val)

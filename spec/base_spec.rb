@@ -7,22 +7,22 @@ class BaseStub < BinData::Base
   # Override to avoid NotImplemented errors
   def clear; end
   def clear?; end
-  def _do_read(io) end
-  def _do_write(io) end
-  def _do_num_bytes; end
-  def _assign(x); end
-  def _snapshot; end
+  def assign(x); end
+  def snapshot; end
+  def do_read(io) end
+  def do_write(io) end
+  def do_num_bytes; end
 end
 
 class MockBaseStub < BaseStub
   attr_accessor :mock
   def clear;           mock.clear; end
   def clear?;          mock.clear?; end
-  def _do_read(io)     mock._do_read(io); end
-  def _do_write(io)    mock._do_write(io); end
-  def _do_num_bytes;   mock._do_num_bytes; end
-  def _assign(x);      mock._assign(x); end
-  def _snapshot;       mock._snapshot; end
+  def assign(x);       mock.assign(x); end
+  def snapshot;        mock.snapshot; end
+  def do_read(io)      mock.do_read(io); end
+  def do_write(io)     mock.do_write(io); end
+  def do_num_bytes;    mock.do_num_bytes; end
 end
 
 describe BinData::Base, "when subclassing" do
@@ -38,10 +38,10 @@ describe BinData::Base, "when subclassing" do
     lambda { @obj.clear }.should raise_error(NotImplementedError)
     lambda { @obj.clear? }.should raise_error(NotImplementedError)
     lambda { @obj.assign(nil) }.should raise_error(NotImplementedError)
-    lambda { @obj._do_read(nil) }.should raise_error(NotImplementedError)
-    lambda { @obj._do_write(nil) }.should raise_error(NotImplementedError)
-    lambda { @obj._do_num_bytes }.should raise_error(NotImplementedError)
-    lambda { @obj._snapshot }.should raise_error(NotImplementedError)
+    lambda { @obj.snapshot }.should raise_error(NotImplementedError)
+    lambda { @obj.do_read(nil) }.should raise_error(NotImplementedError)
+    lambda { @obj.do_write(nil) }.should raise_error(NotImplementedError)
+    lambda { @obj.do_num_bytes }.should raise_error(NotImplementedError)
   end
 end
 
@@ -171,10 +171,14 @@ end
 
 describe BinData::Base, "with :check_offset" do
   class TenByteOffsetBase < BaseStub
+    def initialize(params = {})
+      super({})
+      @child = BaseStub.new(params, self)
+    end
+
     def do_read(io)
-      # advance the io position before checking offset
       io.seekbytes(10)
-      super(io)
+      @child.do_read(io)
     end
   end
 
@@ -209,10 +213,14 @@ end
 
 describe BinData::Base, "with :adjust_offset" do
   class TenByteAdjustingOffsetBase < BaseStub
+    def initialize(params = {})
+      super({})
+      @child = BaseStub.new(params, self)
+    end
+
     def do_read(io)
-      # advance the io position before checking offset
       io.seekbytes(10)
-      super(io)
+      @child.do_read(io)
     end
   end
 
@@ -304,7 +312,7 @@ describe BinData::Base, "as black box" do
 
   it "should write the same as to_binary_s" do
     class WriteToSBase < BaseStub
-      def _do_write(io) io.writebytes("abc"); end
+      def do_write(io) io.writebytes("abc"); end
     end
 
     obj = WriteToSBase.new
@@ -320,29 +328,24 @@ describe BinData::Base, "as white box" do
     @obj.mock = mock('mock')
   end
 
-  it "should forward read to _do_read" do
+  it "should forward read to do_read" do
     @obj.mock.should_receive(:clear).ordered
-    @obj.mock.should_receive(:_do_read).ordered
+    @obj.mock.should_receive(:do_read).ordered
     @obj.read(nil)
   end
 
-  it "should forward write to _do_write" do
-    @obj.mock.should_receive(:_do_write)
+  it "should forward write to do_write" do
+    @obj.mock.should_receive(:do_write)
     @obj.write(nil)
   end
 
-  it "should forward num_bytes to _do_num_bytes" do
-    @obj.mock.should_receive(:_do_num_bytes).and_return(42)
+  it "should forward num_bytes to do_num_bytes" do
+    @obj.mock.should_receive(:do_num_bytes).and_return(42)
     @obj.num_bytes.should == 42
   end
 
   it "should round up fractional num_bytes" do
-    @obj.mock.should_receive(:_do_num_bytes).and_return(42.1)
+    @obj.mock.should_receive(:do_num_bytes).and_return(42.1)
     @obj.num_bytes.should == 43
-  end
-
-  it "should forward snapshot to _snapshot" do
-    @obj.mock.should_receive(:_snapshot).and_return("abc")
-    @obj.snapshot.should == "abc"
   end
 end

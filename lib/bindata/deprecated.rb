@@ -12,6 +12,31 @@ module BinData
         register_class(class_to_register)
       end
     end
+
+    def _do_read(io)
+      warn "#{caller[0]} `_do_read(io)' is deprecated as of BinData 1.3.0.  Replace with `do_read(io)'"
+      do_read(io)
+    end
+
+    def _do_write(io)
+      warn "#{caller[0]} `_do_write(io)' is deprecated as of BinData 1.3.0.  Replace with `do_write(io)'"
+      do_write(io)
+    end
+
+    def _do_num_bytes
+      warn "#{caller[0]} `_do_num_bytes' is deprecated as of BinData 1.3.0.  Replace with `do_num_bytes'"
+      do_num_bytes
+    end
+
+    def _assign(val)
+      warn "#{caller[0]} `_assign(val)' is deprecated as of BinData 1.3.0.  Replace with `assign(val)'"
+      assign(val)
+    end
+
+    def _snapshot
+      warn "#{caller[0]} `_snapshot' is deprecated as of BinData 1.3.0.  Replace with `snapshot'"
+      snapshot
+    end
   end
 
   class SingleValue

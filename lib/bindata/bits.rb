@@ -23,21 +23,21 @@ module BinData
 
       def define_methods(bit_class, nbits, endian)
         bit_class.module_eval <<-END
-          #---------------
-          private
-
-          def _assign(val)
+          def assign(val)
             #{create_clamp_code(nbits)}
             super(val)
           end
 
-          def _do_write(io)
+          def do_write(io)
             io.writebits(_value, #{nbits}, :#{endian})
           end
 
-          def _do_num_bytes
+          def do_num_bytes
             #{nbits / 8.0}
           end
+
+          #---------------
+          private
 
           def read_and_return_value(io)
             io.readbits(#{nbits}, :#{endian})
