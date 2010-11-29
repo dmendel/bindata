@@ -49,6 +49,17 @@ describe BinData::Record, "when defining with errors" do
     }
   end
 
+  it "should fail on malformed names" do
+    lambda {
+      class MalformedNameRecord < BinData::Record
+        int8 :a
+        int8 45
+      end
+    }.should raise_error_on_line(NameError, 3) { |err|
+      err.message.should == "field '45' is an illegal fieldname in #{MalformedNameRecord}"
+    }
+  end
+
   it "should fail on duplicate names" do
     lambda {
       class DuplicateNameRecord < BinData::Record

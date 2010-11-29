@@ -230,6 +230,10 @@ module BinData
           dsl_raise SyntaxError, "field must have a name"
         end
 
+        if malformed_name?(name)
+          dsl_raise NameError.new("", name), "field '#{name}' is an illegal fieldname"
+        end
+
         if duplicate_name?(name)
           dsl_raise SyntaxError, "duplicate field '#{name}'"
         end
@@ -264,6 +268,10 @@ module BinData
         else
           false
         end
+      end
+
+      def malformed_name?(name)
+        name != "" and /^[a-z_]\w*$/ !~ name
       end
 
       def duplicate_name?(name)
