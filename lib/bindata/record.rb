@@ -55,6 +55,31 @@ module BinData
         params[:hide]   = hide   unless hide.empty?
 
         super(params, sanitizer)
+
+        define_field_accessors(params[:fields].fields)
+      end
+
+      # Defines accessor methods to avoid the overhead of going through
+      # Struct#method_missing.  This is purely a speed optimisation.
+      # Removing this method will not have any effect on correctness.
+      def define_field_accessors(fields) #:nodoc:
+        unless method_defined?(:bindata_defined_accessors_for_fields?)
+          fields.each_with_index do |field, i|
+            name = field.name
+            if name
+              define_method(name.to_sym) do
+                instantiate_obj_at(i) unless @field_objs[i]
+                @field_objs[i]
+              end
+              define_method((name + "=").to_sym) do |*vals|
+                instantiate_obj_at(i) unless @field_objs[i]
+                @field_objs[i].assign(*vals)
+              end
+            end
+          end
+
+          define_method(:bindata_defined_accessors_for_fields?) { true }
+        end
       end
     end
   end
