@@ -757,6 +757,8 @@ Here is an example of a big integer implementation.
     #             positive form of the integer.  The upper bit of each byte
     #             is set when there are more bytes in the stream.
     class BigInteger < BinData::BasePrimitive
+      register_self
+
       def value_to_binary_string(value)
         negative = (value < 0) ? 1 : 0
         value = value.abs
