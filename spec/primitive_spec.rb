@@ -24,9 +24,7 @@ describe BinData::Primitive, "when defining with errors" do
       class BadTypePrimitive < BinData::Primitive
         non_registered_type :a
       end
-    }.should raise_error_on_line(TypeError, 2) { |err|
-      err.message.should == "unknown type 'non_registered_type' in #{BadTypePrimitive}"
-    }
+    }.should raise_error_on_line(TypeError, 2, "unknown type 'non_registered_type' in BadTypePrimitive")
   end
 
   it "should fail on duplicate names" do
@@ -36,9 +34,7 @@ describe BinData::Primitive, "when defining with errors" do
         int8 :b
         int8 :a
       end
-    }.should raise_error_on_line(SyntaxError, 4) { |err|
-      err.message.should == "duplicate field 'a' in #{DuplicateNamePrimitive}"
-    }
+    }.should raise_error_on_line(SyntaxError, 4, "duplicate field 'a' in DuplicateNamePrimitive")
   end
 
   it "should fail when field name shadows an existing method" do
@@ -46,9 +42,7 @@ describe BinData::Primitive, "when defining with errors" do
       class ExistingNamePrimitive < BinData::Primitive
         int8 :object_id
       end
-    }.should raise_error_on_line(NameError, 2) { |err|
-      err.message.should == "field 'object_id' shadows an existing method in #{ExistingNamePrimitive}"
-    }
+    }.should raise_error_on_line(NameError, 2, "field 'object_id' shadows an existing method in ExistingNamePrimitive")
   end
 
   it "should fail on unknown endian" do
@@ -56,9 +50,7 @@ describe BinData::Primitive, "when defining with errors" do
       class BadEndianPrimitive < BinData::Primitive
         endian 'a bad value'
       end
-    }.should raise_error_on_line(ArgumentError, 2) { |err|
-      err.message.should == "unknown value for endian 'a bad value' in #{BadEndianPrimitive}"
-    }
+    }.should raise_error_on_line(ArgumentError, 2, "unknown value for endian 'a bad value' in BadEndianPrimitive")
   end
 end
 

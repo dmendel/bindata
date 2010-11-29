@@ -38,10 +38,10 @@ def exception_line(ex)
   end
 end
 
-def raise_error_on_line(exception, line, &block)
+def raise_error_on_line(exception, line, msg = nil)
   raise_exception(exception) do |err|
+    err.message.should == msg if msg
     exception_line(err).should == line
-    block.call(err) if block_given?
   end
 end
 

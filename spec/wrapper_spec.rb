@@ -10,9 +10,7 @@ describe BinData::Wrapper, "with errors" do
         uint8
         uint8
       end
-    }.should raise_error_on_line(SyntaxError, 3) { |err|
-      err.message.should == "attempting to wrap more than one type in #{WrappedMultipleTypes}"
-    }
+    }.should raise_error_on_line(SyntaxError, 3, "attempting to wrap more than one type in WrappedMultipleTypes")
   end
 
   it "should fail if wrapped type has a name" do
@@ -20,9 +18,7 @@ describe BinData::Wrapper, "with errors" do
       class WrappedWithName < BinData::Wrapper
         uint8 :a
       end
-    }.should raise_error_on_line(SyntaxError, 2) { |err|
-      err.message.should == "field must not have a name in #{WrappedWithName}"
-    }
+    }.should raise_error_on_line(SyntaxError, 2, "field must not have a name in WrappedWithName")
   end
 
   it "should fail if no types to wrap" do
