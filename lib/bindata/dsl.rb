@@ -23,6 +23,10 @@ module BinData
       def method_missing(symbol, *args, &block) #:nodoc:
         dsl_parser.__send__(symbol, *args, &block)
       end
+
+      # Assert object is not an array or string.
+      def to_ary; nil; end
+      def to_str; nil; end
     end
 
     # An array containing a field definition of the form

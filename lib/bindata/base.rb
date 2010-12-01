@@ -217,7 +217,7 @@ module BinData
         class << self
           alias_method :do_read_without_offset, :do_read
           alias_method :do_read, :do_read_with_offset
-          protected :do_read
+          public :do_read # Ruby 1.9.2 bug.  Should be protected
         end
       end
     end

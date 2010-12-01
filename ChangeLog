@@ -5,6 +5,8 @@
 * Added Base.bindata_name method.
 * Removed Base#done_read to reduce memory usage and cpu usage.
 * Derived classes should now use do_read et al, instead of _do_read.
+* Added predefinition of record fields to improve speed.
+* Made compatible with ruby 1.9.2.  Thanks to Andrew Watts.
 
 == Version 1.2.1 (2010-07-20)
 

@@ -51,7 +51,7 @@ module BinData
       if val.is_a? Symbol
         __send__(val)
       elsif val.respond_to? :arity
-        instance_eval(&val)
+        instance_exec(&val)
       else
         val
       end
@@ -117,7 +117,7 @@ module BinData
       if val.is_a?(Symbol)
         parent.__send__(val, *args)
       elsif val.respond_to?(:arity)
-        parent.instance_eval(&val)
+        parent.instance_exec(&val)
       else
         val
       end
