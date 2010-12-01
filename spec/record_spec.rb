@@ -9,7 +9,9 @@ describe BinData::Record, "when defining with errors" do
       class BadTypeRecord < BinData::Record
         non_registered_type :a
       end
-    }.should raise_error_on_line(TypeError, 2, "unknown type 'non_registered_type' in BadTypeRecord")
+    }.should raise_error_on_line(TypeError, 2) { |err|
+      err.message.should == "unknown type 'non_registered_type' in #{BadTypeRecord}"
+    }
   end
 
   it "should give correct error message for non registered nested types" do
@@ -17,7 +19,9 @@ describe BinData::Record, "when defining with errors" do
       class BadNestedTypeRecord < BinData::Record
         array :a, :type => :non_registered_type
       end
-    }.should raise_error_on_line(TypeError, 2, "unknown type 'non_registered_type' in BadNestedTypeRecord")
+    }.should raise_error_on_line(TypeError, 2) { |err|
+      err.message.should == "unknown type 'non_registered_type' in #{BadNestedTypeRecord}"
+    }
   end
 
   it "should give correct error message for non registered nested types in blocks" do
@@ -27,7 +31,9 @@ describe BinData::Record, "when defining with errors" do
           non_registered_type
         end
       end
-    }.should raise_error_on_line(TypeError, 3, "unknown type 'non_registered_type' in BinData::Array")
+    }.should raise_error_on_line(TypeError, 3) { |err|
+      err.message.should == "unknown type 'non_registered_type' in #{BinData::Array}"
+    }
   end
 
   it "should fail on nested choice when missing names" do
@@ -38,7 +44,9 @@ describe BinData::Record, "when defining with errors" do
           int8
         end
       end
-    }.should raise_error_on_line(SyntaxError, 4, "fields must either all have names, or none must have names in BinData::Choice")
+    }.should raise_error_on_line(SyntaxError, 4) { |err|
+      err.message.should == "fields must either all have names, or none must have names in BinData::Choice"
+    }
   end
 
   it "should fail on malformed names" do
@@ -47,7 +55,9 @@ describe BinData::Record, "when defining with errors" do
         int8 :a
         int8 45
       end
-    }.should raise_error_on_line(NameError, 3, "field '45' is an illegal fieldname in MalformedNameRecord")
+    }.should raise_error_on_line(NameError, 3) { |err|
+      err.message.should == "field '45' is an illegal fieldname in #{MalformedNameRecord}"
+    }
   end
 
   it "should fail on duplicate names" do
@@ -57,7 +67,9 @@ describe BinData::Record, "when defining with errors" do
         int8 :b
         int8 :a
       end
-    }.should raise_error_on_line(SyntaxError, 4, "duplicate field 'a' in DuplicateNameRecord")
+    }.should raise_error_on_line(SyntaxError, 4) { |err|
+      err.message.should == "duplicate field 'a' in #{DuplicateNameRecord}"
+    }
   end
 
   it "should fail on reserved names" do
@@ -66,7 +78,9 @@ describe BinData::Record, "when defining with errors" do
         int8 :a
         int8 :invert # from Hash.instance_methods
       end
-    }.should raise_error_on_line(NameError, 3, "field 'invert' is a reserved name in ReservedNameRecord")
+    }.should raise_error_on_line(NameError, 3) { |err|
+      err.message.should == "field 'invert' is a reserved name in #{ReservedNameRecord}"
+    }
   end
 
   it "should fail when field name shadows an existing method" do
@@ -74,7 +88,9 @@ describe BinData::Record, "when defining with errors" do
       class ExistingNameRecord < BinData::Record
         int8 :object_id
       end
-    }.should raise_error_on_line(NameError, 2, "field 'object_id' shadows an existing method in ExistingNameRecord")
+    }.should raise_error_on_line(NameError, 2) { |err|
+      err.message.should == "field 'object_id' shadows an existing method in #{ExistingNameRecord}"
+    }
   end
 
   it "should fail on unknown endian" do
@@ -82,7 +98,9 @@ describe BinData::Record, "when defining with errors" do
       class BadEndianRecord < BinData::Record
         endian 'a bad value'
       end
-    }.should raise_error_on_line(ArgumentError, 2, "unknown value for endian 'a bad value' in BadEndianRecord")
+    }.should raise_error_on_line(ArgumentError, 2) { |err|
+      err.message.should == "unknown value for endian 'a bad value' in #{BadEndianRecord}"
+    }
   end
 end
 
