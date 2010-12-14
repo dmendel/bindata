@@ -1,6 +1,6 @@
 = BinData Changelog
 
-== Version 1.2.2 (2010-xx-xx)
+== Version 1.2.2 (2010-12-14)
 
 * Added Base.bindata_name method.
 * Removed Base#done_read to reduce memory usage and cpu usage.

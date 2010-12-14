@@ -30,5 +30,5 @@ require 'bindata/deprecated'
 #
 # Copyright (c) 2007 - 2010 Dion Mendel.
 module BinData
-  VERSION = "1.2.1"
+  VERSION = "1.2.2"
 end
