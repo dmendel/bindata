@@ -8,6 +8,23 @@ class Chooser
   attr_accessor :choice
 end
 
+class BinData::Choice
+  def set_chooser(chooser)
+    @chooser = chooser
+  end
+  def choice=(s)
+    @chooser.choice = s
+  end
+end
+
+def create_choice(choices, options = {})
+  chooser = Chooser.new
+  params = {:choices => choices, :selection => lambda { chooser.choice } }.merge(options)
+  BinData::Choice.new(params).tap { |obj|
+    obj.set_chooser(chooser)
+  }
+end
+
 describe BinData::Choice, "when instantiating" do
   it "should ensure mandatory parameters are supplied" do
     args = {}
@@ -41,170 +58,158 @@ end
 
 share_examples_for "Choice initialized with array or hash" do
   it "should be able to select the choice" do
-    @chooser.choice = 3
-    @data.value.should == 30
+    subject.choice = 3
+    subject.value.should == 30
   end
 
   it "should show the current selection" do
-    @chooser.choice = 3
-    @data.selection.should == 3
+    subject.choice = 3
+    subject.selection.should == 3
   end
 
   it "should not be able to directly change the current selection" do
     lambda {
-      @data.selection = 3
+      subject.selection = 3
     }.should raise_error(NoMethodError)
   end
 
   it "should forward #snapshot" do
-    @chooser.choice = 3
-    @data.snapshot.should == 30
+    subject.choice = 3
+    subject.snapshot.should == 30
   end
 
   it "should be able to change the choice" do
-    @chooser.choice = 3
+    subject.choice = 3
 
-    @chooser.choice = 7
-    @data.value.should == 70
+    subject.choice = 7
+    subject.value.should == 70
   end
 
   it "should fail if no choice has been set" do
-    lambda { @data.value }.should raise_error(IndexError)
+    lambda { subject.value }.should raise_error(IndexError)
   end
 
   it "should not be able to select an invalid choice" do
-    @chooser.choice = 99
-    lambda { @data.value }.should raise_error(IndexError)
+    subject.choice = 99
+    lambda { subject.value }.should raise_error(IndexError)
   end
 
   it "should not be able to select a nil choice" do
-    @chooser.choice = 1
-    lambda { @data.value }.should raise_error(IndexError)
+    subject.choice = 1
+    lambda { subject.value }.should raise_error(IndexError)
   end
 
   it "should handle missing methods correctly" do
-    @chooser.choice = 3
+    subject.choice = 3
 
-    @data.should respond_to(:value)
-    @data.should_not respond_to(:does_not_exist)
-    lambda { @data.does_not_exist }.should raise_error(NoMethodError)
+    subject.should respond_to(:value)
+    subject.should_not respond_to(:does_not_exist)
+    lambda { subject.does_not_exist }.should raise_error(NoMethodError)
   end
 
   it "should delegate methods to the selected single choice" do
-    @chooser.choice = 5
-
-    @data.num_bytes.should == ExampleSingle.new.num_bytes
+    subject.choice = 5
+    subject.num_bytes.should == ExampleSingle.new.num_bytes
   end
 end
 
 describe BinData::Choice, "with sparse choices array" do
   it_should_behave_like "Choice initialized with array or hash"
 
-  before(:each) do
-    chooser = Chooser.new
-    @data = BinData::Choice.new(:choices => [nil, nil, nil,
-                                             [:example_single, {:value => 30}],
-                                             nil,
-                                             [:example_single, {:value => 50}],
-                                             nil,
-                                             [:example_single, {:value => 70}]],
-                                :selection => lambda { chooser.choice } )
-    @chooser = chooser
-  end
+  subject {
+    choices = [nil, nil, nil,
+               [:example_single, {:value => 30}], nil,
+               [:example_single, {:value => 50}], nil,
+               [:example_single, {:value => 70}]]
+    create_choice(choices)
+  }
 end
 
 describe BinData::Choice, "with choices hash" do
   it_should_behave_like "Choice initialized with array or hash"
 
-  before(:each) do
-    chooser = Chooser.new
-    @data = BinData::Choice.new(:choices => {3 => [:example_single, {:value => 30}],
-                                             5 => [:example_single, {:value => 50}],
-                                             7 => [:example_single, {:value => 70}]},
-                                :selection => lambda { chooser.choice } )
-    @chooser = chooser
-  end
+  subject {
+    choices = {3 => [:example_single, {:value => 30}],
+               5 => [:example_single, {:value => 50}],
+               7 => [:example_single, {:value => 70}]}
+    create_choice(choices)
+  }
 end
 
 describe BinData::Choice, "with single values" do
-  before(:each) do
-    chooser = Chooser.new
-    @data = BinData::Choice.new(:choices => {3 => :example_single,
-                                             5 => :example_single,
-                                             7 => :example_single,},
-                                :selection => lambda { chooser.choice } )
-    @chooser = chooser
-  end
+  subject {
+    choices = {3 => :example_single,
+               5 => :example_single,
+               7 => :example_single}
+    create_choice(choices)
+  }
 
   it "should assign raw values" do
-    @chooser.choice = 3
-    @data.value = 254
-    @data.value.should == 254
+    subject.choice = 3
+    subject.value = 254
+    subject.value.should == 254
   end
 
   it "should assign Single values" do
     obj = ExampleSingle.new
     obj.value = 11
 
-    @chooser.choice = 3
-    @data.value = obj
-    @data.value.should == 11
+    subject.choice = 3
+    subject.value = obj
+    subject.value.should == 11
   end
 
   it "should clear" do
-    @chooser.choice = 3
-    @data.value = 254
+    subject.choice = 3
+    subject.value = 254
 
-    @data.clear
-    @data.value.should be_zero
+    subject.clear
+    subject.value.should be_zero
   end
 
   it "should be clear on initialisation" do
-    @chooser.choice = 3
+    subject.choice = 3
 
-    @data.should be_clear
+    subject.should be_clear
   end
 
   it "should not be clear after assignment" do
-    @chooser.choice = 3
-    @data.value = 254
+    subject.choice = 3
+    subject.value = 254
 
-    @data.should_not be_clear
+    subject.should_not be_clear
   end
 
   it "should not copy value when changing selection" do
-    @chooser.choice = 3
-    @data.value = 254
+    subject.choice = 3
+    subject.value = 254
 
-    @chooser.choice = 7
-    @data.value.should_not == 254
+    subject.choice = 7
+    subject.value.should_not == 254
   end
 
   it "should behave as value" do
-    @chooser.choice = 3
-    @data.value = 5
+    subject.choice = 3
+    subject.value = 5
 
-    (@data + 1).should == 6
-    (1 + @data).should == 6
+    (subject + 1).should == 6
+    (1 + subject).should == 6
   end
 end
 
 describe BinData::Choice, "with copy_on_change => true" do
-  before(:each) do
-    chooser = Chooser.new
-    @data = BinData::Choice.new(:choices => {3 => :example_single,
-                                             5 => :example_single,
-                                             7 => :example_single,},
-                                :selection => lambda { chooser.choice },
-                                :copy_on_change => true)
-    @chooser = chooser
-  end
+  subject {
+    choices = {3 => :example_single,
+               5 => :example_single,
+               7 => :example_single}
+    create_choice(choices, :copy_on_change => true)
+  }
 
   it "should copy value when changing selection" do
-    @chooser.choice = 3
-    @data.value = 254
+    subject.choice = 3
+    subject.value = 254
 
-    @chooser.choice = 7
-    @data.value.should == 254
+    subject.choice = 7
+    subject.value.should == 254
   end
 end

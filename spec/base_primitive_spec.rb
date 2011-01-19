@@ -5,19 +5,17 @@ require File.expand_path(File.join(File.dirname(__FILE__), "example"))
 require 'bindata/base_primitive'
 require 'bindata/io'
 
-describe BinData::BasePrimitive, "when subclassing" do
+describe BinData::BasePrimitive, "all subclasses" do
   class SubClassOfBasePrimitive < BinData::BasePrimitive
     expose_methods_for_testing
   end
 
-  before(:each) do
-    @obj = SubClassOfBasePrimitive.new
-  end
+  subject { SubClassOfBasePrimitive.new }
 
   it "should raise errors on unimplemented methods" do
-    lambda { @obj.value_to_binary_string(nil) }.should raise_error(NotImplementedError)
-    lambda { @obj.read_and_return_value(nil) }.should raise_error(NotImplementedError)
-    lambda { @obj.sensible_default }.should raise_error(NotImplementedError)
+    lambda { subject.value_to_binary_string(nil) }.should raise_error(NotImplementedError)
+    lambda { subject.read_and_return_value(nil) }.should raise_error(NotImplementedError)
+    lambda { subject.sensible_default }.should raise_error(NotImplementedError)
   end
 end
 
@@ -64,192 +62,169 @@ describe BinData::BasePrimitive do
 end
 
 describe ExampleSingle do
-  before(:each) do
-    @data = ExampleSingle.new
-    @data.value = 5
-  end
+  subject { ExampleSingle.new.tap { |obj| obj.value = 5 } }
 
   it "should fail when assigning nil values" do
-    lambda { @data.assign(nil) }.should raise_error(ArgumentError)
+    lambda { subject.assign(nil) }.should raise_error(ArgumentError)
   end
 
   it "should allowing setting and retrieving value" do
-    @data.value = 7
-    @data.value.should == 7
+    subject.value = 7
+    subject.value.should == 7
   end
 
   it "should allowing setting and retrieving BinData::BasePrimitives" do
     obj = ExampleSingle.new
     obj.value = 7
-    @data.value = obj
-    @data.value.should == 7
+    subject.value = obj
+    subject.value.should == 7
   end
 
   it "should respond to known methods" do
-    @data.should respond_to(:num_bytes)
+    subject.should respond_to(:num_bytes)
   end
 
   it "should respond to known methods in #snapshot" do
-    @data.should respond_to(:div)
+    subject.should respond_to(:div)
   end
 
   it "should not respond to unknown methods in self or #snapshot" do
-    @data.should_not respond_to(:does_not_exist)
+    subject.should_not respond_to(:does_not_exist)
   end
 
   it "should behave as #snapshot" do
-    (@data + 1).should == 6
-    (1 + @data).should == 6
+    (subject + 1).should == 6
+    (1 + subject).should == 6
   end
 
   it "should be equal to other ExampleSingle" do
     other = ExampleSingle.new
     other.value = 5
-    @data.should == other
+    subject.should == other
   end
 
   it "should be equal to raw values" do
-    @data.should == 5
-    5.should == @data
+    subject.should == 5
+    5.should == subject
   end
 
   it "should work as hash keys" do
     hash = {5 => 17}
 
-    obj = ExampleSingle.new
-    obj.value = 5
-
-    hash[obj].should == 17
+    hash[subject].should == 17
   end
 end
 
 describe BinData::BasePrimitive, "after initialisation" do
-  before(:each) do
-    @data = ExampleSingle.new
-  end
+  subject { ExampleSingle.new }
 
   it "should not allow both :initial_value and :value" do
     params = {:initial_value => 1, :value => 2}
     lambda { ExampleSingle.new(params) }.should raise_error(ArgumentError)
   end
 
-  it "should have a sensible value" do
-    @data.value.should == 0
-  end
+  it { should be_clear }
+  its(:value) { should == 0 }
+  its(:num_bytes) { should == 4 }
 
   it "should have symmetric IO" do
-    @data.value = 42
-    written = @data.to_binary_s
+    subject.value = 42
+    written = subject.to_binary_s
 
     ExampleSingle.read(written).should == 42
   end
 
   it "should allowing setting and retrieving value" do
-    @data.value = 5
-    @data.value.should == 5
-  end
-
-  it "should be clear" do
-    @data.should be_clear
+    subject.value = 5
+    subject.value.should == 5
   end
 
   it "should not be clear after setting value" do
-    @data.value = 5
-    @data.should_not be_clear
+    subject.value = 5
+    subject.should_not be_clear
   end
 
   it "should not be clear after reading" do
-    @data.read("\x11\x22\x33\x44")
-    @data.should_not be_clear
-  end
-
-  it "should return num_bytes" do
-    @data.num_bytes.should == 4
+    subject.read("\x11\x22\x33\x44")
+    subject.should_not be_clear
   end
 
   it "should return a snapshot" do
-    @data.value = 5
-    @data.snapshot.should == 5
+    subject.value = 5
+    subject.snapshot.should == 5
   end
 end
 
 describe BinData::BasePrimitive, "with :initial_value" do
-  before(:each) do
-    @data = ExampleSingle.new(:initial_value => 5)
-  end
+  subject { ExampleSingle.new(:initial_value => 5) }
 
-  it "should return that initial value before reading or being set" do
-    @data.value.should == 5
-  end
+  its(:value) { should == 5 }
 
   it "should forget :initial_value after being set" do
-    @data.value = 17
-    @data.value.should_not == 5
+    subject.value = 17
+    subject.value.should_not == 5
   end
 
   it "should forget :initial_value after reading" do
-    @data.read("\x11\x22\x33\x44")
-    @data.value.should_not == 5
+    subject.read("\x11\x22\x33\x44")
+    subject.value.should_not == 5
   end
 
   it "should remember :initial_value after being cleared" do
-    @data.value = 17
-    @data.clear
-    @data.value.should == 5
+    subject.value = 17
+    subject.clear
+    subject.value.should == 5
   end
 end
 
 describe BinData::BasePrimitive, "with :value" do
-  before(:each) do
-    @data = ExampleSingle.new(:value => 5)
-  end
+  subject { ExampleSingle.new(:value => 5) }
 
-  it "should return that :value" do
-    @data.value.should == 5
-  end
+  its(:value) { should == 5 }
+
+  let(:io) { ExampleSingle.io_with_value(56) }
 
   it "should change during reading" do
-    io = ExampleSingle.io_with_value(56)
-    @data.read(io)
-
-    def @data.reading?; true; end
-    @data.value.should == 56
+    subject.read(io)
+    subject.stub(:reading?).and_return(true)
+    subject.value.should == 56
   end
 
   it "should not change after reading" do
-    io = ExampleSingle.io_with_value(56)
-    @data.read(io)
-    @data.value.should == 5
+    subject.read(io)
+    subject.value.should == 5
   end
 
   it "should not be able to change the value" do
-    @data.value = 17
-    @data.value.should == 5
+    subject.value = 17
+    subject.value.should == 5
   end
 end
 
-describe BinData::BasePrimitive, "with :check_value" do
-  before(:each) do
-    @io = ExampleSingle.io_with_value(34)
+describe BinData::BasePrimitive, "checking read value" do
+  let(:io) { ExampleSingle.io_with_value(12) }
+
+  context ":check_value is non boolean" do
+    it "should succeed when check_value and correct" do
+      data = ExampleSingle.new(:check_value => 12)
+      lambda { data.read(io) }.should_not raise_error
+    end
+
+    it "should fail when check_value is incorrect" do
+      data = ExampleSingle.new(:check_value => lambda { 99 })
+      lambda { data.read(io) }.should raise_error(BinData::ValidityError)
+    end
   end
 
-  it "should succeed when check_value is non boolean and correct" do
-    data = ExampleSingle.new(:check_value => 34)
-    lambda { data.read(@io) }.should_not raise_error
-  end
+  context ":check_value is boolean" do
+    it "should succeed when check_value is true" do
+      data = ExampleSingle.new(:check_value => lambda { value < 20 })
+      lambda { data.read(io) }.should_not raise_error
+    end
 
-  it "should fail when check_value is non boolean and incorrect" do
-    data = ExampleSingle.new(:check_value => lambda { 123 * 5 })
-    lambda { data.read(@io) }.should raise_error(BinData::ValidityError)
-  end
-
-  it "should succeed when check_value is boolean and true" do
-    data = ExampleSingle.new(:check_value => lambda { (value % 2) == 0})
-    lambda { data.read(@io) }.should_not raise_error
-  end
-
-  it "should fail when check_value is boolean and false" do
-    data = ExampleSingle.new(:check_value => lambda { value > 100 })
-    lambda { data.read(@io) }.should raise_error(BinData::ValidityError)
+    it "should fail when check_value is false" do
+      data = ExampleSingle.new(:check_value => lambda { value > 20 })
+      lambda { data.read(io) }.should raise_error(BinData::ValidityError)
+    end
   end
 end

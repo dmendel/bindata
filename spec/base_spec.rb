@@ -14,42 +14,25 @@ class BaseStub < BinData::Base
   def do_num_bytes; end
 end
 
-class MockBaseStub < BaseStub
-  attr_accessor :mock
-  def clear;           mock.clear; end
-  def clear?;          mock.clear?; end
-  def assign(x);       mock.assign(x); end
-  def snapshot;        mock.snapshot; end
-  def do_read(io)      mock.do_read(io); end
-  def do_write(io)     mock.do_write(io); end
-  def do_num_bytes;    mock.do_num_bytes; end
-end
-
-describe BinData::Base, "when subclassing" do
+describe BinData::Base, "all subclasses" do
   class SubClassOfBase < BinData::Base
     expose_methods_for_testing
   end
 
-  before(:each) do
-    @obj = SubClassOfBase.new
-  end
+  subject { SubClassOfBase.new }
 
   it "should raise errors on unimplemented methods" do
-    lambda { @obj.clear }.should raise_error(NotImplementedError)
-    lambda { @obj.clear? }.should raise_error(NotImplementedError)
-    lambda { @obj.assign(nil) }.should raise_error(NotImplementedError)
-    lambda { @obj.snapshot }.should raise_error(NotImplementedError)
-    lambda { @obj.do_read(nil) }.should raise_error(NotImplementedError)
-    lambda { @obj.do_write(nil) }.should raise_error(NotImplementedError)
-    lambda { @obj.do_num_bytes }.should raise_error(NotImplementedError)
+    lambda { subject.clear         }.should raise_error(NotImplementedError)
+    lambda { subject.clear?        }.should raise_error(NotImplementedError)
+    lambda { subject.assign(nil)   }.should raise_error(NotImplementedError)
+    lambda { subject.snapshot      }.should raise_error(NotImplementedError)
+    lambda { subject.do_read(nil)  }.should raise_error(NotImplementedError)
+    lambda { subject.do_write(nil) }.should raise_error(NotImplementedError)
+    lambda { subject.do_num_bytes  }.should raise_error(NotImplementedError)
   end
 end
 
 describe BinData::Base, "with parameters" do
-  it "should raise error if parameter has nil value" do
-    lambda { BaseStub.new(:a => nil) }.should raise_error(ArgumentError)
-  end
-
   it "should raise error if parameter name is invalid" do
     lambda {
       class InvalidParameterNameBase < BinData::Base
@@ -58,10 +41,13 @@ describe BinData::Base, "with parameters" do
     }.should raise_error(NameError)
   end
 
-  it "should convert keys to symbols" do
-    obj = BaseStub.new('a' => 3)
-    obj.should have_parameter(:a)
-    obj.get_parameter(:a).should == 3
+  it "should raise error if parameter has nil value" do
+    lambda { BaseStub.new(:a => nil) }.should raise_error(ArgumentError)
+  end
+
+  it "should convert parameter keys to symbols" do
+    subject = BaseStub.new('a' => 3)
+    subject.should have_parameter(:a)
   end
 end
 
@@ -92,15 +78,13 @@ describe BinData::Base, "with default parameters" do
   end
 
   it "should use default parameters when not specified" do
-    obj = DefaultBase.new
-    obj.should have_parameter(:p1)
-    obj.eval_parameter(:p1).should == "a"
+    subject = DefaultBase.new
+    subject.eval_parameter(:p1).should == "a"
   end
 
   it "should be able to override default parameters" do
-    obj = DefaultBase.new(:p1 => "b")
-    obj.should have_parameter(:p1)
-    obj.eval_parameter(:p1).should == "b"
+    subject = DefaultBase.new(:p1 => "b")
+    subject.eval_parameter(:p1).should == "b"
   end
 end
 
@@ -127,8 +111,8 @@ end
 describe BinData::Base, "with multiple parameters" do
   class WithParamBase < BaseStub
     mandatory_parameter :p1
-    optional_parameter  :p2
-    default_parameter   :p3 => 3
+    default_parameter   :p2 => 2
+    optional_parameter  :p3
   end
 
   it "should identify internally accepted parameters" do
@@ -139,37 +123,122 @@ describe BinData::Base, "with multiple parameters" do
     accepted.should_not include(:xx)
   end
 
-  it "should evaluate parameters" do
-    params = {:p1 => 1, :p2 => 2, :p3 => 3, :p4 => lambda { 4 }}
-    obj = WithParamBase.new(params)
-    obj.eval_parameter(:p4).should == 4
-  end
+  context "examining parameters" do
+    subject {
+      params = {:p1 => 1, :p3 => :xx, :p4 => lambda { 4 }}
+      WithParamBase.new(params)
+    }
 
-  it "should return parameters" do
-    params = {:p1 => 1, :p2 => 2, :p3 => 3, :p4 => :a}
-    obj = WithParamBase.new(params)
-    obj.get_parameter(:p4).should == :a
-  end
+    it "should evaluate parameters" do
+      subject.eval_parameter(:p1).should == 1
+      subject.eval_parameter(:p2).should == 2
+      lambda { subject.eval_parameter(:p3) }.should raise_error(NoMethodError)
+      subject.eval_parameter(:p4).should == 4
+    end
 
-  it "should have parameters" do
-    params = {:p1 => 1, :p2 => 2, :p3 => 3, :p4 => 4}
-    obj = WithParamBase.new(params)
-    obj.should have_parameter(:p4)
-  end
+    it "should get parameters without evaluating" do
+      subject.get_parameter(:p1).should == 1
+      subject.get_parameter(:p2).should == 2
+      subject.get_parameter(:p3).should == :xx
+      subject.get_parameter(:p4).should respond_to(:arity)
+    end
 
-  it "should not allow parameters with nil values" do
-    lambda { WithParamBase.new(:p1 => 1, :p2 => nil) }.should raise_error(ArgumentError)
-  end
-
-  it "should be able to access without evaluating" do
-    obj = WithParamBase.new(:p1 => :asym, :p3 => lambda {1 + 2})
-    obj.get_parameter(:p1).should == :asym
-    obj.get_parameter(:p2).should be_nil
-    obj.get_parameter(:p3).should respond_to(:arity)
+    it "should have parameters" do
+      subject.should have_parameter(:p1)
+      subject.should have_parameter(:p2)
+      subject.should have_parameter(:p3)
+      subject.should have_parameter(:p4)
+    end
   end
 end
 
-describe BinData::Base, "with :check_offset" do
+describe BinData::Base, "as black box" do
+  context "class methods" do
+    it "should return bindata_name" do
+      BaseStub.bindata_name.should == "base_stub"
+    end
+
+    it "should instantiate self for ::read" do
+      BaseStub.read("").class.should == BaseStub
+    end
+  end
+
+  it "should access parent" do
+    parent = BaseStub.new
+    child = BaseStub.new(nil, parent)
+    child.parent.should == parent
+  end
+
+  subject { BaseStub.new }
+
+  it "should return self for #read" do
+    subject.read("").should == subject
+  end
+
+  it "should return self for #write" do
+    subject.write("").should == subject
+  end
+
+  it "should forward #inspect to snapshot" do
+    subject.stub(:snapshot).and_return([1, 2, 3])
+    subject.inspect.should == subject.snapshot.inspect
+  end
+
+  it "should forward #to_s to snapshot" do
+    subject.stub(:snapshot).and_return([1, 2, 3])
+    subject.to_s.should == subject.snapshot.to_s
+  end
+
+  it "should pretty print object as snapshot" do
+    subject.stub(:snapshot).and_return([1, 2, 3])
+    actual_io = StringIO.new
+    expected_io = StringIO.new
+
+    require 'pp'
+    PP.pp(subject, actual_io)
+    PP.pp(subject.snapshot, expected_io)
+
+    actual_io.value.should == expected_io.value
+  end
+
+  it "should write the same as to_binary_s" do
+    class WriteToSBase < BaseStub
+      def do_write(io) io.writebytes("abc"); end
+    end
+
+    subject = WriteToSBase.new
+    io = StringIO.new
+    subject.write(io)
+    io.value.should == subject.to_binary_s
+  end
+end
+
+describe BinData::Base, "as white box" do
+  subject { BaseStub.new }
+
+  it "should forward read to do_read" do
+    subject.should_receive(:clear).ordered
+    subject.should_receive(:do_read).ordered
+    subject.read(nil)
+  end
+
+  it "should forward write to do_write" do
+    subject.should_receive(:do_write)
+    subject.write(nil)
+  end
+
+  it "should forward num_bytes to do_num_bytes" do
+    subject.should_receive(:do_num_bytes).and_return(42)
+    subject.num_bytes.should == 42
+  end
+
+  it "should round up fractional num_bytes" do
+    subject.should_receive(:do_num_bytes).and_return(42.1)
+    subject.num_bytes.should == 43
+  end
+end
+
+describe BinData::Base, "checking offsets" do
   class TenByteOffsetBase < BaseStub
     def initialize(params = {})
       super({})
@@ -182,170 +251,58 @@ describe BinData::Base, "with :check_offset" do
     end
   end
 
-  before(:each) do
-    @io = StringIO.new("12345678901234567890")
-  end
+  let(:io) { StringIO.new("12345678901234567890") }
 
-  it "should fail if offset is incorrect" do
-    @io.seek(2)
-    obj = TenByteOffsetBase.new(:check_offset => 8)
-    lambda { obj.read(@io) }.should raise_error(BinData::ValidityError)
-  end
-
-  it "should succeed if offset is correct" do
-    @io.seek(3)
-    obj = TenByteOffsetBase.new(:check_offset => 10)
-    lambda { obj.read(@io) }.should_not raise_error
-  end
-
-  it "should fail if :check_offset fails" do
-    @io.seek(4)
-    obj = TenByteOffsetBase.new(:check_offset => lambda { offset == 11 } )
-    lambda { obj.read(@io) }.should raise_error(BinData::ValidityError)
-  end
-
-  it "should succeed if :check_offset succeeds" do
-    @io.seek(5)
-    obj = TenByteOffsetBase.new(:check_offset => lambda { offset == 10 } )
-    lambda { obj.read(@io) }.should_not raise_error
-  end
-end
-
-describe BinData::Base, "with :adjust_offset" do
-  class TenByteAdjustingOffsetBase < BaseStub
-    def initialize(params = {})
-      super({})
-      @child = BaseStub.new(params, self)
+  context "with :check_offset" do
+    it "should fail if offset is incorrect" do
+      io.seek(2)
+      subject = TenByteOffsetBase.new(:check_offset => 8)
+      lambda { subject.read(io) }.should raise_error(BinData::ValidityError)
     end
 
-    def do_read(io)
-      io.seekbytes(10)
-      @child.do_read(io)
+    it "should succeed if offset is correct" do
+      io.seek(3)
+      subject = TenByteOffsetBase.new(:check_offset => 10)
+      lambda { subject.read(io) }.should_not raise_error
+    end
+
+    it "should fail if :check_offset fails" do
+      io.seek(4)
+      subject = TenByteOffsetBase.new(:check_offset => lambda { offset == 11 } )
+      lambda { subject.read(io) }.should raise_error(BinData::ValidityError)
+    end
+
+    it "should succeed if :check_offset succeeds" do
+      io.seek(5)
+      subject = TenByteOffsetBase.new(:check_offset => lambda { offset == 10 } )
+      lambda { subject.read(io) }.should_not raise_error
     end
   end
 
-  before(:each) do
-    @io = StringIO.new("12345678901234567890")
-  end
-
-  it "should be mutually exclusive with :check_offset" do
-    params = { :check_offset => 8, :adjust_offset => 8 }
-    lambda { TenByteAdjustingOffsetBase.new(params) }.should raise_error(ArgumentError)
-  end
-
-  it "should adjust if offset is incorrect" do
-    @io.seek(2)
-    obj = TenByteAdjustingOffsetBase.new(:adjust_offset => 13)
-    obj.read(@io)
-    @io.pos.should == (2 + 13)
-  end
-
-  it "should succeed if offset is correct" do
-    @io.seek(3)
-    obj = TenByteAdjustingOffsetBase.new(:adjust_offset => 10)
-    lambda { obj.read(@io) }.should_not raise_error
-    @io.pos.should == (3 + 10)
-  end
-
-  it "should fail if cannot adjust offset" do
-    @io.seek(3)
-    obj = TenByteAdjustingOffsetBase.new(:adjust_offset => -4)
-    lambda { obj.read(@io) }.should raise_error(BinData::ValidityError)
-  end
-end
-
-describe BinData::Base, "as black box" do
-  it "should return bindata_name" do
-    BaseStub.bindata_name.should == "base_stub"
-  end
-
-  it "should access parent" do
-    parent = BaseStub.new
-    child = BaseStub.new(nil, parent)
-    child.parent.should == parent
-  end
-
-  it "should instantiate self for ::read" do
-    BaseStub.read("").class.should == BaseStub
-  end
-
-  it "should return self for #read" do
-    obj = BaseStub.new
-    obj.read("").should == obj
-  end
-
-  it "should return self for #write" do
-    obj = BaseStub.new
-    obj.write("").should == obj
-  end
-
-  it "should forward #inspect to snapshot" do
-    class SnapshotBase < BaseStub
-      def snapshot; [1, 2, 3]; end
-    end
-    obj = SnapshotBase.new
-    obj.inspect.should == obj.snapshot.inspect
-  end
-
-  it "should forward #to_s to snapshot" do
-    class SnapshotBase < BaseStub
-      def snapshot; [1, 2, 3]; end
-    end
-    obj = SnapshotBase.new
-    obj.to_s.should == obj.snapshot.to_s
-  end
-
-  it "should pretty print object as snapshot" do
-    class SnapshotBase < BaseStub
-      def snapshot; [1, 2, 3]; end
-    end
-    obj = SnapshotBase.new
-    actual_io = StringIO.new
-    expected_io = StringIO.new
-
-    require 'pp'
-    PP.pp(obj, actual_io)
-    PP.pp(obj.snapshot, expected_io)
-
-    actual_io.value.should == expected_io.value
-  end
-
-  it "should write the same as to_binary_s" do
-    class WriteToSBase < BaseStub
-      def do_write(io) io.writebytes("abc"); end
+  context "with :adjust_offset" do
+    it "should be mutually exclusive with :check_offset" do
+      params = { :check_offset => 8, :adjust_offset => 8 }
+      lambda { TenByteOffsetBase.new(params) }.should raise_error(ArgumentError)
     end
 
-    obj = WriteToSBase.new
-    io = StringIO.new
-    obj.write(io)
-    io.value.should == obj.to_binary_s
-  end
-end
+    it "should adjust if offset is incorrect" do
+      io.seek(2)
+      subject = TenByteOffsetBase.new(:adjust_offset => 13)
+      subject.read(io)
+      io.pos.should == (2 + 13)
+    end
 
-describe BinData::Base, "as white box" do
-  before(:each) do
-    @obj = MockBaseStub.new
-    @obj.mock = mock('mock')
-  end
+    it "should succeed if offset is correct" do
+      io.seek(3)
+      subject = TenByteOffsetBase.new(:adjust_offset => 10)
+      lambda { subject.read(io) }.should_not raise_error
+      io.pos.should == (3 + 10)
+    end
 
-  it "should forward read to do_read" do
-    @obj.mock.should_receive(:clear).ordered
-    @obj.mock.should_receive(:do_read).ordered
-    @obj.read(nil)
-  end
-
-  it "should forward write to do_write" do
-    @obj.mock.should_receive(:do_write)
-    @obj.write(nil)
-  end
-
-  it "should forward num_bytes to do_num_bytes" do
-    @obj.mock.should_receive(:do_num_bytes).and_return(42)
-    @obj.num_bytes.should == 42
-  end
-
-  it "should round up fractional num_bytes" do
-    @obj.mock.should_receive(:do_num_bytes).and_return(42.1)
-    @obj.num_bytes.should == 43
+    it "should fail if cannot adjust offset" do
+      io.seek(4)
+      subject = TenByteOffsetBase.new(:adjust_offset => -5)
+      lambda { subject.read(io) }.should raise_error(BinData::ValidityError)
+    end
   end
 end

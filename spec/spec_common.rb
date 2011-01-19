@@ -13,6 +13,10 @@ class Object
     protected_method_names = cls.protected_instance_methods - Object.protected_instance_methods
     cls.send(:public, *protected_method_names)
   end
+
+  def value_read_from_written
+    self.class.read(self.to_binary_s)
+  end
 end
 
 class StringIO

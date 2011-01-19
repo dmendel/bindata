@@ -13,34 +13,35 @@ share_examples_for "All Integers" do
 
   it "should have a sensible value of zero" do
     all_classes do |int_class|
-      int_class.new.value.should be_zero
+      int_class.new.should be_zero
     end
   end
 
   it "should avoid underflow" do
     all_classes do |int_class|
-      obj = int_class.new
-      obj.value = min_value - 1
+      subject = int_class.new
+      subject.assign(min_value - 1)
 
-      obj.value.should == min_value
+      subject.should == min_value
     end
   end
 
   it "should avoid overflow" do
     all_classes do |int_class|
-      obj = int_class.new
-      obj.value = max_value + 1
+      subject = int_class.new
+      subject.assign(max_value + 1)
 
-      obj.value.should == max_value
+      subject.should == max_value
     end
   end
 
   it "should assign values" do
     all_classes do |int_class|
-      obj = int_class.new
+      subject = int_class.new
       test_int = gen_test_int
-      obj.assign(test_int)
-      obj.value.should == test_int
+      subject.assign(test_int)
+
+      subject.should == test_int
     end
   end
 
@@ -49,30 +50,28 @@ share_examples_for "All Integers" do
       src = int_class.new
       src.assign(gen_test_int)
 
-      obj = int_class.new
-      obj.assign(src)
-      obj.value.should == src.value
+      subject = int_class.new
+      subject.assign(src)
+      subject.value.should == src.value
     end
   end
 
   it "should symmetrically read and write a +ve number" do
     all_classes do |int_class|
-      obj = int_class.new
-      obj.value = gen_test_int
+      subject = int_class.new
+      subject.value = gen_test_int
 
-      str = obj.to_binary_s
-      int_class.read(str).should == obj.value
+      subject.value_read_from_written.should == subject.value
     end
   end
 
   it "should symmetrically read and write a -ve number" do
     all_classes do |int_class|
       if @signed
-        obj = int_class.new
-        obj.value = -gen_test_int
+        subject = int_class.new
+        subject.value = -gen_test_int
 
-        str = obj.to_binary_s
-        int_class.read(str).should == obj.value
+        subject.value_read_from_written.should == subject.value
       end
     end
   end
@@ -81,10 +80,10 @@ share_examples_for "All Integers" do
     all_classes do |int_class|
       val = gen_test_int
 
-      obj = int_class.new
-      obj.value = val
+      subject = int_class.new
+      subject.value = val
 
-      obj.to_binary_s.should == int_to_binary_str(val)
+      subject.to_binary_s.should == int_to_binary_str(val)
     end
   end
 
@@ -93,10 +92,10 @@ share_examples_for "All Integers" do
       if @signed
         val = -gen_test_int
 
-        obj = int_class.new
-        obj.value = val
+        subject = int_class.new
+        subject.value = val
 
-        obj.to_binary_s.should == int_to_binary_str(val)
+        subject.to_binary_s.should == int_to_binary_str(val)
       end
     end
   end

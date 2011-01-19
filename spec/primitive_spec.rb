@@ -3,18 +3,16 @@
 require File.expand_path(File.join(File.dirname(__FILE__), "spec_common"))
 require 'bindata'
 
-describe BinData::Primitive, "when subclassing" do
+describe BinData::Primitive, "all subclasses" do
   class SubClassOfPrimitive < BinData::Primitive
     expose_methods_for_testing
   end
 
-  before(:each) do
-    @obj = SubClassOfPrimitive.new
-  end
+  subject { SubClassOfPrimitive.new }
 
   it "should raise errors on unimplemented methods" do
-    lambda { @obj.set(nil) }.should raise_error(NotImplementedError)
-    lambda { @obj.get }.should raise_error(NotImplementedError)
+    lambda { subject.set(nil) }.should raise_error(NotImplementedError)
+    lambda { subject.get }.should raise_error(NotImplementedError)
   end
 end
 
@@ -70,47 +68,45 @@ describe BinData::Primitive do
     def set(v); self.a = v; end
   end
 
-  before(:each) do
-    @obj = PrimitiveWithEndian.new
+  subject { PrimitiveWithEndian.new }
+
+  it "should assign value" do
+    subject.value = 5
+    subject.value.should == 5
   end
 
-  it "should support endian" do
-    @obj.value = 5
-    @obj.to_binary_s.should == "\x05\x00"
-  end
-
-  it "should set value" do
-    @obj.value = 5
-    @obj.to_binary_s.should == "\x05\x00"
+  it "should produce binary string" do
+    subject.assign(5)
+    subject.to_binary_s.should == "\x05\x00"
   end
 
   it "should read value" do
-    @obj.read("\x00\x01")
-    @obj.value.should == 0x100
+    subject.read("\x00\x01")
+    subject.value.should == 0x100
   end
 
   it "should accept standard parameters" do
-    obj = PrimitiveWithEndian.new(:initial_value => 2)
-    obj.to_binary_s.should == "\x02\x00"
+    subject = PrimitiveWithEndian.new(:initial_value => 2)
+    subject.to_binary_s.should == "\x02\x00"
   end
 
   it "should return num_bytes" do
-    @obj.num_bytes.should == 2
+    subject.num_bytes.should == 2
   end
 
   it "should raise error on missing methods" do
     lambda {
-      @obj.does_not_exist
+      subject.does_not_exist
     }.should raise_error(NoMethodError)
   end
 
   it "should use read value whilst reading" do
-    obj = PrimitiveWithEndian.new(:value => 2)
-    obj.read "\x05\x00"
-    obj.value.should == 2
+    subject = PrimitiveWithEndian.new(:value => 2)
+    subject.read "\x05\x00"
+    subject.value.should == 2
 
-    def obj.reading?; true; end
-    obj.value.should == 5
+    subject.stub(:reading?).and_return(true)
+    subject.value.should == 5
   end
 end
 
@@ -122,8 +118,8 @@ describe BinData::Primitive, "requiring custom parameters" do
   end
 
   it "should pass parameters correctly" do
-    obj = PrimitiveWithCustom.new(:iv => 5)
-    obj.value.should == 5
+    subject = PrimitiveWithCustom.new(:iv => 5)
+    subject.value.should == 5
   end
 end
 
@@ -141,8 +137,8 @@ describe BinData::Primitive, "with custom mandatory parameters" do
   end
 
   it "should use mandatory parameter" do
-    obj = MandatoryPrimitive.new(:arg1 => 5)
-    obj.value.should == 5
+    subject = MandatoryPrimitive.new(:arg1 => 5)
+    subject.value.should == 5
   end
 end
 
@@ -160,13 +156,13 @@ describe BinData::Primitive, "with custom default parameters" do
   end
 
   it "should use default parameter" do
-    obj = DefaultPrimitive.new
-    obj.value.should == 5
+    subject = DefaultPrimitive.new
+    subject.value.should == 5
   end
 
   it "should be able to override default parameter" do
-    obj = DefaultPrimitive.new(:arg1 => 7)
-    obj.value.should == 7
+    subject = DefaultPrimitive.new(:arg1 => 7)
+    subject.value.should == 7
   end
 end
 

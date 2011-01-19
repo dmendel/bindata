@@ -45,44 +45,44 @@ describe BinData::Wrapper, "around a Primitive" do
   end
 
   it "should access custom parameter" do
-    obj = WrappedPrimitive.new
-    obj.assign(3)
-    obj.should == 3
+    subject = WrappedPrimitive.new
+    subject.assign(3)
+    subject.should == 3
   end
 
   it "should be able to override custom default parameter" do
-    obj = WrappedPrimitive.new(:a => 5)
-    obj.should == 5
+    subject = WrappedPrimitive.new(:a => 5)
+    subject.should == 5
   end
 
   it "should be able to override parameter" do
-    obj = WrappedPrimitive.new(:initial_value => 7)
-    obj.should == 7
+    subject = WrappedPrimitive.new(:initial_value => 7)
+    subject.should == 7
   end
 
   it "should clear" do
-    obj = WrappedPrimitive.new
-    obj.assign(3)
-    obj.should_not be_clear
+    subject = WrappedPrimitive.new
+    subject.assign(3)
+    subject.should_not be_clear
 
-    obj.clear
-    obj.should be_clear
+    subject.clear
+    subject.should be_clear
   end
 
   it "should read" do
-    obj = WrappedPrimitive.new
-    obj.assign(3)
-    str = obj.to_binary_s
+    subject = WrappedPrimitive.new
+    subject.assign(3)
+    str = subject.to_binary_s
 
     WrappedPrimitive.read(str).should == 3
   end
 
   it "should respond_to and forward messages to the wrapped object" do
-    obj = WrappedPrimitive.new
-    obj.assign(5)
+    subject = WrappedPrimitive.new
+    subject.assign(5)
 
-    obj.should respond_to(:value)
-    obj.value.should == 5
+    subject.should respond_to(:value)
+    subject.value.should == 5
   end
 end
 
@@ -94,13 +94,13 @@ describe BinData::Wrapper, "around an Array" do
   end
 
   it "should forward parameters" do
-    obj = WrappedIntArray.new(:initial_length => 7)
-    obj.length.should == 7
+    subject = WrappedIntArray.new(:initial_length => 7)
+    subject.length.should == 7
   end
 
   it "should be able to override default parameters" do
-    obj = WrappedIntArray.new(:initial_length => 3, :initial_element_value => 5)
-    obj.to_binary_s.should == "\x00\x05\x00\x05\x00\x05"
+    subject = WrappedIntArray.new(:initial_length => 3, :initial_element_value => 5)
+    subject.to_binary_s.should == "\x00\x05\x00\x05\x00\x05"
   end
 end
 
@@ -111,8 +111,8 @@ describe BinData::Wrapper, "around a Choice" do
   end
 
   it "should forward parameters" do
-    obj = WrappedChoice.new(:selection => 'b')
-    obj.num_bytes.should == 2
+    subject = WrappedChoice.new(:selection => 'b')
+    subject.num_bytes.should == 2
   end
 end
 
@@ -125,8 +125,8 @@ describe BinData::Wrapper, "inside a struct" do
     field1 = [:wrapped_uint32le, :a, {:onlyif => false, :value => 1 }]
     field2 = [:wrapped_uint32le, :b, {:onlyif => true, :value => 2 }]
 
-    obj = BinData::Struct.new(:fields => [field1, field2])
-    obj.should == {'b' => 2}
+    subject = BinData::Struct.new(:fields => [field1, field2])
+    subject.should == {'b' => 2}
   end
 end
 

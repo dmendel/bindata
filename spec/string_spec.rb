@@ -22,170 +22,147 @@ describe BinData::String, "with mutually exclusive parameters" do
 end
 
 describe BinData::String, "when assigning" do
-  before(:each) do
-    @small = BinData::String.new(:length => 3, :pad_char => "A")
-    @large = BinData::String.new(:length => 5, :pad_char => "B")
-  end
+  let(:small) { BinData::String.new(:length => 3, :pad_char => "A") }
+  let(:large) { BinData::String.new(:length => 5, :pad_char => "B") }
 
   it "should copy data from small to large" do
-    @large.value = @small
-    @large.value.should == "AAABB"
+    large.assign(small)
+    large.should == "AAABB"
   end
 
   it "should copy data from large to small" do
-    @small.value = @large
-    @small.value.should == "BBB"
+    small.assign(large)
+    small.should == "BBB"
   end
 end
 
 describe BinData::String, "with :read_length" do
-  before(:each) do
-    @str = BinData::String.new(:read_length => 5)
-  end
+  subject { BinData::String.new(:read_length => 5) }
 
-  it "should have default value" do
-    @str.num_bytes.should == 0
-    @str.value.should == ""
-  end
+  its(:num_bytes) { should == 0 }
+  its(:value) { should == "" }
 
   it "should read :read_length bytes" do
-    @str.read("abcdefghij")
-    @str.value.should == "abcde"
+    subject.read("abcdefghij")
+    subject.should == "abcde"
   end
 
   it "should remember :read_length after value is cleared" do
-    @str.value = "abc"
-    @str.num_bytes.should == 3
-    @str.clear
+    subject.assign("abc")
+    subject.num_bytes.should == 3
+    subject.clear
 
-    @str.read("abcdefghij")
-    @str.value.should == "abcde"
+    subject.read("abcdefghij")
+    subject.should == "abcde"
   end
 end
 
 describe BinData::String, "with :length" do
-  before(:each) do
-    @str = BinData::String.new(:length => 5)
-  end
+  subject { BinData::String.new(:length => 5) }
 
-  it "should set num_bytes" do
-    @str.num_bytes.should == 5
-  end
-
-  it "should fill value with pad_char" do
-    @str.value.should == "\0\0\0\0\0"
-  end
+  its(:num_bytes) { should == 5 }
+  its(:value) { should == "\0\0\0\0\0" }
 
   it "should retain :length after value is set" do
-    @str.value = "abcdefghij"
-    @str.num_bytes.should == 5
+    subject.assign("abcdefghij")
+    subject.num_bytes.should == 5
   end
 
   it "should read :length bytes" do
-    @str.read("abcdefghij")
-    @str.value.should == "abcde"
+    subject.read("abcdefghij")
+    subject.should == "abcde"
   end
 
   it "should pad values less than :length" do
-    @str.value = "abc"
-    @str.value.should == "abc\0\0"
+    subject.assign("abc")
+    subject.should == "abc\0\0"
   end
 
   it "should accept values exactly :length" do
-    @str.value = "abcde"
-    @str.value.should == "abcde"
+    subject.assign("abcde")
+    subject.should == "abcde"
   end
 
   it "should truncate values greater than :length" do
-    @str.value = "abcdefg"
-    @str.value.should == "abcde"
+    subject.assign("abcdefghij")
+    subject.should == "abcde"
   end
 end
 
 describe BinData::String, "with :read_length and :initial_value" do
-  before(:each) do
-    @str = BinData::String.new(:read_length => 5, :initial_value => "abcdefghij")
-  end
+  subject { BinData::String.new(:read_length => 5, :initial_value => "abcdefghij") }
 
-  it "should use :initial_value before value is read" do
-    @str.num_bytes.should == 10
-    @str.value.should == "abcdefghij"
-  end
+  its(:num_bytes) { should == 10 }
+  its(:value) { should == "abcdefghij" }
 
   it "should use :read_length for reading" do
     io = StringIO.new("ABCDEFGHIJKLMNOPQRST")
-    @str.read(io)
+    subject.read(io)
     io.pos.should == 5
    end
 
   it "should forget :initial_value after reading" do
-    @str.read("ABCDEFGHIJKLMNOPQRST")
-    @str.num_bytes.should == 5
-    @str.value.should == "ABCDE"
+    subject.read("ABCDEFGHIJKLMNOPQRST")
+    subject.num_bytes.should == 5
+    subject.should == "ABCDE"
   end
 end
 
 describe BinData::String, "with :read_length and :value" do
-  before(:each) do
-    @str = BinData::String.new(:read_length => 5, :value => "abcdefghij")
-  end
+  subject { BinData::String.new(:read_length => 5, :value => "abcdefghij") }
 
-  it "should not be affected by :read_length before value is read" do
-    @str.num_bytes.should == 10
-    @str.value.should == "abcdefghij"
-  end
+  its(:num_bytes) { should == 10 }
+  its(:value) { should == "abcdefghij" }
 
   it "should use :read_length for reading" do
     io = StringIO.new("ABCDEFGHIJKLMNOPQRST")
-    @str.read(io)
+    subject.read(io)
     io.pos.should == 5
-   end
-
-  it "should not be affected by :read_length after reading" do
-    @str.read("ABCDEFGHIJKLMNOPQRST")
-    @str.num_bytes.should == 10
-    @str.value.should == "abcdefghij"
   end
 
-  it "should return read value while reading" do
-    @str.read("ABCDEFGHIJKLMNOPQRST")
+  context "after reading" do
+    before(:each) do
+      subject.read("ABCDEFGHIJKLMNOPQRST")
+    end
 
-    def @str.reading?; true; end
+    it "should not be affected by :read_length after reading" do
+      subject.num_bytes.should == 10
+      subject.should == "abcdefghij"
+    end
 
-    @str.value.should == "ABCDE"
+    it "should return read value while reading" do
+      subject.stub(:reading?).and_return(true)
+      subject.should == "ABCDE"
+    end
   end
 end
 
 describe BinData::String, "with :length and :initial_value" do
-  before(:each) do
-    @str = BinData::String.new(:length => 5, :initial_value => "abcdefghij")
-  end
+  subject { BinData::String.new(:length => 5, :initial_value => "abcdefghij") }
 
-  it "should apply :length to :initial_value" do
-    @str.num_bytes.should == 5
-    @str.value.should == "abcde"
-  end
+  its(:num_bytes) { should == 5 }
+  its(:value) { should == "abcde" }
 
   it "should forget :initial_value after reading" do
     io = StringIO.new("ABCDEFGHIJKLMNOPQRST")
-    @str.read(io)
+    subject.read(io)
     io.pos.should == 5
-    @str.num_bytes.should == 5
-    @str.value.should == "ABCDE"
+    subject.num_bytes.should == 5
+    subject.should == "ABCDE"
   end
 end
 
 describe BinData::String, "with :pad_char" do
   it "should accept a numeric value for :pad_char" do
-    @str = BinData::String.new(:length => 5, :pad_char => 6)
-    @str.value = "abc"
-    @str.value.should == "abc\x06\x06"
+    str = BinData::String.new(:length => 5, :pad_char => 6)
+    str.assign("abc")
+    str.should == "abc\x06\x06"
   end
 
   it "should accept a character for :pad_char" do
-    @str = BinData::String.new(:length => 5, :pad_char => "R")
-    @str.value = "abc"
-    @str.value.should == "abcRR"
+    str = BinData::String.new(:length => 5, :pad_char => "R")
+    str.assign("abc")
+    str.should == "abcRR"
   end
 
   it "should not accept a string for :pad_char" do
@@ -200,31 +177,31 @@ describe BinData::String, "with :trim_padding" do
     str2 = BinData::String.new(:length => 5, :trim_padding => false)
     str1.value = "abc"
     str2.value = "abc"
-    str1.value.should == "abc\0\0"
-    str2.value.should == "abc\0\0"
+    str1.should == "abc\0\0"
+    str2.should == "abc\0\0"
   end
 
-  it "should trim the value" do
-    str = BinData::String.new(:pad_char => 'R', :trim_padding => true)
-    str.value = "abcRR"
-    str.value.should == "abc"
-  end
+  context "trim padding set" do
+    subject { BinData::String.new(:pad_char => 'R', :trim_padding => true) }
 
-  it "should not affect num_bytes" do
-    str = BinData::String.new(:pad_char => 'R', :trim_padding => true)
-    str.value = "abcRR"
-    str.num_bytes.should == 5
-  end
+    it "should trim the value" do
+      subject.value = "abcRR"
+      subject.should == "abc"
+    end
 
-  it "should trim if last char is :pad_char" do
-    str = BinData::String.new(:pad_char => 'R', :trim_padding => true)
-    str.value = "abcRR"
-    str.value.should == "abc"
-  end
+    it "should not affect num_bytes" do
+      subject.value = "abcRR"
+      subject.num_bytes.should == 5
+    end
 
-  it "should not trim if value contains :pad_char not at the end" do
-    str = BinData::String.new(:pad_char => 'R', :trim_padding => true)
-    str.value = "abcRRde"
-    str.value.should == "abcRRde"
+    it "should trim if last char is :pad_char" do
+      subject.value = "abcRR"
+      subject.should == "abc"
+    end
+
+    it "should not trim if value contains :pad_char not at the end" do
+      subject.value = "abcRRde"
+      subject.should == "abcRRde"
+    end
   end
 end

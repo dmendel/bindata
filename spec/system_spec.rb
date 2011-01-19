@@ -23,8 +23,8 @@ describe "lambdas with index" do
   end
 
   it "should fail if there is no containing array" do
-    obj = NestedLambdaWithIndex.new
-    lambda { obj.a.value }.should raise_error(NoMethodError)
+    subject = NestedLambdaWithIndex.new
+    lambda { subject.a.value }.should raise_error(NoMethodError)
   end
 end
 
@@ -40,8 +40,8 @@ describe "lambdas with parent" do
       nested_lambda_without_parent :x
     end
 
-    obj = TestLambdaWithoutParent.new
-    obj.x.b.should == 5
+    subject = TestLambdaWithoutParent.new
+    subject.x.b.should == 5
   end
 
   it "should access parent's parent when parent is specified" do
@@ -55,8 +55,8 @@ describe "lambdas with parent" do
       nested_lambda_with_parent :x
     end
 
-    obj = TestLambdaWithParent.new
-    obj.x.b.should == 3
+    subject = TestLambdaWithParent.new
+    subject.x.b.should == 3
   end
 end
 
@@ -81,60 +81,58 @@ describe BinData::Record, "with choice field" do
   end
 
   it "should treat choice object transparently " do
-    obj = RecordWithChoiceField.new
+    subject = RecordWithChoiceField.new
 
-    obj.x.a.should == 3
+    subject.x.a.should == 3
   end
 
   it "should treat nested choice object transparently " do
-    obj = RecordWithNestedChoiceField.new
+    subject = RecordWithNestedChoiceField.new
 
-    obj.x.a.should == 3
+    subject.x.a.should == 3
   end
 
   it "should have correct offset" do
-    obj = RecordWithNestedChoiceField.new
-    obj.x.b.offset.should == 1
+    subject = RecordWithNestedChoiceField.new
+    subject.x.b.offset.should == 1
   end
 end
 
 describe BinData::Array, "of bits" do
-  before(:each) do
-    @data = BinData::Array.new(:type => :bit1, :initial_length => 15)
-  end
+  let(:data) { BinData::Array.new(:type => :bit1, :initial_length => 15) }
 
   it "should read" do
     str = [0b0001_0100, 0b1000_1000].pack("CC")
-    @data.read(str)
-    @data[0].should  == 0
-    @data[1].should  == 0
-    @data[2].should  == 0
-    @data[3].should  == 1
-    @data[4].should  == 0
-    @data[5].should  == 1
-    @data[6].should  == 0
-    @data[7].should  == 0
-    @data[8].should  == 1
-    @data[9].should  == 0
-    @data[10].should == 0
-    @data[11].should == 0
-    @data[12].should == 1
-    @data[13].should == 0
-    @data[14].should == 0
+    data.read(str)
+    data[0].should  == 0
+    data[1].should  == 0
+    data[2].should  == 0
+    data[3].should  == 1
+    data[4].should  == 0
+    data[5].should  == 1
+    data[6].should  == 0
+    data[7].should  == 0
+    data[8].should  == 1
+    data[9].should  == 0
+    data[10].should == 0
+    data[11].should == 0
+    data[12].should == 1
+    data[13].should == 0
+    data[14].should == 0
   end
 
   it "should write" do
-    @data[3] = 1
-    @data.to_binary_s.should == [0b0001_0000, 0b0000_0000].pack("CC")
+    data[3] = 1
+    data.to_binary_s.should == [0b0001_0000, 0b0000_0000].pack("CC")
   end
 
   it "should return num_bytes" do
-    @data.num_bytes.should == 2
+    data.num_bytes.should == 2
   end
 
   it "should have correct offset" do
-    @data[7].offset.should == 0
-    @data[8].offset.should == 1
+    data[7].offset.should == 0
+    data[8].offset.should == 1
   end
 end
 
@@ -186,28 +184,28 @@ describe "Tracing"  do
       def set(val) self.ex = val; end
     end
 
-    obj = DebugNamePrimitive.new
+    subject = DebugNamePrimitive.new
 
     io = StringIO.new
-    BinData::trace_reading(io) { obj.read("\x01") }
+    BinData::trace_reading(io) { subject.read("\x01") }
 
     io.value.should == ["obj-internal-.ex => 1\n", "obj => 1\n"].join("")
   end
 
   it "should trace choice selection" do
-    obj = BinData::Choice.new(:choices => [:int8, :int16be], :selection => 0)
+    subject = BinData::Choice.new(:choices => [:int8, :int16be], :selection => 0)
 
     io = StringIO.new
-    BinData::trace_reading(io) { obj.read("\x01") }
+    BinData::trace_reading(io) { subject.read("\x01") }
 
     io.value.should == ["obj-selection- => 0\n", "obj => 1\n"].join("")
   end
 
   it "should trim long trace values" do
-    obj = BinData::String.new(:read_length => 40)
+    subject = BinData::String.new(:read_length => 40)
 
     io = StringIO.new
-    BinData::trace_reading(io) { obj.read("0000000000111111111122222222223333333333") }
+    BinData::trace_reading(io) { subject.read("0000000000111111111122222222223333333333") }
 
     io.value.should == "obj => \"000000000011111111112222222222...\n"
   end
@@ -219,21 +217,20 @@ describe "Forward referencing with Primitive" do
     string :data, :read_length => :len
   end
 
+  subject { FRPrimitive.new }
+
   it "should initialise" do
-    @obj = FRPrimitive.new
-    @obj.snapshot.should == {"len" => 0, "data" => ""}
+    subject.snapshot.should == {"len" => 0, "data" => ""}
   end
 
   it "should read" do
-    @obj = FRPrimitive.new
-    @obj.read("\x04test")
-    @obj.snapshot.should == {"len" => 4, "data" => "test"}
+    subject.read("\x04test")
+    subject.snapshot.should == {"len" => 4, "data" => "test"}
   end
 
   it "should set value" do
-    @obj = FRPrimitive.new
-    @obj.data = "hello"
-    @obj.snapshot.should == {"len" => 5, "data" => "hello"}
+    subject.data = "hello"
+    subject.snapshot.should == {"len" => 5, "data" => "hello"}
   end
 end
 
@@ -243,21 +240,20 @@ describe "Forward referencing with Array" do
     array :data, :type => :uint8, :initial_length => :len
   end
 
+  subject { FRArray.new }
+
   it "should initialise" do
-    @obj = FRArray.new
-    @obj.snapshot.should == {"len" => 0, "data" => []}
+    subject.snapshot.should == {"len" => 0, "data" => []}
   end
 
   it "should read" do
-    @obj = FRArray.new
-    @obj.read("\x04\x01\x02\x03\x04")
-    @obj.snapshot.should == {"len" => 4, "data" => [1, 2, 3, 4]}
+    subject.read("\x04\x01\x02\x03\x04")
+    subject.snapshot.should == {"len" => 4, "data" => [1, 2, 3, 4]}
   end
 
   it "should set value" do
-    @obj = FRArray.new
-    @obj.data = [1, 2, 3]
-    @obj.snapshot.should == {"len" => 3, "data" => [1, 2, 3]}
+    subject.data = [1, 2, 3]
+    subject.snapshot.should == {"len" => 3, "data" => [1, 2, 3]}
   end
 end
 
@@ -271,8 +267,8 @@ describe "Evaluating custom parameters" do
   end
 
   it "should recursively evaluate parameter" do
-    obj = CustomParameterRecord.new(:zz => 5)
-    obj.c.eval_parameter(:custom).should == 5
+    subject = CustomParameterRecord.new(:zz => 5)
+    subject.c.eval_parameter(:custom).should == 5
   end
 end
 

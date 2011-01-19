@@ -112,24 +112,22 @@ describe BinData::Record, "with anonymous fields" do
     int8 :value => :a
   end
 
-  before(:each) do
-    @obj = AnonymousRecord.new
-  end
+  subject { AnonymousRecord.new }
 
   it "should only show non anonymous fields" do
-    @obj.field_names.should == ["a"]
+    subject.field_names.should == ["a"]
   end
 
   it "should not include anonymous fields in snapshot" do
-    @obj.a = 5
-    @obj.snapshot.should == {"a" => 5}
+    subject.a = 5
+    subject.snapshot.should == {"a" => 5}
   end
 
   it "should write anonymous fields" do
     str = "\001\002\003\004"
-    @obj.read(str)
-    @obj.a.clear
-    @obj.to_binary_s.should == "\012\002\003\012"
+    subject.read(str)
+    subject.a.clear
+    subject.to_binary_s.should == "\012\002\003\012"
   end
 end
 
@@ -142,25 +140,23 @@ describe BinData::Record, "with hidden fields" do
     int8 :d, :value => :b
   end
 
-  before(:each) do
-    @obj = HiddenRecord.new
-  end
+  subject { HiddenRecord.new }
 
   it "should only show fields that aren't hidden" do
-    @obj.field_names.should == ["a", "d"]
+    subject.field_names.should == ["a", "d"]
   end
 
   it "should be able to access hidden fields directly" do
-    @obj.b.should == 10
-    @obj.c = 15
-    @obj.c.should == 15
+    subject.b.should == 10
+    subject.c = 15
+    subject.c.should == 15
 
-    @obj.should respond_to(:b=)
+    subject.should respond_to(:b=)
   end
 
   it "should not include hidden fields in snapshot" do
-    @obj.b = 5
-    @obj.snapshot.should == {"a" => 0, "d" => 5}
+    subject.b = 5
+    subject.snapshot.should == {"a" => 0, "d" => 5}
   end
 end
 
@@ -170,16 +166,12 @@ describe BinData::Record, "with multiple fields" do
     int8 :b
   end
 
-  before(:each) do
-    @obj = MultiFieldRecord.new
-    @obj.a = 1
-    @obj.b = 2
-  end
+  subject { MultiFieldRecord.new.tap { |obj| obj.assign(:a => 1, :b => 2) } }
 
   it "should return num_bytes" do
-    @obj.a.num_bytes.should == 1
-    @obj.b.num_bytes.should == 1
-    @obj.num_bytes.should     == 2
+    subject.a.num_bytes.should == 1
+    subject.b.num_bytes.should == 1
+    subject.num_bytes.should     == 2
   end
 
   it "should identify accepted parameters" do
@@ -188,43 +180,43 @@ describe BinData::Record, "with multiple fields" do
   end
 
   it "should clear" do
-    @obj.a = 6
-    @obj.clear
-    @obj.should be_clear
+    subject.a = 6
+    subject.clear
+    subject.should be_clear
   end
 
   it "should clear individual elements" do
-    @obj.a = 6
-    @obj.b = 7
-    @obj.a.clear
-    @obj.a.should be_clear
-    @obj.b.should_not be_clear
+    subject.a = 6
+    subject.b = 7
+    subject.a.clear
+    subject.a.should be_clear
+    subject.b.should_not be_clear
   end
 
   it "should write ordered" do
-    @obj.to_binary_s.should == "\x01\x02"
+    subject.to_binary_s.should == "\x01\x02"
   end
 
   it "should read ordered" do
-    @obj.read("\x03\x04")
+    subject.read("\x03\x04")
 
-    @obj.a.should == 3
-    @obj.b.should == 4
+    subject.a.should == 3
+    subject.b.should == 4
   end
 
   it "should return a snapshot" do
-    snap = @obj.snapshot
+    snap = subject.snapshot
     snap.a.should == 1
     snap.b.should == 2
     snap.should == { "a" => 1, "b" => 2 }
   end
 
   it "should return field_names" do
-    @obj.field_names.should == ["a", "b"]
+    subject.field_names.should == ["a", "b"]
   end
   
   it "should fail on unknown method call" do
-    lambda { @obj.does_not_exist }.should raise_error(NoMethodError)
+    lambda { subject.does_not_exist }.should raise_error(NoMethodError)
   end
 end
 
@@ -242,39 +234,37 @@ describe BinData::Record, "with nested structs" do
     end
   end
 
-  before(:each) do
-    @obj = NestedStructRecord.new
-  end
+  subject { NestedStructRecord.new }
 
   it "should included nested field names" do
-    @obj.field_names.should == ["a", "b", "c"]
+    subject.field_names.should == ["a", "b", "c"]
   end
 
   it "should hide nested field names" do
-    @obj.b.field_names.should == ["x"]
+    subject.b.field_names.should == ["x"]
   end
 
   it "should access nested fields" do
-    @obj.a.should   == 6
-    @obj.b.w.should == 3
-    @obj.b.x.should == 6
-    @obj.c.y.should == 3
+    subject.a.should   == 6
+    subject.b.w.should == 3
+    subject.b.x.should == 6
+    subject.c.y.should == 3
   end
 
   it "should return correct offset" do
-    @obj.offset.should == 0
-    @obj.b.offset.should == 1
-    @obj.b.w.offset.should == 1
-    @obj.c.offset.should == 3
-    @obj.c.z.offset.should == 4
+    subject.offset.should == 0
+    subject.b.offset.should == 1
+    subject.b.w.offset.should == 1
+    subject.c.offset.should == 3
+    subject.c.z.offset.should == 4
   end
 
   it "should return correct rel_offset" do
-    @obj.rel_offset.should == 0
-    @obj.b.rel_offset.should == 1
-    @obj.b.w.rel_offset.should == 0
-    @obj.c.rel_offset.should == 3
-    @obj.c.z.rel_offset.should == 1
+    subject.rel_offset.should == 0
+    subject.b.rel_offset.should == 1
+    subject.b.w.rel_offset.should == 0
+    subject.c.rel_offset.should == 3
+    subject.c.z.rel_offset.should == 1
   end
 end
 
@@ -285,12 +275,10 @@ describe BinData::Record, "with nested array of primitives" do
     end
   end
 
-  before(:each) do
-    @obj = NestedPrimitiveArrayRecord.new
-  end
+  subject { NestedPrimitiveArrayRecord.new }
 
   it "should use block as :type" do
-    @obj.snapshot.should == {"a" => [0, 1, 2]}
+    subject.snapshot.should == {"a" => [0, 1, 2]}
   end
 end
 
@@ -302,13 +290,11 @@ describe BinData::Record, "with nested array of structs" do
     end
   end
 
-  before(:each) do
-    @obj = NestedStructArrayRecord.new
-  end
+  subject { NestedStructArrayRecord.new }
 
   it "should use block as struct for :type" do
-    @obj.a[0].b = 2
-    @obj.snapshot.should == {"a" => [{"b" => 2, "c" => 0}]}
+    subject.a[0].b = 2
+    subject.snapshot.should == {"a" => [{"b" => 2, "c" => 0}]}
   end
 end
 
@@ -320,13 +306,9 @@ describe BinData::Record, "with nested choice without names" do
     end
   end
 
-  before(:each) do
-    @obj = NestedChoiceRecord.new
-  end
+  subject { NestedChoiceRecord.new }
 
-  it "should select choices by index" do
-    @obj.a.should == 2
-  end
+  its(:a) { should == 2 }
 end
 
 describe BinData::Record, "with nested choice with names" do
@@ -337,13 +319,9 @@ describe BinData::Record, "with nested choice with names" do
     end
   end
 
-  before(:each) do
-    @obj = NestedChoiceWithNamesRecord.new
-  end
+  subject { NestedChoiceWithNamesRecord.new }
 
-  it "should select choices by name" do
-    @obj.a.should == 1
-  end
+  its(:a) { should == 1 }
 end
 
 describe BinData::Record, "with an endian defined" do
@@ -371,23 +349,21 @@ describe BinData::Record, "with an endian defined" do
     end
   end
 
-  before(:each) do
-    @obj = RecordWithEndian.new
-  end
+  subject { RecordWithEndian.new }
 
   it "should use correct endian" do
-    @obj.a = 1
-    @obj.b = 2.0
-    @obj.c[0] = 3
-    @obj.c[1] = 4
-    @obj.d = 5
-    @obj.e.f = 6
-    @obj.e.g = 7
-    @obj.h.i.j = 8
+    subject.a = 1
+    subject.b = 2.0
+    subject.c[0] = 3
+    subject.c[1] = 4
+    subject.d = 5
+    subject.e.f = 6
+    subject.e.g = 7
+    subject.h.i.j = 8
 
     expected = [1, 2.0, 3, 4, 5, 6, 7, 8].pack('veCCVvNn')
 
-    @obj.to_binary_s.should == expected
+    subject.to_binary_s.should == expected
   end
 end
 
@@ -400,30 +376,30 @@ describe BinData::Record, "defined recursively" do
   end
 
   it "should be able to be created" do
-    obj = RecursiveRecord.new
+    subject = RecursiveRecord.new
   end
 
   it "should read" do
     str = "\x00\x01\x01\x00\x02\x01\x00\x03\x00"
-    obj = RecursiveRecord.read(str)
-    obj.val.should == 1
-    obj.nxt.val.should == 2
-    obj.nxt.nxt.val.should == 3
+    subject = RecursiveRecord.read(str)
+    subject.val.should == 1
+    subject.nxt.val.should == 2
+    subject.nxt.nxt.val.should == 3
   end
 
   it "should be assignable on demand" do
-    obj = RecursiveRecord.new
-    obj.val = 13
-    obj.nxt.val = 14
-    obj.nxt.nxt.val = 15
+    subject = RecursiveRecord.new
+    subject.val = 13
+    subject.nxt.val = 14
+    subject.nxt.nxt.val = 15
   end
 
   it "should write" do
-    obj = RecursiveRecord.new
-    obj.val = 5
-    obj.nxt.val = 6
-    obj.nxt.nxt.val = 7
-    obj.to_binary_s.should == "\x00\x05\x01\x00\x06\x01\x00\x07\x00"
+    subject = RecursiveRecord.new
+    subject.val = 5
+    subject.nxt.val = 6
+    subject.nxt.nxt.val = 7
+    subject.to_binary_s.should == "\x00\x05\x01\x00\x06\x01\x00\x07\x00"
   end
 end
 
@@ -439,8 +415,8 @@ describe BinData::Record, "with custom mandatory parameters" do
   end
 
   it "should use mandatory parameter" do
-    obj = MandatoryRecord.new(:arg1 => 5)
-    obj.a.should == 5
+    subject = MandatoryRecord.new(:arg1 => 5)
+    subject.a.should == 5
   end
 end
 
@@ -456,13 +432,13 @@ describe BinData::Record, "with custom default parameters" do
   end
 
   it "should use default parameter" do
-    obj = DefaultRecord.new
-    obj.a.should == 5
+    subject = DefaultRecord.new
+    subject.a.should == 5
   end
 
   it "should be able to override default parameter" do
-    obj = DefaultRecord.new(:arg1 => 7)
-    obj.a.should == 7
+    subject = DefaultRecord.new(:arg1 => 7)
+    subject.a.should == 7
   end
 end
 
@@ -473,25 +449,15 @@ describe BinData::Record, "with :onlyif" do
     uint8 :c, :initial_value => 7, :onlyif => lambda { a != 3 }
   end
 
-  before(:each) do
-    @obj = OnlyIfRecord.new
-  end
+  subject { OnlyIfRecord.new }
 
-  it "should have correct num_bytes" do
-    @obj.num_bytes.should == 2
-  end
-
-  it "should have expected snapshot" do
-    @obj.snapshot.should == {"a" => 3, "b" => 5}
-  end
+  its(:num_bytes) { should == 2 }
+  its(:snapshot) { should == {"a" => 3, "b" => 5} }
+  its(:to_binary_s) { should == "\x03\x05" }
 
   it "should read as expected" do
-    @obj.read("\x01\x02")
-    @obj.snapshot.should == {"a" => 1, "c" => 2}
-  end
-
-  it "should write as expected" do
-    @obj.to_binary_s.should == "\x03\x05"
+    subject.read("\x01\x02")
+    subject.snapshot.should == {"a" => 1, "c" => 2}
   end
 end
 

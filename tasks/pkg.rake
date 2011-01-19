@@ -16,7 +16,7 @@ begin
     s.extra_rdoc_files = ['NEWS']
     s.rdoc_options << '--main' << 'NEWS'
     s.files = PKG_FILES
-    s.add_development_dependency('rspec')
+    s.add_development_dependency('rspec', [">= 1.3.0"])
     s.add_development_dependency('haml')
     s.add_development_dependency('maruku')
     s.add_development_dependency('syntax')
