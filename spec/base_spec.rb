@@ -7,8 +7,8 @@ class BaseStub < BinData::Base
   # Override to avoid NotImplemented errors
   def clear; end
   def clear?; end
-  def assign(x); end
-  def snapshot; end
+  def assign(x); @data = x; end
+  def snapshot; @data; end
   def do_read(io) end
   def do_write(io) end
   def do_num_bytes; end
@@ -148,6 +148,40 @@ describe BinData::Base, "with multiple parameters" do
       subject.should have_parameter(:p2)
       subject.should have_parameter(:p3)
       subject.should have_parameter(:p4)
+    end
+  end
+end
+
+describe BinData::Base, "as a factory" do
+  subject { BaseStub.new(:check_offset => 1) }
+
+  describe "#new" do
+    it "should copy parameters" do
+      obj = subject.new
+      obj.eval_parameter(:check_offset).should == 1
+      puts obj.private_methods.sort - Object.private_methods
+    end
+
+    it "should call #initialize_instance" do
+      subject.should_receive(:initialize_instance)
+      obj = subject.new
+    end
+
+    it "should perform action for :check_offset" do
+      obj = subject.new
+      lambda {
+        obj.read("abc")
+      }.should raise_error(BinData::ValidityError)
+    end
+
+    it "should assign value" do
+      obj = subject.new(3)
+      obj.snapshot.should == 3
+    end
+
+    it "should set parent" do
+      obj = subject.new(3, "p")
+      obj.parent.should == "p"
     end
   end
 end

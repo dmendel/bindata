@@ -76,6 +76,10 @@ module BinData
     def initialize(parameters = {}, parent = nil)
       super
 
+      initialize_instance
+    end
+
+    def initialize_instance
       @struct = BinData::Struct.new(get_parameter(:struct_params), self)
     end
 

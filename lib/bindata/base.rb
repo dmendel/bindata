@@ -38,9 +38,7 @@ module BinData
       # Instantiates this class and reads from +io+, returning the newly
       # created data object.
       def read(io)
-        data = self.new
-        data.read(io)
-        data
+        self.new.tap { |obj| obj.read(io) }
       end
 
       # The name of this class as used by Records, Arrays etc.
@@ -83,7 +81,19 @@ module BinData
       prepare_for_read_with_offset
     end
 
-    attr_reader :parent
+    attr_accessor :parent
+
+    # Creates a new data object based on this instance.
+    #
+    # All parameters will be be duplicated.  Use this method to obtain a
+    # speedup if you are creating multiple objects with the same parameters.
+    def new(value = nil, parent = nil)
+      clone.tap do |obj|
+        obj.initialize_instance
+        obj.assign(value) if value
+        obj.parent = parent if parent
+      end
+    end
 
     # Returns the result of evaluating the parameter identified by +key+.
     #
@@ -272,6 +282,11 @@ module BinData
     def self.sanitize_parameters!(parameters, sanitizer) #:nodoc:
     end
 
+    # Sets the initial state of the object.  All instance variables that
+    # shouldn't be cloned are set here.
+    def initialize_instance
+    end
+
     # Resets the internal state to that of a newly created object.
     def clear
       raise NotImplementedError
@@ -321,7 +336,7 @@ module BinData
     end
 
     # Set visibility requirements of methods to implement
-    public :clear, :clear?, :assign, :snapshot, :debug_name_of, :offset_of
+    public :initialize_instance, :clear, :clear?, :assign, :snapshot, :debug_name_of, :offset_of
     protected :do_read, :do_write, :do_num_bytes
 
     # End To be implemented by subclasses

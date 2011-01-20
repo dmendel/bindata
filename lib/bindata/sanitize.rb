@@ -216,7 +216,9 @@ module BinData
     end
 
     def instantiate(parent = nil)
-      @obj_class.new(@obj_params, parent)
+      @factory ||= @obj_class.new(@obj_params, parent)
+
+      @factory.new(nil, parent)
     end
   end
   #----------------------------------------------------------------------------
@@ -229,7 +231,9 @@ module BinData
     attr_reader :name
 
     def instantiate(parent = nil)
-      @prototype.instantiate(parent)
+      @factory ||= @prototype.instantiate(parent)
+
+      @factory.new(nil, parent)
     end
   end
   #----------------------------------------------------------------------------

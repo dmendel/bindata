@@ -15,6 +15,16 @@ unless Object.respond_to? :instance_exec
   end
 end
 
+# Implement Object#tap for Ruby 1.8.6 and below
+unless Object.method_defined? :tap
+  Object.class_eval do
+    def tap
+      yield self
+      self
+    end
+  end
+end
+
 module BinData
   class Base
     class << self

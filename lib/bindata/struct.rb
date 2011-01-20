@@ -146,6 +146,10 @@ module BinData
       super
 
       @field_names = get_parameter(:fields).field_names
+      initialize_instance
+    end
+
+    def initialize_instance
       @field_objs  = []
     end
 

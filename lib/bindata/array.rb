@@ -81,8 +81,12 @@ module BinData
     def initialize(parameters = {}, parent = nil)
       super
 
-      @element_list      = nil
       @element_prototype = get_parameter(:type)
+      initialize_instance
+    end
+
+    def initialize_instance
+      @element_list = nil
     end
 
     def clear?
