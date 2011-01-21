@@ -98,12 +98,6 @@ module BinData
       end
     end
 
-    def initialize(parameters = {}, parent = nil)
-      super
-
-      initialize_instance
-    end
-
     def initialize_instance
       @choices = {}
       @last_selection = nil

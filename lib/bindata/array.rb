@@ -78,11 +78,8 @@ module BinData
       end
     end
 
-    def initialize(parameters = {}, parent = nil)
-      super
-
+    def initialize_shared_instance
       @element_prototype = get_parameter(:type)
-      initialize_instance
     end
 
     def initialize_instance

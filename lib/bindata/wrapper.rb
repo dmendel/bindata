@@ -40,14 +40,7 @@ module BinData
 
     mandatory_parameter :wrapped
 
-    def initialize(parameters = {}, parent = nil)
-      super
-
-      initialize_instance
-    end
-
     def initialize_instance
-
       prototype = get_parameter(:wrapped)
       @wrapped = prototype.instantiate(self)
     end

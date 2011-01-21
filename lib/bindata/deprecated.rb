@@ -27,6 +27,23 @@ end
 
 module BinData
   class Base
+
+    alias_method :initialize_without_deprecation, :initialize
+    def initialize_with_deprecation(*args)
+      owner = method(:initialize).owner
+      if owner != BinData::Base
+        fail "implementing #initialize on #{owner} is not allowed.\nEither downgrade to BinData 1.2.2, or rename #initialize to #initialize_instance."
+      end
+      initialize_without_deprecation(*args)
+    end
+    alias_method :initialize, :initialize_with_deprecation
+
+    def initialize_instance(*args)
+      unless args.empty?
+        warn "#{caller[0]} remove the call to super in #initialize_instance"
+      end
+    end
+
     class << self
       def register(name, class_to_register)
         if class_to_register == self

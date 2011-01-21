@@ -152,38 +152,70 @@ describe BinData::Base, "with multiple parameters" do
   end
 end
 
-describe BinData::Base, "as a factory" do
-  subject { BaseStub.new(:check_offset => 1) }
-
-  describe "#new" do
-    it "should copy parameters" do
-      obj = subject.new
-      obj.eval_parameter(:check_offset).should == 1
-      puts obj.private_methods.sort - Object.private_methods
+describe BinData::Base, "when initializing" do
+  class BaseInit < BaseStub
+    class << self
+      attr_accessor :calls
+      def recorded_calls(&block)
+        self.calls = []
+        block.call
+        calls
+      end
     end
 
-    it "should call #initialize_instance" do
-      subject.should_receive(:initialize_instance)
-      obj = subject.new
+    def initialize_instance
+      self.class.calls << :initialize_instance
     end
 
-    it "should perform action for :check_offset" do
-      obj = subject.new
-      lambda {
-        obj.read("abc")
-      }.should raise_error(BinData::ValidityError)
-    end
-
-    it "should assign value" do
-      obj = subject.new(3)
-      obj.snapshot.should == 3
-    end
-
-    it "should set parent" do
-      obj = subject.new(3, "p")
-      obj.parent.should == "p"
+    def initialize_shared_instance
+      self.class.calls << :initialize_shared_instance
     end
   end
+
+  it "should call both #initialize_xxx methods when initializing" do
+    BaseInit.recorded_calls {
+      BaseInit.new
+    }.should == [:initialize_shared_instance, :initialize_instance]
+  end
+
+  context "as a factory" do
+    subject { BaseInit.new(:check_offset => 1) }
+
+    describe "#new" do
+      it "should call #initialize_instance" do
+        obj = subject
+
+        BaseInit.recorded_calls {
+          obj.new
+        }.should == [:initialize_instance]
+      end
+
+      it "should copy parameters" do
+        obj = subject.new
+        obj.eval_parameter(:check_offset).should == 1
+      end
+
+      it "should perform action for :check_offset" do
+        obj = subject.new
+        lambda {
+          obj.read("abc")
+        }.should raise_error(BinData::ValidityError)
+      end
+
+      it "should assign value" do
+        obj = subject.new(3)
+        obj.snapshot.should == 3
+      end
+
+      it "should set parent" do
+        obj = subject.new(3, "p")
+        obj.parent.should == "p"
+      end
+    end
+  end
+end
+
+describe BinData::Base, "as a factory" do
 end
 
 describe BinData::Base, "as black box" do
@@ -274,8 +306,11 @@ end
 
 describe BinData::Base, "checking offsets" do
   class TenByteOffsetBase < BaseStub
-    def initialize(params = {})
-      super({})
+    def self.create(params)
+      self.new.tap { |obj| obj.initialize_child(params) }
+    end
+
+    def initialize_child(params)
       @child = BaseStub.new(params, self)
     end
 
@@ -290,25 +325,25 @@ describe BinData::Base, "checking offsets" do
   context "with :check_offset" do
     it "should fail if offset is incorrect" do
       io.seek(2)
-      subject = TenByteOffsetBase.new(:check_offset => 8)
+      subject = TenByteOffsetBase.create(:check_offset => 8)
       lambda { subject.read(io) }.should raise_error(BinData::ValidityError)
     end
 
     it "should succeed if offset is correct" do
       io.seek(3)
-      subject = TenByteOffsetBase.new(:check_offset => 10)
+      subject = TenByteOffsetBase.create(:check_offset => 10)
       lambda { subject.read(io) }.should_not raise_error
     end
 
     it "should fail if :check_offset fails" do
       io.seek(4)
-      subject = TenByteOffsetBase.new(:check_offset => lambda { offset == 11 } )
+      subject = TenByteOffsetBase.create(:check_offset => lambda { offset == 11 } )
       lambda { subject.read(io) }.should raise_error(BinData::ValidityError)
     end
 
     it "should succeed if :check_offset succeeds" do
       io.seek(5)
-      subject = TenByteOffsetBase.new(:check_offset => lambda { offset == 10 } )
+      subject = TenByteOffsetBase.create(:check_offset => lambda { offset == 10 } )
       lambda { subject.read(io) }.should_not raise_error
     end
   end
@@ -316,26 +351,26 @@ describe BinData::Base, "checking offsets" do
   context "with :adjust_offset" do
     it "should be mutually exclusive with :check_offset" do
       params = { :check_offset => 8, :adjust_offset => 8 }
-      lambda { TenByteOffsetBase.new(params) }.should raise_error(ArgumentError)
+      lambda { TenByteOffsetBase.create(params) }.should raise_error(ArgumentError)
     end
 
     it "should adjust if offset is incorrect" do
       io.seek(2)
-      subject = TenByteOffsetBase.new(:adjust_offset => 13)
+      subject = TenByteOffsetBase.create(:adjust_offset => 13)
       subject.read(io)
       io.pos.should == (2 + 13)
     end
 
     it "should succeed if offset is correct" do
       io.seek(3)
-      subject = TenByteOffsetBase.new(:adjust_offset => 10)
+      subject = TenByteOffsetBase.create(:adjust_offset => 10)
       lambda { subject.read(io) }.should_not raise_error
       io.pos.should == (3 + 10)
     end
 
     it "should fail if cannot adjust offset" do
       io.seek(4)
-      subject = TenByteOffsetBase.new(:adjust_offset => -5)
+      subject = TenByteOffsetBase.create(:adjust_offset => -5)
       lambda { subject.read(io) }.should raise_error(BinData::ValidityError)
     end
   end

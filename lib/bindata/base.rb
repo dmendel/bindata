@@ -75,23 +75,28 @@ module BinData
     # +parent+ is the parent data object (e.g. struct, array, choice) this
     # object resides under.
     def initialize(parameters = {}, parent = nil)
+      # value, parameters, parent = extract_args(args)
       @params = Sanitizer.sanitize(parameters, self.class)
-      @parent = parent
-
       prepare_for_read_with_offset
+      #
+      @parent = parent if parent
+      initialize_shared_instance
+      initialize_instance
+      # assign(value) if value
     end
 
     attr_accessor :parent
+    protected :parent=
 
     # Creates a new data object based on this instance.
     #
-    # All parameters will be be duplicated.  Use this method to obtain a
-    # speedup if you are creating multiple objects with the same parameters.
+    # All parameters will be be duplicated.  Use this method 
+    # when creating multiple objects with the same parameters.
     def new(value = nil, parent = nil)
       clone.tap do |obj|
+        obj.parent = parent if parent
         obj.initialize_instance
         obj.assign(value) if value
-        obj.parent = parent if parent
       end
     end
 
@@ -282,9 +287,18 @@ module BinData
     def self.sanitize_parameters!(parameters, sanitizer) #:nodoc:
     end
 
-    # Sets the initial state of the object.  All instance variables that
-    # shouldn't be cloned are set here.
+    # Initializes the state of the object.  All instance variables that
+    # are used by the object must be initialized here.
     def initialize_instance
+    end
+
+    # Initialises state that is shared by objects with the same parameters.
+    #
+    # This should only be used when optimising for performance.  Instance
+    # variables set here, and changes to the singleton class will be shared
+    # between all objects that are initialized with the same parameters.
+    # This method is called only once for a particular set of parameters.
+    def initialize_shared_instance
     end
 
     # Resets the internal state to that of a newly created object.

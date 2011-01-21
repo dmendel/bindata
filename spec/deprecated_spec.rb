@@ -23,6 +23,30 @@ describe BinData::MultiValue, "when defining" do
 end
 
 describe BinData::Base, "when defining" do
+  it "should fail if #initialize is overridden" do
+    class BaseWithInitialize < BinData::Base
+      def initialize(params = {}, parent = nil)
+        super
+      end
+    end
+
+    lambda {
+      BaseWithInitialize.new
+    }.should raise_error
+  end
+
+  it "should handle if #initialize is naively renamed to #initialize_instance" do
+    class BaseWithInitializeInstance < BinData::Base
+      def initialize_instance(params = {}, parent = nil)
+        super
+      end
+    end
+
+    lambda {
+      BaseWithInitializeInstance.new
+    }.should_not raise_error
+  end
+
   it "should handle deprecated #register method" do
     lambda {
       class DeprecatedRegisterBase < BinData::Base

@@ -50,12 +50,6 @@ module BinData
     optional_parameters :initial_value, :value, :check_value
     mutually_exclusive_parameters :initial_value, :value
 
-    def initialize(parameters = {}, parent = nil)
-      super
-
-      initialize_instance
-    end
-
     def initialize_instance
       @value = nil
     end

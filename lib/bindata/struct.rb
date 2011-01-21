@@ -142,11 +142,8 @@ module BinData
       end
     end
 
-    def initialize(parameters = {}, parent = nil)
-      super
-
-      @field_names = get_parameter(:fields).field_names
-      initialize_instance
+    def initialize_shared_instance
+      @field_names = get_parameter(:fields).field_names.freeze
     end
 
     def initialize_instance
