@@ -75,13 +75,7 @@ describe BinData::Array, "with several elements" do
   end
 
   it "should assign bindata objects" do
-    o1 = ExampleSingle.new
-    o1.value = 4
-    o2 = ExampleSingle.new
-    o2.value = 5
-    o3 = ExampleSingle.new
-    o3.value = 6
-    subject.assign([o1, o2, o3])
+    subject.assign([ExampleSingle.new(4), ExampleSingle.new(5), ExampleSingle.new(6)])
     subject.should == [4, 5, 6]
   end
 

@@ -208,7 +208,7 @@ module BinData
       if prototype.nil?
         raise IndexError, "selection '#{selection}' does not exist in :choices for #{debug_name}"
       end
-      prototype.instantiate(self)
+      prototype.instantiate(nil, self)
     end
 
     def copy_previous_value_if_required(selection, obj)

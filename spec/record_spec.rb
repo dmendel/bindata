@@ -108,6 +108,7 @@ describe BinData::Record, "with anonymous fields" do
   class AnonymousRecord < BinData::Record
     int8 'a', :initial_value => 10
     int8 ''
+    int8 nil
     int8
     int8 :value => :a
   end
@@ -124,10 +125,10 @@ describe BinData::Record, "with anonymous fields" do
   end
 
   it "should write anonymous fields" do
-    str = "\001\002\003\004"
+    str = "\001\002\003\004\005"
     subject.read(str)
     subject.a.clear
-    subject.to_binary_s.should == "\012\002\003\012"
+    subject.to_binary_s.should == "\012\002\003\004\012"
   end
 end
 
@@ -166,7 +167,7 @@ describe BinData::Record, "with multiple fields" do
     int8 :b
   end
 
-  subject { MultiFieldRecord.new.tap { |obj| obj.assign(:a => 1, :b => 2) } }
+  subject { MultiFieldRecord.new(:a => 1, :b => 2) }
 
   it "should return num_bytes" do
     subject.a.num_bytes.should == 1
@@ -265,6 +266,14 @@ describe BinData::Record, "with nested structs" do
     subject.b.w.rel_offset.should == 0
     subject.c.rel_offset.should == 3
     subject.c.z.rel_offset.should == 1
+  end
+
+  it "should assign nested fields" do
+    subject.assign(:a => 2, :b => {:w => 4})
+    subject.a.should   == 2
+    subject.b.w.should == 4
+    subject.b.x.should == 2
+    subject.c.y.should == 4
   end
 end
 
@@ -425,6 +434,7 @@ describe BinData::Record, "with custom default parameters" do
     default_parameter :arg1 => 5
 
     uint8 :a, :value => :arg1
+    uint8 :b
   end
 
   it "should not raise error if default parameter is not supplied" do
@@ -439,6 +449,17 @@ describe BinData::Record, "with custom default parameters" do
   it "should be able to override default parameter" do
     subject = DefaultRecord.new(:arg1 => 7)
     subject.a.should == 7
+  end
+
+  it "should accept values" do
+    subject = DefaultRecord.new(:b => 2)
+    subject.b.should == 2
+  end
+
+  it "should accept values and parameters" do
+    subject = DefaultRecord.new({:b => 2}, :arg1 => 3)
+    subject.a.should == 3
+    subject.b.should == 2
   end
 end
 

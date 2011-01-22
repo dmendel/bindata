@@ -8,27 +8,22 @@ module BinData
   #   data = "\x03\x04\x05\x06\x07\x08\x09"
   #
   #   obj = BinData::Array.new(:type => :int8, :initial_length => 6)
-  #   obj.read(data)
-  #   obj.snapshot #=> [3, 4, 5, 6, 7, 8]
+  #   obj.read(data) #=> [3, 4, 5, 6, 7, 8]
   #
   #   obj = BinData::Array.new(:type => :int8,
   #                            :read_until => lambda { index == 1 })
-  #   obj.read(data)
-  #   obj.snapshot #=> [3, 4]
+  #   obj.read(data) #=> [3, 4]
   #
   #   obj = BinData::Array.new(:type => :int8,
   #                            :read_until => lambda { element >= 6 })
-  #   obj.read(data)
-  #   obj.snapshot #=> [3, 4, 5, 6]
+  #   obj.read(data) #=> [3, 4, 5, 6]
   #
   #   obj = BinData::Array.new(:type => :int8,
   #           :read_until => lambda { array[index] + array[index - 1] == 13 })
-  #   obj.read(data)
-  #   obj.snapshot #=> [3, 4, 5, 6, 7]
+  #   obj.read(data) #=> [3, 4, 5, 6, 7]
   #
   #   obj = BinData::Array.new(:type => :int8, :read_until => :eof)
-  #   obj.read(data)
-  #   obj.snapshot #=> [3, 4, 5, 6, 7, 8, 9]
+  #   obj.read(data) #=> [3, 4, 5, 6, 7, 8, 9]
   #
   # == Parameters
   #
@@ -262,13 +257,7 @@ module BinData
     end
 
     def to_storage_formats(els)
-      els.collect { |el| to_storage_format(el) }
-    end
-
-    def to_storage_format(obj)
-      element = new_element
-      element.assign(obj)
-      element
+      els.collect { |el| new_element(el) }
     end
 
     def read_until(io)
@@ -319,8 +308,8 @@ module BinData
       element
     end
 
-    def new_element
-      @element_prototype.instantiate(self)
+    def new_element(value = nil)
+      @element_prototype.instantiate(value, self)
     end
 
     def sum_num_bytes_for_all_elements

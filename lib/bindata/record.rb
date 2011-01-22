@@ -82,5 +82,25 @@ module BinData
         end
       end
     end
+
+    def extract_args(the_args)
+      value, parameters, parent = super
+
+      if value.nil? and parameters.length > 0
+        if field_names_in_parameters(parameters).length > 0
+          value = parameters
+          parameters = nil
+        end
+      end
+
+      [value, parameters, parent]
+    end
+
+    def field_names_in_parameters(parameters)
+      field_names = self.class.fields.field_names.collect { |k| k.to_s }
+      param_keys = parameters.keys.collect { |k| k.to_s }
+
+      (field_names & param_keys)
+    end
   end
 end

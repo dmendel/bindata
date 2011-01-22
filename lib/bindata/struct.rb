@@ -259,7 +259,7 @@ module BinData
     def instantiate_obj_at(index)
       if @field_objs[index].nil?
         field = get_parameter(:fields)[index]
-        @field_objs[index] = field.instantiate(self)
+        @field_objs[index] = field.instantiate(nil, self)
       end
     end
 

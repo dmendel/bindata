@@ -69,20 +69,24 @@ module BinData
 
     # Creates a new data object.
     #
+    # Args are optional, but if present, must be in the following order.
+    #
+    # +value+ is a value that is +assign+ed immediately after initialization.
+    #
     # +parameters+ is a hash containing symbol keys.  Some parameters may
     # reference callable objects (methods or procs).
     #
     # +parent+ is the parent data object (e.g. struct, array, choice) this
     # object resides under.
-    def initialize(parameters = {}, parent = nil)
-      # value, parameters, parent = extract_args(args)
+    def initialize(*args)
+      value, parameters, parent = extract_args(args)
       @params = Sanitizer.sanitize(parameters, self.class)
       prepare_for_read_with_offset
-      #
+
       @parent = parent if parent
       initialize_shared_instance
       initialize_instance
-      # assign(value) if value
+      assign(value) if value
     end
 
     attr_accessor :parent
@@ -217,6 +221,27 @@ module BinData
     #---------------
     private
 
+    def extract_args(the_args)
+      args = the_args.dup
+      value = parameters = parent = nil
+
+      if args.length > 1 and args.last.is_a? BinData::Base
+        parent = args.pop
+      end
+
+      if args.length > 0 and args.last.respond_to?(:keys)
+        parameters = args.pop
+      end
+
+      if args.length > 0
+        value = args.pop
+      end
+
+      parameters ||= {}
+
+      return [value, parameters, parent]
+    end
+
     def furthest_ancestor
       if parent.nil?
         self
@@ -228,26 +253,30 @@ module BinData
     end
 
     def prepare_for_read_with_offset
-      if has_parameter?(:check_offset) or has_parameter?(:adjust_offset)
+      if has_parameter?(:check_offset)
         class << self
-          alias_method :do_read_without_offset, :do_read
-          alias_method :do_read, :do_read_with_offset
-          public :do_read # Ruby 1.9.2 bug.  Should be protected
+          alias_method :do_read_without_check_offset, :do_read
+          alias_method :do_read, :do_read_with_check_offset
+          public :do_read
+        end
+      end
+      if has_parameter?(:adjust_offset)
+        class << self
+          alias_method :do_read_without_adjust_offset, :do_read
+          alias_method :do_read, :do_read_with_adjust_offset
+          public :do_read
         end
       end
     end
 
-    def do_read_with_offset(io) #:nodoc:
-      check_or_adjust_offset(io)
-      do_read_without_offset(io)
+    def do_read_with_check_offset(io) #:nodoc:
+      check_offset(io)
+      do_read_without_check_offset(io)
     end
 
-    def check_or_adjust_offset(io)
-      if has_parameter?(:check_offset)
-        check_offset(io)
-      elsif has_parameter?(:adjust_offset)
-        adjust_offset(io)
-      end
+    def do_read_with_adjust_offset(io) #:nodoc:
+      adjust_offset(io)
+      do_read_without_adjust_offset(io)
     end
 
     def check_offset(io)
@@ -311,7 +340,7 @@ module BinData
       raise NotImplementedError
     end
 
-    # Assigns the value of +val+ to this data object.  Note that +val+ will
+    # Assigns the value of +val+ to this data object.  Note that +val+ must
     # always be deep copied to ensure no aliasing problems can occur.
     def assign(val)
       raise NotImplementedError
@@ -350,7 +379,8 @@ module BinData
     end
 
     # Set visibility requirements of methods to implement
-    public :initialize_instance, :clear, :clear?, :assign, :snapshot, :debug_name_of, :offset_of
+    public :clear, :clear?, :assign, :snapshot, :debug_name_of, :offset_of
+    protected :initialize_instance, :initialize_shared_instance
     protected :do_read, :do_write, :do_num_bytes
 
     # End To be implemented by subclasses

@@ -20,7 +20,7 @@ module BinData
       @the_class = the_class
 
       @parameters = {}
-      parameters.each { |key, value| @parameters[key.to_sym] = value }
+      parameters.each_pair { |key, value| @parameters[key.to_sym] = value }
 
       ensure_no_nil_values
     end
@@ -36,6 +36,10 @@ module BinData
 
     def []=(key, value)
       @parameters[key] = value unless @all_sanitized
+    end
+
+    def keys
+      @parameters.keys
     end
 
     def has_parameter?(key)
@@ -215,10 +219,10 @@ module BinData
       end
     end
 
-    def instantiate(parent = nil)
+    def instantiate(value = nil, parent = nil)
       @factory ||= @obj_class.new(@obj_params, parent)
 
-      @factory.new(nil, parent)
+      @factory.new(value, parent)
     end
   end
   #----------------------------------------------------------------------------
@@ -230,10 +234,10 @@ module BinData
     end
     attr_reader :name
 
-    def instantiate(parent = nil)
-      @factory ||= @prototype.instantiate(parent)
+    def instantiate(value = nil, parent = nil)
+      @factory ||= @prototype.instantiate(nil, parent)
 
-      @factory.new(nil, parent)
+      @factory.new(value, parent)
     end
   end
   #----------------------------------------------------------------------------

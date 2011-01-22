@@ -177,8 +177,7 @@ describe BinData::Primitive, "derived classes" do
   end
 
   it "should derive" do
-    a = ChildDerivedPrimitive.new
-    a.value = 7
+    a = ChildDerivedPrimitive.new(7)
     a.to_binary_s.should == "\000\007"
   end
 end

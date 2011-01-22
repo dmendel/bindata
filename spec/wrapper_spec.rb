@@ -90,7 +90,9 @@ describe BinData::Wrapper, "around an Array" do
   class WrappedIntArray < BinData::Wrapper
     endian :big
     default_parameter :initial_element_value => 0
-    array :type => [:uint16, {:initial_value => :initial_element_value}]
+    array do
+      uint16 :initial_value => :initial_element_value
+    end
   end
 
   it "should forward parameters" do
@@ -116,17 +118,47 @@ describe BinData::Wrapper, "around a Choice" do
   end
 end
 
-describe BinData::Wrapper, "inside a struct" do
+describe BinData::Wrapper, "inside a Record" do
   class WrappedUint32le < BinData::Wrapper
     uint32le
   end
 
-  it "should handle onlyif" do
-    field1 = [:wrapped_uint32le, :a, {:onlyif => false, :value => 1 }]
-    field2 = [:wrapped_uint32le, :b, {:onlyif => true, :value => 2 }]
+  class RecordWithWrapped < BinData::Record
+    wrapped_uint32le :a, :onlyif => false, :value => 1
+    wrapped_uint32le :b, :onlyif => true,  :value => 2
+  end
 
-    subject = BinData::Struct.new(:fields => [field1, field2])
+  it "should handle onlyif" do
+    subject = RecordWithWrapped.new
     subject.should == {'b' => 2}
+  end
+end
+
+describe BinData::Wrapper, "around a Record" do
+  class RecordToBeWrapped < BinData::Record
+    default_parameter :arg => 3
+    uint8 :a, :initial_value => :arg
+    uint8 :b
+  end
+
+  class WrappedRecord < BinData::Wrapper
+    record_to_be_wrapped
+  end
+
+  it "should forward parameters" do
+    subject = WrappedRecord.new(:arg => 5)
+    subject.a.should == 5
+  end
+
+  it "should assign value" do
+    subject = WrappedRecord.new(:b => 5)
+    subject.b.should == 5
+  end
+
+  it "should assign value and forward parameters" do
+    subject = WrappedRecord.new({:b => 5}, :arg => 7)
+    subject.a.should == 7
+    subject.b.should == 5
   end
 end
 

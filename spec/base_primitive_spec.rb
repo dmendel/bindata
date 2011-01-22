@@ -62,7 +62,7 @@ describe BinData::BasePrimitive do
 end
 
 describe ExampleSingle do
-  subject { ExampleSingle.new.tap { |obj| obj.value = 5 } }
+  subject { ExampleSingle.new(5) }
 
   it "should fail when assigning nil values" do
     lambda { subject.assign(nil) }.should raise_error(ArgumentError)
@@ -74,9 +74,7 @@ describe ExampleSingle do
   end
 
   it "should allowing setting and retrieving BinData::BasePrimitives" do
-    obj = ExampleSingle.new
-    obj.value = 7
-    subject.value = obj
+    subject.value = ExampleSingle.new(7)
     subject.value.should == 7
   end
 
@@ -98,9 +96,7 @@ describe ExampleSingle do
   end
 
   it "should be equal to other ExampleSingle" do
-    other = ExampleSingle.new
-    other.value = 5
-    subject.should == other
+    subject.should == ExampleSingle.new(5)
   end
 
   it "should be equal to raw values" do

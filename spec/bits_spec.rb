@@ -71,11 +71,8 @@ share_examples_for "All bitfields" do
   it "should assign values from other bit objects" do
     all_classes do |bit_class|
       some_values_within_range.each do |val|
-        src = bit_class.new
-        src.assign(val)
-
         subject = bit_class.new
-        subject.assign(src)
+        subject.assign(bit_class.new(val))
 
         subject.should == val
       end
