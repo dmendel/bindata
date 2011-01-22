@@ -13,6 +13,7 @@ module BinData
       # [<tt>:sanitize_fields</tt>]        Fields are to be sanitized.
       # [<tt>:mandatory_fieldnames</tt>]   Fieldnames are mandatory.
       # [<tt>:optional_fieldnames</tt>]    Fieldnames are optional.
+      # [<tt>:fieldnames_for_choices</tt>] Fieldnames are choice keys.
       # [<tt>:no_fieldnames</tt>]          Fieldnames are prohibited.
       # [<tt>:all_or_none_fieldnames</tt>] All fields must have names, or
       #                                    none may have names.
@@ -108,7 +109,13 @@ module BinData
 
       def hide(*args)
         if option?(:hidden_fields)
-          @hide.concat(args.collect { |name| name.to_s })
+          hidden = args.collect do |name|
+                     unless Symbol === name
+                       warn "Hidden field '#{name}' should be provided as a symbol.  Using strings is deprecated"
+                     end
+                     name.to_sym
+                   end
+          @hide.concat(hidden.compact)
           @hide
         end
       end
@@ -188,8 +195,10 @@ module BinData
       def name_from_field_declaration(args)
         name, params = args
         name = nil if name.is_a?(Hash)
+        name = name.to_s if name.is_a?(Symbol)
+        name = name.to_s if name.nil?
 
-        name.to_s
+        name
       end
 
       def params_from_field_declaration(type, args, &block)
@@ -233,6 +242,8 @@ module BinData
         if must_have_a_name_failed?(name)
           dsl_raise SyntaxError, "field must have a name"
         end
+
+        return if option?(:fieldnames_for_choices)
 
         if malformed_name?(name)
           dsl_raise NameError.new("", name), "field '#{name}' is an illegal fieldname"
@@ -317,7 +328,7 @@ module BinData
 
     class ChoiceBlockParser
       def self.extract_params(endian, &block)
-        parser = DSLParser.new(BinData::Choice, :multiple_fields, :all_or_none_fieldnames)
+        parser = DSLParser.new(BinData::Choice, :multiple_fields, :all_or_none_fieldnames, :fieldnames_for_choices)
         parser.endian endian
         parser.instance_eval(&block)
 

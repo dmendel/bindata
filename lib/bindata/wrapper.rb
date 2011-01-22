@@ -40,6 +40,29 @@ module BinData
 
     mandatory_parameter :wrapped
 
+    def wrapped_class
+      return nil if self.class.field.nil?
+
+      sanitizer = Sanitizer.new
+      sanitizer.with_endian(self.class.endian) do
+        begin
+          return sanitizer.lookup_class(self.class.field.type)
+        rescue BinData::UnRegisteredTypeError
+        end
+      end
+
+      nil
+    end
+
+    def extract_args(args)
+      klass = wrapped_class
+      if klass
+        klass.arg_extractor.extract(klass, args)
+      else
+        super
+      end
+    end
+
     def initialize_instance
       prototype = get_parameter(:wrapped)
       @wrapped = prototype.instantiate(nil, self)
@@ -79,23 +102,6 @@ module BinData
 
     def do_num_bytes #:nodoc:
       @wrapped.do_num_bytes
-    end
-
-    def extract_args(*args)
-      # TODO: this is an ugly hack so extract_args delegates to Record#extract_args
-      sanitizer = Sanitizer.new
-      sanitizer.with_endian(self.class.endian) do
-        begin
-          klass = sanitizer.lookup_class(self.class.field.type)
-          if klass.ancestors.include? BinData::Record
-            obj = klass.new
-            return obj.send(:extract_args, *args)
-          end
-        rescue BinData::UnRegisteredTypeError
-        end
-      end
-
-      super
     end
   end
 end

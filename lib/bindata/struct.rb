@@ -1,6 +1,11 @@
 require 'bindata/base'
 
 module BinData
+
+  class Base
+    optional_parameter :onlyif  # Used by Struct
+  end
+
   # A Struct is an ordered collection of named data objects.
   #
   #    require 'bindata'
@@ -119,7 +124,12 @@ module BinData
       end
 
       def hidden_field_names(hidden)
-        (hidden || []).collect { |h| h.to_s }
+        (hidden || []).collect do |h|
+          unless Symbol === h
+            warn "Hidden field '#{h}' should be provided as a symbol.  Using strings is deprecated"
+          end
+          h.to_s # TODO: change this to sym
+        end
       end
 
       def ensure_field_names_are_valid(field_names)

@@ -6,12 +6,35 @@ require 'bindata/registry'
 require 'bindata/sanitize'
 
 module BinData
+  # ArgExtractors take the arguments to BinData::Base.new and
+  # separate them into [value, parameters, parent].
+  class BaseArgExtractor
+    def self.extract(the_class, the_args)
+      args = the_args.dup
+      value = parameters = parent = nil
+
+      if args.length > 1 and args.last.is_a? BinData::Base
+        parent = args.pop
+      end
+
+      if args.length > 0 and args.last.respond_to?(:keys)
+        parameters = args.pop
+      end
+
+      if args.length > 0
+        value = args.pop
+      end
+
+      parameters ||= {}
+
+      return [value, parameters, parent]
+    end
+  end
+
   # This is the abstract base class for all data objects.
   class Base
     include AcceptedParametersMixin
     include CheckOrAdjustOffsetMixin
-
-    optional_parameter :onlyif                            # Used by Struct
 
     class << self
 
@@ -19,6 +42,11 @@ module BinData
       # created data object.
       def read(io)
         self.new.tap { |obj| obj.read(io) }
+      end
+
+      # The arg extractor for this class.
+      def arg_extractor
+        BaseArgExtractor
       end
 
       # The name of this class as used by Records, Arrays etc.
@@ -203,24 +231,7 @@ module BinData
     private
 
     def extract_args(the_args)
-      args = the_args.dup
-      value = parameters = parent = nil
-
-      if args.length > 1 and args.last.is_a? BinData::Base
-        parent = args.pop
-      end
-
-      if args.length > 0 and args.last.respond_to?(:keys)
-        parameters = args.pop
-      end
-
-      if args.length > 0
-        value = args.pop
-      end
-
-      parameters ||= {}
-
-      return [value, parameters, parent]
+      self.class.arg_extractor.extract(self.class, the_args)
     end
 
     def furthest_ancestor

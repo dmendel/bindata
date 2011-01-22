@@ -69,7 +69,7 @@ end
 
 describe BinData::Struct, "with hidden fields" do
   subject {
-    params = { :hide => [:b, 'c'],
+    params = { :hide => [:b, :c],
                :fields => [
                    [:int8, :a],
                    [:int8, 'b', {:initial_value => 5}],

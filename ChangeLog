@@ -7,6 +7,7 @@
 * Objects deriving from BinData::Base should no longer override #initialize.
 * Added BinData::Base(#new, #initialize_instance) to speed up
   instantiation of multiple objects.
+* BinData::Struct.hide now expects symbols instead of strings.
 
 == Version 1.2.2 (2010-12-14)
 

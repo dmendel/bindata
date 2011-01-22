@@ -1,5 +1,18 @@
 = 1.3.0
 
+== New features
+
+You can now assign values to BinData objects when instantiating them.
+
+Previously:
+    obj = BinData::Stringz.new(:max_length => 10)
+    obj.assign("abc")
+
+Now:
+    obj = BinData::Stringz.new("abc", :max_length => 10)
+
+== Backwards incompatible changes
+
 This version makes some backwards incompatible changes for more advanced
 users of BinData.
 
@@ -9,6 +22,9 @@ subclassing BinData::Base or BinData::BasePrimitive.
 All instance variables must now be initialized in #initialize_instance.
 Implementing #initialize is no longer allowed.
 
+Run your existing code in $VERBOSE mode ("ruby -w"), and BinData will
+inform you of any changes you need to make to your code.
+
 If your code previously looked like:
 
     class MyType < BinData::Base
@@ -17,8 +33,8 @@ If your code previously looked like:
       def initialize(parameters = {}, parent = nil)
         super
 
-        @instance1 = ...
-        @instance2 = ...
+        @var1 = ...
+        @var2 = ...
       end
       ...
     end
@@ -29,8 +45,8 @@ You must change it to look like:
       register_self
 
       def initialize_instance
-        @instance1 = ...
-        @instance2 = ...
+        @var1 = ...
+        @var2 = ...
       end
       ...
     end

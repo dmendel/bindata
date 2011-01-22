@@ -53,7 +53,7 @@ describe BinData::Record, "when defining with errors" do
     lambda {
       class MalformedNameRecord < BinData::Record
         int8 :a
-        int8 45
+        int8 "45"
       end
     }.should raise_error_on_line(NameError, 3) { |err|
       err.message.should == "field '45' is an illegal fieldname in #{MalformedNameRecord}"
@@ -134,7 +134,7 @@ end
 
 describe BinData::Record, "with hidden fields" do
   class HiddenRecord < BinData::Record
-    hide :b, 'c'
+    hide :b, :c
     int8 :a
     int8 'b', :initial_value => 10
     int8 :c
@@ -307,15 +307,28 @@ describe BinData::Record, "with nested array of structs" do
   end
 end
 
-describe BinData::Record, "with nested choice without names" do
-  class NestedChoiceRecord < BinData::Record
+describe BinData::Record, "with nested choice with implied keys" do
+  class NestedChoiceWithImpliedKeysRecord < BinData::Record
     choice :a, :selection => 1 do
       uint8 :value => 1
       uint8 :value => 2
     end
   end
 
-  subject { NestedChoiceRecord.new }
+  subject { NestedChoiceWithImpliedKeysRecord.new }
+
+  its(:a) { should == 2 }
+end
+
+describe BinData::Record, "with nested choice with explicit keys" do
+  class NestedChoiceWithKeysRecord < BinData::Record
+    choice :a, :selection => 5 do
+      uint8 3, :value => 1
+      uint8 5, :value => 2
+    end
+  end
+
+  subject { NestedChoiceWithKeysRecord.new }
 
   its(:a) { should == 2 }
 end

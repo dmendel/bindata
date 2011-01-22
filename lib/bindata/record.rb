@@ -3,6 +3,28 @@ require 'bindata/sanitize'
 require 'bindata/struct'
 
 module BinData
+  class RecordArgExtractor
+    def self.extract(the_class, the_args)
+      value, parameters, parent = BaseArgExtractor.extract(the_class, the_args)
+
+      if value.nil? and parameters.length > 0
+        if field_names_in_parameters(the_class, parameters).length > 0
+          value = parameters
+          parameters = nil
+        end
+      end
+
+      [value, parameters, parent]
+    end
+
+    def self.field_names_in_parameters(the_class, parameters)
+      field_names = the_class.fields.field_names.collect { |k| k.to_s }
+      param_keys = parameters.keys.collect { |k| k.to_s }
+
+      (field_names & param_keys)
+    end
+  end
+
   # A Record is a declarative wrapper around Struct.
   #
   #    require 'bindata'
@@ -49,6 +71,11 @@ module BinData
     dsl_parser :multiple_fields, :optional_fieldnames, :sanitize_fields, :hidden_fields
 
     class << self
+
+      def arg_extractor
+        RecordArgExtractor
+      end
+
       def sanitize_parameters!(params, sanitizer) #:nodoc:
         params[:fields] = fields
         params[:endian] = endian unless endian.nil?
@@ -65,42 +92,25 @@ module BinData
       def define_field_accessors(fields) #:nodoc:
         unless method_defined?(:bindata_defined_accessors_for_fields?)
           fields.each_with_index do |field, i|
-            name = field.name
-            if name
-              define_method(name.to_sym) do
-                instantiate_obj_at(i) unless @field_objs[i]
-                @field_objs[i]
-              end
-              define_method((name + "=").to_sym) do |*vals|
-                instantiate_obj_at(i) unless @field_objs[i]
-                @field_objs[i].assign(*vals)
-              end
+            if field.name
+              define_field_accessors_for(field.name, i)
             end
           end
 
           define_method(:bindata_defined_accessors_for_fields?) { true }
         end
       end
-    end
 
-    def extract_args(the_args)
-      value, parameters, parent = super
-
-      if value.nil? and parameters.length > 0
-        if field_names_in_parameters(parameters).length > 0
-          value = parameters
-          parameters = nil
+      def define_field_accessors_for(name, index)
+        define_method(name.to_sym) do
+          instantiate_obj_at(index) unless @field_objs[index]
+          @field_objs[index]
+        end
+        define_method((name + "=").to_sym) do |*vals|
+          instantiate_obj_at(index) unless @field_objs[index]
+          @field_objs[index].assign(*vals)
         end
       end
-
-      [value, parameters, parent]
-    end
-
-    def field_names_in_parameters(parameters)
-      field_names = self.class.fields.field_names.collect { |k| k.to_s }
-      param_keys = parameters.keys.collect { |k| k.to_s }
-
-      (field_names & param_keys)
     end
   end
 end

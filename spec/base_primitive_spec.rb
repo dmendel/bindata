@@ -30,7 +30,7 @@ describe BinData::BasePrimitive do
     data = ExampleSingle.new(:value => 5)
     data.read(io)
 
-    def data.reading?; true; end
+    data.stub(:reading?).and_return(true)
     data.value.should == 42
   end
 
