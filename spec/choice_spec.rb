@@ -20,9 +20,9 @@ end
 def create_choice(choices, options = {})
   chooser = Chooser.new
   params = {:choices => choices, :selection => lambda { chooser.choice } }.merge(options)
-  BinData::Choice.new(params).tap { |obj|
-    obj.set_chooser(chooser)
-  }
+  choice = BinData::Choice.new(params)
+  choice.set_chooser(chooser)
+  choice
 end
 
 describe BinData::Choice, "when instantiating" do

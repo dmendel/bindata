@@ -307,7 +307,9 @@ end
 describe BinData::Base, "checking offsets" do
   class TenByteOffsetBase < BaseStub
     def self.create(params)
-      self.new.tap { |obj| obj.initialize_child(params) }
+      obj = self.new
+      obj.initialize_child(params)
+      obj
     end
 
     def initialize_child(params)

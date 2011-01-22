@@ -10,7 +10,7 @@ describe BinData::Stringz, "when empty" do
 end
 
 describe BinData::Stringz, "with value set" do
-  subject { BinData::Stringz.new.tap { |obj| obj.value = "abcd" } }
+  subject { BinData::Stringz.new("abcd") }
 
   its(:value) { should == "abcd" }
   its(:num_bytes) { should == 5 }

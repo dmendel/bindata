@@ -98,12 +98,7 @@ end
 
 describe BinData::Struct, "with multiple fields" do
   let(:params) { { :fields => [ [:int8, :a], [:int8, :b] ] } }
-  subject {
-    BinData::Struct.new(params).tap { |obj|
-      obj.a = 1
-      obj.b = 2
-    }
-  }
+  subject { BinData::Struct.new({:a => 1, :b => 2}, params) }
 
   its(:field_names) { should == ["a", "b"] }
   its(:to_binary_s) { should == "\x01\x02" }
@@ -268,7 +263,7 @@ end
 describe BinData::Struct, "with bit fields" do
   subject {
     params = { :fields => [ [:bit1le, :a], [:bit2le, :b], [:uint8, :c], [:bit1le, :d] ] }
-    BinData::Struct.new(params).tap { |obj| obj.assign(:a => 1, :b => 2, :c => 3, :d => 1) }
+    BinData::Struct.new({:a => 1, :b => 2, :c => 3, :d => 1}, params)
   }
 
   its(:num_bytes) { should == 3 }

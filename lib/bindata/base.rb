@@ -41,7 +41,9 @@ module BinData
       # Instantiates this class and reads from +io+, returning the newly
       # created data object.
       def read(io)
-        self.new.tap { |obj| obj.read(io) }
+        obj = self.new
+        obj.read(io)
+        obj
       end
 
       # The arg extractor for this class.
@@ -106,11 +108,12 @@ module BinData
     # All parameters will be be duplicated.  Use this method 
     # when creating multiple objects with the same parameters.
     def new(value = nil, parent = nil)
-      clone.tap do |obj|
-        obj.parent = parent if parent
-        obj.initialize_instance
-        obj.assign(value) if value
-      end
+      obj = clone
+      obj.parent = parent if parent
+      obj.initialize_instance
+      obj.assign(value) if value
+
+      obj
     end
 
     # Returns the result of evaluating the parameter identified by +key+.
