@@ -13,41 +13,21 @@ module BinData
   # SanitizedParameters is a hash-like collection of parameters.  Its purpose
   # it to recursively sanitize the parameters of an entire BinData object chain
   # at a single time.
-  class SanitizedParameters
+  class SanitizedParameters < Hash
 
     def initialize(parameters, the_class)
       @all_sanitized = false
       @the_class = the_class
 
-      @parameters = {}
-      parameters.each_pair { |key, value| @parameters[key.to_sym] = value }
+      parameters.each_pair { |key, value| self[key.to_sym] = value }
 
       ensure_no_nil_values
     end
 
-    def length
-      @parameters.size
-    end
-    alias_method :size, :length
-
-    def [](key)
-      @parameters[key]
-    end
-
-    def []=(key, value)
-      @parameters[key] = value unless @all_sanitized
-    end
-
-    def keys
-      @parameters.keys
-    end
-
-    def has_parameter?(key)
-      @parameters.has_key?(key)
-    end
+    alias_method :has_parameter?, :has_key?
 
     def needs_sanitizing?(key)
-      parameter = @parameters[key]
+      parameter = self[key]
 
       parameter and not parameter.is_a?(SanitizedParameter)
     end
@@ -71,9 +51,9 @@ module BinData
 
     def move_unknown_parameters_to(dest)
       unless @all_sanitized
-        unused_keys = @parameters.keys - @the_class.accepted_parameters.all
+        unused_keys = keys - @the_class.accepted_parameters.all
         unused_keys.each do |key|
-          dest[key] = @parameters.delete(key)
+          dest[key] = delete(key)
         end
       end
     end
@@ -89,7 +69,7 @@ module BinData
     private
 
     def ensure_no_nil_values
-      @parameters.each do |key, value|
+      each do |key, value|
         if value.nil?
           raise ArgumentError,
                 "parameter '#{key}' has nil value in #{@the_class}"
@@ -99,7 +79,7 @@ module BinData
 
     def merge_default_parameters!
       @the_class.default_parameters.each do |key, value|
-        @parameters[key] ||= value
+        self[key] ||= value
       end
     end
 

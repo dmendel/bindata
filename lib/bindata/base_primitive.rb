@@ -1,5 +1,4 @@
 require 'bindata/base'
-require 'bindata/trace'
 
 module BinData
   # A BinData::BasePrimitive object is a container for a value that has a
@@ -50,6 +49,25 @@ module BinData
     optional_parameters :initial_value, :value, :check_value
     mutually_exclusive_parameters :initial_value, :value
 
+    def initialize_shared_instance
+      if has_parameter?(:check_value)
+        class << self
+          alias_method :do_read_without_check_value, :do_read
+          alias_method :do_read, :do_read_with_check_value
+        end
+      end
+      if has_parameter?(:value)
+        class << self
+          alias_method :_value, :_value_with_value
+        end
+      end
+      if has_parameter?(:initial_value)
+        class << self
+          alias_method :_value, :_value_with_initial_value
+        end
+      end
+    end
+
     def initialize_instance
       @value = nil
     end
@@ -81,12 +99,10 @@ module BinData
     end
 
     def value
-      # TODO: warn "#value is deprecated, use #snapshot instead"
       snapshot
     end
 
     def value=(val)
-      # TODO: warn "#value= is deprecated, use #assign instead"
       assign(val)
     end
 
@@ -112,13 +128,13 @@ module BinData
     end
 
     def do_read(io) #:nodoc:
-      @value   = read_and_return_value(io)
+      @value = read_and_return_value(io)
+      hook_after_do_read
+    end
 
-      trace_value
-
-      if has_parameter?(:check_value)
-        check_value(value)
-      end
+    def do_read_with_check_value(io) #:nodoc:
+      do_read_without_check_value(io)
+      check_value(value)
     end
 
     def do_write(io) #:nodoc:
@@ -132,12 +148,7 @@ module BinData
     #---------------
     private
 
-    def trace_value
-      BinData::trace_message do |tracer|
-        value_string = _value.inspect
-        tracer.trace_obj(debug_name, value_string)
-      end
-    end
+    def hook_after_do_read; end
 
     def check_value(current_value)
       expected = eval_parameter(:check_value, :value => current_value)
@@ -154,23 +165,28 @@ module BinData
     # The unmodified value of this data object.  Note that #value calls this
     # method.  This indirection is so that #value can be overridden in
     # subclasses to modify the value.
+    #
+    # Table of possible preconditions and expected outcome
+    #   1. :value and !reading?         ->   :value
+    #   2. :value and reading?          ->   @value
+    #   3. :initial_value and clear?    ->   :initial_value
+    #   4. :initial_value and !clear?   ->   @value
+    #   5. clear?                       ->   sensible_default
+    #   6. !clear?                      ->   @value
     def _value
-      # Table of possible preconditions and expected outcome
-      #   1. :value and !reading?         ->   :value
-      #   2. :value and reading?          ->   @value
-      #   3. :initial_value and clear?    ->   :initial_value
-      #   4. :initial_value and !clear?   ->   @value
-      #   5. clear?                       ->   sensible_default
-      #   6. !clear?                      ->   @value
+      @value || sensible_default()
+    end
 
-      if has_parameter?(:value) and not reading?
-        # rule 1 above
-        eval_parameter(:value)
+    def _value_with_value #:nodoc:
+      if reading?
+        @value
       else
-        # combining all other rules gives this simplified expression
-        @value || eval_parameter(:value) ||
-          eval_parameter(:initial_value) || sensible_default()
+        eval_parameter(:value)
       end
+    end
+
+    def _value_with_initial_value #:nodoc:
+      @value || eval_parameter(:initial_value)
     end
 
     ###########################################################################

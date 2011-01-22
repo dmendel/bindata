@@ -25,10 +25,14 @@ module BinData
   # This is useful for debugging a BinData declaration.
   def trace_reading(io = STDERR, &block)
     @tracer = Tracer.new(io)
+    BasePrimitive.turn_on_tracing
+    Choice.turn_on_tracing
     if block_given?
       begin
         block.call
       ensure
+        BasePrimitive.turn_off_tracing
+        Choice.turn_off_tracing
         @tracer = nil
       end
     end
@@ -39,4 +43,52 @@ module BinData
   end
 
   module_function :trace_reading, :trace_message
+
+  class BasePrimitive < BinData::Base
+    class << self
+      def turn_on_tracing
+        alias_method :hook_after_do_read, :trace_value
+      end
+
+      def turn_off_tracing
+        alias_method :hook_after_do_read, :null_method
+      end
+    end
+
+    #---------------
+    private
+
+    def null_method; end
+
+    def trace_value
+      BinData::trace_message do |tracer|
+        value_string = _value.inspect
+        tracer.trace_obj(debug_name, value_string)
+      end
+    end
+  end
+
+  class Choice < BinData::Base
+    class << self
+      def turn_on_tracing
+        alias_method :hook_before_do_read, :trace_selection
+      end
+
+      def turn_off_tracing
+        alias_method :hook_before_do_read, :null_method
+      end
+    end
+
+    #---------------
+    private
+
+    def null_method; end
+
+    def trace_selection
+      BinData::trace_message do |tracer|
+        selection_string = eval_parameter(:selection).inspect
+        tracer.trace_obj("#{debug_name}-selection-", selection_string)
+      end
+    end
+  end
 end

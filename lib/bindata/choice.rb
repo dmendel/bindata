@@ -1,5 +1,4 @@
 require 'bindata/base'
-require 'bindata/trace'
 
 module BinData
   # A Choice is a collection of data objects of which only one is active
@@ -160,7 +159,7 @@ module BinData
     end
 
     def do_read(io) #:nodoc:
-      trace_selection
+      hook_before_do_read
       current_choice.do_read(io)
     end
 
@@ -175,12 +174,7 @@ module BinData
     #---------------
     private
 
-    def trace_selection
-      BinData::trace_message do |tracer|
-        selection_string = eval_parameter(:selection).inspect
-        tracer.trace_obj("#{debug_name}-selection-", selection_string)
-      end
-    end
+    def hook_before_do_read; end
 
     def current_choice
       selection = eval_parameter(:selection)
