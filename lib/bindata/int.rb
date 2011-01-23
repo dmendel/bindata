@@ -56,6 +56,7 @@ module BinData
           def read_and_return_value(io)
             val = #{create_read_code(nbits, endian)}
             #{create_uint2int_code(nbits) if signed == :signed}
+            val
           end
         END
       end
@@ -82,8 +83,7 @@ module BinData
       def create_uint2int_code(nbits)
         mask = (1 << (nbits - 1)) - 1
 
-        "val = ((val & #{1 << (nbits - 1)}).zero?) ? " +
-                 "val & #{mask} : -(((~val) & #{mask}) + 1)"
+        "val = -(((~val) & #{mask}) + 1) if (val >= #{1 << (nbits - 1)})"
       end
 
       def create_read_code(nbits, endian)
