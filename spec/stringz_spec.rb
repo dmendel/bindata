@@ -39,27 +39,27 @@ end
 
 describe BinData::Stringz, "when setting the value" do
   it "should include the zero byte in num_bytes total" do
-    subject.value = "abcd"
+    subject.assign("abcd")
     subject.num_bytes.should == 5
   end
 
   it "should accept empty strings" do
-    subject.value = ""
+    subject.assign("")
     subject.should == ""
   end
 
   it "should accept strings that aren't zero terminated" do
-    subject.value = "abcd"
+    subject.assign("abcd")
     subject.should == "abcd"
   end
 
   it "should accept strings that are zero terminated" do
-    subject.value = "abcd\0"
+    subject.assign("abcd\0")
     subject.should == "abcd"
   end
 
   it "should accept up to the first zero byte" do
-    subject.value = "abcd\0xyz\0"
+    subject.assign("abcd\0xyz\0")
     subject.should == "abcd"
   end
 end
@@ -87,32 +87,32 @@ describe BinData::Stringz, "with max_length" do
   end
 
   it "should accept values less than max_length" do
-    subject.value = "abc"
+    subject.assign("abc")
     subject.should == "abc"
   end
 
   it "should accept values exactly max_length" do
-    subject.value = "abcd"
+    subject.assign("abcd")
     subject.should == "abcd"
   end
 
   it "should trim values greater than max_length" do
-    subject.value = "abcde"
+    subject.assign("abcde")
     subject.should == "abcd"
   end
 
   it "should write values greater than max_length" do
-    subject.value = "abcde"
+    subject.assign("abcde")
     subject.to_binary_s.should == "abcd\0"
   end
 
   it "should write values less than max_length" do
-    subject.value = "abc"
+    subject.assign("abc")
     subject.to_binary_s.should == "abc\0"
   end
 
   it "should write values exactly max_length" do
-    subject.value = "abcd"
+    subject.assign("abcd")
     subject.to_binary_s.should == "abcd\0"
   end
 end

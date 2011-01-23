@@ -29,7 +29,7 @@ module BinData
   #    ps = PascalString.new(:initial_value => "hello")
   #    ps.to_binary_s #=> "\005hello"
   #    ps.read("\003abcde")
-  #    ps.value #=> "abc"
+  #    ps #=> "abc"
   #
   #    # Unsigned 24 bit big endian integer
   #    class Uint24be < BinData::Primitive
@@ -53,7 +53,7 @@ module BinData
   #
   #    u24 = Uint24be.new
   #    u24.read("\x12\x34\x56")
-  #    "0x%x" % u24.value #=> 0x123456
+  #    "0x%x" % u24 #=> 0x123456
   #
   # == Parameters
   #
@@ -77,8 +77,16 @@ module BinData
       @struct = BinData::Struct.new(get_parameter(:struct_params), self)
     end
 
+    def respond_to?(symbol, include_private = false) #:nodoc:
+      @struct.respond_to?(symbol, include_private) || super
+    end
+
     def method_missing(symbol, *args, &block) #:nodoc:
-      @struct.__send__(symbol, *args, &block)
+      if @struct.respond_to?(symbol)
+        @struct.__send__(symbol, *args, &block)
+      else
+        super
+      end
     end
 
     def debug_name_of(child) #:nodoc:

@@ -24,7 +24,7 @@ describe "lambdas with index" do
 
   it "should fail if there is no containing array" do
     subject = NestedLambdaWithIndex.new
-    lambda { subject.a.value }.should raise_error(NoMethodError)
+    lambda { subject.a.to_s }.should raise_error(NoMethodError)
   end
 end
 

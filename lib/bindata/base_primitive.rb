@@ -9,16 +9,16 @@ module BinData
   #   require 'bindata'
   #
   #   obj = BinData::Uint8.new(:initial_value => 42)
-  #   obj.value #=> 42
-  #   obj.value = 5
-  #   obj.value #=> 5
+  #   obj #=> 42
+  #   obj.assign(5)
+  #   obj #=> 5
   #   obj.clear
-  #   obj.value #=> 42
+  #   obj #=> 42
   #
   #   obj = BinData::Uint8.new(:value => 42)
-  #   obj.value #=> 42
-  #   obj.value = 5
-  #   obj.value #=> 42
+  #   obj #=> 42
+  #   obj.assign(5)
+  #   obj #=> 42
   #
   #   obj = BinData::Uint8.new(:check_value => 3)
   #   obj.read("\005") #=> BinData::ValidityError: value is '5' but expected '3'
@@ -101,21 +101,24 @@ module BinData
     def value
       snapshot
     end
-
-    def value=(val)
-      assign(val)
-    end
+    alias_method :value=, :assign
 
     def respond_to?(symbol, include_private = false) #:nodoc:
-      value.respond_to?(symbol, include_private) || super
+      child = snapshot
+      child.respond_to?(symbol, include_private) || super
     end
 
     def method_missing(symbol, *args, &block) #:nodoc:
-      if value.respond_to?(symbol)
-        value.__send__(symbol, *args, &block)
+      child = snapshot
+      if child.respond_to?(symbol)
+        child.__send__(symbol, *args, &block)
       else
         super
       end
+    end
+
+    def <=>(other)
+      snapshot <=> other
     end
 
     def eql?(other)
@@ -134,7 +137,7 @@ module BinData
 
     def do_read_with_check_value(io) #:nodoc:
       do_read_without_check_value(io)
-      check_value(value)
+      check_value(snapshot)
     end
 
     def do_write(io) #:nodoc:
@@ -162,9 +165,9 @@ module BinData
       end
     end
 
-    # The unmodified value of this data object.  Note that #value calls this
-    # method.  This indirection is so that #value can be overridden in
-    # subclasses to modify the value.
+    # The unmodified value of this data object.  Note that #snapshot calls this
+    # method.  This indirection is so that #snapshot can be overridden in
+    # subclasses to modify the presentation value.
     #
     # Table of possible preconditions and expected outcome
     #   1. :value and !reading?         ->   :value
@@ -173,6 +176,7 @@ module BinData
     #   4. :initial_value and !clear?   ->   @value
     #   5. clear?                       ->   sensible_default
     #   6. !clear?                      ->   @value
+
     def _value
       @value || sensible_default()
     end

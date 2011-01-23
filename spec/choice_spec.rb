@@ -59,7 +59,7 @@ end
 share_examples_for "Choice initialized with array or hash" do
   it "should be able to select the choice" do
     subject.choice = 3
-    subject.value.should == 30
+    subject.should == 30
   end
 
   it "should show the current selection" do
@@ -82,21 +82,21 @@ share_examples_for "Choice initialized with array or hash" do
     subject.choice = 3
 
     subject.choice = 7
-    subject.value.should == 70
+    subject.should == 70
   end
 
   it "should fail if no choice has been set" do
-    lambda { subject.value }.should raise_error(IndexError)
+    lambda { subject.to_s }.should raise_error(IndexError)
   end
 
   it "should not be able to select an invalid choice" do
     subject.choice = 99
-    lambda { subject.value }.should raise_error(IndexError)
+    lambda { subject.to_s }.should raise_error(IndexError)
   end
 
   it "should not be able to select a nil choice" do
     subject.choice = 1
-    lambda { subject.value }.should raise_error(IndexError)
+    lambda { subject.to_s }.should raise_error(IndexError)
   end
 
   it "should handle missing methods correctly" do
@@ -146,25 +146,24 @@ describe BinData::Choice, "with single values" do
 
   it "should assign raw values" do
     subject.choice = 3
-    subject.value = 254
-    subject.value.should == 254
+    subject.assign(254)
+    subject.should == 254
   end
 
   it "should assign Single values" do
-    obj = ExampleSingle.new
-    obj.value = 11
+    obj = ExampleSingle.new(11)
 
     subject.choice = 3
-    subject.value = obj
-    subject.value.should == 11
+    subject.assign(obj)
+    subject.should == 11
   end
 
   it "should clear" do
     subject.choice = 3
-    subject.value = 254
+    subject.assign(254)
 
     subject.clear
-    subject.value.should be_zero
+    subject.should be_zero
   end
 
   it "should be clear on initialisation" do
@@ -175,22 +174,22 @@ describe BinData::Choice, "with single values" do
 
   it "should not be clear after assignment" do
     subject.choice = 3
-    subject.value = 254
+    subject.assign(254)
 
     subject.should_not be_clear
   end
 
   it "should not copy value when changing selection" do
     subject.choice = 3
-    subject.value = 254
+    subject.assign(254)
 
     subject.choice = 7
-    subject.value.should_not == 254
+    subject.should_not == 254
   end
 
   it "should behave as value" do
     subject.choice = 3
-    subject.value = 5
+    subject.assign(5)
 
     (subject + 1).should == 6
     (1 + subject).should == 6
@@ -207,9 +206,9 @@ describe BinData::Choice, "with copy_on_change => true" do
 
   it "should copy value when changing selection" do
     subject.choice = 3
-    subject.value = 254
+    subject.assign(254)
 
     subject.choice = 7
-    subject.value.should == 254
+    subject.should == 254
   end
 end

@@ -1,8 +1,4 @@
 module BinData
-
-  # Error raised when unexpected results occur when reading data from IO.
-  class ValidityError < StandardError ; end
-
   # == Parameters
   #
   # Parameters may be provided at initialisation to control the behaviour of

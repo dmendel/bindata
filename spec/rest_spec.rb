@@ -12,8 +12,8 @@ describe BinData::Rest do
   end
 
   it "should allow setting value for completeness" do
-    subject.value = "123"
-    subject.value.should == "123"
+    subject.assign("123")
+    subject.should == "123"
     subject.to_binary_s.should == "123"
   end
 

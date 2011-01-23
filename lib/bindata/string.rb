@@ -10,24 +10,24 @@ module BinData
   #
   #   obj = BinData::String.new(:read_length => 5)
   #   obj.read(data)
-  #   obj.value #=> "abcde"
+  #   obj #=> "abcde"
   #
   #   obj = BinData::String.new(:length => 6)
   #   obj.read(data)
-  #   obj.value #=> "abcdef"
-  #   obj.value = "abcdefghij"
-  #   obj.value #=> "abcdef"
-  #   obj.value = "abcd"
-  #   obj.value #=> "abcd\000\000"
+  #   obj #=> "abcdef"
+  #   obj.assign("abcdefghij")
+  #   obj #=> "abcdef"
+  #   obj.assign("abcd")
+  #   obj #=> "abcd\000\000"
   #
   #   obj = BinData::String.new(:length => 6, :trim_padding => true)
-  #   obj.value = "abcd"
-  #   obj.value #=> "abcd"
+  #   obj.assign("abcd")
+  #   obj #=> "abcd"
   #   obj.to_binary_s #=> "abcd\000\000"
   #
   #   obj = BinData::String.new(:length => 6, :pad_char => 'A')
-  #   obj.value = "abcd"
-  #   obj.value #=> "abcdAA"
+  #   obj.assign("abcd")
+  #   obj #=> "abcdAA"
   #   obj.to_binary_s #=> "abcdAA"
   #
   # == Parameters
@@ -83,12 +83,11 @@ module BinData
     end
 
     def snapshot
-      # override to ensure length and optionally trim padding
+      # override to trim padding
       result = super
-      if has_parameter?(:length)
-        result = truncate_or_pad_to_length(result)
-      end
-      if get_parameter(:trim_padding) == true
+      result = clamp_to_length(result)
+
+      if get_parameter(:trim_padding)
         result = trim_padding(result)
       end
       result
@@ -97,7 +96,7 @@ module BinData
     #---------------
     private
 
-    def truncate_or_pad_to_length(str)
+    def clamp_to_length(str)
       len = eval_parameter(:length) || str.length
       if str.length == len
         str
@@ -113,7 +112,7 @@ module BinData
     end
 
     def value_to_binary_string(val)
-      truncate_or_pad_to_length(val)
+      clamp_to_length(val)
     end
 
     def read_and_return_value(io)

@@ -22,7 +22,7 @@ end
 describe BinData::BasePrimitive do
   it "should conform to rule 1 for returning a value" do
     data = ExampleSingle.new(:value => 5)
-    data.value.should == 5
+    data.should == 5
   end
 
   it "should conform to rule 2 for returning a value" do
@@ -31,33 +31,33 @@ describe BinData::BasePrimitive do
     data.read(io)
 
     data.stub(:reading?).and_return(true)
-    data.value.should == 42
+    data.should == 42
   end
 
   it "should conform to rule 3 for returning a value" do
     data = ExampleSingle.new(:initial_value => 5)
     data.should be_clear
-    data.value.should == 5
+    data.should == 5
   end
 
   it "should conform to rule 4 for returning a value" do
     data = ExampleSingle.new(:initial_value => 5)
-    data.value = 17
+    data.assign(17)
     data.should_not be_clear
-    data.value.should == 17
+    data.should == 17
   end
 
   it "should conform to rule 5 for returning a value" do
     data = ExampleSingle.new
     data.should be_clear
-    data.value.should == 0
+    data.should == 0
   end
 
   it "should conform to rule 6 for returning a value" do
     data = ExampleSingle.new
-    data.value = 8
+    data.assign(8)
     data.should_not be_clear
-    data.value.should == 8
+    data.should == 8
   end
 end
 
@@ -69,13 +69,13 @@ describe ExampleSingle do
   end
 
   it "should allowing setting and retrieving value" do
-    subject.value = 7
-    subject.value.should == 7
+    subject.assign(7)
+    subject.should == 7
   end
 
   it "should allowing setting and retrieving BinData::BasePrimitives" do
-    subject.value = ExampleSingle.new(7)
-    subject.value.should == 7
+    subject.assign(ExampleSingle.new(7))
+    subject.should == 7
   end
 
   it "should respond to known methods" do
@@ -109,6 +109,10 @@ describe ExampleSingle do
 
     hash[subject].should == 17
   end
+
+  it "should be able to sort" do
+    [ExampleSingle.new(5), ExampleSingle.new(3)].sort.should == [3, 5]
+  end
 end
 
 describe BinData::BasePrimitive, "after initialisation" do
@@ -124,7 +128,7 @@ describe BinData::BasePrimitive, "after initialisation" do
   its(:num_bytes) { should == 4 }
 
   it "should have symmetric IO" do
-    subject.value = 42
+    subject.assign(42)
     written = subject.to_binary_s
 
     ExampleSingle.read(written).should == 42
@@ -136,7 +140,7 @@ describe BinData::BasePrimitive, "after initialisation" do
   end
 
   it "should not be clear after setting value" do
-    subject.value = 5
+    subject.assign(5)
     subject.should_not be_clear
   end
 
@@ -146,7 +150,7 @@ describe BinData::BasePrimitive, "after initialisation" do
   end
 
   it "should return a snapshot" do
-    subject.value = 5
+    subject.assign(5)
     subject.snapshot.should == 5
   end
 end
@@ -157,19 +161,19 @@ describe BinData::BasePrimitive, "with :initial_value" do
   its(:value) { should == 5 }
 
   it "should forget :initial_value after being set" do
-    subject.value = 17
-    subject.value.should_not == 5
+    subject.assign(17)
+    subject.should_not == 5
   end
 
   it "should forget :initial_value after reading" do
     subject.read("\x11\x22\x33\x44")
-    subject.value.should_not == 5
+    subject.should_not == 5
   end
 
   it "should remember :initial_value after being cleared" do
-    subject.value = 17
+    subject.assign(17)
     subject.clear
-    subject.value.should == 5
+    subject.should == 5
   end
 end
 
@@ -183,17 +187,17 @@ describe BinData::BasePrimitive, "with :value" do
   it "should change during reading" do
     subject.read(io)
     subject.stub(:reading?).and_return(true)
-    subject.value.should == 56
+    subject.should == 56
   end
 
   it "should not change after reading" do
     subject.read(io)
-    subject.value.should == 5
+    subject.should == 5
   end
 
   it "should not be able to change the value" do
-    subject.value = 17
-    subject.value.should == 5
+    subject.assign(17)
+    subject.should == 5
   end
 end
 

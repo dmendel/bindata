@@ -14,7 +14,6 @@ module BinData
   #   obj = BinData::Stringz.new
   #   obj.read(data)
   #   obj.snapshot #=> "abcd"
-  #   obj.value #=> "abcd"
   #   obj.num_bytes #=> 5
   #   obj.to_binary_s #=> "abcd\000"
   #

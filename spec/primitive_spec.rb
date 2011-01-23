@@ -82,7 +82,7 @@ describe BinData::Primitive do
 
   it "should read value" do
     subject.read("\x00\x01")
-    subject.value.should == 0x100
+    subject.should == 0x100
   end
 
   it "should accept standard parameters" do
@@ -103,10 +103,15 @@ describe BinData::Primitive do
   it "should use read value whilst reading" do
     subject = PrimitiveWithEndian.new(:value => 2)
     subject.read "\x05\x00"
-    subject.value.should == 2
+    subject.should == 2
 
     subject.stub(:reading?).and_return(true)
-    subject.value.should == 5
+    subject.should == 5
+  end
+
+  it "should behave as primitive" do
+    subject.assign(5)
+    (2 + subject).should == 7
   end
 end
 
@@ -119,7 +124,7 @@ describe BinData::Primitive, "requiring custom parameters" do
 
   it "should pass parameters correctly" do
     subject = PrimitiveWithCustom.new(:iv => 5)
-    subject.value.should == 5
+    subject.should == 5
   end
 end
 
@@ -138,7 +143,7 @@ describe BinData::Primitive, "with custom mandatory parameters" do
 
   it "should use mandatory parameter" do
     subject = MandatoryPrimitive.new(:arg1 => 5)
-    subject.value.should == 5
+    subject.should == 5
   end
 end
 
@@ -157,12 +162,12 @@ describe BinData::Primitive, "with custom default parameters" do
 
   it "should use default parameter" do
     subject = DefaultPrimitive.new
-    subject.value.should == 5
+    subject.should == 5
   end
 
   it "should be able to override default parameter" do
     subject = DefaultPrimitive.new(:arg1 => 7)
-    subject.value.should == 7
+    subject.should == 7
   end
 end
 

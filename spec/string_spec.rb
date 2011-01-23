@@ -175,8 +175,8 @@ describe BinData::String, "with :trim_padding" do
   it "set false is the default" do
     str1 = BinData::String.new(:length => 5)
     str2 = BinData::String.new(:length => 5, :trim_padding => false)
-    str1.value = "abc"
-    str2.value = "abc"
+    str1.assign("abc")
+    str2.assign("abc")
     str1.should == "abc\0\0"
     str2.should == "abc\0\0"
   end
@@ -185,22 +185,22 @@ describe BinData::String, "with :trim_padding" do
     subject { BinData::String.new(:pad_char => 'R', :trim_padding => true) }
 
     it "should trim the value" do
-      subject.value = "abcRR"
+      subject.assign("abcRR")
       subject.should == "abc"
     end
 
     it "should not affect num_bytes" do
-      subject.value = "abcRR"
+      subject.assign("abcRR")
       subject.num_bytes.should == 5
     end
 
     it "should trim if last char is :pad_char" do
-      subject.value = "abcRR"
+      subject.assign("abcRR")
       subject.should == "abc"
     end
 
     it "should not trim if value contains :pad_char not at the end" do
-      subject.value = "abcRRde"
+      subject.assign("abcRRde")
       subject.should == "abcRRde"
     end
   end

@@ -81,8 +81,8 @@ describe BinData::Wrapper, "around a Primitive" do
     subject = WrappedPrimitive.new
     subject.assign(5)
 
-    subject.should respond_to(:value)
-    subject.value.should == 5
+    subject.should respond_to(:to_int)
+    subject.to_int.should == 5
   end
 end
 

@@ -12,26 +12,29 @@ module BinData
   #
   #   choices = {5 => type1, 17 => type2}
   #   a = BinData::Choice.new(:choices => choices, :selection => 5)
-  #   a.value # => "Type1"
+  #   a # => "Type1"
   #
   #   choices = [ type1, type2 ]
   #   a = BinData::Choice.new(:choices => choices, :selection => 1)
-  #   a.value # => "Type2"
+  #   a # => "Type2"
   #
   #   choices = [ nil, nil, nil, type1, nil, type2 ]
   #   a = BinData::Choice.new(:choices => choices, :selection => 3)
-  #   a.value # => "Type1"
+  #   a # => "Type1"
   #
-  #   mychoice = 'big'
+  #
+  #   Chooser = Struct.new(:choice)
+  #   mychoice = Chooser.new
+  #   mychoice.choice = 'big'
+  #
   #   choices = {'big' => :uint16be, 'little' => :uint16le}
-  #   a = BinData::Choice.new(:choices => choices,
-  #                           :selection => lambda { mychoice })
-  #   a.value  = 256
+  #   a = BinData::Choice.new(:choices => choices, :copy_on_change => true,
+  #                           :selection => lambda { mychoice.choice })
+  #   a.assign(256)
   #   a.to_binary_s #=> "\001\000"
-  #   mychoice.replace 'little'
-  #   a.selection #=> 'little'
-  #   a.to_binary_s #=> "\000\001"
   #
+  #   mychoice.choice = 'little'
+  #   a.to_binary_s #=> "\000\001"
   #
   # == Parameters
   #

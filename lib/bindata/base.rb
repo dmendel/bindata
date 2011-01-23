@@ -6,6 +6,9 @@ require 'bindata/registry'
 require 'bindata/sanitize'
 
 module BinData
+  # Error raised when unexpected results occur when reading data from IO.
+  class ValidityError < StandardError ; end
+
   # ArgExtractors take the arguments to BinData::Base.new and
   # separate them into [value, parameters, parent].
   class BaseArgExtractor
@@ -17,7 +20,7 @@ module BinData
         parent = args.pop
       end
 
-      if args.length > 0 and args.last.respond_to?(:keys)
+      if args.length > 0 and args.last.is_a? Hash
         parameters = args.pop
       end
 

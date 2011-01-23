@@ -16,7 +16,7 @@ describe BinData::Skip do
   end
 
   it "should have expected binary representation after setting value" do
-    subject.value = "123"
+    subject.assign("123")
     subject.to_binary_s.should == "\000" * 5
   end
 

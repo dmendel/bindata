@@ -52,16 +52,16 @@ share_examples_for "All Integers" do
 
       subject = int_class.new
       subject.assign(src)
-      subject.value.should == src.value
+      subject.should == src
     end
   end
 
   it "should symmetrically read and write a +ve number" do
     all_classes do |int_class|
       subject = int_class.new
-      subject.value = gen_test_int
+      subject.assign(gen_test_int)
 
-      subject.value_read_from_written.should == subject.value
+      subject.value_read_from_written.should == subject
     end
   end
 
@@ -69,9 +69,9 @@ share_examples_for "All Integers" do
     all_classes do |int_class|
       if @signed
         subject = int_class.new
-        subject.value = -gen_test_int
+        subject.assign(-gen_test_int)
 
-        subject.value_read_from_written.should == subject.value
+        subject.value_read_from_written.should == subject
       end
     end
   end
@@ -81,7 +81,7 @@ share_examples_for "All Integers" do
       val = gen_test_int
 
       subject = int_class.new
-      subject.value = val
+      subject.assign(val)
 
       subject.to_binary_s.should == int_to_binary_str(val)
     end
@@ -93,7 +93,7 @@ share_examples_for "All Integers" do
         val = -gen_test_int
 
         subject = int_class.new
-        subject.value = val
+        subject.assign(val)
 
         subject.to_binary_s.should == int_to_binary_str(val)
       end

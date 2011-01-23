@@ -85,7 +85,7 @@ share_examples_for "All bitfields" do
         subject = bit_class.new
         subject.assign(val)
 
-        subject.value_read_from_written.should == subject.value
+        subject.value_read_from_written.should == subject
       end
     end
   end
