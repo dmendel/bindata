@@ -2,16 +2,18 @@
 %html{ :xmlns => "http://www.w3.org/1999/xhtml", "xml:lang" => "en", :lang => "en" }
   %head
     %meta{ :content => "text/html; charset=iso-8859-1", "http-equiv" => "Content-Type" }
+    %meta{ :description =>"How to easily parse binary data in Ruby" }
+    %meta{ :keywords =>"ruby, parse binary data, read binary data" }
     %title
-      BinData Reference Manual
+      Parsing Binary Data in Ruby - BinData Reference Manual
     :javascript
       var TINY={};function T$(i){return document.getElementById(i)}function T$$(e,p){return p.getElementsByTagName(e)}TINY.accordion=function(){function slider(n){this.n=n;this.a=[]}slider.prototype.init=function(t,e,m,o,k){var a=T$(t),i=s=0,n=a.childNodes,l=n.length;this.s=k||0;this.m=m||0;for(i;i<l;i++){var v=n[i];if(v.nodeType!=3){this.a[s]={};this.a[s].h=h=T$$(e,v)[0];this.a[s].c=c=T$$('div',v)[0];h.onclick=new Function(this.n+'.pr(0,'+s+')');if(o==s){h.className=this.s;c.style.height='auto';c.d=1}else{c.style.height=0;c.d=-1}s++}}this.l=s};slider.prototype.pr=function(f,d){for(var i=0;i<this.l;i++){var h=this.a[i].h,c=this.a[i].c,k=c.style.height;k=k=='auto'?1:parseInt(k);clearInterval(c.t);if((k!=1&&c.d==-1)&&(f==1||i==d)){c.style.height='';c.m=c.offsetHeight;c.style.height=k+'px';c.d=1;h.className=this.s;su(c,1)}else if(k>0&&(f==-1||this.m||i==d)){c.d=-1;h.className='';su(c,-1)}}};function su(c){c.t=setInterval(function(){sl(c)},20)};function sl(c){var h=c.offsetHeight,d=c.d==1?c.m-h:h;c.style.height=h+(Math.ceil(d/5)*c.d)+'px';c.style.opacity=h/c.m;c.style.filter='alpha(opacity='+h*100/c.m+')';if((c.d==1&&h>=c.m)||(c.d!=1&&h==1)){if(c.d==1){c.style.height='auto'}clearInterval(c.t)}};return{slider:slider}}();
 
       var menu1, menu2, menu3, menu4, menu5, menu6;
-      var menu7, menu8, menu9, menu10, menu11;
+      var menu7, menu8, menu9, menu10, menu11, menu12, menu13;
 
       function init_accordion() {
-        menu1 = new TINY.accordion.slider("menu1"); menu1.init("menu1","a",1,0);
+        menu1 = new TINY.accordion.slider("menu1"); menu1.init("menu1","a",1,-1);
         menu2 = new TINY.accordion.slider("menu2"); menu2.init("menu2","a",1,-1);
         menu3 = new TINY.accordion.slider("menu3"); menu3.init("menu3","a",1,-1);
         menu4 = new TINY.accordion.slider("menu4"); menu4.init("menu4","a",1,-1);
@@ -22,6 +24,8 @@
         menu9 = new TINY.accordion.slider("menu9"); menu9.init("menu9","a",1,-1);
         menu10 = new TINY.accordion.slider("menu10"); menu10.init("menu10","a",1,-1);
         menu11 = new TINY.accordion.slider("menu11"); menu11.init("menu11","a",1,-1);
+        menu12 = new TINY.accordion.slider("menu12"); menu11.init("menu12","a",1,-1);
+        menu13 = new TINY.accordion.slider("menu13"); menu11.init("menu13","a",1,-1);
       };
       window.onload = init_accordion;
 
@@ -125,6 +129,11 @@
                       License
                     .acc-section
                       .acc-content
+                  %li
+                    %a{ :href => "#donate" }
+                      Donate
+                    .acc-section
+                      .acc-content
           %li
             %a{ :href => "#installation" }
               Installation
@@ -168,13 +177,23 @@
                     .acc-section
                       .acc-content
                   %li
-                    %a{ :href => "#optional_fields" }
-                      Optional fields
+                    %a{ :href => "#dependencies_between_fields" }
+                      Dependencies between fields
                     .acc-section
                       .acc-content
                   %li
-                    %a{ :href => "#handling_dependencies_between_fields" }
-                      Handling dependencies between fields
+                    %a{ :href => "#nested_records" }
+                      Nested Records
+                    .acc-section
+                      .acc-content
+                  %li
+                    %a{ :href => "#bitfields" }
+                      Bitfields
+                    .acc-section
+                      .acc-content
+                  %li
+                    %a{ :href => "#optional_fields" }
+                      Optional fields
                     .acc-section
                       .acc-content
           %li
@@ -241,20 +260,47 @@
               Arrays
             .acc-section
               .acc-content
+                %ul.level2#menu9
+                  %li
+                    %a{ :href => "#array_syntax" }
+                      Array syntax
+                    .acc-section
+                      .acc-content
+                  %li
+                    %a{ :href => "#array_parameters" }
+                      Array parameters
+                    .acc-section
+                      .acc-content
           %li
             %a{ :href => "#choices" }
               Choices
             .acc-section
               .acc-content
+                %ul.level2#menu10
+                  %li
+                    %a{ :href => "#choice_syntax" }
+                      Choice syntax
+                    .acc-section
+                      .acc-content
+                  %li
+                    %a{ :href => "#choice_parameters" }
+                      Choice parameters
+                    .acc-section
+                      .acc-content
           %li
             %a{ :href => "#advanced_topics" }
               Advanced Topics
             .acc-section
               .acc-content
-                %ul.level2#menu9
+                %ul.level2#menu11
                   %li
                     %a{ :href => "#skipping_over_unused_data" }
                       Skipping over unused data
+                    .acc-section
+                      .acc-content
+                  %li
+                    %a{ :href => "#bitaligned_records" }
+                      Bit-aligned Records
                     .acc-section
                       .acc-content
                   %li
@@ -267,7 +313,7 @@
                       Parameterizing User Defined Types
                     .acc-section
                       .acc-content
-                        %ul.level3#menu10
+                        %ul.level3#menu12
                           %li
                             %a{ :href => "#mandatory_parameters" }
                               Mandatory Parameters
@@ -283,7 +329,7 @@
                       Debugging
                     .acc-section
                       .acc-content
-                        %ul.level3#menu11
+                        %ul.level3#menu13
                           %li
                             %a{ :href => "#tracing" }
                               Tracing

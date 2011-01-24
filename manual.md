@@ -2,7 +2,7 @@ Title: BinData Reference Manual
 
 {:ruby: lang=ruby html_use_syntax=true}
 
-# BinData
+# BinData - Parsing Binary Data in Ruby
 
 A declarative way to read and write structured binary data.
 
@@ -37,14 +37,18 @@ There is a better way.
 BinData makes it easy to specify the structure of the data you are
 manipulating.
 
-Read on for the tutorial, or go straight to the
-[download](http://rubyforge.org/frs/?group_id=3252) page.
+It supports all the common datatypes that are found in structured binary
+data. Support for dependent and variable length fields is built in. 
 
 ## License
 
 BinData is released under the same license as Ruby.
 
-Copyright &copy; 2007 - 2010 [Dion Mendel](mailto:dion@lostrealm.com)
+Copyright &copy; 2007 - 2011 [Dion Mendel](mailto:dion@lostrealm.com)
+
+## Donate
+
+Want to donate?  My favourite local charity is [Perth Raptor Care](http://care.raptor.id.au/help.html#PAL).
 
 ---------------------------------------------------------------------------
 
@@ -66,17 +70,22 @@ BinData declarations are easy to read.  Here's an example.
 
     class MyFancyFormat < BinData::Record
       stringz :comment
-      uint8   :num_ints, :check_value => lambda { value.even? }
+      uint8   :num, :check_value => lambda { value.even? }
       array   :some_ints, :type => :int32be, :initial_length => :num_ints
     end
 {:ruby}
 
 This fancy format describes the following collection of data:
 
-1.  A zero terminated string
-2.  An unsigned 8bit integer which must by even
-3.  A sequence of unsigned 32bit integers in big endian form, the total
-    number of which is determined by the value of the 8bit integer.
+`:comment`
+:   A zero terminated string
+
+`:num`
+:   An unsigned 8bit integer which must by even
+
+`:some_ints`
+:   A sequence of unsigned 32bit big endian integers.  The number of
+    integers is given by the value of `:num`
 
 The BinData declaration matches the English description closely.
 Compare the above declaration with the equivalent `#unpack` code to read
@@ -96,7 +105,7 @@ The BinData declaration clearly shows the structure of the record.  The
 The general usage of BinData is to declare a structured collection of
 data as a user defined record.  This record can be instantiated, read,
 written and manipulated without the user having to be concerned with the
-underlying binary representation of the data.
+underlying binary data representation.
 
 ---------------------------------------------------------------------------
 
@@ -112,36 +121,34 @@ ones.  These are summarised here.
 :   Creates a BinData object and reads its value from the given string
     or `IO`.  The newly created object is returned.
 
-        str = BinData::Stringz::read("string1\0string2")
-        str.snapshot #=> "string1"
+        obj = BinData::Int8.read("\xff")
+        obj.snapshot #=> -1
     {:ruby}
 
 `#read(io)`
 
 :   Reads and assigns binary data read from `io`.
 
-        obj = BinData::Uint16be.new
-        obj.read("\022\064")
-        obj.value #=> 4660
+        obj = BinData::Stringz.new
+        obj.read("string 1\0string 2\0")
+        obj #=> "string 1"
     {:ruby}
 
 `#write(io)`
 
-:   Writes the binary representation of the object to `io`.
+:   Writes the binary data representation of the object to `io`.
 
         File.open("...", "wb") do |io|
-          obj = BinData::Uint64be.new
-          obj.value = 568290145640170
+          obj = BinData::Uint64be.new(568290145640170)
           obj.write(io)
         end
     {:ruby}
 
 `#to_binary_s`
 
-:   Returns the binary representation of this object as a string.
+:   Returns the binary data representation of this object as a string.
 
-        obj = BinData::Uint16be.new
-        obj.assign(4660)
+        obj = BinData::Uint16be.new(4660)
         obj.to_binary_s #=> "\022\064"
     {:ruby}
 
@@ -165,7 +172,7 @@ ones.  These are summarised here.
         obj = BinData::Int32be.new(:initial_value => 42)
         obj.assign(50)
         obj.clear
-        obj.value #=> 42
+        obj #=> 42
     {:ruby}
 
 `#clear?`
@@ -184,8 +191,8 @@ ones.  These are summarised here.
 
 `#num_bytes`
 
-:   Returns the number of bytes required for the binary representation
-    of this object.
+:   Returns the number of bytes required for the binary data
+    representation of this object.
 
         arr = BinData::Array.new(:type => :uint16be, :initial_length => 5)
         arr[0].num_bytes #=> 2
@@ -199,11 +206,11 @@ ones.  These are summarised here.
     may be useful for serialization or as a reduced memory usage
     representation.
 
-        obj = BinData::Uint8.new
-        obj.assign(3)
-        obj + 3 #=> 6
+        obj = BinData::Uint8.new(2)
+        obj.class #=> BinData::Uint8
+        obj + 3 #=> 5
 
-        obj.snapshot #=> 3
+        obj.snapshot #=> 2
         obj.snapshot.class #=> Fixnum
     {:ruby}
 
@@ -260,10 +267,10 @@ one or more fields.
     converted from `CamelCase` to lowercased `underscore_style`.
 
 `field_name`
-:   is the name by which you can access the field.  Use either a
-    `String` or a `Symbol`.  If name is nil or the empty string, then
-    this particular field is anonymous.  An anonymous field is still
-    read and written, but will not appear in `#snapshot`.
+:   is the name by which you can access the field.  Use a `Symbol` for
+    the name.  If the name is omitted, then this particular field 
+    is anonymous.  An anonymous field is still read and written, but
+    will not appear in `#snapshot`.
 
 Each field may have optional *parameters* for how to process the data.
 The parameters are passed as a `Hash` with `Symbols` for keys.
@@ -273,9 +280,8 @@ This means that any parameter value must not have side effects.
 Here are some examples of legal values for parameters.
 
 *   `:param => 5`
-*   `:param => lambda { 5 + 2 }`
 *   `:param => lambda { foo + 2 }`
-*   `:param => :foo`
+*   `:param => :bar`
 
 The simplest case is when the value is a literal value, such as `5`.
 
@@ -285,14 +291,14 @@ parent is an instance of `MyName`.
 
 If the value is a symbol, it is taken as syntactic sugar for a lambda
 containing the value of the symbol.
-e.g `:param => :foo` is `:param => lambda { foo }`
+e.g `:param => :bar` is `:param => lambda { bar }`
 
 ## Specifying default endian
 
 The endianess of numeric types must be explicitly defined so that the
 code produced is independent of architecture.  However, explicitly
 specifying the endian for each numeric field can result in a bloated
-declaration that can be difficult to read.
+declaration that is difficult to read.
 
     class A < BinData::Record
       int16be  :a
@@ -324,27 +330,7 @@ The increase in clarity can be seen with the above example.  The
 `endian` keyword will cascade to nested types, as illustrated with the
 array in the above example.
 
-## Optional fields
-
-A record may contain optional fields.  The optional state of a field is
-decided by the `:onlyif` parameter.  If the value of this parameter is
-`false`, then the field will be as if it didn't exist in the record.
-
-    class RecordWithOptionalField < BinData::Record
-      ...
-      uint8  :comment_flag
-      string :comment, :length => 20, :onlyif => :has_comment?
-
-      def has_comment?
-        comment_flag.nonzero?
-      end
-    end
-{:ruby}
-
-In the above example, the `comment` field is only included in the record
-if the value of the `comment_flag` field is non zero.
-
-## Handling dependencies between fields
+## Dependencies between fields
 
 A common occurence in binary file formats is one field depending upon
 the value of another.  e.g. A string preceded by its length.
@@ -417,6 +403,96 @@ It is important to note with dependencies, that a field can only depend
 on one before it.  You can't have a string which has the characters
 first and the length afterwards.
 
+## Nested Records
+
+Records can be used as a mean of grouping together related data.  Rather
+than declaring a single flat record, a nested structure can be used to
+document this grouping.
+
+    class Coord < BinData::Record
+      endian :little
+      double :x
+      double :z
+      double :y
+    end
+
+    class LabeledCoord < BinData::Record
+      string :label, :length => 20
+      coord  :coord
+    end
+
+    pos = LabeledCoord.new(:label => "red leader")
+    pos.coord.assign(:x => 2.0, :y => 0, :z => -1.57)
+{:ruby}
+
+BinData supports anonymous nested records.  The previous example could
+also be declared using the `struct` keyword as follows:
+
+    class LabeledCoord < BinData::Record
+      string :label, :length => 20
+
+      struct :coord do
+        endian :little
+        double :x
+        double :z
+        double :y
+      end
+    end
+{:ruby}
+
+## Bitfields
+
+Most types in a record are byte oriented.  Bitfields allow us to access
+individual bits in an octet stream.
+
+Sometimes a bitfield has unused elements such as
+
+    class RecordWithBitfield < BinData::Record
+      bit1 :foo
+      bit1 :bar
+      bit1 :baz
+      bit5 :unused
+
+      stringz :qux
+    end
+{:ruby}
+
+The problem with specifying an unused field is that the size of this
+field must be manually counted.  This is a potential source of errors.
+
+BinData provides a shortcut to skip to the next byte boundary with the
+`resume_byte_alignment` keyword.
+
+    class RecordWithBitfield < BinData::Record
+      bit1 :foo
+      bit1 :bar
+      bit1 :baz
+      resume_byte_alignment
+
+      stringz :qux
+    end
+{:ruby}
+
+## Optional fields
+
+A record may contain optional fields.  The optional state of a field is
+decided by the `:onlyif` parameter.  If the value of this parameter is
+`false`, then the field will be as if it didn't exist in the record.
+
+    class RecordWithOptionalField < BinData::Record
+      ...
+      uint8  :comment_flag
+      string :comment, :length => 20, :onlyif => :has_comment?
+
+      def has_comment?
+        comment_flag.nonzero?
+      end
+    end
+{:ruby}
+
+In the above example, the `comment` field is only included in the record
+if the value of the `comment_flag` field is non zero.
+
 ---------------------------------------------------------------------------
 
 # Primitive Types
@@ -438,8 +514,7 @@ with them as part of a record.
 
 Examples of individual usage:
 
-    int16 = BinData::Int16be.new
-    int16.value = 941
+    int16 = BinData::Int16be.new(941)
     int16.to_binary_s #=> "\003\255"
 
     fl = BinData::FloatBe.read("\100\055\370\124") #=> 2.71828174591064
@@ -524,7 +599,7 @@ stored as an array of 12bit little endian integers).
 An array of bit based integers will be packed according to their endian.
 
 In a record, adjacent bitfields will be packed according to their
-endian.  All other fields are byte aligned.
+endian.  All other fields are byte-aligned.
 
 Examples of bit based integers are:
 
@@ -642,7 +717,7 @@ There are several parameters that are specific to fixed sized strings.
 
         obj = BinData::String.new(:read_length => 5)
         obj.read("abcdefghij")
-        obj.value #=> "abcde"
+        obj #=> "abcde"
     {:ruby}
 
 `:length`
@@ -652,15 +727,15 @@ There are several parameters that are specific to fixed sized strings.
 
         obj = BinData::String.new(:length => 6)
         obj.read("abcdefghij")
-        obj.value #=> "abcdef"
+        obj #=> "abcdef"
 
         obj = BinData::String.new(:length => 6)
-        obj.value = "abcd"
-        obj.value #=> "abcd\000\000"
+        obj.assign("abcd")
+        obj #=> "abcd\000\000"
 
         obj = BinData::String.new(:length => 6)
-        obj.value = "abcdefghij"
-        obj.value #=> "abcdef"
+        obj.assign("abcdefghij")
+        obj #=> "abcdef"
     {:ruby}
 
 `:pad_char`
@@ -670,8 +745,8 @@ There are several parameters that are specific to fixed sized strings.
     `"\0"` is the default.
 
         obj = BinData::String.new(:length => 6, :pad_char => 'A')
-        obj.value = "abcd"
-        obj.value #=> "abcdAA"
+        obj.assign("abcd")
+        obj.snapshot #=> "abcdAA"
         obj.to_binary_s #=> "abcdAA"
     {:ruby}
 
@@ -682,8 +757,8 @@ There are several parameters that are specific to fixed sized strings.
     will not be trimmed when writing.
 
         obj = BinData::String.new(:length => 6, :trim_value => true)
-        obj.value = "abcd"
-        obj.value #=> "abcd"
+        obj.assign("abcd")
+        obj.snapshot #=> "abcd"
         obj.to_binary_s #=> "abcd\000\000"
     {:ruby}
 
@@ -694,7 +769,7 @@ bytes terminated by a null (`"\0"`) character.
 
     obj = BinData::Stringz.new
     obj.read("abcd\000efgh")
-    obj.value #=> "abcd"
+    obj #=> "abcd"
     obj.num_bytes #=> 5
     obj.to_binary_s #=> "abcd\000"
 {:ruby}
@@ -745,9 +820,19 @@ Sometimes a user defined primitive type can not easily be declaratively
 defined.  In this case you should inherit from `BinData::BasePrimitive`
 and implement the following three methods:
 
-*   `value_to_binary_string(value)`
-*   `read_and_return_value(io)`
-*   `sensible_default()`
+`def value_to_binary_string(value)`
+
+:   Takes a ruby value (`String`, `Numeric` etc) and converts it to
+    the appropriate binary string representation.
+
+`def read_and_return_value(io)`
+
+:   Reads a number of bytes from `io` and returns a ruby object that
+    represents these bytes.
+
+`def sensible_default()`
+
+:   The ruby value that a clear object should return.
 
 Here is an example of a big integer implementation.
 
@@ -811,20 +896,61 @@ A BinData array is a list of data objects of the same type.  It behaves
 much the same as the standard Ruby array, supporting most of the common
 methods.
 
+## Array syntax
+
 When instantiating an array, the type of object it contains must be
-specified.
+specified.  The two different ways of declaring this are the `:type`
+parameter and the block form.
 
-    arr = BinData::Array.new(:type => :uint8)
-    arr[3] = 5
-    arr.snapshot #=> [0, 0, 0, 5]
+    class A < BinData::Record
+       array :numbers, :type => :uint8, :initial_length => 3
+    end
+                  -vs-
+
+    class A < BinData::Record
+       array :numbers, :initial_length => 3 do
+         uint8
+       end
+    end
 {:ruby}
 
-Parameters can be passed to this object with a slightly clumsy syntax.
+For the simple case, the `:type` parameter is usually clearer.  When the
+array type has parameters, the block form becomes easier to read.
 
-    arr = BinData::Array.new(:type => [:uint8, {:initial_value => :index}])
-    arr[3] = 5
-    arr.snapshot #=> [0, 1, 2, 5]
+    class A < BinData::Record
+       array :numbers, :type => [:uint8, {:initial_value => :index}],
+                       :initial_length => 3
+    end
+                  -vs-
+
+    class A < BinData::Record
+       array :numbers, :initial_length => 3 do
+         uint8 :initial_value => :index
+       end
+    end
 {:ruby}
+
+If the block form has multiple types declared, they are interpreted as
+the contents of an anonymous `struct`.  To illustrate this, consider the
+following representation of a polygon.
+
+    class Polygon < BinData::Record
+      endian :little
+      uint8 :num_points, :value => lambda { points.length }
+      array :points, :initial_length => :num_points do
+        double :x
+        double :y
+      end
+    end
+
+    triangle = Polygon.new
+    triangle.points[0].assign(:x => 1, :y => 2)
+    triangle.points[1].x = 3
+    triangle.points[1].y = 4
+    triangle.points << {:x => 5, :y => 6}
+{:ruby}
+
+## Array parameters
 
 There are two different parameters that specify the length of the array.
 
@@ -877,6 +1003,49 @@ choice.  The possible types of objects that a choice contains is
 controlled by the `:choices` parameter, while the `:selection` parameter
 specifies the active choice.
 
+## Choice syntax
+
+Choices have two ways of specifying the possible data objects they can
+contain.  The `:choices` parameter or the block form.  The block form is
+usually clearer and is prefered.
+
+    class MyInt16 < BinData::Record
+      uint8  :e, :check_value => lambda { value == 0 or value == 1 }
+      choice :int, :selection => :e,
+                   :choices => {0 => :int16be, 1 => :int16le}
+    end
+                  -vs-
+
+    class MyInt16 < BinData::Record
+      uint8  :e, :check_value => lambda { value == 0 or value == 1 }
+      choice :int, :selection => :e do
+        int16be 0
+        int16le 1
+      end
+    end
+{:ruby}
+
+The general form of the choice is
+
+    class MyRecord < BinData::Record
+      choice :name, :selection => lambda { ... } do
+        type key, :param1 => "foo", :param2 => "bar" ... # option 1
+        type key, :param1 => "foo", :param2 => "bar" ... # option 2
+      end
+    end
+{:ruby}
+
+`type`
+:   is the name of a supplied type (e.g. `uint32be`, `string`)
+    or a user defined type.  This is the same as for Records.
+
+`key`
+:   is the value that `:selection` will return to specify that this
+    choice is currently active.  The key can be any ruby type (`String`,
+    `Numeric` etc) except `Symbol`.
+
+## Choice parameters
+
 `:choices`
 
 :   Either an array or a hash specifying the possible data objects.  The
@@ -904,21 +1073,23 @@ Examples
     
     choices = {5 => type1, 17 => type2}
     obj = BinData::Choice.new(:choices => choices, :selection => 5)
-    obj.value # => "Type1"
+    obj # => "Type1"
 
     choices = [ type1, type2 ]
     obj = BinData::Choice.new(:choices => choices, :selection => 1)
-    obj.value # => "Type2"
+    obj # => "Type2"
 
     choices = [ nil, nil, nil, type1, nil, type2 ]
     obj = BinData::Choice.new(:choices => choices, :selection => 3)
-    obj.value # => "Type1"
+    obj # => "Type1"
 
     class MyNumber < BinData::Record
       int8 :is_big_endian
-      choice :data, :choices => { true => :int32be, false => :int32le },
-                    :selection => lambda { is_big_endian != 0 },
-                    :copy_on_change => true
+      choice :data, :selection => lambda { is_big_endian != 0 },
+                    :copy_on_change => true do
+        int32be true
+        int32le false
+      end
     end
 
     obj = MyNumber.new
@@ -936,7 +1107,7 @@ Examples
 
 ## Skipping over unused data
 
-Some binary structures contain data that is irrelevant to your purposes.  
+Some structures contain binary data that is irrelevant to your purposes.  
 
 Say you are interested in 50 bytes of data located 10 megabytes into the
 stream.  One way of accessing this useful data is:
@@ -960,6 +1131,49 @@ data and won't consume space in memory.  When writing it will write
       skip :length => 10 * 1024 * 1024
       string :data, :length => 50
     end
+{:ruby}
+
+## Bit-aligned Records
+
+Most structured binary data is byte-aligned.  Any bitfields that occur,
+usually start and end on a byte boundary.  But occasionally you will
+come across a format where primitive types (string and numerics) are not
+aligned on byte boundaries.
+
+    class CrazyAlignment < BinData::Record
+      bit4     :a
+      string   :b, :length => 2  # note: byte-aligned
+      bit1     :c
+      int16le  :d                # note: byte-aligned
+      bit3     :e
+    end
+
+    c = CrazyAlignment.read("\xff" * 10)
+    c.to_binary_s #=> "\360\377\377\200\377\377\340"
+{:ruby}
+
+The above declaration does not work as expected because BinData's
+internal strings and integers are byte-aligned.  We need bit-aligned
+versions of `string` and `int16le`.
+
+    class BitString < BinData::String
+      bit_aligned
+    end
+
+    class BitInt16le < BinData::Int16le
+      bit_aligned
+    end
+
+    class CrazyAlignment < BinData::Record
+      bit4        :a
+      bit_string  :b, :length => 2
+      bit1        :c
+      bit_int16le :d
+      bit3        :e
+    end
+
+    c = CrazyAlignment.read("\xff" * 10)
+    c.to_binary_s #=> "\377\377\377\377\377"
 {:ruby}
 
 ## Wrappers
@@ -1004,15 +1218,15 @@ type.  The `:type` parameter of `Array` is an example of a mandatory
 type.
 
     class IntArray < BinData::Wrapper
-      mandatory_parameter :half_count
+      mandatory_parameter :byte_count
 
-      array :type => :uint8, :initial_length => lambda { half_count * 2 }
+      array :type => :uint16be, :initial_length => lambda { byte_count / 2 }
     end
 
     arr = IntArray.new
-        #=> raises ArgumentError: parameter 'half_count' must be specified in IntArray
+        #=> raises ArgumentError: parameter 'byte_count' must be specified in IntArray
 
-    arr = IntArray.new(:half_count => lambda { 1 + 2 })
+    arr = IntArray.new(:byte_count => 12)
     arr.snapshot #=> [0, 0, 0, 0, 0, 0]
 {:ruby}
 
@@ -1119,34 +1333,25 @@ what they are currently interested in.
 There are several alternatives to BinData.  Below is a comparison
 between BinData and its alternatives.
 
-The short form is that BinData is the best choice for most cases.  If
-decoding / encoding speed is very important and the binary formats are
-simple then BitStruct may be a good choice.  (Though if speed is
-important, perhaps you should investigate a language other than Ruby.)
+The short form is that BinData is the best choice for most cases.
+It is the most full featured of all the alternatives.  It is also 
+arguably the most readable and easiest way to parse and write
+binary data.
 
 ### [BitStruct](http://rubyforge.org/projects/bit-struct)
 
 BitStruct is the most complete of all the alternatives.  It is
-declarative and supports all the same primitive types as BinData.  In
-addition it includes a self documenting feature to make it easy to write
-reports.
+declarative and supports most of the same primitive types as BinData.
+Its special feature is a self documenting feature for report generation.
+BitStruct's design choice is to favour speed over flexibility.
 
 The major limitation of BitStruct is that it does not support variable
-length fields and dependent fields.  The simple PascalString example
-used previously is not possible with BitStruct.  This limitation is due
-to the design choice to favour speed over flexibility.
-
-Most non trivial file formats rely on dependent and variable length
-fields.  It is difficult to use BitStruct with these formats as code
-must be written to explicitly handle the dependencies.
-
-BitStruct does not currently support little endian bit fields, or
-bitfields that span more than 2 bytes.  BitStruct is actively maintained
-so these limitations may be removed in a future release.
+length fields and dependent fields.  This makes it difficult to work
+with any non trivial file formats.
 
 If speed is important and you are only dealing with simple binary data
-types then BitStruct is a good choice.  For non trivial data types,
-BinData is the better choice.
+types then BitStruct might be a good choice.  For non trivial data
+types, BinData is the better choice.
 
 ### [BinaryParse](http://rubyforge.org/projects/binaryparse)
 
