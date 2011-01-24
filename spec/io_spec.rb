@@ -156,6 +156,12 @@ describe BinData::IO, "reading bits in big endian" do
     io.readbytes(1).should == [b2].pack("C")
     io.readbits(2, :big).should == 0b01
   end
+
+  it "should reset read bits to realign stream to next byte" do
+    io.readbits(3, :big).should == 0b111
+    io.reset_read_bits
+    io.readbits(3, :big).should == 0b110
+  end
 end
 
 describe BinData::IO, "reading bits in little endian" do
@@ -195,6 +201,12 @@ describe BinData::IO, "reading bits in little endian" do
     io.readbits(3, :little).should == 0b010
     io.readbytes(1).should == [b2].pack("C")
     io.readbits(2, :little).should == 0b10
+  end
+
+  it "should reset read bits to realign stream to next byte" do
+    io.readbits(3, :little).should == 0b010
+    io.reset_read_bits
+    io.readbits(3, :little).should == 0b110
   end
 end
 

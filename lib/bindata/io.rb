@@ -111,6 +111,14 @@ module BinData
       end
     end
 
+    # Discards any read bits so the stream becomes aligned at the
+    # next byte boundary.
+    def reset_read_bits
+      raise "Internal state error nbits = #{@rnbits}" if @rnbits >= 8
+      @rnbits = 0
+      @rval   = 0
+    end
+
     # Writes the given string of bytes to the io stream.
     def writebytes(str)
       flushbits
@@ -158,12 +166,6 @@ module BinData
         end
       end
       @positioning_supported
-    end
-
-    def reset_read_bits
-      raise "Internal state error nbits = #{@rnbits}" if @rnbits >= 8
-      @rnbits = 0
-      @rval   = 0
     end
 
     def skipbytes(n)
