@@ -71,9 +71,6 @@ module BinData
       @wrapped.__send__(symbol, *args, &block)
     end
 
-    #---------------
-    protected
-
     def do_read(io) #:nodoc:
       @wrapped.do_read(io)
     end

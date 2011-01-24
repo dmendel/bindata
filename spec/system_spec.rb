@@ -137,6 +137,22 @@ describe BinData::Array, "of bits" do
 end
 
 describe BinData::Record, "containing bitfields" do
+  class BCD < BinData::Primitive
+    bit4 :d1
+    bit4 :d2
+    bit4 :d3
+
+    def set(v)
+      self.d1 = (v / 100) % 10
+      self.d2 = (v /  10) % 10
+      self.d3 =  v        % 10
+    end
+
+    def get()
+      d1 * 100 + d2 * 10 + d3
+    end
+  end
+
   class BitfieldRecord < BinData::Record
     struct :a do
       bit4 :w
@@ -147,20 +163,25 @@ describe BinData::Record, "containing bitfields" do
     struct :c do
       bit2 :x
     end
+
+    bcd    :d
+    bit6   :e
   end
 
   subject { BitfieldRecord.new }
 
   it "should have correct num_bytes" do
-    subject.num_bytes.should == 2
+    subject.num_bytes.should == 5
   end
 
   it "should read across bitfield boundaries" do
-    subject.read [0b0111_0010, 0b0110_0101].pack("CC")
+    subject.read [0b0111_0010, 0b0110_0101, 0b0010_1010, 0b1000_0101, 0b1000_0000].pack("CCCCC")
 
     subject.a.w.should == 7
     subject.b.should == [0, 0, 1, 0, 0, 1, 1, 0, 0]
     subject.c.x.should == 2
+    subject.d.should == 954
+    subject.e.should == 11
   end
 
   it "should write across bitfield boundaries" do
@@ -168,7 +189,9 @@ describe BinData::Record, "containing bitfields" do
     subject.b[2] = 1
     subject.b[5] = 1
     subject.c.x = 1
-    subject.to_binary_s.should == [0b0011_0010, 0b0100_0010].pack("CC")
+    subject.d = 850
+    subject.e = 35
+    subject.to_binary_s.should == [0b0011_0010, 0b0100_0011, 0b0000_1010, 0b0001_0001, 0b1000_0000].pack("CCCCC")
   end
 end
 

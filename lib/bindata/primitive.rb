@@ -93,6 +93,16 @@ module BinData
       debug_name + "-internal-"
     end
 
+    def do_write(io)
+      set(_value)
+      @struct.do_write(io)
+    end
+
+    def do_num_bytes
+      set(_value)
+      @struct.do_num_bytes
+    end
+
     #---------------
     private
 
@@ -103,11 +113,6 @@ module BinData
     def read_and_return_value(io)
       @struct.do_read(io)
       get
-    end
-
-    def value_to_binary_string(val)
-      set(val)
-      @struct.to_binary_s
     end
 
     ###########################################################################
