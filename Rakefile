@@ -7,7 +7,8 @@ CURRENT_VERSION = BinData::VERSION
 
 PKG_FILES = FileList[
   "[A-Z]*",
-  "{examples,spec,lib}/**/*.rb",
+  "examples/**/*",
+  "{spec,lib}/**/*.rb",
   "tasks/**/*.rake",
   "setup.rb",
   "manual.haml",

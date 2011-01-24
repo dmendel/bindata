@@ -1,9 +1,11 @@
 = BinData Changelog
 
-== Version 1.3.0 (2011-xx-xx)
+== Version 1.3.0 (2011-01-25)
 
 * BinData objects can now assign values when instantiating.
 * Improved support for bit-based alignment.
+* Updated reference manual.
+* Added examples for declaring recursive structures.
 * Objects deriving from BinData::Base should no longer override #initialize.
 * Added BinData::Base(#new, #initialize_instance) to speed up
   instantiation of multiple objects.
