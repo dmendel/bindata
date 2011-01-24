@@ -9,8 +9,10 @@ module BinData
   #
   #   class Uint8Array < BinData::Wrapper
   #     default_parameter :initial_element_value => 0
-  #     array :type => [:uint8, {:initial_value => :initial_element_value}],
-  #           :initial_length => 2
+  #
+  #     array :initial_length => 2 do
+  #       uint8 :initial_value => :initial_element_value
+  #     end
   #   end
   #
   #   arr = Uint8Array.new
@@ -39,29 +41,6 @@ module BinData
     end
 
     mandatory_parameter :wrapped
-
-    def wrapped_class
-      return nil if self.class.field.nil?
-
-      sanitizer = Sanitizer.new
-      sanitizer.with_endian(self.class.endian) do
-        begin
-          return sanitizer.lookup_class(self.class.field.type)
-        rescue BinData::UnRegisteredTypeError
-        end
-      end
-
-      nil
-    end
-
-    def extract_args(args)
-      klass = wrapped_class
-      if klass
-        klass.arg_extractor.extract(klass, args)
-      else
-        super
-      end
-    end
 
     def initialize_instance
       prototype = get_parameter(:wrapped)
@@ -92,6 +71,9 @@ module BinData
       @wrapped.__send__(symbol, *args, &block)
     end
 
+    #---------------
+    protected
+
     def do_read(io) #:nodoc:
       @wrapped.do_read(io)
     end
@@ -102,6 +84,28 @@ module BinData
 
     def do_num_bytes #:nodoc:
       @wrapped.do_num_bytes
+    end
+
+    #---------------
+    private
+
+    def extract_args(args)
+      klass = wrapped_class
+      if klass
+        klass.arg_extractor.extract(klass, args)
+      else
+        super
+      end
+    end
+
+    def wrapped_class
+      return nil if self.class.field.nil?
+
+      begin
+        RegisteredClasses.lookup(self.class.field.type, self.class.endian)
+      rescue BinData::UnRegisteredTypeError
+        nil
+      end
     end
   end
 end

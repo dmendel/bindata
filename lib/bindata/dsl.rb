@@ -194,9 +194,8 @@ module BinData
 
       def name_from_field_declaration(args)
         name, params = args
-        name = nil if name.is_a?(Hash)
+        name = "" if name.nil? or name.is_a?(Hash)
         name = name.to_s if name.is_a?(Symbol)
-        name = name.to_s if name.nil?
 
         name
       end
@@ -243,22 +242,22 @@ module BinData
           dsl_raise SyntaxError, "field must have a name"
         end
 
-        return if option?(:fieldnames_for_choices)
+        unless option?(:fieldnames_for_choices)
+          if malformed_name?(name)
+            dsl_raise NameError.new("", name), "field '#{name}' is an illegal fieldname"
+          end
 
-        if malformed_name?(name)
-          dsl_raise NameError.new("", name), "field '#{name}' is an illegal fieldname"
-        end
+          if duplicate_name?(name)
+            dsl_raise SyntaxError, "duplicate field '#{name}'"
+          end
 
-        if duplicate_name?(name)
-          dsl_raise SyntaxError, "duplicate field '#{name}'"
-        end
+          if name_shadows_method?(name)
+            dsl_raise NameError.new("", name), "field '#{name}' shadows an existing method"
+          end
 
-        if name_shadows_method?(name)
-          dsl_raise NameError.new("", name), "field '#{name}' shadows an existing method"
-        end
-
-        if name_is_reserved?(name)
-          dsl_raise NameError.new("", name), "field '#{name}' is a reserved name"
+          if name_is_reserved?(name)
+            dsl_raise NameError.new("", name), "field '#{name}' is a reserved name"
+          end
         end
       end
 

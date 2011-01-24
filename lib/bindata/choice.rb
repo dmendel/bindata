@@ -192,12 +192,7 @@ module BinData
     end
 
     def get_or_instantiate_choice(selection)
-      obj = @choices[selection]
-      if obj.nil?
-        obj = instantiate_choice(selection)
-        @choices[selection] = obj
-      end
-      obj
+      @choices[selection] ||= instantiate_choice(selection)
     end
 
     def instantiate_choice(selection)

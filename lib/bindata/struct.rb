@@ -230,7 +230,7 @@ module BinData
 
     def do_num_bytes #:nodoc:
       instantiate_all_objs
-      sum_num_bytes_for_all_fields.ceil
+      sum_num_bytes_for_all_fields
     end
 
     #---------------

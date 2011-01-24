@@ -136,6 +136,42 @@ describe BinData::Array, "of bits" do
   end
 end
 
+describe BinData::Record, "containing bitfields" do
+  class BitfieldRecord < BinData::Record
+    struct :a do
+      bit4 :w
+    end
+
+    array  :b, :type => :bit1, :initial_length => 9
+
+    struct :c do
+      bit2 :x
+    end
+  end
+
+  subject { BitfieldRecord.new }
+
+  it "should have correct num_bytes" do
+    subject.num_bytes.should == 2
+  end
+
+  it "should read across bitfield boundaries" do
+    subject.read [0b0111_0010, 0b0110_0101].pack("CC")
+
+    subject.a.w.should == 7
+    subject.b.should == [0, 0, 1, 0, 0, 1, 1, 0, 0]
+    subject.c.x.should == 2
+  end
+
+  it "should write across bitfield boundaries" do
+    subject.a.w = 3
+    subject.b[2] = 1
+    subject.b[5] = 1
+    subject.c.x = 1
+    subject.to_binary_s.should == [0b0011_0010, 0b0100_0010].pack("CC")
+  end
+end
+
 describe "Objects with debug_name" do
   it "should have default name of obj" do
     el = ExampleSingle.new

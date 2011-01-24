@@ -243,7 +243,7 @@ module BinData
     end
 
     def do_num_bytes #:nodoc:
-      sum_num_bytes_for_all_elements.ceil
+      sum_num_bytes_for_all_elements
     end
 
     #---------------
@@ -317,13 +317,15 @@ module BinData
     end
 
     def sum_num_bytes_below_index(index)
-      sum = 0
-      (0...index).each do |i|
+      (0...index).inject(0) do |sum, i|
         nbytes = elements[i].do_num_bytes
-        sum = (nbytes.is_a?(Integer) ? sum.ceil : sum) + nbytes
-      end
 
-      sum
+        if nbytes.is_a?(Integer)
+          (sum + nbytes).ceil
+        else
+          sum + nbytes
+        end
+      end
     end
   end
 end

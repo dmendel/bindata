@@ -16,11 +16,10 @@ module BinData
   class SanitizedParameters < Hash
 
     def initialize(parameters, the_class)
-      @all_sanitized = false
-      @the_class = the_class
-
       parameters.each_pair { |key, value| self[key.to_sym] = value }
 
+      @all_sanitized = false
+      @the_class = the_class
       ensure_no_nil_values
     end
 
@@ -200,7 +199,7 @@ module BinData
     end
 
     def instantiate(value = nil, parent = nil)
-      @factory ||= @obj_class.new(@obj_params, parent)
+      @factory ||= @obj_class.new(@obj_params)
 
       @factory.new(value, parent)
     end
@@ -215,9 +214,7 @@ module BinData
     attr_reader :name
 
     def instantiate(value = nil, parent = nil)
-      @factory ||= @prototype.instantiate(nil, parent)
-
-      @factory.new(value, parent)
+      @prototype.instantiate(value, parent)
     end
   end
   #----------------------------------------------------------------------------
