@@ -1,5 +1,5 @@
 # BinData -- Binary data manipulator.
-# Copyright (c) 2007 - 2010 Dion Mendel.
+# Copyright (c) 2007 - 2011 Dion Mendel.
 
 require 'bindata/array'
 require 'bindata/bits'
@@ -15,6 +15,7 @@ require 'bindata/stringz'
 require 'bindata/struct'
 require 'bindata/trace'
 require 'bindata/wrapper'
+require 'bindata/alignment'
 require 'bindata/deprecated'
 
 # = BinData
@@ -28,7 +29,7 @@ require 'bindata/deprecated'
 #
 # BinData is released under the same license as Ruby.
 #
-# Copyright (c) 2007 - 2010 Dion Mendel.
+# Copyright (c) 2007 - 2011 Dion Mendel.
 module BinData
-  VERSION = "1.2.2"
+  VERSION = "1.3.0"
 end
