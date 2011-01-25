@@ -834,6 +834,9 @@ and implement the following three methods:
 
 :   The ruby value that a clear object should return.
 
+If you wish to access parameters from inside these methods, you can
+use `eval_parameter(key)`.
+
 Here is an example of a big integer implementation.
 
     # A custom big integer format.  Binary format is:
