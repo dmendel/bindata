@@ -183,6 +183,24 @@ describe BinData::Struct, "with multiple fields" do
   it "should fail on unknown method call" do
     lambda { subject.does_not_exist }.should raise_error(NoMethodError)
   end
+
+  context "#snapshot" do
+    it "should have ordered #keys" do
+      subject.snapshot.keys.should == ["a", "b"]
+    end
+
+    it "should have ordered #each" do
+      keys = []
+      subject.snapshot.each { |el| keys << el[0] }
+      keys.should == ["a", "b"]
+    end
+
+    it "should have ordered #each_pair" do
+      keys = []
+      subject.snapshot.each_pair { |k, v| keys << k }
+      keys.should == ["a", "b"]
+    end
+  end
 end
 
 describe BinData::Struct, "with nested structs" do

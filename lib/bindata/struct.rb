@@ -70,6 +70,29 @@ module BinData
 
     # A hash that can be accessed via attributes.
     class Snapshot < Hash #:nodoc:
+      def initialize(order = [])
+        @order = order
+      end
+
+      if RUBY_VERSION <= "1.9"
+        def keys
+          k = super
+          @order & k
+        end
+
+        def each
+          keys.each do |k|
+            yield [k, self[k]]
+          end
+        end
+
+        def each_pair
+          each do |el|
+            yield *el
+          end
+        end
+      end
+
       def respond_to?(symbol, include_private = false)
         has_key?(symbol.to_s) || super
       end
@@ -174,7 +197,7 @@ module BinData
     end
 
     def snapshot
-      snapshot = Snapshot.new
+      snapshot = Snapshot.new(field_names)
       field_names.each do |name|
         obj = find_obj_for_name(name)
         snapshot[name] = obj.snapshot if include_obj(obj)
@@ -275,11 +298,11 @@ module BinData
 
     def as_snapshot(val)
       if val.class == Hash
-        snapshot = Snapshot.new
+        snapshot = Snapshot.new(field_names)
         val.each_pair { |k,v| snapshot[k.to_s] = v unless v.nil? }
         snapshot
       elsif val.nil?
-        Snapshot.new
+        Snapshot.new(field_names)
       else
         val
       end
