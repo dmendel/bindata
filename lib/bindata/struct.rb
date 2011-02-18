@@ -52,8 +52,6 @@ module BinData
   #                      calls to #read, #write, #num_bytes or #snapshot.
   class Struct < BinData::Base
 
-    register_self
-
     mandatory_parameter :fields
     optional_parameters :endian, :hide
 

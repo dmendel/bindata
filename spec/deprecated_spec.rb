@@ -47,6 +47,14 @@ describe BinData::Base, "when defining" do
     }.should_not raise_error
   end
 
+  it "should handle deprecated #register_self method" do
+    lambda {
+      class DeprecatedRegisterSelfBase < BinData::Base
+        register_self
+      end
+    }.should_not raise_error
+  end
+
   it "should handle deprecated #register method" do
     lambda {
       class DeprecatedRegisterBase < BinData::Base

@@ -49,8 +49,6 @@ module BinData
   class Array < BinData::Base
     include Enumerable
 
-    register_self
-
     mandatory_parameter :type
     optional_parameters :initial_length, :read_until
     mutually_exclusive_parameters :initial_length, :read_until

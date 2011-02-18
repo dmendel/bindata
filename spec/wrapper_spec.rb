@@ -3,6 +3,16 @@
 require File.expand_path(File.join(File.dirname(__FILE__), "spec_common"))
 require 'bindata'
 
+describe BinData::Wrapper do
+  let(:r) { BinData::RegisteredClasses }
+
+  it "should not be registered" do
+    lambda {
+      r.lookup("Wrapper")
+    }.should raise_error(BinData::UnRegisteredTypeError)
+  end
+end
+
 describe BinData::Wrapper, "with errors" do
   it "should not wrap more than one type" do
     lambda {

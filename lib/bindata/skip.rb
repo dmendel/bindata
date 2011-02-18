@@ -25,8 +25,6 @@ module BinData
   #
   class Skip < BinData::BasePrimitive
 
-    register_self
-
     mandatory_parameter :length
 
     #---------------

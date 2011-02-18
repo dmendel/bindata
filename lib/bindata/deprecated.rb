@@ -35,15 +35,12 @@ module BinData
     end
 
     class << self
+      def register_self
+        warn "#{caller[0]} `register_self' is no longer needed as of BinData 1.3.2.  You can delete this line"
+      end
+
       def register(name, class_to_register)
-        if class_to_register == self
-          warn "#{caller[0]} `register(name, class_to_register)' is deprecated as of BinData 1.2.0.  Replace with `register_self'"
-        elsif /inherited/ =~ caller[0]
-          warn "#{caller[0]} `def self.inherited(subclass); register(subclass.name, subclass); end' is deprecated as of BinData 1.2.0.  Replace with `register_subclasses'"
-        else
-          warn "#{caller[0]} `register(name, class_to_register)' is deprecated as of BinData 1.2.0.  Replace with `register_class(class_to_register)'"
-        end
-        register_class(class_to_register)
+        warn "#{caller[0]} `register' is no longer needed as of BinData 1.3.2.  You can delete this line"
       end
     end
 

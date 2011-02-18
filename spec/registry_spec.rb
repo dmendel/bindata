@@ -14,29 +14,28 @@ describe BinData::Registry do
 
   let(:r) { BinData::Registry.new }
 
-  it "should determine if a name is registered" do
-    r.register('A', A)
-
-    r.is_registered?('a').should be_true
-  end
-
-  it "should determine if a name is not registered" do
-    lambda {
-      r.is_registered?('xyz')
-    }.should raise_error(BinData::UnRegisteredTypeError)
-  end
-
   it "should lookup registered names" do
     r.register('ASubClass', A)
     r.register('AnotherSubClass', B)
 
+    r.lookup('ASubClass').should == A
     r.lookup('a_sub_class').should == A
-    r.lookup('another_sub_class').should  == B
+    r.lookup('AnotherSubClass').should == B
+    r.lookup('another_sub_class').should == B
   end
 
   it "should not lookup unregistered names" do
     lambda {
       r.lookup('a_non_existent_sub_class')
+    }.should raise_error(BinData::UnRegisteredTypeError)
+  end
+
+  it "should be able to unregister names" do
+    r.register('ASubClass', A)
+    r.unregister('ASubClass')
+
+    lambda {
+      r.lookup('ASubClass')
     }.should raise_error(BinData::UnRegisteredTypeError)
   end
 

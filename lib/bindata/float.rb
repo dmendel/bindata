@@ -60,25 +60,21 @@ module BinData
 
   # Single precision floating point number in little endian format
   class FloatLe < BinData::BasePrimitive
-    register_self
     FloatingPoint.define_methods(self, :single, :little)
   end
 
   # Single precision floating point number in big endian format
   class FloatBe < BinData::BasePrimitive
-    register_self
     FloatingPoint.define_methods(self, :single, :big)
   end
 
   # Double precision floating point number in little endian format
   class DoubleLe < BinData::BasePrimitive
-    register_self
     FloatingPoint.define_methods(self, :double, :little)
   end
 
   # Double precision floating point number in big endian format
   class DoubleBe < BinData::BasePrimitive
-    register_self
     FloatingPoint.define_methods(self, :double, :big)
   end
 end

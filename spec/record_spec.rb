@@ -3,6 +3,16 @@
 require File.expand_path(File.join(File.dirname(__FILE__), "spec_common"))
 require 'bindata'
 
+describe BinData::Record do
+  let(:r) { BinData::RegisteredClasses }
+
+  it "should not be registered" do
+    lambda {
+      r.lookup("Record")
+    }.should raise_error(BinData::UnRegisteredTypeError)
+  end
+end
+
 describe BinData::Record, "when defining with errors" do
   it "should fail on non registered types" do
     lambda {

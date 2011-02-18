@@ -67,7 +67,7 @@ module BinData
   class Record < BinData::Struct
     include DSLMixin
 
-    register_subclasses
+    unregister_self
     dsl_parser :multiple_fields, :optional_fieldnames, :sanitize_fields, :hidden_fields
 
     class << self

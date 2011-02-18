@@ -24,7 +24,7 @@ module BinData
   class Wrapper < BinData::Base
     include DSLMixin
 
-    register_subclasses
+    unregister_self
     dsl_parser :only_one_field, :no_fieldnames
 
     class << self

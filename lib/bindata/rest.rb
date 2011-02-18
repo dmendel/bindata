@@ -17,8 +17,6 @@ module BinData
   #
   class Rest < BinData::BasePrimitive
 
-    register_self
-
     #---------------
     private
 

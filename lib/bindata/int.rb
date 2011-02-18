@@ -11,7 +11,6 @@ module BinData
         unless BinData.const_defined?(name)
           BinData.module_eval <<-END
             class #{name} < BinData::BasePrimitive
-              register_self
               Int.define_methods(self, #{nbits}, :#{endian}, :#{signed})
             end
           END
@@ -151,13 +150,11 @@ module BinData
 
   # Unsigned 1 byte integer.
   class Uint8 < BinData::BasePrimitive
-    register_self
     Int.define_methods(self, 8, :little, :unsigned)
   end
 
   # Signed 1 byte integer.
   class Int8 < BinData::BasePrimitive
-    register_self
     Int.define_methods(self, 8, :little, :signed)
   end
 

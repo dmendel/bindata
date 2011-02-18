@@ -9,8 +9,8 @@ module BinData
   # Error raised when unexpected results occur when reading data from IO.
   class ValidityError < StandardError ; end
 
-  # ArgExtractors take the arguments to BinData::Base.new and
-  # separate them into [value, parameters, parent].
+  # ArgExtractors take the arguments passed to BinData::Base.new and
+  # separates them into [value, parameters, parent].
   class BaseArgExtractor
     def self.extract(the_class, the_args)
       args = the_args.dup
@@ -59,26 +59,26 @@ module BinData
         RegisteredClasses.underscore_name(self.name)
       end
 
-      # Registers this class for use.
-      def register_self
-        register_class(self)
+      # Call this method if this class is abstract and not to be used.
+      def unregister_self
+        RegisteredClasses.unregister(name)
       end
 
       # Registers all subclasses of this class for use
-      def register_subclasses
+      def register_subclasses #:nodoc:
         class << self
           define_method(:inherited) do |subclass|
-            register_class(subclass)
+            RegisteredClasses.register(subclass.name, subclass)
+            register_subclasses
           end
         end
       end
 
-      def register_class(class_to_register) #:nodoc:
-        RegisteredClasses.register(class_to_register.name, class_to_register)
-      end
-
-      private :register_self, :register_subclasses, :register_class
+      private :unregister_self, :register_subclasses
     end
+
+    # Register all subclasses of this class.
+    register_subclasses
 
     # Creates a new data object.
     #

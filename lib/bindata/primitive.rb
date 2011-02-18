@@ -62,7 +62,7 @@ module BinData
   class Primitive < BasePrimitive
     include DSLMixin
 
-    register_subclasses
+    unregister_self
     dsl_parser :multiple_fields, :optional_fieldnames, :sanitize_fields
 
     class << self

@@ -24,6 +24,11 @@ module BinData
       @registry[formatted_name] = class_to_register
     end
 
+    def unregister(name)
+      formatted_name = lookup_key(name)
+      @registry.delete(formatted_name)
+    end
+
     def lookup(name, endian = nil)
       key = lookup_key(name, endian)
       try_registering_key(key) unless @registry.has_key?(key)

@@ -5,6 +5,16 @@ require File.expand_path(File.join(File.dirname(__FILE__), "example"))
 require 'bindata/base_primitive'
 require 'bindata/io'
 
+describe BinData::BasePrimitive do
+  let(:r) { BinData::RegisteredClasses }
+
+  it "should not be registered" do
+    lambda {
+      r.lookup("BasePrimitive")
+    }.should raise_error(BinData::UnRegisteredTypeError)
+  end
+end
+
 describe BinData::BasePrimitive, "all subclasses" do
   class SubClassOfBasePrimitive < BinData::BasePrimitive
     expose_methods_for_testing

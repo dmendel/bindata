@@ -26,8 +26,6 @@ module BinData
   #                        byte.
   class Stringz < BinData::BasePrimitive
 
-    register_self
-
     optional_parameters :max_length
 
     def assign(val)

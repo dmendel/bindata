@@ -45,6 +45,7 @@ module BinData
   #                           or failure.  Any other return is compared to
   #                           the value just read in.
   class BasePrimitive < BinData::Base
+    unregister_self
 
     optional_parameters :initial_value, :value, :check_value
     mutually_exclusive_parameters :initial_value, :value
