@@ -181,7 +181,7 @@ describe BinData::Primitive, "with custom default parameters" do
   end
 end
 
-describe BinData::Primitive, "derived classes" do
+describe BinData::Primitive, "subclassed with default parameter" do
   class ParentDerivedPrimitive < BinData::Primitive
     uint16be :a
     def get; self.a; end
@@ -189,10 +189,16 @@ describe BinData::Primitive, "derived classes" do
   end
 
   class ChildDerivedPrimitive < ParentDerivedPrimitive
+    default_parameter :initial_value => 5
   end
 
-  it "should derive" do
-    a = ChildDerivedPrimitive.new(7)
+  it "should override initial_value" do
+    a = ChildDerivedPrimitive.new(:initial_value => 7)
     a.to_binary_s.should == "\000\007"
+  end
+
+  it "should use default parameter" do
+    a = ChildDerivedPrimitive.new
+    a.to_binary_s.should == "\000\005"
   end
 end

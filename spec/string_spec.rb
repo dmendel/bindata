@@ -205,3 +205,42 @@ describe BinData::String, "with :trim_padding" do
     end
   end
 end
+
+describe BinData::String, "with Ruby 1.9 encodings" do
+  if RUBY_VERSION >= "1.9"
+    class UTF8String < BinData::String
+      def snapshot
+        super.force_encoding('UTF-8')
+      end
+    end
+
+    subject { UTF8String.new }
+    let(:binary_str) { "\xC3\x85\xC3\x84\xC3\x96" }
+    let(:utf8_str) { binary_str.dup.force_encoding('UTF-8') }
+
+    it "should store assigned values as binary" do
+      subject.assign(utf8_str)
+      subject.to_binary_s.should == binary_str
+    end
+
+    it "should store read values as binary" do
+      subject = UTF8String.new(:read_length => binary_str.length)
+      subject.read(binary_str)
+
+      subject.to_binary_s.should == binary_str
+    end
+
+    it "should return values in correct encoding" do
+      subject.assign(utf8_str)
+
+      subject.snapshot.should == utf8_str
+    end
+
+    it "should have correct num_bytes" do
+      subject.assign(utf8_str)
+
+      subject.num_bytes.should == binary_str.length
+    end
+  end
+end
+

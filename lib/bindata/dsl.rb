@@ -74,11 +74,11 @@ module BinData
     #
     class DSLParser
       def initialize(the_class, *options)
+        options = options_for_parser_type(options[0]) if options.length == 1
+
         @the_class = the_class
-
-        @options = parent_options_plus_these(options)
-
-        @endian = parent_attribute(:endian, nil)
+        @options   = parent_options_plus_these(options)
+        @endian    = parent_attribute(:endian, nil)
 
         if option?(:hidden_fields)
           @hide = parent_attribute(:hide, []).dup
@@ -94,6 +94,23 @@ module BinData
       end
 
       attr_reader :options
+
+      def options_for_parser_type(parser_type)
+        case parser_type
+        when :struct
+          [:multiple_fields, :optional_fieldnames, :sanitize_fields, :hidden_fields]
+        when :array
+          [:multiple_fields, :optional_fieldnames]
+        when :choice
+          [:multiple_fields, :all_or_none_fieldnames, :fieldnames_for_choices]
+        when :primitive
+          [:multiple_fields, :optional_fieldnames, :sanitize_fields]
+        when :wrapper
+          [:only_one_field, :no_fieldnames]
+        else
+          raise "unknown parser type #{parser_type}"
+        end
+      end
 
       def endian(endian = nil)
         if endian.nil?
@@ -124,10 +141,6 @@ module BinData
         @fields
       end
 
-      def field
-        @fields[0]
-      end
-
       def to_struct_params
         result = {:fields => fields}
         if not endian.nil?
@@ -138,6 +151,30 @@ module BinData
         end
 
         result
+      end
+
+      def to_array_params
+        case fields.length
+        when 0
+          {}
+        when 1
+          {:type => fields[0].to_type_params}
+        else
+          {:type => [:struct, to_struct_params]}
+        end
+      end
+
+      def to_choice_params
+        all_blank = fields.field_names.all? { |el| el == "" }
+        if fields.length == 0
+          {}
+        elsif all_blank
+          {:choices => fields.collect { |f| f.to_type_params }}
+        else
+          choices = {}
+          fields.each { |f| choices[f.name] = f.to_type_params }
+          {:choices => choices}
+        end
       end
 
       def method_missing(symbol, *args, &block) #:nodoc:
@@ -194,10 +231,13 @@ module BinData
 
       def name_from_field_declaration(args)
         name, params = args
-        name = "" if name.nil? or name.is_a?(Hash)
-        name = name.to_s if name.is_a?(Symbol)
-
-        name
+        if name.nil? or name.is_a?(Hash)
+          ""
+        elsif name.is_a?(Symbol)
+          name.to_s
+        else
+          name
+        end
       end
 
       def params_from_field_declaration(type, args, &block)
@@ -303,7 +343,7 @@ module BinData
 
     class StructBlockParser
       def self.extract_params(endian, &block)
-        parser = DSLParser.new(BinData::Struct, :multiple_fields, :optional_fieldnames, :hidden_fields)
+        parser = DSLParser.new(BinData::Struct, :struct)
         parser.endian endian
         parser.instance_eval(&block)
 
@@ -313,35 +353,21 @@ module BinData
 
     class ArrayBlockParser
       def self.extract_params(endian, &block)
-        parser = DSLParser.new(BinData::Array, :multiple_fields, :optional_fieldnames)
+        parser = DSLParser.new(BinData::Array, :array)
         parser.endian endian
         parser.instance_eval(&block)
 
-        if parser.fields.length == 1
-          {:type => parser.field.to_type_params}
-        else
-          {:type => [:struct, parser.to_struct_params]}
-        end
+        parser.to_array_params
       end
     end
 
     class ChoiceBlockParser
       def self.extract_params(endian, &block)
-        parser = DSLParser.new(BinData::Choice, :multiple_fields, :all_or_none_fieldnames, :fieldnames_for_choices)
+        parser = DSLParser.new(BinData::Choice, :choice)
         parser.endian endian
         parser.instance_eval(&block)
 
-        if all_blank?(parser.fields.field_names)
-          {:choices => parser.fields.collect { |f| f.to_type_params }}
-        else
-          choices = {}
-          parser.fields.each { |f| choices[f.name] = f.to_type_params }
-          {:choices => choices}
-        end
-      end
-
-      def self.all_blank?(array)
-        array.all? { |el| el == "" }
+        parser.to_choice_params
       end
     end
 

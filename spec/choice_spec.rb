@@ -67,12 +67,6 @@ share_examples_for "Choice initialized with array or hash" do
     subject.selection.should == 3
   end
 
-  it "should not be able to directly change the current selection" do
-    lambda {
-      subject.selection = 3
-    }.should raise_error(NoMethodError)
-  end
-
   it "should forward #snapshot" do
     subject.choice = 3
     subject.snapshot.should == 30
@@ -210,5 +204,25 @@ describe BinData::Choice, "with copy_on_change => true" do
 
     subject.choice = 7
     subject.should == 254
+  end
+end
+
+describe BinData::Choice, "subclassed with default parameters" do
+  class DerivedChoice < BinData::Choice
+    endian :big
+    default_parameter :selection => 'a'
+
+    uint16 'a'
+    uint32 'b'
+  end
+
+  it "should set initial selection" do
+    subject = DerivedChoice.new
+    subject.num_bytes.should == 2
+  end
+
+  it "should overide default parameter" do
+    subject = DerivedChoice.new(:selection => 'b')
+    subject.num_bytes.should == 4
   end
 end

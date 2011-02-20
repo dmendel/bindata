@@ -1,4 +1,5 @@
 require 'bindata/base'
+require 'bindata/dsl'
 
 module BinData
   # An Array is a list of data objects of the same type.
@@ -47,7 +48,10 @@ module BinData
   # Each data object in an array has the variable +index+ made available
   # to any lambda evaluated as a parameter of that data object.
   class Array < BinData::Base
+    include DSLMixin
     include Enumerable
+
+    dsl_parser :array
 
     mandatory_parameter :type
     optional_parameters :initial_length, :read_until
@@ -63,6 +67,8 @@ module BinData
         end
 
         params.warn_replacement_parameter(:read_length, :initial_length)
+
+        params.merge!(to_array_params)
 
         if params.needs_sanitizing?(:type)
           el_type, el_params = params[:type]
@@ -319,7 +325,7 @@ module BinData
         nbytes = elements[i].do_num_bytes
 
         if nbytes.is_a?(Integer)
-          (sum + nbytes).ceil
+          sum.ceil + nbytes
         else
           sum + nbytes
         end

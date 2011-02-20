@@ -4,6 +4,7 @@
 
 * Record#snapshot now returns fields in order.
 * Removed the need to call #register_self in subclasses.
+* Wrapper is now deprecated.  Use subclassing instead.
 
 == Version 1.3.1 (2011-01-25)
 

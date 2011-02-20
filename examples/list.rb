@@ -2,7 +2,7 @@ require 'bindata'
 
 # An example of a recursively defined data format.
 #
-# This format is used to describe atoms and lists.
+# This example format describes atoms and lists.
 # It is recursive because lists can contain other lists.
 #
 # Atoms - contain a single integer
@@ -49,10 +49,9 @@ require 'bindata'
 #
 # The declaration then becomes:
 #
-#     class Term < BinData::Record; end # forward declaration
+#     class Term < BinData::Record; end  # forward declaration
 #     
-#     class Atom < BinData::Wrapper
-#       int32be
+#     class Atom < BinData::Int32be
 #     end
 #     
 #     class List < BinData::Record
@@ -71,9 +70,7 @@ require 'bindata'
 
 class Term < BinData::Record; end  # Forward declaration
 
-class Atom < BinData::Wrapper
-  int32be
-
+class Atom < BinData::Int32be
   def decode
     snapshot
   end
@@ -117,8 +114,11 @@ class Term < BinData::Record
 end
 
 
+puts "A single Atom"
 p Term.encode(4)
 p Term.encode(4).decode
 puts
+
+puts "A nested List"
 p Term.encode([1, [2, 3], 4])
 p Term.encode([1, [2, 3], 4]).decode

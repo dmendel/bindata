@@ -296,3 +296,23 @@ describe BinData::Array, "nested within an Array" do
     subject.should == [ [4], [5, 6], [7, 8, 9] ]
   end
 end
+
+describe BinData::Array, "subclassed" do
+  class IntArray < BinData::Array
+    endian :big
+    default_parameter :initial_element_value => 0
+
+    uint16 :initial_value => :initial_element_value
+  end
+
+  it "should forward parameters" do
+    subject = IntArray.new(:initial_length => 7)
+    subject.length.should == 7
+  end
+
+  it "should be able to override default parameters" do
+    subject = IntArray.new(:initial_length => 3, :initial_element_value => 5)
+    subject.to_binary_s.should == "\x00\x05\x00\x05\x00\x05"
+  end
+end
+

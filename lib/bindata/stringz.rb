@@ -67,6 +67,8 @@ module BinData
     end
 
     def trim_and_zero_terminate(str)
+      str.force_encoding(Encoding::BINARY) if RUBY_VERSION >= "1.9"
+
       str = truncate_after_first_zero_byte(str)
       str = trim_to(str, eval_parameter(:max_length))
       append_zero_byte_if_needed(str)

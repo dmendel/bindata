@@ -95,6 +95,8 @@ module BinData
     private
 
     def clamp_to_length(str)
+      str.force_encoding(Encoding::BINARY) if RUBY_VERSION >= "1.9"
+
       len = eval_parameter(:length) || str.length
       if str.length == len
         str

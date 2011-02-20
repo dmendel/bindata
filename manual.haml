@@ -1,16 +1,16 @@
 !!!
 %html{ :xmlns => "http://www.w3.org/1999/xhtml", "xml:lang" => "en", :lang => "en" }
   %head
-    %meta{ :content => "text/html; charset=iso-8859-1", "http-equiv" => "Content-Type" }
-    %meta{ :description =>"How to easily parse binary data in Ruby" }
-    %meta{ :keywords =>"ruby, parse binary data, read binary data" }
+    %meta{ :content => "text/html; charset=utf-8", "http-equiv" => "Content-Type" }
+    %meta{ :description =>"How to easily read and write binary data in Ruby" }
+    %meta{ :keywords =>"ruby, binary, binary data, parse binary data, read binary data, write binary data, binary file, read binary file, write binary file" }
     %title
-      Parsing Binary Data in Ruby - BinData Reference Manual
+      Reading, writing and parsing binary data in Ruby
     :javascript
       var TINY={};function T$(i){return document.getElementById(i)}function T$$(e,p){return p.getElementsByTagName(e)}TINY.accordion=function(){function slider(n){this.n=n;this.a=[]}slider.prototype.init=function(t,e,m,o,k){var a=T$(t),i=s=0,n=a.childNodes,l=n.length;this.s=k||0;this.m=m||0;for(i;i<l;i++){var v=n[i];if(v.nodeType!=3){this.a[s]={};this.a[s].h=h=T$$(e,v)[0];this.a[s].c=c=T$$('div',v)[0];h.onclick=new Function(this.n+'.pr(0,'+s+')');if(o==s){h.className=this.s;c.style.height='auto';c.d=1}else{c.style.height=0;c.d=-1}s++}}this.l=s};slider.prototype.pr=function(f,d){for(var i=0;i<this.l;i++){var h=this.a[i].h,c=this.a[i].c,k=c.style.height;k=k=='auto'?1:parseInt(k);clearInterval(c.t);if((k!=1&&c.d==-1)&&(f==1||i==d)){c.style.height='';c.m=c.offsetHeight;c.style.height=k+'px';c.d=1;h.className=this.s;su(c,1)}else if(k>0&&(f==-1||this.m||i==d)){c.d=-1;h.className='';su(c,-1)}}};function su(c){c.t=setInterval(function(){sl(c)},20)};function sl(c){var h=c.offsetHeight,d=c.d==1?c.m-h:h;c.style.height=h+(Math.ceil(d/5)*c.d)+'px';c.style.opacity=h/c.m;c.style.filter='alpha(opacity='+h*100/c.m+')';if((c.d==1&&h>=c.m)||(c.d!=1&&h==1)){if(c.d==1){c.style.height='auto'}clearInterval(c.t)}};return{slider:slider}}();
 
-      var menu1, menu2, menu3, menu4, menu5, menu6;
-      var menu7, menu8, menu9, menu10, menu11, menu12, menu13;
+      var menu1, menu2, menu3, menu4, menu5, menu6, menu7;
+      var menu8, menu9, menu10, menu11, menu12, menu13, menu14;
 
       function init_accordion() {
         menu1 = new TINY.accordion.slider("menu1"); menu1.init("menu1","a",1,-1);
@@ -24,8 +24,9 @@
         menu9 = new TINY.accordion.slider("menu9"); menu9.init("menu9","a",1,-1);
         menu10 = new TINY.accordion.slider("menu10"); menu10.init("menu10","a",1,-1);
         menu11 = new TINY.accordion.slider("menu11"); menu11.init("menu11","a",1,-1);
-        menu12 = new TINY.accordion.slider("menu12"); menu11.init("menu12","a",1,-1);
-        menu13 = new TINY.accordion.slider("menu13"); menu11.init("menu13","a",1,-1);
+        menu12 = new TINY.accordion.slider("menu12"); menu12.init("menu12","a",1,-1);
+        menu13 = new TINY.accordion.slider("menu13"); menu13.init("menu13","a",1,-1);
+        menu14 = new TINY.accordion.slider("menu14"); menu14.init("menu14","a",1,-1);
       };
       window.onload = init_accordion;
 
@@ -108,6 +109,17 @@
         #main_content .ruby .global { color: #7FB; }
         #main_content .ruby .expr { color: #227; }
         #main_content .ruby .escape { color: #277; }
+    %script{:type => "text/javascript"}
+      :plain
+        var _gaq = _gaq || [];
+        _gaq.push(['_setAccount', 'UA-20958115-1']);
+        _gaq.push(['_trackPageview']);
+
+        (function() {
+          var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+          ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+          var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+        })();
 
   %body
     #left_frame
@@ -246,13 +258,13 @@
                               .acc-content
                   %li
                     %a{ :href => "#user_defined_primitive_types" }
-                      User Defined Primitive Types
+                      User-defined Primitive Types
                     .acc-section
                       .acc-content
                         %ul.level3#menu8
                           %li
                             %a{ :href => "#advanced_user_defined_primitive_types" }
-                              Advanced User Defined Primitive Types
+                              Advanced Example
                             .acc-section
                               .acc-content
           %li
@@ -294,37 +306,6 @@
               .acc-content
                 %ul.level2#menu11
                   %li
-                    %a{ :href => "#skipping_over_unused_data" }
-                      Skipping over unused data
-                    .acc-section
-                      .acc-content
-                  %li
-                    %a{ :href => "#bitaligned_records" }
-                      Bit-aligned Records
-                    .acc-section
-                      .acc-content
-                  %li
-                    %a{ :href => "#wrappers" }
-                      Wrappers
-                    .acc-section
-                      .acc-content
-                  %li
-                    %a{ :href => "#parameterizing_user_defined_types" }
-                      Parameterizing User Defined Types
-                    .acc-section
-                      .acc-content
-                        %ul.level3#menu12
-                          %li
-                            %a{ :href => "#mandatory_parameters" }
-                              Mandatory Parameters
-                            .acc-section
-                              .acc-content
-                          %li
-                            %a{ :href => "#default_parameters" }
-                              Default Parameters
-                            .acc-section
-                              .acc-content
-                  %li
                     %a{ :href => "#debugging" }
                       Debugging
                     .acc-section
@@ -345,6 +326,48 @@
                               Hidden fields
                             .acc-section
                               .acc-content
+                  %li
+                    %a{ :href => "#parameterizing_user_defined_types" }
+                      Parameterizing Types
+                    .acc-section
+                      .acc-content
+                        %ul.level3#menu12
+                          %li
+                            %a{ :href => "#mandatory_parameters" }
+                              Mandatory Parameters
+                            .acc-section
+                              .acc-content
+                          %li
+                            %a{ :href => "#default_parameters" }
+                              Default Parameters
+                            .acc-section
+                              .acc-content
+                  %li
+                    %a{ :href => "#extending_existing_types" }
+                      Extending existing Types
+                    .acc-section
+                      .acc-content
+                  %li
+                    %a{ :href => "#skipping_over_unused_data" }
+                      Skipping over unused data
+                    .acc-section
+                      .acc-content
+                  %li
+                    %a{ :href => "#bitaligned_records" }
+                      Bit-aligned Records
+                    .acc-section
+                      .acc-content
+          %li
+            %a{ :href => "#faq" }
+              FAQ
+            .acc-section
+              .acc-content
+                %ul.level2#menu14
+                  %li
+                    %a{ :href => "#im_using_ruby_19_how_do_i_use_string_encodings_with_bindata" }
+                      String encoding - Ruby 1.9
+                    .acc-section
+                      .acc-content
           %li
             %a{ :href => "#alternatives" }
               Alternatives

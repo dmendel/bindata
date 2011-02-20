@@ -63,7 +63,7 @@ module BinData
     include DSLMixin
 
     unregister_self
-    dsl_parser :multiple_fields, :optional_fieldnames, :sanitize_fields
+    dsl_parser :primitive
 
     class << self
       def sanitize_parameters!(params, sanitizer) #:nodoc:
@@ -74,6 +74,7 @@ module BinData
     mandatory_parameter :struct_params
 
     def initialize_instance
+      #TODO: should some of this be in init_shared_instance?
       @struct = BinData::Struct.new(get_parameter(:struct_params), self)
     end
 

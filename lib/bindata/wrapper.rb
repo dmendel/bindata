@@ -2,6 +2,17 @@ require 'bindata/base'
 require 'bindata/dsl'
 
 module BinData
+  class SanitizedParameters < Hash
+    def move_unknown_parameters_to(dest)
+      unless @all_sanitized
+        unused_keys = keys - @the_class.accepted_parameters.all
+        unused_keys.each do |key|
+          dest[key] = delete(key)
+        end
+      end
+    end
+  end
+
   # A Wrapper allows the creation of new BinData types that
   # provide default parameters.
   #
@@ -25,18 +36,21 @@ module BinData
     include DSLMixin
 
     unregister_self
-    dsl_parser :only_one_field, :no_fieldnames
+    dsl_parser :wrapper
 
     class << self
       def sanitize_parameters!(params, sanitizer) #:nodoc:
-        raise "no wrapped type was specified in #{self}" if field.nil?
+        raise "no wrapped type was specified in #{self}" if fields[0].nil?
 
-        wrapped_type = field.type
-        wrapped_params = field.params.dup
+        wrapped_type = fields[0].type
+        wrapped_params = fields[0].params.dup
 
         params.move_unknown_parameters_to(wrapped_params)
 
         params[:wrapped] = sanitizer.create_sanitized_object_prototype(wrapped_type, wrapped_params, endian)
+
+        wrapped_class = params[:wrapped].instance_variable_get(:@obj_class)
+        warn "BinData::Wrapper is deprecated as of BinData 1.3.2.  #{self} should derive from #{wrapped_class}\n   See http://bindata.rubyforge.org/#extending_existing_types"
       end
     end
 
@@ -96,10 +110,10 @@ module BinData
     end
 
     def wrapped_class
-      return nil if self.class.field.nil?
+      return nil if self.class.fields[0].nil?
 
       begin
-        RegisteredClasses.lookup(self.class.field.type, self.class.endian)
+        RegisteredClasses.lookup(self.class.fields[0].type, self.class.endian)
       rescue BinData::UnRegisteredTypeError
         nil
       end

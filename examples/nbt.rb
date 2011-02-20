@@ -30,44 +30,32 @@ module Nbt
   end
 
   # NBT.txt line 31
-  class TagByte < BinData::Wrapper
-    int8
-
+  class TagByte < BinData::Int8
     def to_formatted_s(indent = 0); to_s; end
   end
 
   # NBT.txt line 34
-  class TagShort < BinData::Wrapper
-    int16be
-
+  class TagShort < BinData::Int16be
     def to_formatted_s(indent = 0); to_s; end
   end
 
   # NBT.txt line 37
-  class TagInt < BinData::Wrapper
-    int32be
-
+  class TagInt < BinData::Int32be
     def to_formatted_s(indent = 0); to_s; end
   end
 
   # NBT.txt line 40
-  class TagLong < BinData::Wrapper
-    int64be
-
+  class TagLong < BinData::Int64be
     def to_formatted_s(indent = 0); to_s; end
   end
 
   # NBT.txt line 43
-  class TagFloat < BinData::Wrapper
-    float_be
-
+  class TagFloat < BinData::FloatBe
     def to_formatted_s(indent = 0); to_s; end
   end
 
   # NBT.txt line 46
-  class TagDouble < BinData::Wrapper
-    double_be
-
+  class TagDouble < BinData::DoubleBe
     def to_formatted_s(indent = 0); to_s; end
   end
 
@@ -106,28 +94,25 @@ module Nbt
   class TagList < BinData::Record; end
 
   # NBT.txt line 10
-  class Payload < BinData::Wrapper
-    mandatory_parameter :tag_selector
-    choice :selection => :tag_selector do
-      tag_end        0
-      tag_byte       1
-      tag_short      2
-      tag_int        3
-      tag_long       4
-      tag_float      5
-      tag_double     6
-      tag_byte_array 7
-      tag_string     8
-      tag_list       9
-      tag_compound   10
-    end
+  class Payload < BinData::Choice
+    tag_end        0
+    tag_byte       1
+    tag_short      2
+    tag_int        3
+    tag_long       4
+    tag_float      5
+    tag_double     6
+    tag_byte_array 7
+    tag_string     8
+    tag_list       9
+    tag_compound   10
   end
 
   # NBT.txt line 6, 27
   class NamedTag < BinData::Record
     int8 :tag_id
     tag_string :name,    :onlyif => :not_end_tag?
-    payload    :payload, :onlyif => :not_end_tag?, :tag_selector => :tag_id
+    payload    :payload, :onlyif => :not_end_tag?, :selection => :tag_id
 
     def not_end_tag?
       tag_id != 0
@@ -145,7 +130,7 @@ module Nbt
     int8 :tag_id
     int32be :len, :value => lambda { data.length }
     array :data, :initial_length => :len do
-      payload :tag_selector => :tag_id
+      payload :selection => :tag_id
     end
 
     def to_formatted_s(indent = 0)
@@ -175,9 +160,7 @@ module Nbt
   end
 
   # NBT.txt line 3
-  class Nbt < BinData::Wrapper
-    named_tag
-
+  class Nbt < NamedTag
     def self.read(io)
       require 'zlib'
       super(Zlib::GzipReader.new(io))

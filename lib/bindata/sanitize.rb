@@ -48,15 +48,6 @@ module BinData
       end
     end
 
-    def move_unknown_parameters_to(dest)
-      unless @all_sanitized
-        unused_keys = keys - @the_class.accepted_parameters.all
-        unused_keys.each do |key|
-          dest[key] = delete(key)
-        end
-      end
-    end
-
     def warn_replacement_parameter(bad_key, suggested_key)
       if has_parameter?(bad_key)
         warn ":#{bad_key} is not used with #{@the_class}.  " +

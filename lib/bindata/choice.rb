@@ -1,4 +1,5 @@
 require 'bindata/base'
+require 'bindata/dsl'
 
 module BinData
   # A Choice is a collection of data objects of which only one is active
@@ -55,6 +56,9 @@ module BinData
   #                            selection to the current selection whenever the
   #                            selection changes.  Default is false.
   class Choice < BinData::Base
+    include DSLMixin
+
+    dsl_parser :choice
 
     mandatory_parameters :choices, :selection
     optional_parameter   :copy_on_change
@@ -62,6 +66,8 @@ module BinData
     class << self
 
       def sanitize_parameters!(params, sanitizer) #:nodoc:
+        params.merge!(to_choice_params)
+
         if params.needs_sanitizing?(:choices)
           choices = choices_as_hash(params[:choices])
           ensure_valid_keys(choices)
@@ -106,33 +112,6 @@ module BinData
     # A convenience method that returns the current selection.
     def selection
       eval_parameter(:selection)
-    end
-
-    # This method does not exist. This stub only exists to document why.
-    # There is no #selection= method to complement the #selection method.
-    # This is deliberate to promote the declarative nature of BinData.
-    #
-    # If you really *must* be able to programmatically adjust the selection
-    # then try something like the following.
-    #
-    #   class ProgrammaticChoice < BinData::Wrapper
-    #     choice :selection => :selection
-    #     attr_accessor :selection
-    #   end
-    #
-    #   type1 = [:string, {:value => "Type1"}]
-    #   type2 = [:string, {:value => "Type2"}]
-    #
-    #   choices = {5 => type1, 17 => type2}
-    #   pc = ProgrammaticChoice.new(:choices => choices)
-    #
-    #   pc.selection = 5
-    #   pc #=> "Type1"
-    #
-    #   pc.selection = 17
-    #   pc #=> "Type2"
-    def selection=(sel)
-      raise NoMethodError, "See rdoc BinData::Choice.selection= for details"
     end
 
     def clear #:nodoc:

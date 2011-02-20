@@ -698,9 +698,11 @@ Three of the fields have parameters.
 ## Strings
 
 BinData supports two types of strings - fixed size and zero terminated.
-Strings are treated as a sequence of 8bit bytes.  This is the same as
-strings in Ruby 1.8.  The issue of character encoding is ignored by
-BinData.
+Strings are treated internally as a sequence of 8bit bytes.  This is the
+same as strings in Ruby 1.8.  BinData fully supports Ruby 1.9 string
+encodings.  See this [FAQ
+entry](#im_using_ruby_19_how_do_i_use_string_encodings_with_bindata) for
+details.
 
 ### Fixed Sized Strings
 
@@ -1107,6 +1109,169 @@ Examples
 
 # Advanced Topics
 
+## Debugging
+
+BinData includes several features to make it easier to debug
+declarations.
+
+### Tracing
+
+BinData has the ability to trace the results of reading a data
+structure.
+
+    class A < BinData::Record
+      int8  :a
+      bit4  :b
+      bit2  :c
+      array :d, :initial_length => 6, :type => :bit1
+    end
+
+    BinData::trace_reading do
+      A.read("\373\225\220")
+    end
+{:ruby}
+
+Results in the following being written to `STDERR`.
+
+    obj.a => -5
+    obj.b => 9
+    obj.c => 1
+    obj.d[0] => 0
+    obj.d[1] => 1
+    obj.d[2] => 1
+    obj.d[3] => 0
+    obj.d[4] => 0
+    obj.d[5] => 1
+{:ruby}
+
+### Rest
+
+The rest keyword will consume the input stream from the current position
+to the end of the stream.
+
+    class A < BinData::Record
+      string :a, :read_length => 5
+      rest   :rest
+    end
+
+    obj = A.read("abcdefghij")
+    obj.a #=> "abcde"
+    obj.rest #=" "fghij"
+{:ruby}
+
+### Hidden fields
+
+The typical way to view the contents of a BinData record is to call
+`#snapshot` or `#inspect`.  This gives all fields and their values.  The
+`hide` keyword can be used to prevent certain fields from appearing in
+this output.  This removes clutter and allows the developer to focus on
+what they are currently interested in.
+
+    class Testing < BinData::Record
+      hide :a, :b
+      string :a, :read_length => 10
+      string :b, :read_length => 10
+      string :c, :read_length => 10
+    end
+
+    obj = Testing.read(("a" * 10) + ("b" * 10) + ("c" * 10))
+    obj.snapshot #=> {"c"=>"cccccccccc"}
+    obj.to_binary_s #=> "aaaaaaaaaabbbbbbbbbbcccccccccc"
+{:ruby}
+
+## Parameterizing User Defined Types
+
+All BinData types have parameters that allow the behaviour of an object
+to be specified at initialization time.  User defined types may also
+specify parameters.  There are two types of parameters: mandatory and
+default.
+
+### Mandatory Parameters
+
+Mandatory parameters must be specified when creating an instance of the
+type.
+
+    class Polygon < BinData::Record
+      mandatory_parameter :num_edges
+
+      uint8 :num, :value => lambda { vertices.length }
+      array :vertices, :initial_length => :num_edges do
+        int8 :x
+        int8 :y
+      end
+    end
+
+    triangle = Polygon.new
+        #=> raises ArgumentError: parameter 'num_edges' must be specified in Polygon
+
+    triangle = Polygon.new(:num_edges => 3)
+    triangle.snapshot #=> {"num" => 3, "vertices" =>
+                             [{"x"=>0, "y"=>0}, {"x"=>0, "y"=>0}, {"x"=>0, "y"=>0}]}
+{:ruby}
+
+### Default Parameters
+
+Default parameters are optional.  These parameters have a default value
+that may be overridden when an instance of the type is created.
+
+    class Phrase < BinData::Primitive
+      default_parameter :number => "three"
+      default_parameter :adjective => "blind"
+      default_parameter :noun => "mice"
+
+      stringz :a, :initial_value => :number
+      stringz :b, :initial_value => :adjective
+      stringz :c, :initial_value => :noun
+
+      def get; "#{a} #{b} #{c}"; end
+      def set(v)
+        if /(.*) (.*) (.*)/ =~ v
+          self.a, self.b, self.c = $1, $2, $3
+        end
+      end
+    end
+
+    obj = Phrase.new(:number => "two", :adjective => "deaf")
+    obj.to_s #=> "two deaf mice"
+{:ruby}
+
+## Extending existing Types
+
+Sometimes you wish to create a new type that is simply an existing type
+with some predefined parameters.  Examples could be an array with a
+specified type, or an integer with an initial value.
+
+This can be achieved by subclassing the existing type and providing
+default parameters.  These parameters can of course be overridden at
+initialisation time.
+
+Here we define an array that contains big endian 16 bit integers.  The
+array has a preferred initial length.
+
+    class IntArray < BinData::Array
+      default_parameters :type => :uint16be, :initial_length => 5
+    end
+
+    arr = IntArray.new
+    arr.size #=> 5
+{:ruby}
+
+The initial length can be overridden at initialisation time.
+
+    arr = IntArray.new(:initial_length => 8)
+    arr.size #=> 8
+{:ruby}
+
+We can also use the block form syntax:
+
+    class IntArray < BinData::Array
+      endian :big
+      default_parameter :initial_length => 5
+
+      uint16
+    end
+{:ruby}
+
 ## Skipping over unused data
 
 Some structures contain binary data that is irrelevant to your purposes.  
@@ -1178,154 +1343,27 @@ versions of `string` and `int16le`.
     c.to_binary_s #=> "\377\377\377\377\377"
 {:ruby}
 
-## Wrappers
+---------------------------------------------------------------------------
 
-Sometimes you wish to create a new type that is simply an existing type
-with some predefined parameters.  Examples could be an array with a
-specified type, or an integer with an initial value.
+# FAQ
 
-This can be achieved with a wrapper.  A wrapper creates a new type based
-on an existing type which has predefined parameters.  These parameters
-can of course be overridden at initialisation time.
+## I'm using Ruby 1.9.  How do I use string encodings with BinData?
 
-Here we define an array that contains big endian 16 bit integers.  The
-array has a preferred initial length.
+BinData will internally use 8bit binary strings to represent the data.
+You do not need to worry about converting between encodings.
 
-    class IntArray < BinData::Wrapper
-      endian :big
-      array :type => :uint16, :initial_length => 5
-    end
+If you wish BinData to present string data in a specific encoding, you
+can override `#snapshot` as illustrated below:
 
-    arr = IntArray.new
-    arr.size #=> 5
-{:ruby}
-
-The initial length can be overridden at initialisation time.
-
-    arr = IntArray.new(:initial_length => 8)
-    arr.size #=> 8
-{:ruby}
-
-## Parameterizing User Defined Types
-
-All BinData types have parameters that allow the behaviour of an object
-to be specified at initialization time.  User defined types may also
-specify parameters.  There are two types of parameters: mandatory and
-default.
-
-### Mandatory Parameters
-
-Mandatory parameters must be specified when creating an instance of the
-type.  The `:type` parameter of `Array` is an example of a mandatory
-type.
-
-    class IntArray < BinData::Wrapper
-      mandatory_parameter :byte_count
-
-      array :type => :uint16be, :initial_length => lambda { byte_count / 2 }
-    end
-
-    arr = IntArray.new
-        #=> raises ArgumentError: parameter 'byte_count' must be specified in IntArray
-
-    arr = IntArray.new(:byte_count => 12)
-    arr.snapshot #=> [0, 0, 0, 0, 0, 0]
-{:ruby}
-
-### Default Parameters
-
-Default parameters are optional.  These parameters have a default value
-that may be overridden when an instance of the type is created.
-
-    class Phrase < BinData::Primitive
-      default_parameter :number => "three"
-      default_parameter :adjective => "blind"
-      default_parameter :noun => "mice"
-
-      stringz :a, :initial_value => :number
-      stringz :b, :initial_value => :adjective
-      stringz :c, :initial_value => :noun
-
-      def get; "#{a} #{b} #{c}"; end
-      def set(v)
-        if /(.*) (.*) (.*)/ =~ v
-          self.a, self.b, self.c = $1, $2, $3
-        end
+    class UTF8String < BinData::String
+      def snapshot
+        super.force_encoding('UTF-8')
       end
     end
 
-    obj = Phrase.new(:number => "two", :adjective => "deaf")
-    obj.to_s #=> "two deaf mice"
-{:ruby}
-
-## Debugging
-
-BinData includes several features to make it easier to debug
-declarations.
-
-### Tracing
-
-BinData has the ability to trace the results of reading a data
-structure.
-
-    class A < BinData::Record
-      int8  :a
-      bit4  :b
-      bit2  :c
-      array :d, :initial_length => 6, :type => :bit1
-    end
-
-    BinData::trace_reading do
-      A.read("\373\225\220")
-    end
-{:ruby}
-
-Results in the following being written to `STDERR`.
-
-    obj.a => -5
-    obj.b => 9
-    obj.c => 1
-    obj.d[0] => 0
-    obj.d[1] => 1
-    obj.d[2] => 1
-    obj.d[3] => 0
-    obj.d[4] => 0
-    obj.d[5] => 1
-{:ruby}
-
-### Rest
-
-The rest keyword will consume the input stream from the current position
-to the end of the stream.
-
-    class A < BinData::Record
-      string :a, :read_length => 5
-      rest   :rest
-    end
-
-    obj = A.read("abcdefghij")
-    obj.a #=> "abcde"
-    obj.rest #=" "fghij"
-{:ruby}
-
-### Hidden fields
-
-The typical way to view the contents of a BinData record is to call
-`#snapshot` or `#inspect`.  This gives all fields and their values.  The
-`hide` keyword can be used to prevent certain fields from appearing in
-this output.  This removes clutter and allows the developer to focus on
-what they are currently interested in.
-
-    class Testing < BinData::Record
-      hide :a, :b
-      string :a, :read_length => 10
-      string :b, :read_length => 10
-      string :c, :read_length => 10
-    end
-
-    obj = Testing.read(("a" * 10) + ("b" * 10) + ("c" * 10))
-    obj.snapshot #=> {"c"=>"cccccccccc"}
-    obj.to_binary_s #=> "aaaaaaaaaabbbbbbbbbbcccccccccc"
+    str = UTF8String.new("\xC3\x85\xC3\x84\xC3\x96")
+    str #=> "ÅÄÖ"
+    str.to_binary_s #=> "\xC3\x85\xC3\x84\xC3\x96"
 {:ruby}
 
 ---------------------------------------------------------------------------
