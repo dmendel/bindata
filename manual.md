@@ -1366,6 +1366,64 @@ can override `#snapshot` as illustrated below:
     str.to_binary_s #=> "\xC3\x85\xC3\x84\xC3\x96"
 {:ruby}
 
+## How do I speed up initialization?
+
+I'm doing this and it's slow.
+
+    999.times do |i|
+      foo = Foo.new(:bar => "baz")
+      ...
+    end
+{:ruby}
+
+BinData is optimized to be declarative.  For imperative use, the
+above naïve approach will be slow.  Below are faster alternatives.
+
+The fastest approach is to reuse objects by calling `#clear` instead of
+instantiating more objects.
+
+    foo = Foo.new(:bar => "baz")
+    999.times do
+      foo.clear
+      ...
+    end
+{:ruby}
+
+If you can't reuse objects, then consider the prototype pattern.
+
+    prototype = Foo.new(:bar => "baz")
+    999.times do
+      foo = prototype.new
+      ...
+    end
+{:ruby}
+
+The prefered approach is to be declarative.
+
+    class FooList < BinData::Array
+      default_parameter :initial_length => 999
+
+      foo :bar => "baz"
+    end
+
+    array = FooList.new
+    array.each { ... }
+{:ruby}
+
+## How do I model this complex nested format?
+
+A common pattern in file formats and network protocols is
+[type-length-value](http://en.wikipedia.org/wiki/Type-length-value).  The
+`type` field specifies how to interpret the `value`.  This gives a way to
+dynamically structure the data format.  An example is the TCP/IP protocol
+suite.  An IP datagram can contain a nested TCP, UDP or other packet type as
+decided by the `protocol` field.
+
+Modelling this structure can be difficult when the nesting is recursive, e.g.
+IP tunneling.  Here is an example of the simplest possible recursive TLV structure,
+a [list that can contains atoms or other
+lists](http://bindata.rubyforge.org/svn/trunk/examples/list.rb).
+
 ---------------------------------------------------------------------------
 
 # Alternatives
