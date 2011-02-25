@@ -506,21 +506,27 @@ describe BinData::Record, "with :onlyif" do
 end
 
 describe BinData::Record, "derived classes" do
-  class ParentDerivedRecord < BinData::Record
+  class ParentRecord < BinData::Record
     uint8 :a
   end
 
-  class ChildDerivedRecord < ParentDerivedRecord
+  class Child1Record < ParentRecord
     uint8 :b
   end
 
-  it "should not affect parent" do
-    parent = ParentDerivedRecord.new
-    parent.field_names.should == ["a"]
+  class Child2Record < Child1Record
+    uint8 :c
   end
 
-  it "should inherit fields" do
-    child = ChildDerivedRecord.new
-    child.field_names.should == ["a", "b"]
+  it "should not affect parent" do
+    ParentRecord.new.field_names.should == ["a"]
+  end
+
+  it "should inherit fields for first child" do
+    Child1Record.new.field_names.should == ["a", "b"]
+  end
+
+  it "should inherit fields for second child" do
+    Child2Record.new.field_names.should == ["a", "b", "c"]
   end
 end

@@ -72,7 +72,7 @@ module BinData
       end
 
       def sanitize_parameters!(params, sanitizer) #:nodoc:
-        params.merge!(to_struct_params)
+        params.merge!(dsl_params)
 
         super(params, sanitizer)
 

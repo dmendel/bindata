@@ -68,7 +68,7 @@ module BinData
 
         params.warn_replacement_parameter(:read_length, :initial_length)
 
-        params.merge!(to_array_params)
+        params.merge!(dsl_params)
 
         if params.needs_sanitizing?(:type)
           el_type, el_params = params[:type]

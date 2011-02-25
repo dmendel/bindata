@@ -5,20 +5,13 @@ module BinData
     end
 
     module ClassMethods
-      # Defines the DSL Parser for this BinData object.  Allowed +args+ are:
-      #
-      # [<tt>:only_one_field</tt>]         Only one field may be declared.
-      # [<tt>:multiple_fields</tt>]        Multiple fields may be declared.
-      # [<tt>:hidden_fields</tt>]          Hidden fields are allowed.
-      # [<tt>:sanitize_fields</tt>]        Fields are to be sanitized.
-      # [<tt>:mandatory_fieldnames</tt>]   Fieldnames are mandatory.
-      # [<tt>:optional_fieldnames</tt>]    Fieldnames are optional.
-      # [<tt>:fieldnames_for_choices</tt>] Fieldnames are choice keys.
-      # [<tt>:no_fieldnames</tt>]          Fieldnames are prohibited.
-      # [<tt>:all_or_none_fieldnames</tt>] All fields must have names, or
-      #                                    none may have names.
-      def dsl_parser(*args)
-        @dsl_parser ||= DSLParser.new(self, *args)
+
+      def dsl_parser(parser_type = nil)
+        unless defined? @dsl_parser
+          parser_type = superclass.dsl_parser.parser_type if parser_type.nil?
+          @dsl_parser = DSLParser.new(self, parser_type)
+        end
+        @dsl_parser
       end
 
       def method_missing(symbol, *args, &block) #:nodoc:
@@ -73,12 +66,11 @@ module BinData
     #   * +params+ is a hash containing any parameters
     #
     class DSLParser
-      def initialize(the_class, *options)
-        options = options_for_parser_type(options[0]) if options.length == 1
+      def initialize(the_class, parser_type)
+        @the_class   = the_class
+        @parser_type = parser_type
 
-        @the_class = the_class
-        @options   = parent_options_plus_these(options)
-        @endian    = parent_attribute(:endian, nil)
+        @endian  = parent_attribute(:endian, nil)
 
         if option?(:hidden_fields)
           @hide = parent_attribute(:hide, []).dup
@@ -93,24 +85,7 @@ module BinData
         end
       end
 
-      attr_reader :options
-
-      def options_for_parser_type(parser_type)
-        case parser_type
-        when :struct
-          [:multiple_fields, :optional_fieldnames, :sanitize_fields, :hidden_fields]
-        when :array
-          [:multiple_fields, :optional_fieldnames]
-        when :choice
-          [:multiple_fields, :all_or_none_fieldnames, :fieldnames_for_choices]
-        when :primitive
-          [:multiple_fields, :optional_fieldnames, :sanitize_fields]
-        when :wrapper
-          [:only_one_field, :no_fieldnames]
-        else
-          raise "unknown parser type #{parser_type}"
-        end
-      end
+      attr_reader :parser_type
 
       def endian(endian = nil)
         if endian.nil?
@@ -141,39 +116,20 @@ module BinData
         @fields
       end
 
-      def to_struct_params
-        result = {:fields => fields}
-        if not endian.nil?
-          result[:endian] = endian
-        end
-        if option?(:hidden_fields) and not hide.empty?
-          result[:hide] = hide
-        end
-
-        result
-      end
-
-      def to_array_params
-        case fields.length
-        when 0
-          {}
-        when 1
-          {:type => fields[0].to_type_params}
+      def dsl_params
+        case @parser_type
+        when :struct
+          to_struct_params
+        when :array
+          to_array_params
+        when :choice
+          to_choice_params
+        when :primitive
+          to_struct_params
+        when :wrapper
+          raise "Wrapper is deprecated"
         else
-          {:type => [:struct, to_struct_params]}
-        end
-      end
-
-      def to_choice_params
-        all_blank = fields.field_names.all? { |el| el == "" }
-        if fields.length == 0
-          {}
-        elsif all_blank
-          {:choices => fields.collect { |f| f.to_type_params }}
-        else
-          choices = {}
-          fields.each { |f| choices[f.name] = f.to_type_params }
-          {:choices => choices}
+          raise "unknown parser type #{@parser_type}"
         end
       end
 
@@ -188,15 +144,25 @@ module BinData
       #-------------
       private
 
-      def dsl_raise(exception, message)
-        backtrace = caller
-        backtrace.shift while %r{bindata/dsl.rb} =~ backtrace.first
-
-        raise exception, message + " in #{@the_class}", backtrace
+      def option?(opt)
+        options.include?(opt)
       end
 
-      def option?(opt)
-        @options.include?(opt)
+      def options
+        case @parser_type
+        when :struct
+          [:multiple_fields, :optional_fieldnames, :sanitize_fields, :hidden_fields]
+        when :array
+          [:multiple_fields, :optional_fieldnames]
+        when :choice
+          [:multiple_fields, :all_or_none_fieldnames, :fieldnames_for_choices]
+        when :primitive
+          [:multiple_fields, :optional_fieldnames, :sanitize_fields]
+        when :wrapper
+          [:only_one_field, :no_fieldnames]
+        else
+          raise "unknown parser type #{parser_type}"
+        end
       end
 
       def parent_attribute(attr, default = nil)
@@ -206,27 +172,6 @@ module BinData
         else
           default
         end
-      end
-
-      def parent_options_plus_these(options)
-        result = parent_attribute(:options, []).dup
-
-        mutexes = [
-          [:only_one_field, :multiple_fields],
-          [:mandatory_fieldnames, :optional_fieldnames, :no_fieldnames, :all_or_none_fieldnames]
-        ]
-
-        options.each do |opt|
-          mutexes.each do |mutex|
-            if mutex.include?(opt)
-              result -= mutex
-            end
-          end
-
-          result << opt
-        end
-
-        result
       end
 
       def name_from_field_declaration(args)
@@ -243,8 +188,8 @@ module BinData
       def params_from_field_declaration(type, args, &block)
         params = params_from_args(args)
 
-        if block_given? and BlockParsers.has_key?(type)
-          params.merge(BlockParsers[type].extract_params(endian, &block))
+        if block_given?
+          params.merge(params_from_block(type, &block))
         else
           params
         end
@@ -257,6 +202,24 @@ module BinData
         params || {}
       end
 
+      def params_from_block(type, &block)
+        bindata_classes = {
+          :array => BinData::Array,
+          :choice => BinData::Choice,
+          :struct => BinData::Struct
+        }
+
+        if bindata_classes.include?(type)
+          parser = DSLParser.new(bindata_classes[type], type)
+          parser.endian(endian)
+          parser.instance_eval(&block)
+
+          parser.dsl_params
+        else
+          {}
+        end
+      end
+
       def append_field(type, name, params)
         if too_many_fields?
           dsl_raise SyntaxError, "attempting to wrap more than one type"
@@ -264,7 +227,7 @@ module BinData
 
         ensure_valid_name(name)
 
-        fields.add_field(type, name, params, endian)
+        @fields.add_field(type, name, params, endian)
       rescue UnRegisteredTypeError => err
         dsl_raise TypeError, "unknown type '#{err.message}'"
       end
@@ -302,7 +265,7 @@ module BinData
       end
 
       def too_many_fields?
-        option?(:only_one_field) and not fields.empty?
+        option?(:only_one_field) and not @fields.empty?
       end
 
       def must_not_have_a_name_failed?(name)
@@ -314,9 +277,9 @@ module BinData
       end
 
       def all_or_none_names_failed?(name)
-        if option?(:all_or_none_fieldnames) and not fields.empty?
-          all_names_blank = fields.field_names.all? { |n| n == "" }
-          no_names_blank = fields.field_names.all? { |n| n != "" }
+        if option?(:all_or_none_fieldnames) and not @fields.empty?
+          all_names_blank = @fields.field_names.all? { |n| n == "" }
+          no_names_blank = @fields.field_names.all? { |n| n != "" }
 
           (name != "" and all_names_blank) or (name == "" and no_names_blank)
         else
@@ -329,7 +292,7 @@ module BinData
       end
 
       def duplicate_name?(name)
-        name != "" and fields.field_names.include?(name)
+        name != "" and @fields.field_names.include?(name)
       end
 
       def name_shadows_method?(name)
@@ -339,42 +302,49 @@ module BinData
       def name_is_reserved?(name)
         name != "" and BinData::Struct::RESERVED.include?(name)
       end
-    end
 
-    class StructBlockParser
-      def self.extract_params(endian, &block)
-        parser = DSLParser.new(BinData::Struct, :struct)
-        parser.endian endian
-        parser.instance_eval(&block)
+      def dsl_raise(exception, message)
+        backtrace = caller
+        backtrace.shift while %r{bindata/dsl.rb} =~ backtrace.first
 
-        parser.to_struct_params
+        raise exception, message + " in #{@the_class}", backtrace
+      end
+
+      def to_array_params
+        case @fields.length
+        when 0
+          {}
+        when 1
+          {:type => @fields[0].to_type_params}
+        else
+          {:type => [:struct, to_struct_params]}
+        end
+      end
+
+      def to_choice_params
+        all_blank = @fields.field_names.all? { |el| el == "" }
+        if @fields.length == 0
+          {}
+        elsif all_blank
+          {:choices => @fields.collect { |f| f.to_type_params }}
+        else
+          choices = {}
+          @fields.each { |f| choices[f.name] = f.to_type_params }
+          {:choices => choices}
+        end
+      end
+
+      def to_struct_params
+        result = {:fields => @fields}
+        if not endian.nil?
+          result[:endian] = endian
+        end
+        if option?(:hidden_fields) and not hide.empty?
+          result[:hide] = hide
+        end
+
+        result
       end
     end
-
-    class ArrayBlockParser
-      def self.extract_params(endian, &block)
-        parser = DSLParser.new(BinData::Array, :array)
-        parser.endian endian
-        parser.instance_eval(&block)
-
-        parser.to_array_params
-      end
-    end
-
-    class ChoiceBlockParser
-      def self.extract_params(endian, &block)
-        parser = DSLParser.new(BinData::Choice, :choice)
-        parser.endian endian
-        parser.instance_eval(&block)
-
-        parser.to_choice_params
-      end
-    end
-
-    BlockParsers = {
-      :struct => StructBlockParser,
-      :array  => ArrayBlockParser,
-      :choice => ChoiceBlockParser,
-    }
   end
 end

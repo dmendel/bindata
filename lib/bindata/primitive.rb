@@ -67,14 +67,13 @@ module BinData
 
     class << self
       def sanitize_parameters!(params, sanitizer) #:nodoc:
-        params[:struct_params] = sanitizer.create_sanitized_params(to_struct_params, BinData::Struct)
+        params[:struct_params] = sanitizer.create_sanitized_params(dsl_params, BinData::Struct)
       end
     end
 
     mandatory_parameter :struct_params
 
     def initialize_instance
-      #TODO: should some of this be in init_shared_instance?
       @struct = BinData::Struct.new(get_parameter(:struct_params), self)
     end
 

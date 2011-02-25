@@ -48,7 +48,7 @@ module BinData
       end
       def readbytes(n)
         n.times.inject("") do |bytes, i|
-          bytes + @io.readbits(8, :big).chr
+          bytes << @io.readbits(8, :big).chr
         end
       end
       def method_missing(sym, *args, &block)
