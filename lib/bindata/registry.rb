@@ -42,10 +42,6 @@ module BinData
       end
     end
 
-    def is_registered?(name, endian = nil)
-      lookup(name, endian) != nil
-    end
-
     # Convert CamelCase +name+ to underscore style.
     def underscore_name(name)
       name.to_s.sub(/.*::/, "").

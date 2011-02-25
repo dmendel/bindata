@@ -59,7 +59,7 @@ module BinData
 
     class << self
 
-      def sanitize_parameters!(params, sanitizer) #:nodoc:
+      def sanitize_parameters!(params) #:nodoc:
         unless params.has_parameter?(:initial_length) or
                  params.has_parameter?(:read_until)
           # ensure one of :initial_length and :read_until exists
@@ -72,7 +72,7 @@ module BinData
 
         if params.needs_sanitizing?(:type)
           el_type, el_params = params[:type]
-          params[:type] = sanitizer.create_sanitized_object_prototype(el_type, el_params)
+          params[:type] = params.create_sanitized_object_prototype(el_type, el_params)
         end
       end
     end

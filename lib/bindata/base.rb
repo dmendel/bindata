@@ -12,6 +12,8 @@ module BinData
   # ArgExtractors take the arguments passed to BinData::Base.new and
   # separates them into [value, parameters, parent].
   class BaseArgExtractor
+    @@empty_hash = Hash.new.freeze
+
     def self.extract(the_class, the_args)
       args = the_args.dup
       value = parameters = parent = nil
@@ -28,7 +30,7 @@ module BinData
         value = args.pop
       end
 
-      parameters ||= {}
+      parameters ||= @@empty_hash
 
       return [value, parameters, parent]
     end
@@ -93,7 +95,13 @@ module BinData
     # object resides under.
     def initialize(*args)
       value, parameters, parent = extract_args(args)
-      @params = Sanitizer.sanitize(parameters, self.class)
+
+      if parameters.is_a?(SanitizedParameters)
+        @params = parameters
+      else
+        @params = SanitizedParameters.new(parameters, self.class, nil)
+      end
+
 
       add_methods_for_check_or_adjust_offset
 
@@ -255,7 +263,7 @@ module BinData
 
     # Performs sanity checks on the given parameters.  This method converts
     # the parameters to the form expected by this data object.
-    def self.sanitize_parameters!(parameters, sanitizer) #:nodoc:
+    def self.sanitize_parameters!(parameters) #:nodoc:
     end
 
     # Initializes the state of the object.  All instance variables that

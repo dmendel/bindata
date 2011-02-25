@@ -2,25 +2,151 @@ require 'bindata/registry'
 
 module BinData
 
-  # When a BinData object is instantiated, it can be supplied parameters to
-  # determine its behaviour.  These parameters must be sanitized to ensure
-  # their values are valid.  When instantiating many objects, such as an array
-  # of records, there is much duplicated validation.
+  # Subclasses of this are sanitized
+  class SanitizedParameter; end
+
+  class SanitizedPrototype < SanitizedParameter
+    def initialize(obj_type, obj_params, endian)
+      endian = endian.endian if endian.respond_to? :endian
+      obj_params ||= {}
+
+      @obj_class  = RegisteredClasses.lookup(obj_type, endian)
+      @obj_params = SanitizedParameters.new(obj_params, @obj_class, endian)
+    end
+
+    def instantiate(value = nil, parent = nil)
+      @factory ||= @obj_class.new(@obj_params)
+
+      @factory.new(value, parent)
+    end
+  end
+  #----------------------------------------------------------------------------
+
+  class SanitizedField < SanitizedParameter
+    def initialize(name, field_type, field_params, endian)
+      @name      = name
+      @prototype = SanitizedPrototype.new(field_type, field_params, endian)
+    end
+
+    attr_reader :prototype
+
+    def name
+      (@name.nil? or @name == "") ? nil : @name.to_s
+    end
+
+    def raw_name
+      @name
+    end
+
+    def instantiate(value = nil, parent = nil)
+      @prototype.instantiate(value, parent)
+    end
+  end
+  #----------------------------------------------------------------------------
+
+  class SanitizedFields < SanitizedParameter
+    def initialize(endian)
+      @fields = []
+      @field_names = nil
+      @endian = endian
+    end
+    attr_reader :fields
+
+    def add_field(type, name, params)
+      @field_names = nil
+      @fields << SanitizedField.new(name, type, params, @endian)
+    end
+
+    def [](idx)
+      @fields[idx]
+    end
+
+    def empty?
+      @fields.empty?
+    end
+
+    def length
+      @fields.length
+    end
+
+    def each(&block)
+      @fields.each(&block)
+    end
+
+    def collect(&block)
+      @fields.collect(&block)
+    end
+
+    def field_names
+      # memoize field names to reduce duplicate copies
+      @field_names ||= @fields.collect { |field| field.name }
+    end
+
+    def copy_fields(other)
+      @field_names = nil
+      @fields.concat(other.fields)
+    end
+  end
+  #----------------------------------------------------------------------------
+
+  class SanitizedChoices < SanitizedParameter
+    def initialize(choices, endian)
+      @choices = {}
+      choices.each_pair do |key, val|
+        if SanitizedParameter === val
+          prototype = val
+        else
+          type, param = val
+          prototype = SanitizedPrototype.new(type, param, endian)
+        end
+
+        @choices[key] = prototype
+      end
+    end
+
+    def [](key)
+      @choices[key]
+    end
+  end
+  #----------------------------------------------------------------------------
+
+  class SanitizedBigEndian < SanitizedParameter
+    def endian
+      :big
+    end
+  end
+
+  class SanitizedLittleEndian < SanitizedParameter
+    def endian
+      :little
+    end
+  end
+  #----------------------------------------------------------------------------
+
+  # BinData objects are instantiated with parameters to determine their
+  # behaviour.  These parameters must be sanitized to ensure their values
+  # are valid.  When instantiating many objects with identical parameters,
+  # such as an array of records, there is much duplicated sanitizing.
   #
   # The purpose of the sanitizing code is to eliminate the duplicated
   # validation.
   #
   # SanitizedParameters is a hash-like collection of parameters.  Its purpose
-  # it to recursively sanitize the parameters of an entire BinData object chain
+  # is to recursively sanitize the parameters of an entire BinData object chain
   # at a single time.
   class SanitizedParameters < Hash
 
-    def initialize(parameters, the_class)
+    # Memoized constants
+    BIG_ENDIAN    = SanitizedBigEndian.new
+    LITTLE_ENDIAN = SanitizedLittleEndian.new
+
+    def initialize(parameters, the_class, endian)
       parameters.each_pair { |key, value| self[key.to_sym] = value }
 
-      @all_sanitized = false
       @the_class = the_class
-      ensure_no_nil_values
+      @endian    = endian
+
+      sanitize!
     end
 
     alias_method :has_parameter?, :has_key?
@@ -31,23 +157,6 @@ module BinData
       parameter and not parameter.is_a?(SanitizedParameter)
     end
 
-    def all_sanitized?
-      @all_sanitized
-    end
-
-    def sanitize!(sanitizer)
-      unless @all_sanitized
-        merge_default_parameters!
-
-        @the_class.sanitize_parameters!(self, sanitizer)
-
-        ensure_mandatory_parameters_exist
-        ensure_mutual_exclusion_of_parameters
-
-        @all_sanitized = true
-      end
-    end
-
     def warn_replacement_parameter(bad_key, suggested_key)
       if has_parameter?(bad_key)
         warn ":#{bad_key} is not used with #{@the_class}.  " +
@@ -55,8 +164,49 @@ module BinData
       end
     end
 
+    def endian
+      @endian || self[:endian]
+    end
+    attr_writer :endian
+
+    def create_sanitized_endian(endian)
+      if endian == :big
+        BIG_ENDIAN
+      elsif endian == :little
+        LITTLE_ENDIAN
+      else
+        raise ArgumentError, "unknown value for endian '#{endian}'"
+      end
+    end
+
+    def create_sanitized_params(params, the_class)
+      SanitizedParameters.new(params, the_class, self.endian)
+    end
+
+    def create_sanitized_choices(choices)
+      SanitizedChoices.new(choices, self.endian)
+    end
+
+    def create_sanitized_fields
+      SanitizedFields.new(self.endian)
+    end
+
+    def create_sanitized_object_prototype(obj_type, obj_params)
+      SanitizedPrototype.new(obj_type, obj_params, self.endian)
+    end
+
     #---------------
     private
+
+    def sanitize!
+      ensure_no_nil_values
+      merge_default_parameters!
+
+      @the_class.sanitize_parameters!(self)
+
+      ensure_mandatory_parameters_exist
+      ensure_mutual_exclusion_of_parameters
+    end
 
     def ensure_no_nil_values
       each do |key, value|
@@ -92,182 +242,7 @@ module BinData
         end
       end
     end
-
   end
   #----------------------------------------------------------------------------
 
-  # The Sanitizer sanitizes the parameters that are passed when creating a
-  # BinData object.  Sanitizing consists of checking for mandatory, optional
-  # and default parameters and ensuring the values of known parameters are
-  # valid.
-  class Sanitizer
-
-    class << self
-      # Sanitize +params+ for +the_class+.
-      # Returns sanitized parameters.
-      def sanitize(params, the_class)
-        if params.is_a?(SanitizedParameters) and params.all_sanitized?
-          params
-        else
-          sanitizer = self.new
-          sanitizer.create_sanitized_params(params, the_class)
-        end
-      end
-    end
-
-    def initialize
-      @endian = nil
-    end
-
-    def create_sanitized_params(params, the_class)
-      sanitized_params = as_sanitized_params(params, the_class)
-      sanitized_params.sanitize!(self)
-
-      sanitized_params
-    end
-
-    def create_sanitized_endian(endian)
-      # memoize return value to reduce memory usage
-      if endian == :big
-        @@sbe ||= SanitizedBigEndian.new
-      elsif endian == :little
-        @@sle ||= SanitizedLittleEndian.new
-      else
-        raise ArgumentError, "unknown value for endian '#{endian}'"
-      end
-    end
-
-    def create_sanitized_choices(choices)
-      SanitizedChoices.new(self, choices)
-    end
-
-    def create_sanitized_fields(fields = nil)
-      new_fields = SanitizedFields.new(self)
-      new_fields.copy_fields(fields) if fields
-      new_fields
-    end
-
-    def create_sanitized_object_prototype(obj_type, obj_params, endian = nil)
-      SanitizedPrototype.new(self, obj_type, obj_params, endian)
-    end
-
-    def with_endian(endian, &block)
-      if endian != nil
-        saved_endian = @endian
-        @endian = endian.respond_to?(:endian) ? endian.endian : endian
-        yield
-        @endian = saved_endian
-      else
-        yield
-      end
-    end
-
-    def lookup_class(type)
-      RegisteredClasses.lookup(type, @endian)
-    end
-
-    #---------------
-    private
-
-    def as_sanitized_params(params, the_class)
-      if SanitizedParameters === params
-        params
-      else
-        SanitizedParameters.new(params || {}, the_class)
-      end
-    end
-  end
-  #----------------------------------------------------------------------------
-
-  class SanitizedParameter; end
-
-  class SanitizedPrototype < SanitizedParameter
-    def initialize(sanitizer, obj_type, obj_params, endian)
-      sanitizer.with_endian(endian) do
-        @obj_class = sanitizer.lookup_class(obj_type)
-        @obj_params = sanitizer.create_sanitized_params(obj_params, @obj_class)
-      end
-    end
-
-    def instantiate(value = nil, parent = nil)
-      @factory ||= @obj_class.new(@obj_params)
-
-      @factory.new(value, parent)
-    end
-  end
-  #----------------------------------------------------------------------------
-
-  class SanitizedField < SanitizedParameter
-    def initialize(sanitizer, name, field_type, field_params, endian)
-      @name = (name != nil and name != "") ? name.to_s : nil
-      @prototype = sanitizer.create_sanitized_object_prototype(field_type, field_params, endian)
-    end
-    attr_reader :name
-
-    def instantiate(value = nil, parent = nil)
-      @prototype.instantiate(value, parent)
-    end
-  end
-  #----------------------------------------------------------------------------
-
-  class SanitizedFields < SanitizedParameter
-    def initialize(sanitizer)
-      @sanitizer = sanitizer
-      @fields = []
-      @field_names = nil
-    end
-    attr_reader :fields
-
-    def add_field(type, name, params, endian)
-      @field_names = nil
-      @fields << SanitizedField.new(@sanitizer, name, type, params, endian)
-    end
-
-    def [](idx)
-      @fields[idx]
-    end
-
-    def empty?
-      @fields.empty?
-    end
-
-    def field_names
-      # memoize field names to reduce duplicate copies
-      @field_names ||= @fields.collect { |field| field.name }
-    end
-
-    def copy_fields(other)
-      @field_names = nil
-      @fields.concat(other.fields)
-    end
-  end
-  #----------------------------------------------------------------------------
-
-  class SanitizedChoices < SanitizedParameter
-    def initialize(sanitizer, choices)
-      @choices = {}
-      choices.each_pair do |key, val|
-        type, param = val
-        prototype = sanitizer.create_sanitized_object_prototype(type, param)
-        @choices[key] = prototype
-      end
-    end
-
-    def [](key)
-      @choices[key]
-    end
-  end
-  #----------------------------------------------------------------------------
-
-  class SanitizedBigEndian < SanitizedParameter
-    def endian
-      :big
-    end
-  end
-
-  class SanitizedLittleEndian < SanitizedParameter
-    def endian
-      :little
-    end
-  end
 end

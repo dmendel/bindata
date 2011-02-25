@@ -66,8 +66,8 @@ module BinData
     dsl_parser :primitive
 
     class << self
-      def sanitize_parameters!(params, sanitizer) #:nodoc:
-        params[:struct_params] = sanitizer.create_sanitized_params(dsl_params, BinData::Struct)
+      def sanitize_parameters!(params) #:nodoc:
+        params[:struct_params] = params.create_sanitized_params(dsl_params, BinData::Struct)
       end
     end
 

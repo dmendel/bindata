@@ -16,7 +16,7 @@ module BinData
 
         if parameters_is_value?(the_class, value, parameters)
           value = parameters
-          parameters = nil
+          parameters = {}
         end
 
         [value, parameters, parent]
@@ -71,10 +71,10 @@ module BinData
         RecordArgExtractor
       end
 
-      def sanitize_parameters!(params, sanitizer) #:nodoc:
+      def sanitize_parameters!(params) #:nodoc:
         params.merge!(dsl_params)
 
-        super(params, sanitizer)
+        super(params)
 
         define_field_accessors(params[:fields].fields)
       end

@@ -65,13 +65,13 @@ module BinData
 
     class << self
 
-      def sanitize_parameters!(params, sanitizer) #:nodoc:
+      def sanitize_parameters!(params) #:nodoc:
         params.merge!(dsl_params)
 
         if params.needs_sanitizing?(:choices)
           choices = choices_as_hash(params[:choices])
           ensure_valid_keys(choices)
-          params[:choices] = sanitizer.create_sanitized_choices(choices)
+          params[:choices] = params.create_sanitized_choices(choices)
         end
       end
 

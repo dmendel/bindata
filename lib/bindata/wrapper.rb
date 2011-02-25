@@ -4,11 +4,9 @@ require 'bindata/dsl'
 module BinData
   class SanitizedParameters < Hash
     def move_unknown_parameters_to(dest)
-      unless @all_sanitized
-        unused_keys = keys - @the_class.accepted_parameters.all
-        unused_keys.each do |key|
-          dest[key] = delete(key)
-        end
+      unused_keys = keys - @the_class.accepted_parameters.all
+      unused_keys.each do |key|
+        dest[key] = delete(key)
       end
     end
   end
@@ -39,7 +37,7 @@ module BinData
     dsl_parser :wrapper
 
     class << self
-      def sanitize_parameters!(params, sanitizer) #:nodoc:
+      def sanitize_parameters!(params) #:nodoc:
         raise "no wrapped type was specified in #{self}" if fields[0].nil?
 
         wrapped_type = fields[0].type
@@ -47,7 +45,8 @@ module BinData
 
         params.move_unknown_parameters_to(wrapped_params)
 
-        params[:wrapped] = sanitizer.create_sanitized_object_prototype(wrapped_type, wrapped_params, endian)
+        params.endian = endian unless endian.nil?
+        params[:wrapped] = params.create_sanitized_object_prototype(wrapped_type, wrapped_params)
 
         wrapped_class = params[:wrapped].instance_variable_get(:@obj_class)
         warn "BinData::Wrapper is deprecated as of BinData 1.3.2.  #{self} should derive from #{wrapped_class}\n   See http://bindata.rubyforge.org/#extending_existing_types"

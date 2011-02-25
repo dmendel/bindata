@@ -23,39 +23,6 @@ module BinData
       def to_str; nil; end
     end
 
-    # An array containing a field definition of the form
-    # expected by BinData::Struct.
-    class UnSanitizedField < ::Array
-      def initialize(type, name, params)
-        super()
-        self << type << name << params
-      end
-      def type
-        self[0]
-      end
-      def name
-        self[1]
-      end
-      def params
-        self[2]
-      end
-      def to_type_params
-        [self.type, self.params]
-      end
-    end
-
-    class UnSanitizedFields < ::Array
-      def field_names
-        collect { |f| f.name }
-      end
-
-      def add_field(type, name, params, endian)
-        normalized_endian = endian.respond_to?(:endian) ? endian.endian : endian
-        normalized_type = RegisteredClasses.normalize_name(type, normalized_endian)
-        self << UnSanitizedField.new(normalized_type, name, params)
-      end
-    end
-
     # A DSLParser parses and accumulates field definitions of the form
     #
     #   type name, params
@@ -69,20 +36,7 @@ module BinData
       def initialize(the_class, parser_type)
         @the_class   = the_class
         @parser_type = parser_type
-
-        @endian  = parent_attribute(:endian, nil)
-
-        if option?(:hidden_fields)
-          @hide = parent_attribute(:hide, []).dup
-        end
-
-        if option?(:sanitize_fields)
-          fields = parent_attribute(:fields, nil)
-          @fields = Sanitizer.new.create_sanitized_fields(fields)
-        else
-          fields = parent_attribute(:fields, UnSanitizedFields.new)
-          @fields = fields.dup
-        end
+        @endian      = parent_attribute(:endian, nil)
       end
 
       attr_reader :parser_type
@@ -90,10 +44,8 @@ module BinData
       def endian(endian = nil)
         if endian.nil?
           @endian
-        elsif endian.respond_to? :endian
+        elsif endian == :big or endian == :little
           @endian = endian
-        elsif [:little, :big].include?(endian)
-          @endian = Sanitizer.new.create_sanitized_endian(endian)
         else
           dsl_raise ArgumentError, "unknown value for endian '#{endian}'"
         end
@@ -107,12 +59,24 @@ module BinData
                      end
                      name.to_sym
                    end
+
+          unless defined? @hide
+            @hide = parent_attribute(:hide, []).dup
+          end
+
           @hide.concat(hidden.compact)
           @hide
         end
       end
 
       def fields
+        unless defined? @fields
+          fields = parent_attribute(:fields, nil)
+          klass = option?(:sanitize_fields) ? SanitizedFields : UnSanitizedFields
+          @fields = klass.new(endian)
+          @fields.copy_fields(fields) if fields
+        end
+
         @fields
       end
 
@@ -153,9 +117,9 @@ module BinData
         when :struct
           [:multiple_fields, :optional_fieldnames, :sanitize_fields, :hidden_fields]
         when :array
-          [:multiple_fields, :optional_fieldnames]
+          [:multiple_fields, :optional_fieldnames, :sanitize_fields]
         when :choice
-          [:multiple_fields, :all_or_none_fieldnames, :fieldnames_for_choices]
+          [:multiple_fields, :all_or_none_fieldnames, :sanitize_fields, :fieldnames_for_choices]
         when :primitive
           [:multiple_fields, :optional_fieldnames, :sanitize_fields]
         when :wrapper
@@ -221,18 +185,20 @@ module BinData
       end
 
       def append_field(type, name, params)
-        if too_many_fields?
-          dsl_raise SyntaxError, "attempting to wrap more than one type"
-        end
-
         ensure_valid_name(name)
 
-        @fields.add_field(type, name, params, endian)
+        fields.add_field(type, name, params)
+      rescue ArgumentError => err
+        dsl_raise ArgumentError, err.message
       rescue UnRegisteredTypeError => err
         dsl_raise TypeError, "unknown type '#{err.message}'"
       end
 
       def ensure_valid_name(name)
+        if too_many_fields?
+          dsl_raise SyntaxError, "attempting to wrap more than one type"
+        end
+
         if must_not_have_a_name_failed?(name)
           dsl_raise SyntaxError, "field must not have a name"
         end
@@ -265,7 +231,7 @@ module BinData
       end
 
       def too_many_fields?
-        option?(:only_one_field) and not @fields.empty?
+        option?(:only_one_field) and not fields.empty?
       end
 
       def must_not_have_a_name_failed?(name)
@@ -277,9 +243,9 @@ module BinData
       end
 
       def all_or_none_names_failed?(name)
-        if option?(:all_or_none_fieldnames) and not @fields.empty?
-          all_names_blank = @fields.field_names.all? { |n| n == "" }
-          no_names_blank = @fields.field_names.all? { |n| n != "" }
+        if option?(:all_or_none_fieldnames) and not fields.empty?
+          all_names_blank = fields.field_names.all? { |n| n == "" or n.nil? }
+          no_names_blank = fields.field_names.all? { |n| n != "" and n != nil }
 
           (name != "" and all_names_blank) or (name == "" and no_names_blank)
         else
@@ -292,7 +258,7 @@ module BinData
       end
 
       def duplicate_name?(name)
-        name != "" and @fields.field_names.include?(name)
+        name != "" and fields.field_names.include?(name)
       end
 
       def name_shadows_method?(name)
@@ -311,31 +277,31 @@ module BinData
       end
 
       def to_array_params
-        case @fields.length
+        case fields.length
         when 0
           {}
         when 1
-          {:type => @fields[0].to_type_params}
+          {:type => fields[0].prototype}
         else
           {:type => [:struct, to_struct_params]}
         end
       end
 
       def to_choice_params
-        all_blank = @fields.field_names.all? { |el| el == "" }
-        if @fields.length == 0
+        all_blank = fields.field_names.all? { |el| el == nil }
+        if fields.length == 0
           {}
         elsif all_blank
-          {:choices => @fields.collect { |f| f.to_type_params }}
+          {:choices => fields.collect { |f| f.prototype }}
         else
           choices = {}
-          @fields.each { |f| choices[f.name] = f.to_type_params }
+          fields.each { |f| choices[f.raw_name] = f.prototype }
           {:choices => choices}
         end
       end
 
       def to_struct_params
-        result = {:fields => @fields}
+        result = {:fields => fields}
         if not endian.nil?
           result[:endian] = endian
         end
@@ -344,6 +310,40 @@ module BinData
         end
 
         result
+      end
+    end
+
+    # An array containing a field definition of the form
+    # expected by BinData::Struct.
+    class UnSanitizedField < ::Array
+      def initialize(type, name, params)
+        super()
+        self << type << name << params
+      end
+      def type
+        self[0]
+      end
+      def name
+        self[1]
+      end
+      def params
+        self[2]
+      end
+    end
+
+    class UnSanitizedFields < ::Array
+      def initialize(endian)
+        @endian = endian
+      end
+
+      def add_field(type, name, params)
+        normalized_endian = @endian.respond_to?(:endian) ? @endian.endian : @endian
+        normalized_type = RegisteredClasses.normalize_name(type, normalized_endian)
+        self << UnSanitizedField.new(normalized_type, name, params)
+      end
+
+      def copy_fields(other)
+        concat(other)
       end
     end
   end
