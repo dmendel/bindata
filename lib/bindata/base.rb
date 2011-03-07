@@ -96,16 +96,11 @@ module BinData
     def initialize(*args)
       value, parameters, parent = extract_args(args)
 
-      if parameters.is_a?(SanitizedParameters)
-        @params = parameters
-      else
-        @params = SanitizedParameters.new(parameters, self.class, nil)
-      end
-
+      @params = SanitizedParameters.sanitize(parameters, self.class)
+      @parent = parent if parent
 
       add_methods_for_check_or_adjust_offset
 
-      @parent = parent if parent
       initialize_shared_instance
       initialize_instance
       assign(value) if value

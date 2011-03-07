@@ -150,6 +150,16 @@ module BinData
     BIG_ENDIAN    = SanitizedBigEndian.new
     LITTLE_ENDIAN = SanitizedLittleEndian.new
 
+    class << self
+      def sanitize(parameters, the_class)
+        if SanitizedParameters === parameters
+          parameters
+        else
+          SanitizedParameters.new(parameters, the_class, nil)
+        end
+      end
+    end
+
     def initialize(parameters, the_class, endian)
       parameters.each_pair { |key, value| self[key.to_sym] = value }
 
