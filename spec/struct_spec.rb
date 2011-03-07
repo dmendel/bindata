@@ -94,6 +94,10 @@ describe BinData::Struct, "with hidden fields" do
     subject.b = 7
     subject.snapshot.should == {"a" => 0, "d" => 7}
   end
+
+  it "should detect hidden fields with has_key?" do
+    subject.should have_key("b")
+  end
 end
 
 describe BinData::Struct, "with multiple fields" do
@@ -127,6 +131,19 @@ describe BinData::Struct, "with multiple fields" do
     subject.a.clear
     subject.a.should be_clear
     subject.b.should_not be_clear
+  end
+
+  it "should read elements dynamically" do
+    subject[:a].should == 1
+  end
+
+  it "should write elements dynamically" do
+    subject[:a] = 2
+    subject.a.should == 2
+  end
+
+  it "should implement has_key?" do
+    subject.should have_key("a")
   end
 
   it "should read ordered" do

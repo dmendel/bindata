@@ -57,48 +57,14 @@ module BinData
 
     # These reserved words may not be used as field names
     RESERVED = Hash[*
-                 (::Hash.instance_methods.collect { |meth| meth.to_s } + 
+                 (Hash.instance_methods +
                   %w{alias and begin break case class def defined do else elsif
                      end ensure false for if in module next nil not or redo
                      rescue retry return self super then true undef unless until
                      when while yield} +
-                  %w{array element index value} ).
+                  %w{array element index value} ).collect { |name| name.to_sym }.
                   uniq.collect { |key| [key, true] }.flatten
                ]
-
-    # A hash that can be accessed via attributes.
-    class Snapshot < Hash #:nodoc:
-      def initialize(order = [])
-        @order = order
-      end
-
-      if RUBY_VERSION <= "1.9"
-        def keys
-          k = super
-          @order & k
-        end
-
-        def each
-          keys.each do |k|
-            yield [k, self[k]]
-          end
-        end
-
-        def each_pair
-          each do |el|
-            yield *el
-          end
-        end
-      end
-
-      def respond_to?(symbol, include_private = false)
-        has_key?(symbol.to_s) || super
-      end
-
-      def method_missing(symbol, *args)
-        self[symbol.to_s] || super
-      end
-    end
 
     class << self
 
@@ -151,7 +117,7 @@ module BinData
           unless Symbol === h
             warn "Hidden field '#{h}' should be provided as a symbol.  Using strings is deprecated"
           end
-          h.to_s # TODO: change this to sym
+          h.to_sym
         end
       end
 
@@ -193,7 +159,7 @@ module BinData
 
     def assign(val)
       clear
-      assign_fields(as_snapshot(val))
+      assign_fields(val)
     end
 
     def snapshot
@@ -214,11 +180,11 @@ module BinData
       else
         hidden = get_parameter(:hide) || []
         @field_names.compact - hidden
-      end
+      end.collect { |x| x.to_s }
     end
 
     def respond_to?(symbol, include_private = false) #:nodoc:
-      field_names(true).include?(symbol.to_s.chomp("=")) || super
+      @field_names.include?(base_field_name(symbol)) || super
     end
 
     def method_missing(symbol, *args, &block) #:nodoc:
@@ -256,8 +222,27 @@ module BinData
       sum_num_bytes_for_all_fields
     end
 
+    def [](key)
+      find_obj_for_name(key)
+    end
+
+    def []=(key, value)
+      obj = find_obj_for_name(key)
+      if obj
+        obj.assign(value)
+      end
+    end
+
+    def has_key?(key)
+      @field_names.index(base_field_name(key))
+    end
+
     #---------------
     private
+
+    def base_field_name(name)
+      name.to_s.chomp("=").to_sym
+    end
 
     def invoke_field(obj, symbol, args)
       name = symbol.to_s
@@ -275,8 +260,7 @@ module BinData
     end
 
     def find_obj_for_name(name)
-      field_name = name.to_s.chomp("=")
-      index = @field_names.index(field_name)
+      index = @field_names.index(base_field_name(name))
       if index
         instantiate_obj_at(index)
         @field_objs[index]
@@ -296,24 +280,26 @@ module BinData
       end
     end
 
-    def as_snapshot(val)
-      if val.class == Hash
-        snapshot = Snapshot.new(field_names)
-        val.each_pair { |k,v| snapshot[k.to_s] = v unless v.nil? }
-        snapshot
-      elsif val.nil?
-        Snapshot.new(field_names)
-      else
-        val
+    def assign_fields(val)
+      src = as_stringified_hash(val)
+
+      @field_names.compact.each do |name|
+        obj = find_obj_for_name(name)
+        if obj and src.has_key?(name)
+          obj.assign(src[name])
+        end
       end
     end
 
-    def assign_fields(snapshot)
-      field_names(true).each do |name|
-        obj = find_obj_for_name(name)
-        if obj and snapshot.respond_to?(name)
-          obj.assign(snapshot.__send__(name))
-        end
+    def as_stringified_hash(val)
+      if BinData::Struct === val
+        val
+      elsif val.nil?
+        {}
+      else
+        hash = Snapshot.new(field_names)
+        val.each_pair { |k,v| hash[k] = v }
+        hash
       end
     end
 
@@ -336,6 +322,54 @@ module BinData
 
     def include_obj(obj)
       not obj.has_parameter?(:onlyif) or obj.eval_parameter(:onlyif)
+    end
+
+    # A hash that can be accessed via attributes.
+    class Snapshot < ::Hash #:nodoc:
+      def initialize(order = [])
+        @order = order.compact
+      end
+
+      if RUBY_VERSION <= "1.9"
+        def keys
+          k = super
+          @order & k
+        end
+
+        def each
+          keys.each do |k|
+            yield [k, self[k]]
+          end
+        end
+
+        def each_pair
+          each do |el|
+            yield *el
+          end
+        end
+      end
+
+      def has_key?(key)
+        super(key.to_s)
+      end
+
+      def [](key)
+        super(key.to_s)
+      end
+
+      def []=(key, value)
+        if value != nil
+          super(key.to_s, value)
+        end
+      end
+
+      def respond_to?(symbol, include_private = false)
+        has_key?(symbol) || super
+      end
+
+      def method_missing(symbol, *args)
+        self[symbol] || super
+      end
     end
   end
 end

@@ -31,8 +31,8 @@ module BinData
       end
 
       def field_names_in_parameters?(the_class, parameters)
-        field_names = the_class.fields.field_names.collect { |k| k.to_s }
-        param_keys = parameters.keys.collect { |k| k.to_s }
+        field_names = the_class.fields.field_names
+        param_keys = parameters.keys
 
         (field_names & param_keys).length > 0
       end
@@ -85,8 +85,9 @@ module BinData
       def define_field_accessors(fields) #:nodoc:
         unless method_defined?(:bindata_defined_accessors_for_fields?)
           fields.each_with_index do |field, i|
-            if field.name
-              define_field_accessors_for(field.name, i)
+            name = field.name_as_sym
+            if name
+              define_field_accessors_for(name, i)
             end
           end
 
@@ -95,11 +96,11 @@ module BinData
       end
 
       def define_field_accessors_for(name, index)
-        define_method(name.to_sym) do
+        define_method(name) do
           instantiate_obj_at(index) unless @field_objs[index]
           @field_objs[index]
         end
-        define_method((name + "=").to_sym) do |*vals|
+        define_method(name.to_s + "=") do |*vals|
           instantiate_obj_at(index) unless @field_objs[index]
           @field_objs[index].assign(*vals)
         end

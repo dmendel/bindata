@@ -30,11 +30,11 @@ module BinData
 
     attr_reader :prototype
 
-    def name
-      (@name.nil? or @name == "") ? nil : @name.to_s
+    def name_as_sym
+      @name.nil? ? nil : @name.to_sym
     end
 
-    def raw_name
+    def name
       @name
     end
 
@@ -47,13 +47,13 @@ module BinData
   class SanitizedFields < SanitizedParameter
     def initialize(endian)
       @fields = []
-      @field_names = nil
       @endian = endian
     end
     attr_reader :fields
 
     def add_field(type, name, params)
-      @field_names = nil
+      name = nil if name == ""
+
       @fields << SanitizedField.new(name, type, params, @endian)
     end
 
@@ -78,12 +78,22 @@ module BinData
     end
 
     def field_names
-      # memoize field names to reduce duplicate copies
-      @field_names ||= @fields.collect { |field| field.name }
+      @fields.collect { |field| field.name_as_sym }
+    end
+
+    def has_field_name?(name)
+      @fields.detect { |f| f.name_as_sym == name.to_sym }
+    end
+
+    def all_field_names_blank?
+      @fields.all? { |f| f.name == nil }
+    end
+
+    def no_field_names_blank?
+      @fields.all? { |f| f.name != nil }
     end
 
     def copy_fields(other)
-      @field_names = nil
       @fields.concat(other.fields)
     end
   end

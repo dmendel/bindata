@@ -119,7 +119,7 @@ module BinData
         when :array
           [:multiple_fields, :optional_fieldnames, :sanitize_fields]
         when :choice
-          [:multiple_fields, :all_or_none_fieldnames, :sanitize_fields, :fieldnames_for_choices]
+          [:multiple_fields, :all_or_none_fieldnames, :sanitize_fields, :fieldnames_are_values]
         when :primitive
           [:multiple_fields, :optional_fieldnames, :sanitize_fields]
         when :wrapper
@@ -140,10 +140,8 @@ module BinData
 
       def name_from_field_declaration(args)
         name, params = args
-        if name.nil? or name.is_a?(Hash)
-          ""
-        elsif name.is_a?(Symbol)
-          name.to_s
+        if name == "" or name.is_a?(Hash)
+          nil
         else
           name
         end
@@ -168,7 +166,7 @@ module BinData
 
       def params_from_block(type, &block)
         bindata_classes = {
-          :array => BinData::Array,
+          :array  => BinData::Array,
           :choice => BinData::Choice,
           :struct => BinData::Struct
         }
@@ -185,7 +183,7 @@ module BinData
       end
 
       def append_field(type, name, params)
-        ensure_valid_name(name)
+        ensure_valid_field(name)
 
         fields.add_field(type, name, params)
       rescue ArgumentError => err
@@ -194,24 +192,28 @@ module BinData
         dsl_raise TypeError, "unknown type '#{err.message}'"
       end
 
-      def ensure_valid_name(name)
+      def ensure_valid_field(field_name)
         if too_many_fields?
           dsl_raise SyntaxError, "attempting to wrap more than one type"
         end
 
-        if must_not_have_a_name_failed?(name)
+        if must_not_have_a_name_failed?(field_name)
           dsl_raise SyntaxError, "field must not have a name"
         end
 
-        if all_or_none_names_failed?(name)
+        if all_or_none_names_failed?(field_name)
           dsl_raise SyntaxError, "fields must either all have names, or none must have names"
         end
 
-        if must_have_a_name_failed?(name)
+        if must_have_a_name_failed?(field_name)
           dsl_raise SyntaxError, "field must have a name"
         end
 
-        unless option?(:fieldnames_for_choices)
+        ensure_valid_name(field_name)
+      end
+
+      def ensure_valid_name(name)
+        if name and not option?(:fieldnames_are_values)
           if malformed_name?(name)
             dsl_raise NameError.new("", name), "field '#{name}' is an illegal fieldname"
           end
@@ -235,38 +237,38 @@ module BinData
       end
 
       def must_not_have_a_name_failed?(name)
-        option?(:no_fieldnames) and name != ""
+        option?(:no_fieldnames) and name != nil
       end
 
       def must_have_a_name_failed?(name)
-        option?(:mandatory_fieldnames) and name == ""
+        option?(:mandatory_fieldnames) and name.nil?
       end
 
       def all_or_none_names_failed?(name)
         if option?(:all_or_none_fieldnames) and not fields.empty?
-          all_names_blank = fields.field_names.all? { |n| n == "" or n.nil? }
-          no_names_blank = fields.field_names.all? { |n| n != "" and n != nil }
+          all_names_blank = fields.all_field_names_blank?
+          no_names_blank = fields.no_field_names_blank?
 
-          (name != "" and all_names_blank) or (name == "" and no_names_blank)
+          (name != nil and all_names_blank) or (name == nil and no_names_blank)
         else
           false
         end
       end
 
       def malformed_name?(name)
-        name != "" and /^[a-z_]\w*$/ !~ name
+        /^[a-z_]\w*$/ !~ name.to_s
       end
 
       def duplicate_name?(name)
-        name != "" and fields.field_names.include?(name)
+        fields.has_field_name?(name)
       end
 
       def name_shadows_method?(name)
-        name != "" and @the_class.method_defined?(name)
+        @the_class.method_defined?(name)
       end
 
       def name_is_reserved?(name)
-        name != "" and BinData::Struct::RESERVED.include?(name)
+        BinData::Struct::RESERVED.include?(name.to_sym)
       end
 
       def dsl_raise(exception, message)
@@ -288,14 +290,13 @@ module BinData
       end
 
       def to_choice_params
-        all_blank = fields.field_names.all? { |el| el == nil }
         if fields.length == 0
           {}
-        elsif all_blank
+        elsif fields.all_field_names_blank?
           {:choices => fields.collect { |f| f.prototype }}
         else
           choices = {}
-          fields.each { |f| choices[f.raw_name] = f.prototype }
+          fields.each { |f| choices[f.name] = f.prototype }
           {:choices => choices}
         end
       end
