@@ -80,9 +80,7 @@ module BinData
       end
 
       def create_uint2int_code(nbits)
-        mask = (1 << (nbits - 1)) - 1
-
-        "val = -(((~val) & #{mask}) + 1) if (val >= #{1 << (nbits - 1)})"
+        "val = val - #{1 << nbits} if (val >= #{1 << (nbits - 1)})"
       end
 
       def create_read_code(nbits, endian)
