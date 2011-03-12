@@ -104,6 +104,14 @@ module BinData
       end
     end
 
+    def initialize_shared_instance
+      if eval_parameter(:copy_on_change) == true
+        class << self
+          alias_method :hook_after_current_choice, :copy_previous_value
+        end
+      end
+    end
+
     def initialize_instance
       @choices = {}
       @last_selection = nil
@@ -155,6 +163,7 @@ module BinData
     private
 
     def hook_before_do_read; end
+    def hook_after_current_choice(*args); end
 
     def current_choice
       selection = eval_parameter(:selection)
@@ -163,7 +172,7 @@ module BinData
       end
 
       obj = get_or_instantiate_choice(selection)
-      copy_previous_value_if_required(selection, obj)
+      hook_after_current_choice(selection, obj)
 
       obj
     end
@@ -180,16 +189,10 @@ module BinData
       prototype.instantiate(nil, self)
     end
 
-    def copy_previous_value_if_required(selection, obj)
+    def copy_previous_value(selection, obj)
       prev = get_previous_choice(selection)
-      if should_copy_value?(prev, obj)
-        obj.assign(prev)
-      end
+      obj.assign(prev) unless prev.nil?
       remember_current_selection(selection)
-    end
-
-    def should_copy_value?(prev, cur)
-      prev != nil and eval_parameter(:copy_on_change) == true
     end
 
     def get_previous_choice(selection)
@@ -201,9 +204,7 @@ module BinData
     end
 
     def remember_current_selection(selection)
-      if selection != @last_selection
-        @last_selection = selection
-      end
+      @last_selection = selection
     end
   end
 end
