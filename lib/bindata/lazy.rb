@@ -22,10 +22,10 @@ module BinData
     class << self
       # Lazily evaluates +val+ in the context of +obj+, with possibility of
       # +overrides+.
-      def eval(obj, val, overrides = {})
+      def eval(obj, val, overrides = nil)
         if can_eval?(val)
-          env = self.new(obj, overrides)
-          env.lazy_eval(val)
+          env = self.new(obj)
+          env.lazy_eval(val, overrides)
         else
           val
         end
@@ -41,13 +41,12 @@ module BinData
 
     # Creates a new evaluator.  All lazy evaluation is performed in the
     # context of +obj+.
-    # +overrides+ is an optional +obj.parameters+ like hash.
-    def initialize(obj, overrides = {})
+    def initialize(obj)
       @obj = obj
-      @overrides = overrides
     end
 
-    def lazy_eval(val)
+    def lazy_eval(val, overrides = nil)
+      @overrides = overrides if overrides
       if val.is_a? Symbol
         __send__(val)
       elsif val.respond_to? :arity
@@ -69,7 +68,7 @@ module BinData
     # Returns the index of this data object inside it's nearest container
     # array.
     def index
-      return @overrides[:index] if @overrides.has_key?(:index)
+      return @overrides[:index] if @overrides and @overrides.has_key?(:index)
 
       child = @obj
       parent = @obj.parent
@@ -84,7 +83,7 @@ module BinData
     end
 
     def method_missing(symbol, *args)
-      return @overrides[symbol] if @overrides.has_key?(symbol)
+      return @overrides[symbol] if @overrides and @overrides.has_key?(symbol)
 
       if @obj.parent
         eval_symbol_in_parent_context(symbol, args)

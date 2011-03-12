@@ -97,7 +97,7 @@ module BinData
       value, parameters, parent = extract_args(args)
 
       @params = SanitizedParameters.sanitize(parameters, self.class)
-      @parent = parent if parent
+      @parent = parent
 
       add_methods_for_check_or_adjust_offset
 
@@ -128,7 +128,7 @@ module BinData
     # parameters given at object construction to be overridden.
     #
     # Returns nil if +key+ does not refer to any parameter.
-    def eval_parameter(key, overrides = {})
+    def eval_parameter(key, overrides = nil)
       LazyEvaluator.eval(self, get_parameter(key), overrides)
     end
 
