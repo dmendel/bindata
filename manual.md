@@ -40,6 +40,8 @@ manipulating.
 It supports all the common datatypes that are found in structured binary
 data. Support for dependent and variable length fields is built in. 
 
+Last updated: 2011-06-14
+
 ## License
 
 BinData is released under the same license as Ruby.
