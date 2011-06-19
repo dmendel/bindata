@@ -207,6 +207,20 @@ describe BinData::Choice, "with copy_on_change => true" do
   end
 end
 
+describe BinData::Choice, "with :default" do
+  let(:choices) { { "a" => :int8, :default => :int16be } }
+
+  it "should select for existing case" do
+    subject = BinData::Choice.new(:selection => "a", :choices => choices)
+    subject.num_bytes.should == 1
+  end
+
+  it "should select for default case" do
+    subject = BinData::Choice.new(:selection => "other", :choices => choices)
+    subject.num_bytes.should == 2
+  end
+end
+
 describe BinData::Choice, "subclassed with default parameters" do
   class DerivedChoice < BinData::Choice
     endian :big
@@ -214,6 +228,7 @@ describe BinData::Choice, "subclassed with default parameters" do
 
     uint16 'a'
     uint32 'b'
+    uint64 :default
   end
 
   it "should set initial selection" do
@@ -224,5 +239,10 @@ describe BinData::Choice, "subclassed with default parameters" do
   it "should overide default parameter" do
     subject = DerivedChoice.new(:selection => 'b')
     subject.num_bytes.should == 4
+  end
+
+  it "should select default selection" do
+    subject = DerivedChoice.new(:selection => 'z')
+    subject.num_bytes.should == 8
   end
 end

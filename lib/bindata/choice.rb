@@ -49,7 +49,9 @@ module BinData
   #                            is to have params passed to it, then it should
   #                            be provided as [type_symbol, hash_params].  An
   #                            implementation constraint is that the hash may
-  #                            not contain symbols as keys.
+  #                            not contain symbols as keys, with the exception
+  #                            of :default.  :default is to be used when then
+  #                            :selection does not exist in the :choices hash.
   # <tt>:selection</tt>::      An index/key into the :choices array/hash which
   #                            specifies the currently active choice.
   # <tt>:copy_on_change</tt>:: If set to true, copy the value of the previous
@@ -98,7 +100,7 @@ module BinData
         if choices.has_key?(nil)
           raise ArgumentError, ":choices hash may not have nil key"
         end
-        if choices.keys.detect { |key| key.is_a?(Symbol) }
+        if choices.keys.detect { |key| key.is_a?(Symbol) and key != :default }
           raise ArgumentError, ":choices hash may not have symbols for keys"
         end
       end

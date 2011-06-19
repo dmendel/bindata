@@ -1,5 +1,9 @@
 = BinData Changelog
 
+== Version 1.4.1 (2011-xx-xx)
+
+* Added :default option for Choices.
+
 == Version 1.4.0 (2011-06-14)
 
 * Record#snapshot now returns fields in order.

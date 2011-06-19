@@ -110,7 +110,11 @@ module BinData
           prototype = SanitizedPrototype.new(type, param, endian)
         end
 
-        @choices[key] = prototype
+        if key == :default
+          @choices.default = prototype
+        else
+          @choices[key] = prototype
+        end
       end
     end
 

@@ -1085,16 +1085,12 @@ Examples
     obj = BinData::Choice.new(:choices => choices, :selection => 1)
     obj # => "Type2"
 
-    choices = [ nil, nil, nil, type1, nil, type2 ]
-    obj = BinData::Choice.new(:choices => choices, :selection => 3)
-    obj # => "Type1"
-
     class MyNumber < BinData::Record
       int8 :is_big_endian
       choice :data, :selection => lambda { is_big_endian != 0 },
                     :copy_on_change => true do
-        int32be true
         int32le false
+        int32be true
       end
     end
 
@@ -1105,6 +1101,23 @@ Examples
 
     obj.is_big_endian = 0
     obj.to_binary_s #=> "\000\005\000\000\000"
+{:ruby}
+
+## Default selection
+
+A key of `:default` can be specified as a default selection.  If the value of the
+selection isn't specified then the :default will be used.  The previous `MyNumber`
+example used a flag for endian.  Zero is little endian while any other value
+is big endian.  This can be concisely written as:
+
+    class MyNumber < BinData::Record
+      int8 :is_big_endian
+      choice :data, :selection => :is_big_endian,
+                    :copy_on_change => true do
+        int32le 0          # zero is little endian
+        int32be :default   # anything else is big endian
+      end
+    end
 {:ruby}
 
 ---------------------------------------------------------------------------
