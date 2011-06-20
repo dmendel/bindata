@@ -3,6 +3,7 @@
 == Version 1.4.1 (2011-xx-xx)
 
 * Added :default option for Choices.
+* Added count_bytes_remaining keyword.
 
 == Version 1.4.0 (2011-06-14)
 

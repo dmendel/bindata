@@ -1315,6 +1315,28 @@ data and won't consume space in memory.  When writing it will write
     end
 {:ruby}
 
+## Determining stream length
+
+Some file formats don't use length fields but rather read until the end
+of the file.  The stream length is needed when reading these formats.  The
+`count_bytes_remaining` keyword will give the number of bytes remaining in the
+stream.
+
+Consider a string followed by a 2 byte checksum.  The length of the string is
+not specified but is implied by the file length.
+
+    class StringWithChecksum < BinData::Record
+      count_bytes_remaining :bytes_remaining
+      string :the_string, :read_length => lambda { bytes_remaining - 2 }
+      int16le :checksum
+    end
+{:ruby}
+
+These file formats only work with seekable streams (e.g. files).  These formats
+do not stream well as they must be buffered by the client before being
+processed.  Consider using an explicit length when creating a new file format
+as it is easier to work with.
+
 ## Bit-aligned Records
 
 Most structured binary data is byte-aligned.  Any bitfields that occur,

@@ -4,6 +4,7 @@
 require 'bindata/array'
 require 'bindata/bits'
 require 'bindata/choice'
+require 'bindata/count_bytes_remaining'
 require 'bindata/float'
 require 'bindata/int'
 require 'bindata/primitive'
@@ -31,5 +32,5 @@ require 'bindata/deprecated'
 #
 # Copyright (c) 2007 - 2011 Dion Mendel.
 module BinData
-  VERSION = "1.4.0"
+  VERSION = "1.4.1"
 end
