@@ -19,26 +19,6 @@ module BinData
   # <tt>field</tt> instead of <tt>obj.field</tt>.
   class LazyEvaluator
 
-    class << self
-      # Lazily evaluates +val+ in the context of +obj+, with possibility of
-      # +overrides+.
-      def eval(obj, val, overrides = nil)
-        if can_eval?(val)
-          env = self.new(obj)
-          env.lazy_eval(val, overrides)
-        else
-          val
-        end
-      end
-
-      #-------------
-      private
-
-      def can_eval?(val)
-        val.is_a?(Symbol) or val.respond_to?(:arity)
-      end
-    end
-
     # Creates a new evaluator.  All lazy evaluation is performed in the
     # context of +obj+.
     def initialize(obj)
@@ -59,7 +39,7 @@ module BinData
     # Returns a LazyEvaluator for the parent of this data object.
     def parent
       if @obj.parent
-        LazyEvaluator.new(@obj.parent)
+        @obj.parent.lazy_evaluator
       else
         nil
       end

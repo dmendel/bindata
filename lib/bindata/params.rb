@@ -78,8 +78,8 @@ module BinData
         @optional
       end
 
-      def default(args = {})
-        if not args.empty?
+      def default(args = nil)
+        if args
           to_syms(args.keys)  # call for side effect of validating names
           args.each_pair do |param, value|
             @default[param.to_sym] = value

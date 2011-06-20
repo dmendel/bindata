@@ -129,7 +129,17 @@ module BinData
     #
     # Returns nil if +key+ does not refer to any parameter.
     def eval_parameter(key, overrides = nil)
-      LazyEvaluator.eval(self, get_parameter(key), overrides)
+      value = get_parameter(key)
+      if value.is_a?(Symbol) or value.respond_to?(:arity)
+        lazy_evaluator.lazy_eval(value, overrides)
+      else
+        value
+      end
+    end
+
+    # Returns a lazy evaluator for this object.
+    def lazy_evaluator #:nodoc:
+      @lazy ||= LazyEvaluator.new(self)
     end
 
     # Returns the parameter referenced by +key+.
