@@ -67,6 +67,20 @@ module BinData
       end
     end
 
+    # The number of bytes remaining in the input stream.
+    def num_bytes_remaining
+      if positioning_supported?
+        pos = @raw_io.pos
+        @raw_io.seek(0, ::IO::SEEK_END)
+        bytes_remaining = @raw_io.pos - pos
+        @raw_io.seek(pos, ::IO::SEEK_SET)
+
+        bytes_remaining
+      else
+        0
+      end
+    end
+
     # Seek +n+ bytes from the current position in the io stream.
     def seekbytes(n)
       reset_read_bits

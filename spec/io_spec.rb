@@ -39,6 +39,10 @@ describe BinData::IO, "reading from non seekable stream" do
     @io.seekbytes(4999)
     @io.readbytes(5).should == "abbbb"
   end
+
+  it "should return zero for num bytes remaining" do
+    @io.num_bytes_remaining.should == 0
+  end
 end
 
 describe BinData::IO, "when reading" do
@@ -74,6 +78,13 @@ describe BinData::IO, "when reading" do
 
   it "should read all bytes" do
     io.read_all_bytes.should == "abcdefghij"
+  end
+
+  it "should return number of bytes remaining" do
+    stream_length = io.num_bytes_remaining
+
+    io.readbytes(4)
+    io.num_bytes_remaining.should == stream_length - 4
   end
 
   it "should raise error when reading at eof" do
