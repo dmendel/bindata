@@ -1,5 +1,9 @@
 = BinData Changelog
 
+== Version 1.4.2 (2011-08-06)
+
+* =~ now works for strings.
+
 == Version 1.4.1 (2011-06-20)
 
 * Added :default option for Choices.

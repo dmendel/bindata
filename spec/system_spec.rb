@@ -342,3 +342,23 @@ describe BinData::Record, "with custom sized integers" do
   end
 end
 
+describe BinData::Primitive, "representing a string" do
+  class PascalStringPrimitive < BinData::Primitive
+    uint8  :len,  :value => lambda { data.length }
+    string :data, :read_length => :len
+
+    def get;   self.data; end
+    def set(v) self.data = v; end
+  end
+
+  subject { PascalStringPrimitive.new("testing") }
+
+  it "should compare to regexp" do
+    (subject =~ /es/).should == 1
+  end
+
+  it "should compare to regexp" do
+    (/es/ =~ subject).should == 1
+  end
+end
+

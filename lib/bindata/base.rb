@@ -214,6 +214,11 @@ module BinData
       pp.pp(snapshot)
     end
 
+    # Override and delegate =~ as it is defined in Object.
+    def =~(other)
+      snapshot =~ other
+    end
+
     # Returns a user friendly name of this object for debugging purposes.
     def debug_name
       if @parent

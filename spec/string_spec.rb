@@ -36,6 +36,18 @@ describe BinData::String, "when assigning" do
   end
 end
 
+describe BinData::String do
+  subject { BinData::String.new("testing") }
+
+  it "should compare with regexp" do
+    (/es/ =~ subject).should == 1
+  end
+
+  it "should compare with regexp" do
+    (subject =~ /es/).should == 1
+  end
+end
+
 describe BinData::String, "with :read_length" do
   subject { BinData::String.new(:read_length => 5) }
 
