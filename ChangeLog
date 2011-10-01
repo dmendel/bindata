@@ -1,5 +1,12 @@
 = BinData Changelog
 
+== Version 1.4.3 (2011-10-01)
+
+* Exceptions no longer ignored inside lambdas when reading until eof 
+  in an array (thanks John Labovitz).
+* Fixed interaction bug between choices and records (reported by
+  Refrigerator Johnny).
+
 == Version 1.4.2 (2011-08-06)
 
 * =~ now works for strings.

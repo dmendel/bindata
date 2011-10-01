@@ -277,7 +277,7 @@ module BinData
         element = append_new_element
         begin
           element.do_read(io)
-        rescue
+        rescue EOFError, IOError
           elements.pop
           break
         end

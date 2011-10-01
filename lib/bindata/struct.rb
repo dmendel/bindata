@@ -237,6 +237,12 @@ module BinData
       @field_names.index(base_field_name(key))
     end
 
+    def each_pair
+      @field_names.compact.each do |name|
+        yield [name, find_obj_for_name(name)]
+      end
+    end
+
     #---------------
     private
 

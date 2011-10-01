@@ -342,6 +342,21 @@ describe BinData::Record, "with custom sized integers" do
   end
 end
 
+describe BinData::Record, "with choice field" do
+  class ChoiceFieldRecord < BinData::Record
+    int8 :a
+    choice :b, :selection => :a do
+      struct 1, :fields => [[:int8, :v]]
+    end
+  end
+
+  it "should assign" do
+    subject = BinData::Array.new(:type => :choice_field_record)
+    obj = ChoiceFieldRecord.new(:a => 1, :b => {:v => 3})
+    subject.assign([obj])
+  end
+end
+
 describe BinData::Primitive, "representing a string" do
   class PascalStringPrimitive < BinData::Primitive
     uint8  :len,  :value => lambda { data.length }

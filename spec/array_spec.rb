@@ -278,6 +278,12 @@ describe BinData::Array, "with :read_until" do
       subject.read "\x00\x01\x00\x02\x03"
       subject.should == [1, 2]
     end
+
+    it "should report exceptions" do
+      array_type = [:string, {:read_length => lambda { unknown_variable }}]
+      subject = BinData::Array.new(:type => array_type, :read_until => :eof)
+      lambda { subject.read "\x00\x01\x00\x02\x03" }.should raise_error
+    end
   end
 end
 
