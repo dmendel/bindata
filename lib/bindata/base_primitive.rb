@@ -179,7 +179,7 @@ module BinData
     #   6. !clear?                      ->   @value
 
     def _value
-      @value || sensible_default()
+      @value != nil ? @value : sensible_default()
     end
 
     def _value_with_value #:nodoc:
@@ -191,7 +191,7 @@ module BinData
     end
 
     def _value_with_initial_value #:nodoc:
-      @value || eval_parameter(:initial_value)
+      @value != nil ? @value : eval_parameter(:initial_value)
     end
 
     ###########################################################################

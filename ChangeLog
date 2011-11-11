@@ -1,5 +1,10 @@
 = BinData Changelog
 
+== Version 1.4.4 (2011-11-xx)
+
+* Fixed bug where user defined boolean primitive wouldn't set its
+  value to false (reported by Frank Roland).
+
 == Version 1.4.3 (2011-10-01)
 
 * Exceptions no longer ignored inside lambdas when reading until eof 
