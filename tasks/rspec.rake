@@ -1,15 +1,15 @@
 begin
-  require 'spec'
-  require 'spec/rake/spectask'
+  require 'rspec'
+  require 'rspec/core/rake_task'
 
-  Spec::Rake::SpecTask.new("spec") do |t|
-    t.warning = false
+  RSpec::Core::RakeTask.new("spec") do |t|
+#    t.ruby_opts = "-w"
     t.rcov = false
-    t.spec_files = FileList['spec/**/*_spec.rb'].exclude("spec/deprecated_spec.rb", "spec/wrapper_spec.rb")
+    t.pattern = 'spec/**/*_spec.rb' #.exclude("spec/deprecated_spec.rb", "spec/wrapper_spec.rb")
   end
 
-  Spec::Rake::SpecTask.new("rcov") do |t|
-    t.warning = true
+  RSpec::Core::RakeTask.new("rcov") do |t|
+    t.ruby_opts = "-w"
     t.rcov = true
   end
 rescue LoadError

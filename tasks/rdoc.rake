@@ -1,4 +1,4 @@
-require 'rake/rdoctask'
+require 'rdoc/task'
 
 Rake::RDocTask.new() do |rdoc|
   rdoc.main = "NEWS"

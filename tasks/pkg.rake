@@ -1,6 +1,6 @@
 begin
   require 'rubygems'
-  require 'rake/gempackagetask'
+  require 'rubygems/package_task'
 
   SPEC = Gem::Specification.new do |s|
     s.name = 'bindata'
@@ -16,7 +16,7 @@ begin
     s.extra_rdoc_files = ['NEWS']
     s.rdoc_options << '--main' << 'NEWS'
     s.files = PKG_FILES
-    s.add_development_dependency('rspec', [">= 1.3.0"])
+    s.add_development_dependency('rspec', [">= 2.10.0"])
     s.add_development_dependency('haml')
     s.add_development_dependency('maruku')
     s.add_development_dependency('syntax')
@@ -30,7 +30,7 @@ begin
     END
   end
 
-  Rake::GemPackageTask.new(SPEC) do |pkg|
+  Gem::PackageTask.new(SPEC) do |pkg|
     pkg.need_tar_gz = true
   end
 
