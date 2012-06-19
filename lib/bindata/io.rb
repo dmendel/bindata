@@ -85,7 +85,7 @@ module BinData
     def seekbytes(n)
       reset_read_bits
       @raw_io.seek(n, ::IO::SEEK_CUR)
-    rescue Errno::ESPIPE, Errno::EPIPE
+    rescue NoMethodError, Errno::ESPIPE, Errno::EPIPE
       skipbytes(n)
     end
 

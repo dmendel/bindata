@@ -63,7 +63,7 @@ module BinData
     end
 
     def method_missing(symbol, *args)
-      return @overrides[symbol] if @overrides and @overrides.has_key?(symbol)
+      return @overrides[symbol] if defined? @overrides and @overrides.has_key?(symbol)
 
       if @obj.parent
         eval_symbol_in_parent_context(symbol, args)
@@ -85,7 +85,7 @@ module BinData
 
       if obj_parent.has_parameter?(symbol)
         result = obj_parent.get_parameter(symbol)
-      elsif obj_parent.respond_to?(symbol)
+      elsif obj_parent.safe_respond_to?(symbol)
         result = obj_parent.__send__(symbol, *args)
       else
         result = symbol

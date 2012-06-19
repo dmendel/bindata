@@ -144,6 +144,10 @@ module BinData
       current_choice.respond_to?(symbol, include_private) || super
     end
 
+    def safe_respond_to?(symbol, include_private = false) #:nodoc:
+      orig_respond_to?(symbol, include_private)
+    end
+
     def method_missing(symbol, *args, &block) #:nodoc:
       current_choice.__send__(symbol, *args, &block)
     end
