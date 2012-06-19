@@ -12,14 +12,14 @@ describe BinData::ResumeByteAlignment do
 
   subject { ResumeAlignmentRecord.new }
 
-  it "should reset read alignment" do
+  it "resets read alignment" do
     subject.read "\x12\x34"
 
     subject.a.should == 1
     subject.b.should == 3
   end
 
-  it "should reset write alignment" do
+  it "resets write alignment" do
     subject.assign(:a => 2, :b => 7)
 
     subject.to_binary_s.should == "\x20\x70"
@@ -27,12 +27,12 @@ describe BinData::ResumeByteAlignment do
 end
 
 describe BinData::BitAligned do
-  it "should not apply to BinData::Primitives" do
-    lambda {
+  it "does not apply to BinData::Primitives" do
+    expect {
       class BitAlignedPrimitive < BinData::Primitive
         bit_aligned
       end
-    }.should raise_error
+    }.to raise_error
   end
 
   class BitString < BinData::String
@@ -49,12 +49,12 @@ describe BinData::BitAligned do
 
   its(:num_bytes) { should == 3 }
 
-  it "should read" do
+  it "reads as expected" do
     subject.read("\x56\x36\x42")
     subject.should == {"preamble" => 5, "str" => "cd", "afterward" => 2}
   end
 
-  it "should write" do
+  it "writes as expected" do
     subject.assign(:preamble => 5, :str => "ab", :afterward => 1)
     subject.to_binary_s.should == "\x56\x16\x21"
   end

@@ -3,21 +3,21 @@
 require File.expand_path(File.join(File.dirname(__FILE__), "spec_common"))
 require 'bindata'
 
-share_examples_for "All Integers" do
+shared_examples "All Integers" do
 
-  it "should have correct num_bytes" do
+  it "have correct num_bytes" do
     all_classes do |int_class|
       int_class.new.num_bytes.should == @nbytes
     end
   end
 
-  it "should have a sensible value of zero" do
+  it "have a sensible value of zero" do
     all_classes do |int_class|
       int_class.new.should be_zero
     end
   end
 
-  it "should avoid underflow" do
+  it "avoid underflow" do
     all_classes do |int_class|
       subject = int_class.new
       subject.assign(min_value - 1)
@@ -26,7 +26,7 @@ share_examples_for "All Integers" do
     end
   end
 
-  it "should avoid overflow" do
+  it "avoid overflow" do
     all_classes do |int_class|
       subject = int_class.new
       subject.assign(max_value + 1)
@@ -35,7 +35,7 @@ share_examples_for "All Integers" do
     end
   end
 
-  it "should assign values" do
+  it "assign values" do
     all_classes do |int_class|
       subject = int_class.new
       test_int = gen_test_int
@@ -45,7 +45,7 @@ share_examples_for "All Integers" do
     end
   end
 
-  it "should assign values from other int objects" do
+  it "assign values from other int objects" do
     all_classes do |int_class|
       src = int_class.new
       src.assign(gen_test_int)
@@ -56,7 +56,7 @@ share_examples_for "All Integers" do
     end
   end
 
-  it "should symmetrically read and write a +ve number" do
+  it "symmetrically read and write a +ve number" do
     all_classes do |int_class|
       subject = int_class.new
       subject.assign(gen_test_int)
@@ -65,7 +65,7 @@ share_examples_for "All Integers" do
     end
   end
 
-  it "should symmetrically read and write a -ve number" do
+  it "symmetrically read and write a -ve number" do
     all_classes do |int_class|
       if @signed
         subject = int_class.new
@@ -76,7 +76,7 @@ share_examples_for "All Integers" do
     end
   end
 
-  it "should convert a +ve number to string" do
+  it "convert a +ve number to string" do
     all_classes do |int_class|
       val = gen_test_int
 
@@ -87,7 +87,7 @@ share_examples_for "All Integers" do
     end
   end
 
-  it "should convert a -ve number to string" do
+  it "convert a -ve number to string" do
     all_classes do |int_class|
       if @signed
         val = -gen_test_int
@@ -156,7 +156,7 @@ share_examples_for "All Integers" do
 end
 
 describe "All signed big endian integers" do
-  it_should_behave_like "All Integers"
+  include_examples "All Integers"
 
   before(:all) do
     @endian = :big
@@ -166,7 +166,7 @@ describe "All signed big endian integers" do
 end
 
 describe "All unsigned big endian integers" do
-  it_should_behave_like "All Integers"
+  include_examples "All Integers"
 
   before(:all) do
     @endian = :big
@@ -176,7 +176,7 @@ describe "All unsigned big endian integers" do
 end
 
 describe "All signed little endian integers" do
-  it_should_behave_like "All Integers"
+  include_examples "All Integers"
 
   before(:all) do
     @endian = :little
@@ -186,7 +186,7 @@ describe "All signed little endian integers" do
 end
 
 describe "All unsigned little endian integers" do
-  it_should_behave_like "All Integers"
+  include_examples "All Integers"
 
   before(:all) do
     @endian = :little
@@ -196,21 +196,21 @@ describe "All unsigned little endian integers" do
 end
 
 describe "Custom defined integers" do
-  it "should fail unless bits are a multiple of 8" do
-    lambda {
+  it "fail unless bits are a multiple of 8" do
+    expect {
       BinData::Uint7le
-    }.should raise_error
+    }.to raise_error
 
-    lambda {
+    expect {
       BinData::Uint7be
-    }.should raise_error
+    }.to raise_error
 
-    lambda {
+    expect {
       BinData::Int7le
-    }.should raise_error
+    }.to raise_error
 
-    lambda {
+    expect {
       BinData::Int7be
-    }.should raise_error
+    }.to raise_error
   end
 end

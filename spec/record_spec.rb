@@ -4,17 +4,15 @@ require File.expand_path(File.join(File.dirname(__FILE__), "spec_common"))
 require 'bindata'
 
 describe BinData::Record do
-  let(:r) { BinData::RegisteredClasses }
-
-  it "should not be registered" do
-    lambda {
-      r.lookup("Record")
-    }.should raise_error(BinData::UnRegisteredTypeError)
+  it "is not registered" do
+    expect {
+      BinData::RegisteredClasses.lookup("Record")
+    }.to raise_error(BinData::UnRegisteredTypeError)
   end
 end
 
 describe BinData::Record, "when defining with errors" do
-  it "should fail on non registered types" do
+  it "fails on non registered types" do
     lambda {
       class BadTypeRecord < BinData::Record
         non_registered_type :a
@@ -24,7 +22,7 @@ describe BinData::Record, "when defining with errors" do
     }
   end
 
-  it "should give correct error message for non registered nested types" do
+  it "gives correct error message for non registered nested types" do
     lambda {
       class BadNestedTypeRecord < BinData::Record
         array :a, :type => :non_registered_type
@@ -34,7 +32,7 @@ describe BinData::Record, "when defining with errors" do
     }
   end
 
-  it "should give correct error message for non registered nested types in blocks" do
+  it "gives correct error message for non registered nested types in blocks" do
     lambda {
       class BadNestedTypeInBlockRecord < BinData::Record
         array :a do
@@ -46,7 +44,7 @@ describe BinData::Record, "when defining with errors" do
     }
   end
 
-  it "should fail on nested choice when missing names" do
+  it "fails on nested choice when missing names" do
     lambda {
       class MissingChoiceNamesRecord < BinData::Record
         choice do
@@ -59,7 +57,7 @@ describe BinData::Record, "when defining with errors" do
     }
   end
 
-  it "should fail on malformed names" do
+  it "fails on malformed names" do
     lambda {
       class MalformedNameRecord < BinData::Record
         int8 :a
@@ -70,7 +68,7 @@ describe BinData::Record, "when defining with errors" do
     }
   end
 
-  it "should fail on duplicate names" do
+  it "fails on duplicate names" do
     lambda {
       class DuplicateNameRecord < BinData::Record
         int8 :a
@@ -82,7 +80,7 @@ describe BinData::Record, "when defining with errors" do
     }
   end
 
-  it "should fail on reserved names" do
+  it "fails on reserved names" do
     lambda {
       class ReservedNameRecord < BinData::Record
         int8 :a
@@ -93,7 +91,7 @@ describe BinData::Record, "when defining with errors" do
     }
   end
 
-  it "should fail when field name shadows an existing method" do
+  it "fails when field name shadows an existing method" do
     lambda {
       class ExistingNameRecord < BinData::Record
         int8 :object_id
@@ -103,7 +101,7 @@ describe BinData::Record, "when defining with errors" do
     }
   end
 
-  it "should fail on unknown endian" do
+  it "fails on unknown endian" do
     lambda {
       class BadEndianRecord < BinData::Record
         endian 'a bad value'
@@ -125,16 +123,16 @@ describe BinData::Record, "with anonymous fields" do
 
   subject { AnonymousRecord.new }
 
-  it "should only show non anonymous fields" do
+  it "only shows non anonymous fields" do
     subject.field_names.should == ["a"]
   end
 
-  it "should not include anonymous fields in snapshot" do
+  it "does not include anonymous fields in snapshot" do
     subject.a = 5
     subject.snapshot.should == {"a" => 5}
   end
 
-  it "should write anonymous fields" do
+  it "writes anonymous fields" do
     str = "\001\002\003\004\005"
     subject.read(str)
     subject.a.clear
@@ -153,11 +151,11 @@ describe BinData::Record, "with hidden fields" do
 
   subject { HiddenRecord.new }
 
-  it "should only show fields that aren't hidden" do
+  it "only shows fields that aren't hidden" do
     subject.field_names.should == ["a", "d"]
   end
 
-  it "should be able to access hidden fields directly" do
+  it "accesses hidden fields directly" do
     subject.b.should == 10
     subject.c = 15
     subject.c.should == 15
@@ -165,7 +163,7 @@ describe BinData::Record, "with hidden fields" do
     subject.should respond_to(:b=)
   end
 
-  it "should not include hidden fields in snapshot" do
+  it "does not include hidden fields in snapshot" do
     subject.b = 5
     subject.snapshot.should == {"a" => 0, "d" => 5}
   end
@@ -179,24 +177,24 @@ describe BinData::Record, "with multiple fields" do
 
   subject { MultiFieldRecord.new(:a => 1, :b => 2) }
 
-  it "should return num_bytes" do
+  it "returns num_bytes" do
     subject.a.num_bytes.should == 1
     subject.b.num_bytes.should == 1
     subject.num_bytes.should     == 2
   end
 
-  it "should identify accepted parameters" do
+  it "identifies accepted parameters" do
     BinData::Record.accepted_parameters.all.should include(:hide)
     BinData::Record.accepted_parameters.all.should include(:endian)
   end
 
-  it "should clear" do
+  it "clears" do
     subject.a = 6
     subject.clear
     subject.should be_clear
   end
 
-  it "should clear individual elements" do
+  it "clears individual elements" do
     subject.a = 6
     subject.b = 7
     subject.a.clear
@@ -204,30 +202,30 @@ describe BinData::Record, "with multiple fields" do
     subject.b.should_not be_clear
   end
 
-  it "should write ordered" do
+  it "writes ordered" do
     subject.to_binary_s.should == "\x01\x02"
   end
 
-  it "should read ordered" do
+  it "reads ordered" do
     subject.read("\x03\x04")
 
     subject.a.should == 3
     subject.b.should == 4
   end
 
-  it "should return a snapshot" do
+  it "returns a snapshot" do
     snap = subject.snapshot
     snap.a.should == 1
     snap.b.should == 2
     snap.should == { "a" => 1, "b" => 2 }
   end
 
-  it "should return field_names" do
+  it "returns field_names" do
     subject.field_names.should == ["a", "b"]
   end
   
-  it "should fail on unknown method call" do
-    lambda { subject.does_not_exist }.should raise_error(NoMethodError)
+  it "fails on unknown method call" do
+    expect { subject.does_not_exist }.to raise_error(NoMethodError)
   end
 end
 
@@ -247,22 +245,22 @@ describe BinData::Record, "with nested structs" do
 
   subject { NestedStructRecord.new }
 
-  it "should included nested field names" do
+  it "includes nested field names" do
     subject.field_names.should == ["a", "b", "c"]
   end
 
-  it "should hide nested field names" do
+  it "hides nested field names" do
     subject.b.field_names.should == ["x"]
   end
 
-  it "should access nested fields" do
+  it "accesses nested fields" do
     subject.a.should   == 6
     subject.b.w.should == 3
     subject.b.x.should == 6
     subject.c.y.should == 3
   end
 
-  it "should return correct offset" do
+  it "returns correct offset" do
     subject.offset.should == 0
     subject.b.offset.should == 1
     subject.b.w.offset.should == 1
@@ -270,7 +268,7 @@ describe BinData::Record, "with nested structs" do
     subject.c.z.offset.should == 4
   end
 
-  it "should return correct rel_offset" do
+  it "returns correct rel_offset" do
     subject.rel_offset.should == 0
     subject.b.rel_offset.should == 1
     subject.b.w.rel_offset.should == 0
@@ -278,7 +276,7 @@ describe BinData::Record, "with nested structs" do
     subject.c.z.rel_offset.should == 1
   end
 
-  it "should assign nested fields" do
+  it "assigns nested fields" do
     subject.assign(:a => 2, :b => {:w => 4})
     subject.a.should   == 2
     subject.b.w.should == 4
@@ -296,7 +294,7 @@ describe BinData::Record, "with nested array of primitives" do
 
   subject { NestedPrimitiveArrayRecord.new }
 
-  it "should use block as :type" do
+  it "uses block as :type" do
     subject.snapshot.should == {"a" => [0, 1, 2]}
   end
 end
@@ -311,7 +309,7 @@ describe BinData::Record, "with nested array of structs" do
 
   subject { NestedStructArrayRecord.new }
 
-  it "should use block as struct for :type" do
+  it "uses block as struct for :type" do
     subject.a[0].b = 2
     subject.snapshot.should == {"a" => [{"b" => 2, "c" => 0}]}
   end
@@ -383,7 +381,7 @@ describe BinData::Record, "with an endian defined" do
 
   subject { RecordWithEndian.new }
 
-  it "should use correct endian" do
+  it "uses correct endian" do
     subject.a = 1
     subject.b = 2.0
     subject.c[0] = 3
@@ -407,11 +405,11 @@ describe BinData::Record, "defined recursively" do
     recursive_record :nxt, :onlyif => lambda { has_nxt > 0 }
   end
 
-  it "should be able to be created" do
+  it "can be created" do
     subject = RecursiveRecord.new
   end
 
-  it "should read" do
+  it "reads" do
     str = "\x00\x01\x01\x00\x02\x01\x00\x03\x00"
     subject = RecursiveRecord.read(str)
     subject.val.should == 1
@@ -419,14 +417,14 @@ describe BinData::Record, "defined recursively" do
     subject.nxt.nxt.val.should == 3
   end
 
-  it "should be assignable on demand" do
+  it "is assignable on demand" do
     subject = RecursiveRecord.new
     subject.val = 13
     subject.nxt.val = 14
     subject.nxt.nxt.val = 15
   end
 
-  it "should write" do
+  it "writes" do
     subject = RecursiveRecord.new
     subject.val = 5
     subject.nxt.val = 6
@@ -442,11 +440,11 @@ describe BinData::Record, "with custom mandatory parameters" do
     uint8 :a, :value => :arg1
   end
 
-  it "should raise error if mandatory parameter is not supplied" do
-    lambda { MandatoryRecord.new }.should raise_error(ArgumentError)
+  it "raises error if mandatory parameter is not supplied" do
+    expect { MandatoryRecord.new }.to raise_error(ArgumentError)
   end
 
-  it "should use mandatory parameter" do
+  it "uses mandatory parameter" do
     subject = MandatoryRecord.new(:arg1 => 5)
     subject.a.should == 5
   end
@@ -460,26 +458,26 @@ describe BinData::Record, "with custom default parameters" do
     uint8 :b
   end
 
-  it "should not raise error if default parameter is not supplied" do
-    lambda { DefaultRecord.new }.should_not raise_error(ArgumentError)
+  it "does not raise error if default parameter is not supplied" do
+    expect { DefaultRecord.new }.not_to raise_error(ArgumentError)
   end
 
-  it "should use default parameter" do
+  it "uses default parameter" do
     subject = DefaultRecord.new
     subject.a.should == 5
   end
 
-  it "should be able to override default parameter" do
+  it "overrides default parameter" do
     subject = DefaultRecord.new(:arg1 => 7)
     subject.a.should == 7
   end
 
-  it "should accept values" do
+  it "accepts values" do
     subject = DefaultRecord.new(:b => 2)
     subject.b.should == 2
   end
 
-  it "should accept values and parameters" do
+  it "accepts values and parameters" do
     subject = DefaultRecord.new({:b => 2}, :arg1 => 3)
     subject.a.should == 3
     subject.b.should == 2
@@ -499,7 +497,7 @@ describe BinData::Record, "with :onlyif" do
   its(:snapshot) { should == {"a" => 3, "b" => 5} }
   its(:to_binary_s) { should == "\x03\x05" }
 
-  it "should read as expected" do
+  it "reads as expected" do
     subject.read("\x01\x02")
     subject.snapshot.should == {"a" => 1, "c" => 2}
   end
@@ -518,15 +516,15 @@ describe BinData::Record, "derived classes" do
     uint8 :c
   end
 
-  it "should not affect parent" do
+  it "does not affect parent" do
     ParentRecord.new.field_names.should == ["a"]
   end
 
-  it "should inherit fields for first child" do
+  it "inherits fields for first child" do
     Child1Record.new.field_names.should == ["a", "b"]
   end
 
-  it "should inherit fields for second child" do
+  it "inherits fields for second child" do
     Child2Record.new.field_names.should == ["a", "b", "c"]
   end
 end

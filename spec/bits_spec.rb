@@ -6,7 +6,7 @@ require 'bindata/bits'
 describe "Bits of size 1" do
   let(:bit_classes) { [BinData::Bit1, BinData::Bit1le] }
 
-  it "should accept true as value" do
+  it "accept true as value" do
     bit_classes.each do |bit_class|
       subject = bit_class.new
       subject.assign(true)
@@ -14,7 +14,7 @@ describe "Bits of size 1" do
     end
   end
 
-  it "should accept false as value" do
+  it "accept false as value" do
     bit_classes.each do |bit_class|
       subject = bit_class.new
       subject.assign(false)
@@ -22,7 +22,7 @@ describe "Bits of size 1" do
     end
   end
 
-  it "should accept nil as value" do
+  it "accept nil as value" do
     bit_classes.each do |bit_class|
       subject = bit_class.new
       subject.assign(nil)
@@ -31,15 +31,15 @@ describe "Bits of size 1" do
   end
 end
 
-share_examples_for "All bitfields" do
+shared_examples "All bitfields" do
 
-  it "should have a sensible value of zero" do
+  it "have a sensible value of zero" do
     all_classes do |bit_class|
       bit_class.new.should be_zero
     end
   end
 
-  it "should avoid underflow" do
+  it "avoid underflow" do
     all_classes do |bit_class|
       subject = bit_class.new
 
@@ -48,7 +48,7 @@ share_examples_for "All bitfields" do
     end
   end
 
-  it "should avoid overflow" do
+  it "avoid overflow" do
     all_classes do |bit_class|
       subject = bit_class.new
 
@@ -57,7 +57,7 @@ share_examples_for "All bitfields" do
     end
   end
 
-  it "should assign values" do
+  it "assign values" do
     all_classes do |bit_class|
       some_values_within_range.each do |val|
         subject = bit_class.new
@@ -68,7 +68,7 @@ share_examples_for "All bitfields" do
     end
   end
 
-  it "should assign values from other bit objects" do
+  it "assign values from other bit objects" do
     all_classes do |bit_class|
       some_values_within_range.each do |val|
         subject = bit_class.new
@@ -79,7 +79,7 @@ share_examples_for "All bitfields" do
     end
   end
 
-  it "should have symmetric #read and #write" do
+  it "symmetrically #read and #write" do
     all_classes do |bit_class|
       some_values_within_range.each do |val|
         subject = bit_class.new
@@ -129,13 +129,13 @@ def generate_bit_classes_to_test(endian)
 end
 
 describe "Big endian bitfields" do
-  it_should_behave_like "All bitfields"
+  include_examples "All bitfields"
 
   before(:all) do
     @bits = generate_bit_classes_to_test(:big)
   end
 
-  it "should read big endian value" do
+  it "read big endian values" do
     @bits.each_pair do |bit_class, nbits|
       nbytes = (nbits + 7) / 8
       str = [0b1000_0000].pack("C") + "\000" * (nbytes - 1)
@@ -146,13 +146,13 @@ describe "Big endian bitfields" do
 end
 
 describe "Little endian bitfields" do
-  it_should_behave_like "All bitfields"
+  include_examples "All bitfields"
 
   before(:all) do
     @bits = generate_bit_classes_to_test(:little)
   end
 
-  it "should read little endian value" do
+  it "read little endian values" do
     @bits.each_pair do |bit_class, nbits|
       nbytes = (nbits + 7) / 8
       str = [0b0000_0001].pack("C") + "\000" * (nbytes - 1)

@@ -3,6 +3,7 @@
 require File.expand_path(File.join(File.dirname(__FILE__), "spec_common"))
 require File.expand_path(File.join(File.dirname(__FILE__), "example"))
 require 'bindata/choice'
+require 'bindata/int'
 
 class Chooser
   attr_accessor :choice
@@ -26,89 +27,91 @@ def create_choice(choices, options = {})
 end
 
 describe BinData::Choice, "when instantiating" do
-  it "should ensure mandatory parameters are supplied" do
+  it "ensures mandatory parameters are supplied" do
     args = {}
-    lambda { BinData::Choice.new(args) }.should raise_error(ArgumentError)
+    expect { BinData::Choice.new(args) }.to raise_error(ArgumentError)
+
     args = {:selection => 1}
-    lambda { BinData::Choice.new(args) }.should raise_error(ArgumentError)
+    expect { BinData::Choice.new(args) }.to raise_error(ArgumentError)
+
     args = {:choices => []}
-    lambda { BinData::Choice.new(args) }.should raise_error(ArgumentError)
+    expect { BinData::Choice.new(args) }.to raise_error(ArgumentError)
   end
 
-  it "should fail if a given type is unknown" do
+  it "fails when a given type is unknown" do
     args = {:choices => [:does_not_exist], :selection => 0}
-    lambda { BinData::Choice.new(args) }.should raise_error(BinData::UnRegisteredTypeError)
+    expect { BinData::Choice.new(args) }.to raise_error(BinData::UnRegisteredTypeError)
   end
 
-  it "should fail if a given type is unknown" do
+  it "fails when a given type is unknown" do
     args = {:choices => {0 => :does_not_exist}, :selection => 0}
-    lambda { BinData::Choice.new(args) }.should raise_error(BinData::UnRegisteredTypeError)
+    expect { BinData::Choice.new(args) }.to raise_error(BinData::UnRegisteredTypeError)
   end
 
-  it "should fail if :choices Hash has a symbol as key" do
+  it "fails when :choices Hash has a symbol as key" do
     args = {:choices => {:a => :example_single}, :selection => 0}
-    lambda { BinData::Choice.new(args) }.should raise_error(ArgumentError)
+    expect { BinData::Choice.new(args) }.to raise_error(ArgumentError)
   end
 
-  it "should fail if :choices Hash has a nil key" do
+  it "fails when :choices Hash has a nil key" do
     args = {:choices => {nil => :example_single}, :selection => 0}
-    lambda { BinData::Choice.new(args) }.should raise_error(ArgumentError)
+    expect { BinData::Choice.new(args) }.to raise_error(ArgumentError)
   end
 end
 
-share_examples_for "Choice initialized with array or hash" do
-  it "should be able to select the choice" do
+shared_examples "Choice initialized with array or hash" do
+  it "can select the choice" do
     subject.choice = 3
     subject.should == 30
   end
 
-  it "should show the current selection" do
+  it "shows the current selection" do
     subject.choice = 3
     subject.selection.should == 3
   end
 
-  it "should forward #snapshot" do
+  it "forwards #snapshot" do
     subject.choice = 3
     subject.snapshot.should == 30
   end
 
-  it "should be able to change the choice" do
+  it "can change the choice" do
     subject.choice = 3
 
     subject.choice = 7
     subject.should == 70
   end
 
-  it "should fail if no choice has been set" do
-    lambda { subject.to_s }.should raise_error(IndexError)
+  it "fails if no choice has been set" do
+    expect { subject.to_s }.to raise_error(IndexError)
   end
 
-  it "should not be able to select an invalid choice" do
+  it "will not select an invalid choice" do
     subject.choice = 99
-    lambda { subject.to_s }.should raise_error(IndexError)
+    expect { subject.to_s }.to raise_error(IndexError)
   end
 
-  it "should not be able to select a nil choice" do
+  it "will not select a nil choice" do
     subject.choice = 1
-    lambda { subject.to_s }.should raise_error(IndexError)
+    expect { subject.to_s }.to raise_error(IndexError)
   end
 
-  it "should handle missing methods correctly" do
+  it "handles missing methods correctly" do
     subject.choice = 3
 
     subject.should respond_to(:value)
     subject.should_not respond_to(:does_not_exist)
-    lambda { subject.does_not_exist }.should raise_error(NoMethodError)
+    expect { subject.does_not_exist }.to raise_error(NoMethodError)
   end
 
-  it "should delegate methods to the selected single choice" do
+  it "delegates methods to the selected single choice" do
     subject.choice = 5
     subject.num_bytes.should == ExampleSingle.new.num_bytes
   end
 end
 
 describe BinData::Choice, "with sparse choices array" do
-  it_should_behave_like "Choice initialized with array or hash"
+  include_examples "Choice initialized with array or hash"
 
   subject {
     choices = [nil, nil, nil,
@@ -120,7 +123,7 @@ describe BinData::Choice, "with sparse choices array" do
 end
 
 describe BinData::Choice, "with choices hash" do
-  it_should_behave_like "Choice initialized with array or hash"
+  include_examples "Choice initialized with array or hash"
 
   subject {
     choices = {3 => [:example_single, {:value => 30}],
@@ -138,13 +141,13 @@ describe BinData::Choice, "with single values" do
     create_choice(choices)
   }
 
-  it "should assign raw values" do
+  it "assigns raw values" do
     subject.choice = 3
     subject.assign(254)
     subject.should == 254
   end
 
-  it "should assign Single values" do
+  it "assigns Single values" do
     obj = ExampleSingle.new(11)
 
     subject.choice = 3
@@ -152,7 +155,7 @@ describe BinData::Choice, "with single values" do
     subject.should == 11
   end
 
-  it "should clear" do
+  it "clears" do
     subject.choice = 3
     subject.assign(254)
 
@@ -160,20 +163,20 @@ describe BinData::Choice, "with single values" do
     subject.should be_zero
   end
 
-  it "should be clear on initialisation" do
+  it "is clear on initialisation" do
     subject.choice = 3
 
     subject.should be_clear
   end
 
-  it "should not be clear after assignment" do
+  it "is not clear after assignment" do
     subject.choice = 3
     subject.assign(254)
 
     subject.should_not be_clear
   end
 
-  it "should not copy value when changing selection" do
+  it "does not copy value when changing selection" do
     subject.choice = 3
     subject.assign(254)
 
@@ -181,7 +184,7 @@ describe BinData::Choice, "with single values" do
     subject.should_not == 254
   end
 
-  it "should behave as value" do
+  it "behaves as value" do
     subject.choice = 3
     subject.assign(5)
 
@@ -198,7 +201,7 @@ describe BinData::Choice, "with copy_on_change => true" do
     create_choice(choices, :copy_on_change => true)
   }
 
-  it "should copy value when changing selection" do
+  it "copies value when changing selection" do
     subject.choice = 3
     subject.assign(254)
 
@@ -210,12 +213,12 @@ end
 describe BinData::Choice, "with :default" do
   let(:choices) { { "a" => :int8, :default => :int16be } }
 
-  it "should select for existing case" do
+  it "selects for existing case" do
     subject = BinData::Choice.new(:selection => "a", :choices => choices)
     subject.num_bytes.should == 1
   end
 
-  it "should select for default case" do
+  it "selects for default case" do
     subject = BinData::Choice.new(:selection => "other", :choices => choices)
     subject.num_bytes.should == 2
   end
@@ -231,17 +234,17 @@ describe BinData::Choice, "subclassed with default parameters" do
     uint64 :default
   end
 
-  it "should set initial selection" do
+  it "sets initial selection" do
     subject = DerivedChoice.new
     subject.num_bytes.should == 2
   end
 
-  it "should overide default parameter" do
+  it "overides default parameter" do
     subject = DerivedChoice.new(:selection => 'b')
     subject.num_bytes.should == 4
   end
 
-  it "should select default selection" do
+  it "selects default selection" do
     subject = DerivedChoice.new(:selection => 'z')
     subject.num_bytes.should == 8
   end

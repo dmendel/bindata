@@ -4,12 +4,10 @@ require File.expand_path(File.join(File.dirname(__FILE__), "spec_common"))
 require 'bindata'
 
 describe BinData::Primitive do
-  let(:r) { BinData::RegisteredClasses }
-
-  it "should not be registered" do
-    lambda {
-      r.lookup("Primitive")
-    }.should raise_error(BinData::UnRegisteredTypeError)
+  it "is not registered" do
+    expect {
+      BinData::RegisteredClasses.lookup("Primitive")
+    }.to raise_error(BinData::UnRegisteredTypeError)
   end
 end
 
@@ -20,14 +18,14 @@ describe BinData::Primitive, "all subclasses" do
 
   subject { SubClassOfPrimitive.new }
 
-  it "should raise errors on unimplemented methods" do
-    lambda { subject.set(nil) }.should raise_error(NotImplementedError)
-    lambda { subject.get }.should raise_error(NotImplementedError)
+  it "raise errors on unimplemented methods" do
+    expect { subject.set(nil) }.to raise_error(NotImplementedError)
+    expect { subject.get      }.to raise_error(NotImplementedError)
   end
 end
 
 describe BinData::Primitive, "when defining with errors" do
-  it "should fail on non registered types" do
+  it "fails on non registered types" do
     lambda {
       class BadTypePrimitive < BinData::Primitive
         non_registered_type :a
@@ -37,7 +35,7 @@ describe BinData::Primitive, "when defining with errors" do
     }
   end
 
-  it "should fail on duplicate names" do
+  it "fails on duplicate names" do
     lambda {
       class DuplicateNamePrimitive < BinData::Primitive
         int8 :a
@@ -49,7 +47,7 @@ describe BinData::Primitive, "when defining with errors" do
     }
   end
 
-  it "should fail when field name shadows an existing method" do
+  it "fails when field name shadows an existing method" do
     lambda {
       class ExistingNamePrimitive < BinData::Primitive
         int8 :object_id
@@ -59,7 +57,7 @@ describe BinData::Primitive, "when defining with errors" do
     }
   end
 
-  it "should fail on unknown endian" do
+  it "fails on unknown endian" do
     lambda {
       class BadEndianPrimitive < BinData::Primitive
         endian 'a bad value'
@@ -80,37 +78,37 @@ describe BinData::Primitive do
 
   subject { PrimitiveWithEndian.new }
 
-  it "should assign value" do
+  it "assigns value" do
     subject.value = 5
     subject.value.should == 5
   end
 
-  it "should produce binary string" do
+  it "produces binary string" do
     subject.assign(5)
     subject.to_binary_s.should == "\x05\x00"
   end
 
-  it "should read value" do
+  it "reads value" do
     subject.read("\x00\x01")
     subject.should == 0x100
   end
 
-  it "should accept standard parameters" do
+  it "accepts standard parameters" do
     subject = PrimitiveWithEndian.new(:initial_value => 2)
     subject.to_binary_s.should == "\x02\x00"
   end
 
-  it "should return num_bytes" do
+  it "returns num_bytes" do
     subject.num_bytes.should == 2
   end
 
-  it "should raise error on missing methods" do
-    lambda {
+  it "raises error on missing methods" do
+    expect {
       subject.does_not_exist
-    }.should raise_error(NoMethodError)
+    }.to raise_error(NoMethodError)
   end
 
-  it "should use read value whilst reading" do
+  it "uses read value whilst reading" do
     subject = PrimitiveWithEndian.new(:value => 2)
     subject.read "\x05\x00"
     subject.should == 2
@@ -119,7 +117,7 @@ describe BinData::Primitive do
     subject.should == 5
   end
 
-  it "should behave as primitive" do
+  it "behaves as primitive" do
     subject.assign(5)
     (2 + subject).should == 7
   end
@@ -132,7 +130,7 @@ describe BinData::Primitive, "requiring custom parameters" do
     def set(v); self.a = v; end
   end
 
-  it "should pass parameters correctly" do
+  it "passes parameters correctly" do
     subject = PrimitiveWithCustom.new(:iv => 5)
     subject.should == 5
   end
@@ -147,11 +145,11 @@ describe BinData::Primitive, "with custom mandatory parameters" do
     def set(v); self.a = v; end
   end
 
-  it "should raise error if mandatory parameter is not supplied" do
-    lambda { MandatoryPrimitive.new }.should raise_error(ArgumentError)
+  it "raises error if mandatory parameter is not supplied" do
+    expect { MandatoryPrimitive.new }.to raise_error(ArgumentError)
   end
 
-  it "should use mandatory parameter" do
+  it "uses mandatory parameter" do
     subject = MandatoryPrimitive.new(:arg1 => 5)
     subject.should == 5
   end
@@ -166,16 +164,16 @@ describe BinData::Primitive, "with custom default parameters" do
     def set(v); self.a = v; end
   end
 
-  it "should not raise error if default parameter is not supplied" do
-    lambda { DefaultPrimitive.new }.should_not raise_error(ArgumentError)
+  it "does not raise error if default parameter is not supplied" do
+    expect { DefaultPrimitive.new }.not_to raise_error(ArgumentError)
   end
 
-  it "should use default parameter" do
+  it "uses default parameter" do
     subject = DefaultPrimitive.new
     subject.should == 5
   end
 
-  it "should be able to override default parameter" do
+  it "overrides default parameter" do
     subject = DefaultPrimitive.new(:arg1 => 7)
     subject.should == 7
   end
@@ -192,12 +190,12 @@ describe BinData::Primitive, "subclassed with default parameter" do
     default_parameter :initial_value => 5
   end
 
-  it "should override initial_value" do
+  it "overrides initial_value" do
     a = ChildDerivedPrimitive.new(:initial_value => 7)
     a.to_binary_s.should == "\000\007"
   end
 
-  it "should use default parameter" do
+  it "uses default parameter" do
     a = ChildDerivedPrimitive.new
     a.to_binary_s.should == "\000\005"
   end

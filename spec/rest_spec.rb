@@ -6,21 +6,21 @@ require 'bindata/rest'
 describe BinData::Rest do
   it { should == "" }
 
-  it "should read till end of stream" do
+  it "reads till end of stream" do
     data = "abcdefghij"
     subject.read(data).should == data
   end
 
-  it "should allow setting value for completeness" do
+  it "allows setting value for completeness" do
     subject.assign("123")
     subject.should == "123"
     subject.to_binary_s.should == "123"
   end
 
-  it "should accept BinData::BasePrimitive parameters" do
+  it "accepts BinData::BasePrimitive parameters" do
     rest = BinData::Rest.new(:check_value => "abc")
-    lambda {
+    expect {
       rest.read("xyz")
-    }.should raise_error(BinData::ValidityError)
+    }.to raise_error(BinData::ValidityError)
   end
 end

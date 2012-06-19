@@ -9,27 +9,27 @@ describe "lambdas with index" do
     uint8 :a, :value => lambda { index * 10 }
   end
 
-  it "should use index of containing array" do
+  it "uses index of containing array" do
     arr = BinData::Array.new(:type =>
                                [:uint8, { :value => lambda { index * 10 } }],
                              :initial_length => 3)
     arr.snapshot.should == [0, 10, 20]
   end
 
-  it "should use index of nearest containing array" do
+  it "uses index of nearest containing array" do
     arr = BinData::Array.new(:type => :nested_lambda_with_index,
                              :initial_length => 3)
     arr.snapshot.should == [{"a" => 0}, {"a" => 10}, {"a" => 20}]
   end
 
-  it "should fail if there is no containing array" do
+  it "fails if there is no containing array" do
     subject = NestedLambdaWithIndex.new
-    lambda { subject.a.to_s }.should raise_error(NoMethodError)
+    expect { subject.a.to_s }.to raise_error(NoMethodError)
   end
 end
 
 describe "lambdas with parent" do
-  it "should access immediate parent when no parent is specified" do
+  it "accesses immediate parent when no parent is specified" do
     class NestedLambdaWithoutParent < BinData::Record
       int8 :a, :value => 5
       int8 :b, :value => lambda { a }
@@ -44,7 +44,7 @@ describe "lambdas with parent" do
     subject.x.b.should == 5
   end
 
-  it "should access parent's parent when parent is specified" do
+  it "accesses parent's parent when parent is specified" do
     class NestedLambdaWithParent < BinData::Record
       int8 :a, :value => 5
       int8 :b, :value => lambda { parent.a }
@@ -73,6 +73,7 @@ describe BinData::Record, "with choice field" do
   end
 
   class RecordWithNestedChoiceField < BinData::Record
+    uint8  :sel, :value => 0
     choice :x, :selection => 0 do
       choice :selection => 0 do
         tuple_record
@@ -80,28 +81,28 @@ describe BinData::Record, "with choice field" do
     end
   end
 
-  it "should treat choice object transparently " do
+  it "treats choice object transparently " do
     subject = RecordWithChoiceField.new
 
     subject.x.a.should == 3
   end
 
-  it "should treat nested choice object transparently " do
+  it "treats nested choice object transparently " do
     subject = RecordWithNestedChoiceField.new
 
     subject.x.a.should == 3
   end
 
-  it "should have correct offset" do
+  it "has correct offset" do
     subject = RecordWithNestedChoiceField.new
-    subject.x.b.offset.should == 1
+    subject.x.b.offset.should == 2
   end
 end
 
 describe BinData::Array, "of bits" do
   let(:data) { BinData::Array.new(:type => :bit1, :initial_length => 15) }
 
-  it "should read" do
+  it "reads" do
     str = [0b0001_0100, 0b1000_1000].pack("CC")
     data.read(str)
     data[0].should  == 0
@@ -121,16 +122,16 @@ describe BinData::Array, "of bits" do
     data[14].should == 0
   end
 
-  it "should write" do
+  it "writes" do
     data[3] = 1
     data.to_binary_s.should == [0b0001_0000, 0b0000_0000].pack("CC")
   end
 
-  it "should return num_bytes" do
+  it "returns num_bytes" do
     data.num_bytes.should == 2
   end
 
-  it "should have correct offset" do
+  it "has correct offset" do
     data[7].offset.should == 0
     data[8].offset.should == 1
   end
@@ -170,11 +171,11 @@ describe BinData::Record, "containing bitfields" do
 
   subject { BitfieldRecord.new }
 
-  it "should have correct num_bytes" do
+  it "has correct num_bytes" do
     subject.num_bytes.should == 5
   end
 
-  it "should read across bitfield boundaries" do
+  it "reads across bitfield boundaries" do
     subject.read [0b0111_0010, 0b0110_0101, 0b0010_1010, 0b1000_0101, 0b1000_0000].pack("CCCCC")
 
     subject.a.w.should == 7
@@ -184,7 +185,7 @@ describe BinData::Record, "containing bitfields" do
     subject.e.should == 11
   end
 
-  it "should write across bitfield boundaries" do
+  it "writes across bitfield boundaries" do
     subject.a.w = 3
     subject.b[2] = 1
     subject.b[5] = 1
@@ -196,28 +197,28 @@ describe BinData::Record, "containing bitfields" do
 end
 
 describe "Objects with debug_name" do
-  it "should have default name of obj" do
+  it "haves default name of obj" do
     el = ExampleSingle.new
     el.debug_name.should == "obj"
   end
 
-  it "should include array index" do
+  it "includes array index" do
     arr = BinData::Array.new(:type => :example_single, :initial_length => 2)
     arr[2].debug_name.should == "obj[2]"
   end
 
-  it "should include field name" do
+  it "includes field name" do
     s = BinData::Struct.new(:fields => [[:example_single, :a]])
     s.a.debug_name.should == "obj.a"
   end
 
-  it "should delegate to choice" do
+  it "delegates to choice" do
     choice_params = {:choices => [:example_single], :selection => 0}
     s = BinData::Struct.new(:fields => [[:choice, :a, choice_params]])
     s.a.debug_name.should == "obj.a"
   end
 
-  it "should nest" do
+  it "nests" do
     nested_struct_params = {:fields => [[:example_single, :c]]}
     struct_params = {:fields => [[:struct, :b, nested_struct_params]]}
     s = BinData::Struct.new(:fields => [[:struct, :a, struct_params]])
@@ -236,7 +237,7 @@ describe "Tracing"  do
     io.value.should == expected
   end
 
-  it "should trace custom single values" do
+  it "traces custom single values" do
     class DebugNamePrimitive < BinData::Primitive
       int8 :ex
       def get;     self.ex; end
@@ -251,7 +252,7 @@ describe "Tracing"  do
     io.value.should == ["obj-internal-.ex => 1\n", "obj => 1\n"].join("")
   end
 
-  it "should trace choice selection" do
+  it "traces choice selection" do
     subject = BinData::Choice.new(:choices => [:int8, :int16be], :selection => 0)
 
     io = StringIO.new
@@ -260,7 +261,7 @@ describe "Tracing"  do
     io.value.should == ["obj-selection- => 0\n", "obj => 1\n"].join("")
   end
 
-  it "should trim long trace values" do
+  it "trims long trace values" do
     subject = BinData::String.new(:read_length => 40)
 
     io = StringIO.new
@@ -278,16 +279,16 @@ describe "Forward referencing with Primitive" do
 
   subject { FRPrimitive.new }
 
-  it "should initialise" do
+  it "initialises" do
     subject.snapshot.should == {"len" => 0, "data" => ""}
   end
 
-  it "should read" do
+  it "reads" do
     subject.read("\x04test")
     subject.snapshot.should == {"len" => 4, "data" => "test"}
   end
 
-  it "should set value" do
+  it "sets value" do
     subject.data = "hello"
     subject.snapshot.should == {"len" => 5, "data" => "hello"}
   end
@@ -301,16 +302,16 @@ describe "Forward referencing with Array" do
 
   subject { FRArray.new }
 
-  it "should initialise" do
+  it "initialises" do
     subject.snapshot.should == {"len" => 0, "data" => []}
   end
 
-  it "should read" do
+  it "reads" do
     subject.read("\x04\x01\x02\x03\x04")
     subject.snapshot.should == {"len" => 4, "data" => [1, 2, 3, 4]}
   end
 
-  it "should set value" do
+  it "sets value" do
     subject.data = [1, 2, 3]
     subject.snapshot.should == {"len" => 3, "data" => [1, 2, 3]}
   end
@@ -325,7 +326,7 @@ describe "Evaluating custom parameters" do
     uint8 :c, :custom => :b
   end
 
-  it "should recursively evaluate parameter" do
+  it "recursively evaluates parameter" do
     subject = CustomParameterRecord.new(:zz => 5)
     subject.c.eval_parameter(:custom).should == 5
   end
@@ -336,7 +337,7 @@ describe BinData::Record, "with custom sized integers" do
     int40be :a
   end
 
-  it "should read as expected" do
+  it "reads as expected" do
     str = "\x00\x00\x00\x00\x05"
     CustomIntRecord.read(str).should == {"a" => 5}
   end
@@ -350,7 +351,7 @@ describe BinData::Record, "with choice field" do
     end
   end
 
-  it "should assign" do
+  it "assigns" do
     subject = BinData::Array.new(:type => :choice_field_record)
     obj = ChoiceFieldRecord.new(:a => 1, :b => {:v => 3})
     subject.assign([obj])
@@ -368,11 +369,11 @@ describe BinData::Primitive, "representing a string" do
 
   subject { PascalStringPrimitive.new("testing") }
 
-  it "should compare to regexp" do
+  it "compares to regexp" do
     (subject =~ /es/).should == 1
   end
 
-  it "should compare to regexp" do
+  it "compares to regexp" do
     (/es/ =~ subject).should == 1
   end
 end

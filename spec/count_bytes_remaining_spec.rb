@@ -5,37 +5,34 @@ require 'bindata/count_bytes_remaining'
 
 describe BinData::CountBytesRemaining do
   it { should == 0 }
+  its(:num_bytes) { should be_zero }
 
-  it "should count till end of stream" do
+  it "counts till end of stream" do
     data = "abcdefghij"
     subject.read(data).should == 10
   end
 
-  it "should have no size" do
-    subject.num_bytes.should == 0
-  end
-
-  it "should not read any data" do
+  it "does not read any data" do
     io = StringIO.new "abcdefghij"
     subject.read(io)
 
     io.pos.should == 0
   end
 
-  it "should not write any data" do
+  it "does not write any data" do
     subject.to_binary_s.should == ""
   end
 
-  it "should allow setting value for completeness" do
+  it "allows setting value for completeness" do
     subject.assign("123")
     subject.should == "123"
     subject.to_binary_s.should == ""
   end
 
-  it "should accept BinData::BasePrimitive parameters" do
+  it "accepts BinData::BasePrimitive parameters" do
     count = BinData::CountBytesRemaining.new(:check_value => 2)
-    lambda {
+    expect {
       count.read("xyz")
-    }.should raise_error(BinData::ValidityError)
+    }.to raise_error(BinData::ValidityError)
   end
 end

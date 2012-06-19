@@ -18,47 +18,47 @@ describe BinData::Stringz, "with value set" do
 end
 
 describe BinData::Stringz, "when reading" do
-  it "should stop at the first zero byte" do
+  it "stops at the first zero byte" do
     io = StringIO.new("abcd\0xyz\0")
     subject.read(io)
     io.pos.should == 5
     subject.should == "abcd"
   end
 
-  it "should handle a zero length string" do
+  it "handles a zero length string" do
     io = StringIO.new("\0abcd")
     subject.read(io)
     io.pos.should == 1
     subject.should == ""
   end
 
-  it "should fail if no zero byte is found" do
-    lambda {subject.read("abcd") }.should raise_error(EOFError)
+  it "fails if no zero byte is found" do
+    expect {subject.read("abcd") }.to raise_error(EOFError)
   end
 end
 
 describe BinData::Stringz, "when setting the value" do
-  it "should include the zero byte in num_bytes total" do
+  it "includes the zero byte in num_bytes total" do
     subject.assign("abcd")
     subject.num_bytes.should == 5
   end
 
-  it "should accept empty strings" do
+  it "accepts empty strings" do
     subject.assign("")
     subject.should == ""
   end
 
-  it "should accept strings that aren't zero terminated" do
+  it "accepts strings that aren't zero terminated" do
     subject.assign("abcd")
     subject.should == "abcd"
   end
 
-  it "should accept strings that are zero terminated" do
+  it "accepts strings that are zero terminated" do
     subject.assign("abcd\0")
     subject.should == "abcd"
   end
 
-  it "should accept up to the first zero byte" do
+  it "accepts up to the first zero byte" do
     subject.assign("abcd\0xyz\0")
     subject.should == "abcd"
   end
@@ -67,51 +67,51 @@ end
 describe BinData::Stringz, "with max_length" do
   subject { BinData::Stringz.new(:max_length => 5) }
 
-  it "should read less than max_length" do
+  it "reads less than max_length" do
     io = StringIO.new("abc\0xyz")
     subject.read(io)
     subject.should == "abc"
   end
 
-  it "should read exactly max_length" do
+  it "reads exactly max_length" do
     io = StringIO.new("abcd\0xyz")
     subject.read(io)
     subject.should == "abcd"
   end
 
-  it "should read no more than max_length" do
+  it "reads no more than max_length" do
     io = StringIO.new("abcdefg\0xyz")
     subject.read(io)
     io.pos.should == 5
     subject.should == "abcd"
   end
 
-  it "should accept values less than max_length" do
+  it "accepts values less than max_length" do
     subject.assign("abc")
     subject.should == "abc"
   end
 
-  it "should accept values exactly max_length" do
+  it "accepts values exactly max_length" do
     subject.assign("abcd")
     subject.should == "abcd"
   end
 
-  it "should trim values greater than max_length" do
+  it "trims values greater than max_length" do
     subject.assign("abcde")
     subject.should == "abcd"
   end
 
-  it "should write values greater than max_length" do
+  it "writes values greater than max_length" do
     subject.assign("abcde")
     subject.to_binary_s.should == "abcd\0"
   end
 
-  it "should write values less than max_length" do
+  it "writes values less than max_length" do
     subject.assign("abc")
     subject.to_binary_s.should == "abc\0"
   end
 
-  it "should write values exactly max_length" do
+  it "writes values exactly max_length" do
     subject.assign("abcd")
     subject.to_binary_s.should == "abcd\0"
   end
