@@ -75,7 +75,7 @@ describe BinData::Record, "with choice field" do
   class RecordWithNestedChoiceField < BinData::Record
     uint8  :sel, :value => 0
     choice :x, :selection => 0 do
-      choice :selection => 0 do
+      choice :selection => :sel do
         tuple_record
       end
     end

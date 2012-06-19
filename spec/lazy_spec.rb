@@ -26,6 +26,8 @@ class MockBinDataObject
   def lazy_evaluator
     BinData::LazyEvaluator.new(self)
   end
+
+  alias_method :safe_respond_to?, :respond_to?
 end
 
 def lazy_eval(*rest)
