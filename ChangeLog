@@ -1,9 +1,12 @@
 = BinData Changelog
 
-== Version 1.4.4 (2011-11-xx)
+== Version 1.4.4 (2012-06-21)
 
 * Fixed bug where user defined boolean primitive wouldn't set its
   value to false (reported by Frank Roland).
+* Fixed infinite looping bug caused by nested Choices.
+* Renamed String parameter :pad_char to :pad_byte.
+* Updated manual.
 
 == Version 1.4.3 (2011-10-01)
 
