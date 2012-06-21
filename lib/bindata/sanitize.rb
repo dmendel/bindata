@@ -188,6 +188,15 @@ module BinData
       end
     end
 
+    def warn_renamed_parameter(old_key, new_key)
+      val = delete(old_key)
+      if val
+        self[new_key] = val
+        warn ":#{old_key} has been renamed to :#{new_key} in #{@the_class}.  " +
+        "Using :#{old_key} is now deprecated and will be removed in the future"
+      end
+    end
+
     def endian
       @endian || self[:endian]
     end
