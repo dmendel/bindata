@@ -25,7 +25,7 @@ module BinData
   #   obj #=> "abcd"
   #   obj.to_binary_s #=> "abcd\000\000"
   #
-  #   obj = BinData::String.new(:length => 6, :pad_char => 'A')
+  #   obj = BinData::String.new(:length => 6, :pad_byte => 'A')
   #   obj.assign("abcd")
   #   obj #=> "abcdAA"
   #   obj.to_binary_s #=> "abcdAA"
@@ -35,20 +35,20 @@ module BinData
   # String objects accept all the params that BinData::BasePrimitive
   # does, as well as the following:
   #
-  # <tt>:read_length</tt>::    The length to use when reading a value.
+  # <tt>:read_length</tt>::    The length in bytes to use when reading a value.
   # <tt>:length</tt>::         The fixed length of the string.  If a shorter
   #                            string is set, it will be padded to this length.
-  # <tt>:pad_char</tt>::       The character to use when padding a string to a
+  # <tt>:pad_byte</tt>::       The byte to use when padding a string to a
   #                            set length.  Valid values are Integers and
   #                            Strings of length 1.  "\0" is the default.
   # <tt>:trim_padding</tt>::   Boolean, default false.  If set, #value will
-  #                            return the value with all pad_chars trimmed
+  #                            return the value with all pad_bytes trimmed
   #                            from the end of the string.  The value will
   #                            not be trimmed when writing.
   class String < BinData::BasePrimitive
 
     optional_parameters :read_length, :length, :trim_padding
-    default_parameters  :pad_char => "\0"
+    default_parameters  :pad_byte => "\0"
     mutually_exclusive_parameters :read_length, :length
     mutually_exclusive_parameters :length, :value
 
@@ -57,27 +57,36 @@ module BinData
       def sanitize_parameters!(params) #:nodoc:
         params.warn_replacement_parameter(:initial_length, :read_length)
 
-        if params.has_parameter?(:pad_char)
-          ch = params[:pad_char]
-          params[:pad_char] = sanitized_pad_char(ch)
+        params.warn_renamed_parameter(:pad_char, :pad_byte) # Remove this line in the future
+
+        if params.has_parameter?(:pad_byte)
+          byte = params[:pad_byte]
+          params[:pad_byte] = sanitized_pad_byte(byte)
         end
       end
 
       #-------------
       private
 
-      def sanitized_pad_char(ch)
-        result = ch.is_a?(Integer) ? ch.chr : ch.to_s
+      def sanitized_pad_byte(byte)
+        result = byte.is_a?(Integer) ? byte.chr : byte_string(byte.to_s.dup)
         if result.length > 1
-          raise ArgumentError, ":pad_char must not contain more than 1 char"
+          raise ArgumentError, ":pad_byte must not contain more than 1 byte"
         end
         result
+      end
+
+      def byte_string(str)
+        if RUBY_VERSION >= "1.9"
+          str.force_encoding(Encoding::BINARY) 
+        else
+          str
+        end
       end
     end
 
     def assign(val)
-      val = val.dup.force_encoding(Encoding::BINARY) if RUBY_VERSION >= "1.9"
-      super(val)
+      super(byte_string(val.dup))
     end
 
     def snapshot
@@ -94,8 +103,16 @@ module BinData
     #---------------
     private
 
+    def byte_string(str)
+      if RUBY_VERSION >= "1.9"
+        str.force_encoding(Encoding::BINARY) 
+      else
+        str
+      end
+    end
+
     def clamp_to_length(str)
-      str.force_encoding(Encoding::BINARY) if RUBY_VERSION >= "1.9"
+      str = byte_string(str)
 
       len = eval_parameter(:length) || str.length
       if str.length == len
@@ -103,12 +120,12 @@ module BinData
       elsif str.length > len
         str.slice(0, len)
       else
-        str + (eval_parameter(:pad_char) * (len - str.length))
+        str + (eval_parameter(:pad_byte) * (len - str.length))
       end
     end
 
     def trim_padding(str)
-      str.sub(/#{eval_parameter(:pad_char)}*$/, "")
+      str.sub(/#{eval_parameter(:pad_byte)}*$/, "")
     end
 
     def value_to_binary_string(val)

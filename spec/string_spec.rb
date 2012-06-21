@@ -22,8 +22,8 @@ describe BinData::String, "with mutually exclusive parameters" do
 end
 
 describe BinData::String, "when assigning" do
-  let(:small) { BinData::String.new(:length => 3, :pad_char => "A") }
-  let(:large) { BinData::String.new(:length => 5, :pad_char => "B") }
+  let(:small) { BinData::String.new(:length => 3, :pad_byte => "A") }
+  let(:large) { BinData::String.new(:length => 5, :pad_byte => "B") }
 
   it "copies data from small to large" do
     large.assign(small)
@@ -164,21 +164,21 @@ describe BinData::String, "with :length and :initial_value" do
   end
 end
 
-describe BinData::String, "with :pad_char" do
-  it "accepts a numeric value for :pad_char" do
-    str = BinData::String.new(:length => 5, :pad_char => 6)
+describe BinData::String, "with :pad_byte" do
+  it "accepts a numeric value for :pad_byte" do
+    str = BinData::String.new(:length => 5, :pad_byte => 6)
     str.assign("abc")
     str.should == "abc\x06\x06"
   end
 
-  it "accepts a character for :pad_char" do
-    str = BinData::String.new(:length => 5, :pad_char => "R")
+  it "accepts a character for :pad_byte" do
+    str = BinData::String.new(:length => 5, :pad_byte => "R")
     str.assign("abc")
     str.should == "abcRR"
   end
 
-  it "does not accept a string for :pad_char" do
-    params = {:length => 5, :pad_char => "RR"}
+  it "does not accept a string for :pad_byte" do
+    params = {:length => 5, :pad_byte => "RR"}
     lambda { BinData::String.new(params) }.should raise_error(ArgumentError)
   end
 end
@@ -194,7 +194,7 @@ describe BinData::String, "with :trim_padding" do
   end
 
   context "trim padding set" do
-    subject { BinData::String.new(:pad_char => 'R', :trim_padding => true) }
+    subject { BinData::String.new(:pad_byte => 'R', :trim_padding => true) }
 
     it "trims the value" do
       subject.assign("abcRR")
@@ -206,12 +206,12 @@ describe BinData::String, "with :trim_padding" do
       subject.num_bytes.should == 5
     end
 
-    it "trims if last char is :pad_char" do
+    it "trims if last char is :pad_byte" do
       subject.assign("abcRR")
       subject.should == "abc"
     end
 
-    it "does not trim if value contains :pad_char not at the end" do
+    it "does not trim if value contains :pad_byte not at the end" do
       subject.assign("abcRRde")
       subject.should == "abcRRde"
     end

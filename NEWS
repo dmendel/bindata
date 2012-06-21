@@ -1,3 +1,10 @@
+= 1.4.4
+
+== Deprecations
+
+The BinData::String parameter :pad_char has been renamed to :pad_byte.  This
+aids readibilty as Ruby 1.9 characters are not necessarily one byte.
+
 = 1.4.0
 
 == Deprecations
