@@ -10,7 +10,7 @@
       var TINY={};function T$(i){return document.getElementById(i)}function T$$(e,p){return p.getElementsByTagName(e)}TINY.accordion=function(){function slider(n){this.n=n;this.a=[]}slider.prototype.init=function(t,e,m,o,k){var a=T$(t),i=s=0,n=a.childNodes,l=n.length;this.s=k||0;this.m=m||0;for(i;i<l;i++){var v=n[i];if(v.nodeType!=3){this.a[s]={};this.a[s].h=h=T$$(e,v)[0];this.a[s].c=c=T$$('div',v)[0];h.onclick=new Function(this.n+'.pr(0,'+s+')');if(o==s){h.className=this.s;c.style.height='auto';c.d=1}else{c.style.height=0;c.d=-1}s++}}this.l=s};slider.prototype.pr=function(f,d){for(var i=0;i<this.l;i++){var h=this.a[i].h,c=this.a[i].c,k=c.style.height;k=k=='auto'?1:parseInt(k);clearInterval(c.t);if((k!=1&&c.d==-1)&&(f==1||i==d)){c.style.height='';c.m=c.offsetHeight;c.style.height=k+'px';c.d=1;h.className=this.s;su(c,1)}else if(k>0&&(f==-1||this.m||i==d)){c.d=-1;h.className='';su(c,-1)}}};function su(c){c.t=setInterval(function(){sl(c)},20)};function sl(c){var h=c.offsetHeight,d=c.d==1?c.m-h:h;c.style.height=h+(Math.ceil(d/5)*c.d)+'px';c.style.opacity=h/c.m;c.style.filter='alpha(opacity='+h*100/c.m+')';if((c.d==1&&h>=c.m)||(c.d!=1&&h==1)){if(c.d==1){c.style.height='auto'}clearInterval(c.t)}};return{slider:slider}}();
 
       var menu1, menu2, menu3, menu4, menu5, menu6, menu7;
-      var menu8, menu9, menu10, menu11, menu12, menu13, menu14;
+      var menu8, menu9, menu10, menu11, menu12, menu13, menu14, menu15;
 
       function init_accordion() {
         menu1 = new TINY.accordion.slider("menu1"); menu1.init("menu1","a",1,-1);
@@ -27,6 +27,7 @@
         menu12 = new TINY.accordion.slider("menu12"); menu12.init("menu12","a",1,-1);
         menu13 = new TINY.accordion.slider("menu13"); menu13.init("menu13","a",1,-1);
         menu14 = new TINY.accordion.slider("menu14"); menu14.init("menu14","a",1,-1);
+        menu15 = new TINY.accordion.slider("menu15"); menu15.init("menu15","a",1,-1);
       };
       window.onload = init_accordion;
 
@@ -157,32 +158,11 @@
             .acc-section
               .acc-content
           %li
-            %a{ :href => "#common_operations" }
-              Common Operations
-            .acc-section
-              .acc-content
-                %ul.level2#menu3
-                  %li
-                    %a{ :href => "#reading_and_writing" }
-                      Reading and writing
-                    .acc-section
-                      .acc-content
-                  %li
-                    %a{ :href => "#manipulating" }
-                      Manipulating
-                    .acc-section
-                      .acc-content
-                  %li
-                    %a{ :href => "#inspecting" }
-                      Inspecting
-                    .acc-section
-                      .acc-content
-          %li
             %a{ :href => "#records" }
               Records
             .acc-section
               .acc-content
-                %ul.level2#menu4
+                %ul.level2#menu3
                   %li
                     %a{ :href => "#specifying_default_endian" }
                       Specifying default endian
@@ -199,11 +179,6 @@
                     .acc-section
                       .acc-content
                   %li
-                    %a{ :href => "#bitfields" }
-                      Bitfields
-                    .acc-section
-                      .acc-content
-                  %li
                     %a{ :href => "#optional_fields" }
                       Optional fields
                     .acc-section
@@ -213,13 +188,13 @@
               Primitive Types
             .acc-section
               .acc-content
-                %ul.level2#menu5
+                %ul.level2#menu4
                   %li
                     %a{ :href => "#numerics" }
                       Numerics
                     .acc-section
                       .acc-content
-                        %ul.level3#menu6
+                        %ul.level3#menu5
                           %li
                             %a{ :href => "#byte_based_integers" }
                               Byte based integers
@@ -245,7 +220,7 @@
                       Strings
                     .acc-section
                       .acc-content
-                        %ul.level3#menu7
+                        %ul.level3#menu6
                           %li
                             %a{ :href => "#fixed_sized_strings" }
                               Fixed Sized Strings
@@ -261,47 +236,74 @@
                       User-defined Primitive Types
                     .acc-section
                       .acc-content
-                        %ul.level3#menu8
+                        %ul.level3#menu7
                           %li
                             %a{ :href => "#advanced_user_defined_primitive_types" }
                               Advanced Example
                             .acc-section
                               .acc-content
           %li
-            %a{ :href => "#arrays" }
-              Arrays
+            %a{ :href => "#compound_types" }
+              Compound Types
             .acc-section
               .acc-content
-                %ul.level2#menu9
+                %ul.level2#menu8
                   %li
-                    %a{ :href => "#array_syntax" }
-                      Array syntax
+                    %a{ :href => "#arrays" }
+                      Arrays
                     .acc-section
                       .acc-content
+                        %ul.level3#menu9
+                          %li
+                            %a{ :href => "#array_syntax" }
+                              Array syntax
+                            .acc-section
+                              .acc-content
+                          %li
+                            %a{ :href => "#array_parameters" }
+                              Array parameters
+                            .acc-section
+                              .acc-content
                   %li
-                    %a{ :href => "#array_parameters" }
-                      Array parameters
+                    %a{ :href => "#choices" }
+                      Choices
                     .acc-section
                       .acc-content
+                        %ul.level3#menu10
+                          %li
+                            %a{ :href => "#choice_syntax" }
+                              Choice syntax
+                            .acc-section
+                              .acc-content
+                          %li
+                            %a{ :href => "#choice_parameters" }
+                              Choice parameters
+                            .acc-section
+                              .acc-content
+                          %li
+                            %a{ :href => "#default_selection" }
+                              Default Selection
+                            .acc-section
+                              .acc-content
           %li
-            %a{ :href => "#choices" }
-              Choices
+            %a{ :href => "#common_operations" }
+              Common Operations
             .acc-section
               .acc-content
-                %ul.level2#menu10
+                %ul.level2#menu11
                   %li
-                    %a{ :href => "#choice_syntax" }
-                      Choice syntax
+                    %a{ :href => "#reading_and_writing" }
+                      Reading and writing
                     .acc-section
                       .acc-content
                   %li
-                    %a{ :href => "#choice_parameters" }
-                      Choice parameters
+                    %a{ :href => "#manipulating" }
+                      Manipulating
                     .acc-section
                       .acc-content
                   %li
-                    %a{ :href => "#default_selection" }
-                      Default Selection
+                    %a{ :href => "#inspecting" }
+                      Inspecting
                     .acc-section
                       .acc-content
           %li
@@ -309,7 +311,7 @@
               Advanced Topics
             .acc-section
               .acc-content
-                %ul.level2#menu11
+                %ul.level2#menu12
                   %li
                     %a{ :href => "#debugging" }
                       Debugging
@@ -336,7 +338,7 @@
                       Parameterizing Types
                     .acc-section
                       .acc-content
-                        %ul.level3#menu12
+                        %ul.level3#menu14
                           %li
                             %a{ :href => "#mandatory_parameters" }
                               Mandatory Parameters
@@ -363,8 +365,8 @@
                     .acc-section
                       .acc-content
                   %li
-                    %a{ :href => "#bitaligned_records" }
-                      Bit-aligned Records
+                    %a{ :href => "#advanced_bitfields" }
+                      Advanced Bitfields
                     .acc-section
                       .acc-content
           %li
@@ -372,7 +374,7 @@
               FAQ
             .acc-section
               .acc-content
-                %ul.level2#menu14
+                %ul.level2#menu15
                   %li
                     %a{ :href => "#im_using_ruby_19_how_do_i_use_string_encodings_with_bindata" }
                       String encoding - Ruby 1.9
