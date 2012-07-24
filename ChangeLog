@@ -1,5 +1,10 @@
 = BinData Changelog
 
+== Version 1.4.5 (2012-07-24)
+
+* Added the :pad_front option for padding to occur at the front of a String.
+  (suggested by Eduardo Mourão).
+
 == Version 1.4.4 (2012-06-21)
 
 * Fixed bug where user defined boolean primitive wouldn't set its

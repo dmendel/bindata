@@ -41,13 +41,16 @@ module BinData
   # <tt>:pad_byte</tt>::       The byte to use when padding a string to a
   #                            set length.  Valid values are Integers and
   #                            Strings of length 1.  "\0" is the default.
+  # <tt>:pad_front</tt>::      Signifies that the padding occurs at the front
+  #                            of the string rather than the end.  Default
+  #                            is false.
   # <tt>:trim_padding</tt>::   Boolean, default false.  If set, #value will
   #                            return the value with all pad_bytes trimmed
   #                            from the end of the string.  The value will
   #                            not be trimmed when writing.
   class String < BinData::BasePrimitive
 
-    optional_parameters :read_length, :length, :trim_padding
+    optional_parameters :read_length, :length, :trim_padding, :pad_front, :pad_left
     default_parameters  :pad_byte => "\0"
     mutually_exclusive_parameters :read_length, :length
     mutually_exclusive_parameters :length, :value
@@ -58,6 +61,10 @@ module BinData
         params.warn_replacement_parameter(:initial_length, :read_length)
 
         params.warn_renamed_parameter(:pad_char, :pad_byte) # Remove this line in the future
+
+        if params.has_parameter?(:pad_left)
+          params[:pad_front] = params.delete(:pad_left)
+        end
 
         if params.has_parameter?(:pad_byte)
           byte = params[:pad_byte]
@@ -120,12 +127,21 @@ module BinData
       elsif str.length > len
         str.slice(0, len)
       else
-        str + (eval_parameter(:pad_byte) * (len - str.length))
+        padding = (eval_parameter(:pad_byte) * (len - str.length))
+        if get_parameter(:pad_front)
+          padding + str
+        else
+          str + padding
+        end
       end
     end
 
     def trim_padding(str)
-      str.sub(/#{eval_parameter(:pad_byte)}*$/, "")
+      if get_parameter(:pad_front)
+        str.sub(/\A#{eval_parameter(:pad_byte)}*/, "")
+      else
+        str.sub(/#{eval_parameter(:pad_byte)}*\z/, "")
+      end
     end
 
     def value_to_binary_string(val)

@@ -40,7 +40,7 @@ manipulating.
 It supports all the common datatypes that are found in structured binary
 data. Support for dependent and variable length fields is built in. 
 
-Last updated: 2012-06-21
+Last updated: 2012-07-24
 
 ## License
 
@@ -576,6 +576,16 @@ There are several parameters that are specific to fixed sized strings.
         obj = BinData::String.new(:length => 6)
         obj.assign("abcdefghij")
         obj #=> "abcdef"
+    {:ruby}
+
+`:pad_front` or `:pad_left`
+
+:   Boolean, default `false`.  Signifies that the padding occurs at the front
+    of the string rather than the end.
+
+        obj = BinData::String.new(:length => 6, :pad_front => true)
+        obj.assign("abcd")
+        obj.snapshot #=> "\000\000abcd"
     {:ruby}
 
 `:pad_byte`

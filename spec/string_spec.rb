@@ -218,6 +218,48 @@ describe BinData::String, "with :trim_padding" do
   end
 end
 
+describe BinData::String, "with :pad_front" do
+  it "set false is the default" do
+    str1 = BinData::String.new(:length => 5)
+    str2 = BinData::String.new(:length => 5, :pad_front => false)
+    str1.assign("abc")
+    str2.assign("abc")
+    str1.should == "abc\0\0"
+    str2.should == "abc\0\0"
+  end
+
+  it "pads to the front" do
+    str = BinData::String.new(:length => 5, :pad_byte => 'R', :pad_front => true)
+    str.assign("abc")
+    str.should == "RRabc"
+  end
+
+  it "can alternatively be accesses by :pad_left" do
+    str = BinData::String.new(:length => 5, :pad_byte => 'R', :pad_left => true)
+    str.assign("abc")
+    str.should == "RRabc"
+  end
+
+  context "and :trim_padding" do
+    subject { BinData::String.new(:length => 5, :pad_byte => 'R', :pad_front => true, :trim_padding => true) }
+
+    it "assigns" do
+      subject.assign("abc")
+      subject.should == "abc"
+    end
+
+    it "has to_binary_s" do
+      subject.assign("abc")
+      subject.to_binary_s.should == "RRabc"
+    end
+
+    it "reads" do
+      subject.read "RRabc"
+      subject.should == "abc"
+    end
+  end
+end
+
 describe BinData::String, "with Ruby 1.9 encodings" do
   if RUBY_VERSION >= "1.9"
     class UTF8String < BinData::String
