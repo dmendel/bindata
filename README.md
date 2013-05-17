@@ -2,27 +2,31 @@
 
 Do you ever find yourself writing code like this?
 
-    io = File.open(...)
-    len = io.read(2).unpack("v")
-    name = io.read(len)
-    width, height = io.read(8).unpack("VV")
-    puts "Rectangle #{name} is #{width} x #{height}"
+```ruby
+io = File.open(...)
+len = io.read(2).unpack("v")
+name = io.read(len)
+width, height = io.read(8).unpack("VV")
+puts "Rectangle #{name} is #{width} x #{height}"
+```
 
 It’s ugly, violates DRY and feels like you’re writing Perl, not Ruby.
 
 There is a better way. Here’s how you’d write the above using BinData.
 
-    class Rectangle < BinData::Record
-      endian :little
-      uint16 :len
-      string :name, :read_length => :len
-      uint32 :width
-      uint32 :height
-    end
+```ruby
+class Rectangle < BinData::Record
+  endian :little
+  uint16 :len
+  string :name, :read_length => :len
+  uint32 :width
+  uint32 :height
+end
 
-    io = File.open(...)
-    r  = Rectangle.read(io)
-    puts "Rectangle #{r.name} is #{r.width} x #{r.height}"
+io = File.open(...)
+r  = Rectangle.read(io)
+puts "Rectangle #{r.name} is #{r.width} x #{r.height}"
+```
 
 BinData makes it easy to create new data types. It supports all the common
 primitive datatypes that are found in structured binary data formats. Support

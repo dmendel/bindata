@@ -13,8 +13,8 @@ begin
     s.rubyforge_project = 'bindata'
     s.require_path = 'lib'
     s.has_rdoc = true
-    s.extra_rdoc_files = ['NEWS']
-    s.rdoc_options << '--main' << 'NEWS'
+    s.extra_rdoc_files = ['NEWS.rdoc']
+    s.rdoc_options << '--main' << 'NEWS.rdoc'
     s.files = PKG_FILES
     s.add_development_dependency('rspec', [">= 2.10.0"])
     s.add_development_dependency('haml')
