@@ -49,3 +49,10 @@ def raise_error_on_line(exception, line, &block)
   end
 end
 
+def binary(str)
+  if str.respond_to?(:force_encoding)
+    str.dup.force_encoding(Encoding::BINARY)
+  else
+    str
+  end
+end

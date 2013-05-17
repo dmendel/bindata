@@ -1,5 +1,9 @@
 = BinData Changelog
 
+== Version 1.x.x (2013-05-17)
+
+* Updated to Ruby 2.0
+
 == Version 1.4.5 (2012-07-24)
 
 * Added the :pad_front option for padding to occur at the front of a String.

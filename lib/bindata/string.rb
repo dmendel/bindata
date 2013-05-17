@@ -76,24 +76,17 @@ module BinData
       private
 
       def sanitized_pad_byte(byte)
-        result = byte.is_a?(Integer) ? byte.chr : byte_string(byte.to_s.dup)
-        if result.length > 1
+        result = byte.is_a?(Integer) ? byte.chr : byte.to_s
+        len = result.respond_to?(:bytesize) ? result.bytesize : result.length
+        if len > 1
           raise ArgumentError, ":pad_byte must not contain more than 1 byte"
         end
         result
       end
-
-      def byte_string(str)
-        if RUBY_VERSION >= "1.9"
-          str.force_encoding(Encoding::BINARY) 
-        else
-          str
-        end
-      end
     end
 
     def assign(val)
-      super(byte_string(val.dup))
+      super(binary_string(val))
     end
 
     def snapshot
@@ -110,16 +103,8 @@ module BinData
     #---------------
     private
 
-    def byte_string(str)
-      if RUBY_VERSION >= "1.9"
-        str.force_encoding(Encoding::BINARY) 
-      else
-        str
-      end
-    end
-
     def clamp_to_length(str)
-      str = byte_string(str)
+      str = binary_string(str)
 
       len = eval_parameter(:length) || str.length
       if str.length == len

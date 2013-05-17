@@ -275,6 +275,14 @@ module BinData
       end
     end
 
+    def binary_string(str)
+      if str.respond_to?(:force_encoding)
+        str.dup.force_encoding(Encoding::BINARY)
+      else
+        str.dup
+      end
+    end
+
     ###########################################################################
     # To be implemented by subclasses
 

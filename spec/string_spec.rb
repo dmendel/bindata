@@ -269,7 +269,7 @@ describe BinData::String, "with Ruby 1.9 encodings" do
     end
 
     subject { UTF8String.new }
-    let(:binary_str) { "\xC3\x85\xC3\x84\xC3\x96" }
+    let(:binary_str) { binary("\xC3\x85\xC3\x84\xC3\x96") }
     let(:utf8_str) { binary_str.dup.force_encoding('UTF-8') }
 
     it "stores assigned values as binary" do

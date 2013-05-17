@@ -129,7 +129,7 @@ shared_examples "All Integers" do
   end
 
   def int_to_binary_str(val)
-    str = ""
+    str = binary("")
     v = val & ((1 << (@nbytes * 8)) - 1)
     @nbytes.times do
       str.concat(v & 0xff)

@@ -163,7 +163,7 @@ module BinData
     end
 
     def snapshot
-      snapshot = Snapshot.new(field_names)
+      snapshot = Snapshot.new
       field_names.each do |name|
         obj = find_obj_for_name(name)
         snapshot[name] = obj.snapshot if include_obj(obj)
@@ -303,7 +303,7 @@ module BinData
       elsif val.nil?
         {}
       else
-        hash = Snapshot.new(field_names)
+        hash = Snapshot.new
         val.each_pair { |k,v| hash[k] = v }
         hash
       end
@@ -330,16 +330,18 @@ module BinData
       not obj.has_parameter?(:onlyif) or obj.eval_parameter(:onlyif)
     end
 
-    # A hash that can be accessed via attributes.
-    class Snapshot < ::Hash #:nodoc:
-      def initialize(order = [])
-        @order = order.compact
-      end
-
-      if RUBY_VERSION <= "1.9"
+    if RUBY_VERSION <= "1.9"
+      module OrderedHash #:nodoc:
         def keys
+          @order ||= []
           k = super
           @order & k
+        end
+
+        def []=(key, value)
+          @order ||= []
+          @order << key
+          super(key, value)
         end
 
         def each
@@ -354,6 +356,11 @@ module BinData
           end
         end
       end
+    end
+
+    # A hash that can be accessed via attributes.
+    class Snapshot < ::Hash #:nodoc:
+      include OrderedHash if RUBY_VERSION <= "1.9"
 
       def has_key?(key)
         super(key.to_s)

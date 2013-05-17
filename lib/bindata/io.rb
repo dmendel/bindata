@@ -7,7 +7,7 @@ module BinData
 
     # Creates a StringIO around +str+.
     def self.create_string_io(str = "")
-      if RUBY_VERSION >= "1.9"
+      if str.respond_to?(:force_encoding)
         str = str.dup.force_encoding(Encoding::BINARY)
       end
       StringIO.new(str)
