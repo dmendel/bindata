@@ -11,9 +11,15 @@ module BinData
       obj_params ||= {}
 
       if BinData::Base === obj_type
-        @factory = obj_type
+        obj_class = obj_type
       else
-        @obj_class  = RegisteredClasses.lookup(obj_type, endian)
+        obj_class = RegisteredClasses.lookup(obj_type, endian)
+      end
+
+      if BinData::Base === obj_class
+        @factory = obj_class
+      else
+        @obj_class  = obj_class
         @obj_params = SanitizedParameters.new(obj_params, @obj_class, endian)
       end
     end

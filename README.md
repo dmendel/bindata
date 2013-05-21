@@ -42,7 +42,7 @@ for dependent and variable length fields is built in.
 
 # Documentation
 
-[http://bindata.rubyforge.org](http://bindata.rubyforge.org)
+[http://bindata.rubyforge.org/manual.html](http://bindata.rubyforge.org/manual.html)
 
 -or-
 

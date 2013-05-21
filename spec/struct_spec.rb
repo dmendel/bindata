@@ -338,3 +338,13 @@ describe BinData::Struct, "with nested endian" do
     subject.d.should   == 4
   end
 end
+
+describe BinData::Struct, "with dynamically named types" do
+  it "instantiates" do
+    dyn = BinData::Struct.new(:name => :my_struct, :fields => [[:int8, :a, {:initial_value => 3}]])
+
+    obj = BinData::Struct.new(:fields => [[:my_struct, :v]])
+
+    obj.v.a.should == 3
+  end
+end

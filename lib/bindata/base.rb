@@ -82,6 +82,9 @@ module BinData
     # Register all subclasses of this class.
     register_subclasses
 
+    # The registered name may be provided explicitly.
+    optional_parameter :name
+
     # Creates a new data object.
     #
     # Args are optional, but if present, must be in the following order.
@@ -93,12 +96,27 @@ module BinData
     #
     # +parent+ is the parent data object (e.g. struct, array, choice) this
     # object resides under.
+    #
+    # == Parameters
+    #
+    # Parameters may be provided at initialisation to control the behaviour of
+    # an object.  These params are:
+    #
+    # <tt>:name</tt>:: The name that this object can be referred to may be
+    #                  set explicitly.  This is only useful when dynamically
+    #                  generating types.
+    #                  <code><pre>
+    #                    BinData::Struct.new(:name => :my_struct, :fields => ...)
+    #                    array = BinData::Array.new(:type => :my_struct)
+    #                  </pre></code>
+    #
     def initialize(*args)
       value, parameters, parent = extract_args(args)
 
       @params = SanitizedParameters.sanitize(parameters, self.class)
       @parent = parent
 
+      register_prototype
       add_methods_for_check_or_adjust_offset
 
       initialize_shared_instance
@@ -263,6 +281,12 @@ module BinData
 
     def extract_args(the_args)
       self.class.arg_extractor.extract(self.class, the_args)
+    end
+
+    def register_prototype
+      if has_parameter?(:name)
+        RegisteredClasses.register(get_parameter(:name), self)
+      end
     end
 
     def furthest_ancestor

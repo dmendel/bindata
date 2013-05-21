@@ -123,7 +123,7 @@ module BinData
       def self.invalid_parameter_names
         unless defined? @invalid_names
           all_names = LazyEvaluator.instance_methods(true) + Kernel.methods
-          allowed_names = ["type", :type] # ruby 1.8 vs 1.9
+          allowed_names = ["name", "type", :name, :type] # ruby 1.8 vs 1.9
           invalid_names = (all_names - allowed_names).uniq
           @invalid_names = Hash[*invalid_names.collect { |key| [key.to_sym, true] }.flatten]
         end

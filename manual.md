@@ -40,13 +40,17 @@ manipulating.
 It supports all the common datatypes that are found in structured binary
 data. Support for dependent and variable length fields is built in. 
 
-Last updated: 2012-07-24
+Last updated: 2013-05-21
+
+## Source code
+
+[BinData](http://github.com/dmendel/bindata) is hosted on Github.
 
 ## License
 
 BinData is released under the same license as Ruby.
 
-Copyright &copy; 2007 - 2012 [Dion Mendel](mailto:dion@lostrealm.com)
+Copyright &copy; 2007 - 2013 [Dion Mendel](mailto:dion@lostrealm.com)
 
 ## Donate
 
@@ -57,13 +61,14 @@ Want to donate?  My favourite local charity is
 
 # Installation
 
-You can install BinData via rubygems.
+You can install BinData via rubygems (recommended).
 
     gem install bindata
 
-Alternatively, visit the 
-[download](http://rubyforge.org/frs/?group_id=3252) page and download
-BinData as a tar file.
+or as source package.
+
+    git clone http://github.com/dmendel/bindata.git
+    cd bindata && ruby setup.rb
 
 ---------------------------------------------------------------------------
 
@@ -1357,6 +1362,20 @@ We can also use the block form syntax:
     end
 {:ruby}
 
+## Dynamically creating Types
+
+Sometimes the format of a record is not known until runtime.  You can use the
+`BinData::Struct` class to dynamically create a new type.  To be able to reuse
+this type, you can give it a name.
+
+    # Dynamically create my_new_type
+    BinData::Struct.new(:name => :my_new_type,
+                        :fields => [ [:int8, :a], [:int8, :b] ])
+
+    # Create an array of these types
+    array = BinData::Array.new(:type => :my_new_type)
+{:ruby}
+
 ## Skipping over unused data
 
 Some structures contain binary data that is irrelevant to your purposes.  
@@ -1559,7 +1578,7 @@ decided by the `protocol` field.
 Modelling this structure can be difficult when the nesting is recursive, e.g.
 IP tunneling.  Here is an example of the simplest possible recursive TLV structure,
 a [list that can contains atoms or other
-lists](http://bindata.rubyforge.org/svn/trunk/examples/list.rb).
+lists](http://github.com/dmendel/bindata/blob/master/examples/list.rb).
 
 ---------------------------------------------------------------------------
 
