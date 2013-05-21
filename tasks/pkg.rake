@@ -9,7 +9,7 @@ begin
     s.summary = 'A declarative way to read and write binary file formats'
     s.author = 'Dion Mendel'
     s.email = 'dion@lostrealm.com'
-    s.homepage = 'http://bindata.rubyforge.org'
+    s.homepage = 'http://github.com/dmendel/bindata'
     s.rubyforge_project = 'bindata'
     s.require_path = 'lib'
     s.has_rdoc = true

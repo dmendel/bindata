@@ -1,5 +1,5 @@
 # BinData -- Binary data manipulator.
-# Copyright (c) 2007 - 2012 Dion Mendel.
+# Copyright (c) 2007 - 2013 Dion Mendel.
 
 require 'bindata/array'
 require 'bindata/bits'
@@ -23,13 +23,13 @@ require 'bindata/deprecated'
 # A declarative way to read and write structured binary data.
 # 
 # A full reference manual is available online at
-# http://bindata.rubyforge.org.
+# http://bindata.rubyforge.org/manual.html
 #
 # == License
 #
 # BinData is released under the same license as Ruby.
 #
-# Copyright (c) 2007 - 2012 Dion Mendel.
+# Copyright (c) 2007 - 2013 Dion Mendel.
 module BinData
-  VERSION = "1.4.5"
+  VERSION = "1.5.0"
 end

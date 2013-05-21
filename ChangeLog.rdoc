@@ -1,6 +1,6 @@
 = BinData Changelog
 
-== Version 1.x.x (2013-05-21)
+== Version 1.5.0 (2013-05-21)
 
 * Moved to github.
 * Updated to Ruby 2.0
