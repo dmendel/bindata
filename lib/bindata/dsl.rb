@@ -90,8 +90,6 @@ module BinData
           to_choice_params
         when :primitive
           to_struct_params
-        when :wrapper
-          raise "Wrapper is deprecated"
         else
           raise "unknown parser type #{@parser_type}"
         end
@@ -122,8 +120,6 @@ module BinData
           [:multiple_fields, :all_or_none_fieldnames, :sanitize_fields, :fieldnames_are_values]
         when :primitive
           [:multiple_fields, :optional_fieldnames, :sanitize_fields]
-        when :wrapper
-          [:only_one_field, :no_fieldnames]
         else
           raise "unknown parser type #{parser_type}"
         end

@@ -2,11 +2,13 @@
 
 == Version 1.x.x (2013-05-21)
 
+* Moved to github.
 * Updated to Ruby 2.0
 * Arrays now accept BinData object factories for :type (feature request by
   Matt Dainty).
 * Dynamically generated BinData objects can use the :name parameter to
   register themselves.
+* Remove functionality that has been deprecated for two years.
 
 == Version 1.4.5 (2012-07-24)
 
