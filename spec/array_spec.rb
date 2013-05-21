@@ -30,6 +30,12 @@ describe BinData::Array, "when instantiating" do
     args = {:initial_length => 3, :read_until => lambda { false } }
     expect { BinData::Array.new(args) }.to raise_error(ArgumentError)
   end
+
+  it "accepts BinData::Base as :type" do
+    obj = BinData::Int8.new(:initial_value => 5)
+    array = BinData::Array.new(:type => obj, :initial_length => 1)
+    array.should == [5]
+  end
 end
 
 describe BinData::Array, "with no elements" do

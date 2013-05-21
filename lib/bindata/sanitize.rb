@@ -10,8 +10,12 @@ module BinData
       endian = endian.endian if endian.respond_to? :endian
       obj_params ||= {}
 
-      @obj_class  = RegisteredClasses.lookup(obj_type, endian)
-      @obj_params = SanitizedParameters.new(obj_params, @obj_class, endian)
+      if BinData::Base === obj_type
+        @factory = obj_type
+      else
+        @obj_class  = RegisteredClasses.lookup(obj_type, endian)
+        @obj_params = SanitizedParameters.new(obj_params, @obj_class, endian)
+      end
     end
 
     def instantiate(value = nil, parent = nil)
