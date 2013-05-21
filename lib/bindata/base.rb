@@ -129,7 +129,7 @@ module BinData
 
     # Creates a new data object based on this instance.
     #
-    # All parameters will be be duplicated.  Use this method 
+    # All parameters will be be duplicated.  Use this method
     # when creating multiple objects with the same parameters.
     def new(value = nil, parent = nil)
       obj = clone

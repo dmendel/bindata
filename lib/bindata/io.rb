@@ -19,7 +19,7 @@ module BinData
     # +io+ is a string it will be automatically wrapped in an StringIO object.
     #
     # The IO can handle bitstreams in either big or little endian format.
-    # 
+    #
     #      M  byte1   L      M  byte2   L
     #      S 76543210 S      S fedcba98 S
     #      B          B      B          B
