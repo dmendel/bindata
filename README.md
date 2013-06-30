@@ -34,7 +34,7 @@ for dependent and variable length fields is built in.
 
 # Installation
 
-    $ sudo gem install bindata
+    $ gem install bindata
 
 -or-
 
