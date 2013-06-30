@@ -1,5 +1,9 @@
 = BinData Changelog
 
+== Version 1.5.1 (2013-xx-xx)
+
+* Rework build system and include .gemspec.  Requested by Simon Shortman.
+
 == Version 1.5.0 (2013-05-21)
 
 * Moved to github.

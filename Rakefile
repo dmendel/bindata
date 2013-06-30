@@ -1,19 +1,12 @@
-$:.unshift(File.join(File.dirname(__FILE__), 'lib'))
+require 'bundler'
+Bundler.setup
+Bundler::GemHelper.install_tasks
 
-require 'bindata'
 require 'rake/clean'
 
-CURRENT_VERSION = BinData::VERSION
-
-PKG_FILES = FileList[
-  "[A-Z]*",
-  "examples/**/*",
-  "{spec,lib}/**/*.rb",
-  "tasks/**/*.rake",
-  "setup.rb",
-  "manual.haml",
-  "manual.md"
-]
+task :clobber do
+  rm_rf 'pkg'
+end
 
 task :default => :spec
 
