@@ -3,6 +3,8 @@
 == Version 1.5.1 (2013-xx-xx)
 
 * Rework build system and include .gemspec.  Requested by Simon Shortman.
+* Fixed bug when Choice#clear didn't clear everything.  Thanks to Simon
+  Shortman for the bug report.
 
 == Version 1.5.0 (2013-05-21)
 

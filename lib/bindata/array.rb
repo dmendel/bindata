@@ -90,7 +90,7 @@ module BinData
     end
 
     def clear
-      @element_list = nil
+      initialize_instance
     end
 
     def assign(array)

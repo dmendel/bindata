@@ -125,7 +125,7 @@ module BinData
     end
 
     def clear #:nodoc:
-      current_choice.clear
+      initialize_instance
     end
 
     def clear? #:nodoc:

@@ -163,6 +163,18 @@ describe BinData::Choice, "with single values" do
     subject.should be_zero
   end
 
+  it "clears all possible choices" do
+    subject.choice = 3
+    subject.assign(10)
+    subject.choice = 5
+    subject.assign(11)
+
+    subject.clear
+
+    subject.choice = 3
+    subject.should be_zero
+  end
+
   it "is clear on initialisation" do
     subject.choice = 3
 
