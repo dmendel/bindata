@@ -56,12 +56,15 @@ module BinData
     mandatory_parameter :type
     optional_parameters :initial_length, :read_until
     mutually_exclusive_parameters :initial_length, :read_until
+    mutually_exclusive_parameters :initial_length, :read_count
+    mutually_exclusive_parameters :read_until, :read_count
 
     class << self
 
       def sanitize_parameters!(params) #:nodoc:
         unless params.has_parameter?(:initial_length) or
-                 params.has_parameter?(:read_until)
+                 params.has_parameter?(:read_until) or
+                 params.has_parameter?(:read_count)
           # ensure one of :initial_length and :read_until exists
           params[:initial_length] = 0
         end
@@ -235,7 +238,9 @@ module BinData
     end
 
     def do_read(io) #:nodoc:
-      if has_parameter?(:initial_length)
+      if has_parameter?(:read_count)
+        read_count(io)
+      elsif has_parameter?(:initial_length)
         elements.each { |el| el.do_read(io) }
       elsif has_parameter?(:read_until)
         read_until(io)
@@ -291,6 +296,13 @@ module BinData
         variables = { :index => self.length - 1, :element => self.last,
                       :array => self }
         break if eval_parameter(:read_until, variables)
+      end
+    end
+
+    def read_count(io)
+      eval_parameter(:read_count).times do
+        element = append_new_element
+        element.do_read(io)
       end
     end
 
