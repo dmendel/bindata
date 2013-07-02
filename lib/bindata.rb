@@ -30,6 +30,4 @@ require 'bindata/deprecated'
 # BinData is released under the same license as Ruby.
 #
 # Copyright (c) 2007 - 2013 Dion Mendel.
-module BinData
-  VERSION = "1.5.0"
-end
+require 'bindata/version'
