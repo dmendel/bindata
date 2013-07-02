@@ -26,9 +26,15 @@ describe BinData::Array, "when instantiating" do
     expect { BinData::Array.new(args) }.to raise_error(BinData::UnRegisteredTypeError)
   end
 
-  it "does not allow both :initial_length and :read_until" do
-    args = {:initial_length => 3, :read_until => lambda { false } }
-    expect { BinData::Array.new(args) }.to raise_error(ArgumentError)
+  it "does not allow a combination of :initial_length, :read_until, and :read_count" do
+    args = {:type => :int8, :initial_length => 3, :read_until => lambda { false } }
+    expect { BinData::Array.new(args) }.to raise_error(ArgumentError, /'initial_length' and 'read_until'/)
+
+    args = {:type => :int8, :initial_length => 3, :read_count => 5 }
+    expect { BinData::Array.new(args) }.to raise_error(ArgumentError, /'initial_length' and 'read_count'/)
+
+    args = {:type => :int8, :read_until => lambda { false }, :read_count => 5 }
+    expect { BinData::Array.new(args) }.to raise_error(ArgumentError, /'read_until' and 'read_count'/)
   end
 
   it "accepts BinData::Base as :type" do
@@ -291,6 +297,45 @@ describe BinData::Array, "with :read_until" do
       subject = BinData::Array.new(:type => array_type, :read_until => :eof)
       expect { subject.read "\x00\x01\x00\x02\x03" }.to raise_error
     end
+  end
+end
+
+describe BinData::Array, "with :read_count" do
+  it "reads some count of bytes" do
+    subject = BinData::Array.new(:type => :int8, :read_count => lambda { 6 })
+
+    subject.read "\x01\x02\x03\x04\x05\x06"
+    subject.should == [1, 2, 3, 4, 5, 6]
+  end
+
+  it "supports a read of length 0" do
+    subject = BinData::Array.new(:type => :int8, :read_count => lambda { 0 })
+
+    subject.read "\x01\x02\x03\x04\x05\x06"
+    subject.should == []
+  end
+
+  it "can reference additional context" do
+    class LengthTaggedArr < BinData::Record
+      uint8 :ar_len
+      array :the_array, :type => :uint8, :read_count => lambda { ar_len }
+    end
+
+    a = LengthTaggedArr.read("\x00")
+    a.ar_len.should == 0
+    a.the_array.should == []
+
+    a = LengthTaggedArr.read("\x01\xFF")
+    a.ar_len.should == 1
+    a.the_array.should == [255]
+
+    a = LengthTaggedArr.read("\x05\x01\x02\x03\x04\x05")
+    a.ar_len.should == 5
+    a.the_array.should == [1,2,3,4,5]
+
+    a = LengthTaggedArr.read("\x04\x01\x02\x03\x04\x05")
+    a.ar_len.should == 4
+    a.the_array.should == [1,2,3,4]
   end
 end
 
