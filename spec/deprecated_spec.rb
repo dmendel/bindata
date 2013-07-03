@@ -26,6 +26,6 @@ describe BinData::Base, "when defining" do
 
     expect {
       BaseWithInitializeInstance.new
-    }.not_to raise_error
+    }.to raise_error
   end
 end

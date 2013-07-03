@@ -42,7 +42,7 @@ module BinData
 
     def initialize_instance(*args)
       unless args.empty?
-        warn "#{caller[0]} remove the call to super in #initialize_instance"
+        fail "#{caller[0]} remove the call to super in #initialize_instance"
       end
     end
 
