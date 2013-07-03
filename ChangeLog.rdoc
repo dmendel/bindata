@@ -5,6 +5,7 @@
 * Rework build system and include .gemspec.  Requested by Simon Shortman.
 * Fixed bug when Choice#clear didn't clear everything.  Thanks to Simon
   Shortman for the bug report.
+* Moved BinData::VERSION into its own file.  Thanks to John Van Enk.
 
 == Version 1.5.0 (2013-05-21)
 
