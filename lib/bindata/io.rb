@@ -5,6 +5,9 @@ module BinData
   # interface for BinData objects to use when accessing the IO.
   class IO
 
+    # The underlying IO is unseekable
+    class Unseekable < StandardError; end
+
     # Creates a StringIO around +str+.
     def self.create_string_io(str = "")
       if str.respond_to?(:force_encoding)
@@ -41,7 +44,7 @@ module BinData
       @raw_io = io
 
       # initial stream position if stream supports positioning
-      @initial_pos = positioning_supported? ? io.pos : 0
+      @initial_pos = current_position rescue 0
 
       # bits when reading
       @rnbits  = 0
@@ -60,25 +63,21 @@ module BinData
     # Returns the current offset of the io stream.  The exact value of
     # the offset when reading bitfields is not defined.
     def offset
-      if positioning_supported?
-        @raw_io.pos - @initial_pos
-      else
-        0
-      end
+      current_position - @initial_pos
+    rescue Unseekable
+      0
     end
 
     # The number of bytes remaining in the input stream.
     def num_bytes_remaining
-      if positioning_supported?
-        pos = @raw_io.pos
-        @raw_io.seek(0, ::IO::SEEK_END)
-        bytes_remaining = @raw_io.pos - pos
-        @raw_io.seek(pos, ::IO::SEEK_SET)
+      pos = current_position
+      @raw_io.seek(0, ::IO::SEEK_END)
+      bytes_remaining = current_position - pos
+      @raw_io.seek(pos, ::IO::SEEK_SET)
 
-        bytes_remaining
-      else
-        0
-      end
+      bytes_remaining
+    rescue Unseekable
+      0
     end
 
     # Seek +n+ bytes from the current position in the io stream.
@@ -128,7 +127,6 @@ module BinData
     # Discards any read bits so the stream becomes aligned at the
     # next byte boundary.
     def reset_read_bits
-      raise "Internal state error nbits = #{@rnbits}" if @rnbits >= 8
       @rnbits = 0
       @rval   = 0
     end
@@ -170,16 +168,10 @@ module BinData
     #---------------
     private
 
-    def positioning_supported?
-      unless defined? @positioning_supported
-        @positioning_supported = begin
-          @raw_io.pos
-          true
-        rescue NoMethodError, Errno::ESPIPE
-          false
-        end
-      end
-      @positioning_supported
+    def current_position
+      @raw_io.pos
+    rescue NoMethodError, Errno::ESPIPE
+      raise Unseekable
     end
 
     def skipbytes(n)
