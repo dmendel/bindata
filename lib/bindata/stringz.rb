@@ -66,33 +66,30 @@ module BinData
     end
 
     def trim_and_zero_terminate(str)
-      str = binary_string(str)
-      str = truncate_after_first_zero_byte(str)
-      str = trim_to(str, eval_parameter(:max_length))
-      append_zero_byte_if_needed(str)
-    end
-
-    def truncate_after_first_zero_byte(str)
-      str.sub(/([^\0]*\0).*/, '\1')
-    end
-
-    def trim_to(str, max_length = nil)
-      result = str
-      if max_length
-        max_length = 1 if max_length < 1
-        result = result[0, max_length]
-        if result.length == max_length and result[-1, 1] != "\0"
-          result[-1, 1] = "\0"
-        end
-      end
+      result = binary_string(str)
+      truncate_after_first_zero_byte!(result)
+      trim_to!(result, eval_parameter(:max_length))
+      append_zero_byte_if_needed!(result)
       result
     end
 
-    def append_zero_byte_if_needed(str)
+    def truncate_after_first_zero_byte!(str)
+      str.sub!(/([^\0]*\0).*/, '\1')
+    end
+
+    def trim_to!(str, max_length = nil)
+      if max_length
+        max_length = 1 if max_length < 1
+        str.slice!(max_length)
+        if str.length == max_length and str[-1, 1] != "\0"
+          str[-1, 1] = "\0"
+        end
+      end
+    end
+
+    def append_zero_byte_if_needed!(str)
       if str.length == 0 or str[-1, 1] != "\0"
-        str + "\0"
-      else
-        str
+        str << "\0"
       end
     end
   end

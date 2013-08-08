@@ -8,7 +8,7 @@ module BinData
     class << self
       def define_class(nbits, endian)
         name = "Bit#{nbits}"
-        name += "le" if endian == :little
+        name << "le" if endian == :little
         unless BinData.const_defined?(name)
           BinData.module_eval <<-END
             class #{name} < BinData::BasePrimitive
@@ -51,14 +51,14 @@ module BinData
       def create_clamp_code(nbits)
         min = 0
         max = (1 << nbits) - 1
-        clamp = "val = (val < #{min}) ? #{min} : (val > #{max}) ? #{max} : val"
+        clamp = "(val < #{min}) ? #{min} : (val > #{max}) ? #{max} : val"
 
         if nbits == 1
           # allow single bits to be used as booleans
-          "val = (val == true) ? 1 : (not val) ? 0 : #{clamp}"
-        else
-          clamp
+          clamp = "(val == true) ? 1 : (not val) ? 0 : #{clamp}"
         end
+
+        "val = #{clamp}"
       end
     end
   end

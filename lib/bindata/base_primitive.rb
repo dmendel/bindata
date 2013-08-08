@@ -183,11 +183,7 @@ module BinData
     end
 
     def _value_with_value #:nodoc:
-      if reading?
-        @value
-      else
-        eval_parameter(:value)
-      end
+      reading?      ? @value : eval_parameter(:value)
     end
 
     def _value_with_initial_value #:nodoc:

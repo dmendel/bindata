@@ -72,8 +72,7 @@ module BinData
       def fields
         unless defined? @fields
           fields = parent_attribute(:fields, nil)
-          klass = option?(:sanitize_fields) ? SanitizedFields : UnSanitizedFields
-          @fields = klass.new(endian)
+          @fields = SanitizedFields.new(endian)
           @fields.copy_fields(fields) if fields
         end
 
@@ -113,13 +112,13 @@ module BinData
       def options
         case @parser_type
         when :struct
-          [:multiple_fields, :optional_fieldnames, :sanitize_fields, :hidden_fields]
+          [:multiple_fields, :optional_fieldnames, :hidden_fields]
         when :array
-          [:multiple_fields, :optional_fieldnames, :sanitize_fields]
+          [:multiple_fields, :optional_fieldnames]
         when :choice
-          [:multiple_fields, :all_or_none_fieldnames, :sanitize_fields, :fieldnames_are_values]
+          [:multiple_fields, :all_or_none_fieldnames, :fieldnames_are_values]
         when :primitive
-          [:multiple_fields, :optional_fieldnames, :sanitize_fields]
+          [:multiple_fields, :optional_fieldnames]
         else
           raise "unknown parser type #{parser_type}"
         end
@@ -307,40 +306,6 @@ module BinData
         end
 
         result
-      end
-    end
-
-    # An array containing a field definition of the form
-    # expected by BinData::Struct.
-    class UnSanitizedField < ::Array
-      def initialize(type, name, params)
-        super()
-        self << type << name << params
-      end
-      def type
-        self[0]
-      end
-      def name
-        self[1]
-      end
-      def params
-        self[2]
-      end
-    end
-
-    class UnSanitizedFields < ::Array
-      def initialize(endian)
-        @endian = endian
-      end
-
-      def add_field(type, name, params)
-        normalized_endian = @endian.respond_to?(:endian) ? @endian.endian : @endian
-        normalized_type = RegisteredClasses.normalize_name(type, normalized_endian)
-        self << UnSanitizedField.new(normalized_type, name, params)
-      end
-
-      def copy_fields(other)
-        concat(other)
       end
     end
   end
