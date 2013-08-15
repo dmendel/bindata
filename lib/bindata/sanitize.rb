@@ -10,7 +10,11 @@ module BinData
       endian = endian.endian if endian.respond_to? :endian
       obj_params ||= {}
 
-      @obj_class  = RegisteredClasses.lookup(obj_type, endian)
+      if obj_type.is_a? Class
+        @obj_class = obj_type
+      else
+        @obj_class  = RegisteredClasses.lookup(obj_type, endian)
+      end
       @obj_params = SanitizedParameters.new(obj_params, @obj_class, endian)
     end
 
