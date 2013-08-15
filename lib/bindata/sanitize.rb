@@ -9,8 +9,7 @@ module BinData
     def initialize(obj_type, obj_params, endian)
       endian = endian.endian if endian.respond_to? :endian
       obj_params ||= {}
-
-      if BinData::Base === obj_type
+      if BinData::Base === obj_type or obj_type.is_a?(Class)
         obj_class = obj_type
       else
         obj_class = RegisteredClasses.lookup(obj_type, endian)
