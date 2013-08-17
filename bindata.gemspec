@@ -15,6 +15,7 @@ Gem::Specification.new do |s|
   s.extra_rdoc_files = ['NEWS.rdoc']
   s.rdoc_options << '--main' << 'NEWS.rdoc'
   s.files = `git ls-files`.split("\n")
+  s.license = 'Ruby'
 
   s.add_development_dependency('rake')
   s.add_development_dependency('rspec', [">= 2.10.0"])
