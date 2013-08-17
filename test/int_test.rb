@@ -1,93 +1,92 @@
 #!/usr/bin/env ruby
 
-require File.expand_path(File.join(File.dirname(__FILE__), "spec_common"))
-require 'bindata'
+require File.expand_path(File.join(File.dirname(__FILE__), "common"))
 
-shared_examples "All Integers" do
+module AllIntegers
 
-  it "have correct num_bytes" do
+  def test_have_correct_num_bytes
     all_classes do |int_class|
-      int_class.new.num_bytes.should == @nbytes
+      int_class.new.num_bytes.must_equal @nbytes
     end
   end
 
-  it "have a sensible value of zero" do
+  def test_have_a_sensible_value_of_zero
     all_classes do |int_class|
-      int_class.new.should be_zero
+      int_class.new.must_equal 0
     end
   end
 
-  it "avoid underflow" do
+  def test_avoid_underflow
     all_classes do |int_class|
       subject = int_class.new
       subject.assign(min_value - 1)
 
-      subject.should == min_value
+      subject.must_equal min_value
     end
   end
 
-  it "avoid overflow" do
+  def test_avoid_overflow
     all_classes do |int_class|
       subject = int_class.new
       subject.assign(max_value + 1)
 
-      subject.should == max_value
+      subject.must_equal max_value
     end
   end
 
-  it "assign values" do
+  def test_assign_values
     all_classes do |int_class|
       subject = int_class.new
       test_int = gen_test_int
       subject.assign(test_int)
 
-      subject.should == test_int
+      subject.must_equal test_int
     end
   end
 
-  it "assign values from other int objects" do
+  def test_assign_values_from_other_int_objects
     all_classes do |int_class|
       src = int_class.new
       src.assign(gen_test_int)
 
       subject = int_class.new
       subject.assign(src)
-      subject.should == src
+      subject.must_equal src
     end
   end
 
-  it "symmetrically read and write a +ve number" do
+  def test_symmetrically_read_and_write_a_positive_number
     all_classes do |int_class|
       subject = int_class.new
       subject.assign(gen_test_int)
 
-      subject.value_read_from_written.should == subject
+      subject.value_read_from_written.must_equal subject
     end
   end
 
-  it "symmetrically read and write a -ve number" do
+  def test_symmetrically_read_and_write_a_negative_number
     all_classes do |int_class|
       if @signed
         subject = int_class.new
         subject.assign(-gen_test_int)
 
-        subject.value_read_from_written.should == subject
+        subject.value_read_from_written.must_equal subject
       end
     end
   end
 
-  it "convert a +ve number to string" do
+  def test_convert_a_positive_number_to_string
     all_classes do |int_class|
       val = gen_test_int
 
       subject = int_class.new
       subject.assign(val)
 
-      subject.to_binary_s.should == int_to_binary_str(val)
+      subject.to_binary_s.must_equal int_to_binary_str(val)
     end
   end
 
-  it "convert a -ve number to string" do
+  def test_convert_a_negative_number_to_string
     all_classes do |int_class|
       if @signed
         val = -gen_test_int
@@ -95,7 +94,7 @@ shared_examples "All Integers" do
         subject = int_class.new
         subject.assign(val)
 
-        subject.to_binary_s.should == int_to_binary_str(val)
+        subject.to_binary_s.must_equal int_to_binary_str(val)
       end
     end
   end
@@ -156,9 +155,9 @@ shared_examples "All Integers" do
 end
 
 describe "All signed big endian integers" do
-  include_examples "All Integers"
+  include AllIntegers
 
-  before(:all) do
+  before do
     @endian = :big
     @signed = true
     @ints = create_mapping_of_class_to_nbits(@endian, @signed)
@@ -166,9 +165,9 @@ describe "All signed big endian integers" do
 end
 
 describe "All unsigned big endian integers" do
-  include_examples "All Integers"
+  include AllIntegers
 
-  before(:all) do
+  before do
     @endian = :big
     @signed = false
     @ints = create_mapping_of_class_to_nbits(@endian, @signed)
@@ -176,9 +175,9 @@ describe "All unsigned big endian integers" do
 end
 
 describe "All signed little endian integers" do
-  include_examples "All Integers"
+  include AllIntegers
 
-  before(:all) do
+  before do
     @endian = :little
     @signed = true
     @ints = create_mapping_of_class_to_nbits(@endian, @signed)
@@ -186,9 +185,9 @@ describe "All signed little endian integers" do
 end
 
 describe "All unsigned little endian integers" do
-  include_examples "All Integers"
+  include AllIntegers
 
-  before(:all) do
+  before do
     @endian = :little
     @signed = false
     @ints = create_mapping_of_class_to_nbits(@endian, @signed)
@@ -197,20 +196,12 @@ end
 
 describe "Custom defined integers" do
   it "fail unless bits are a multiple of 8" do
-    expect {
-      BinData::Uint7le
-    }.to raise_error
+    lambda { BinData::Uint7le }.must_raise NameError
 
-    expect {
-      BinData::Uint7be
-    }.to raise_error
+    lambda { BinData::Uint7be }.must_raise NameError
 
-    expect {
-      BinData::Int7le
-    }.to raise_error
+    lambda { BinData::Int7le }.must_raise NameError
 
-    expect {
-      BinData::Int7be
-    }.to raise_error
+    lambda { BinData::Int7be }.must_raise NameError
   end
 end

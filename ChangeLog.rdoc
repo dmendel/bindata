@@ -1,5 +1,10 @@
 = BinData Changelog
 
+== Version next
+
+* Added license to .gemspec
+* Moved test suite from RSpec to Minitest.
+
 == Version 1.5.1 (2013-08-16)
 
 * Rework build system and include .gemspec.  Requested by Simon Shortman.

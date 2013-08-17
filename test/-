@@ -1,13 +1,12 @@
 #!/usr/bin/env ruby
 
-require File.expand_path(File.join(File.dirname(__FILE__), "spec_common"))
-require 'bindata'
+require File.expand_path(File.join(File.dirname(__FILE__), "common"))
 
 describe BinData::Record do
   it "is not registered" do
-    expect {
+    lambda {
       BinData::RegisteredClasses.lookup("Record")
-    }.to raise_error(BinData::UnRegisteredTypeError)
+    }.must_raise BinData::UnRegisteredTypeError
   end
 end
 
@@ -17,9 +16,7 @@ describe BinData::Record, "when defining with errors" do
       class BadTypeRecord < BinData::Record
         non_registered_type :a
       end
-    }.should raise_error_on_line(TypeError, 2) { |err|
-      err.message.should == "unknown type 'non_registered_type' in #{BadTypeRecord}"
-    }
+    }.must_raise_on_line TypeError, 2, "unknown type 'non_registered_type' in BadTypeRecord"
   end
 
   it "gives correct error message for non registered nested types" do
@@ -27,9 +24,7 @@ describe BinData::Record, "when defining with errors" do
       class BadNestedTypeRecord < BinData::Record
         array :a, :type => :non_registered_type
       end
-    }.should raise_error_on_line(TypeError, 2) { |err|
-      err.message.should == "unknown type 'non_registered_type' in #{BadNestedTypeRecord}"
-    }
+    }.must_raise_on_line TypeError, 2, "unknown type 'non_registered_type' in BadNestedTypeRecord"
   end
 
   it "gives correct error message for non registered nested types in blocks" do
@@ -39,9 +34,7 @@ describe BinData::Record, "when defining with errors" do
           non_registered_type
         end
       end
-    }.should raise_error_on_line(TypeError, 3) { |err|
-      err.message.should == "unknown type 'non_registered_type' in #{BinData::Array}"
-    }
+    }.must_raise_on_line TypeError, 3, "unknown type 'non_registered_type' in BinData::Array"
   end
 
   it "fails on nested choice when missing names" do
@@ -52,9 +45,7 @@ describe BinData::Record, "when defining with errors" do
           int8
         end
       end
-    }.should raise_error_on_line(SyntaxError, 4) { |err|
-      err.message.should == "fields must either all have names, or none must have names in BinData::Choice"
-    }
+    }.must_raise_on_line SyntaxError, 4, "fields must either all have names, or none must have names in BinData::Choice"
   end
 
   it "fails on malformed names" do
@@ -63,9 +54,7 @@ describe BinData::Record, "when defining with errors" do
         int8 :a
         int8 "45"
       end
-    }.should raise_error_on_line(NameError, 3) { |err|
-      err.message.should == "field '45' is an illegal fieldname in #{MalformedNameRecord}"
-    }
+    }.must_raise_on_line NameError, 3, "field '45' is an illegal fieldname in MalformedNameRecord"
   end
 
   it "fails on duplicate names" do
@@ -75,9 +64,7 @@ describe BinData::Record, "when defining with errors" do
         int8 :b
         int8 :a
       end
-    }.should raise_error_on_line(SyntaxError, 4) { |err|
-      err.message.should == "duplicate field 'a' in #{DuplicateNameRecord}"
-    }
+    }.must_raise_on_line SyntaxError, 4, "duplicate field 'a' in DuplicateNameRecord"
   end
 
   it "fails on reserved names" do
@@ -86,9 +73,7 @@ describe BinData::Record, "when defining with errors" do
         int8 :a
         int8 :invert # from Hash.instance_methods
       end
-    }.should raise_error_on_line(NameError, 3) { |err|
-      err.message.should == "field 'invert' is a reserved name in #{ReservedNameRecord}"
-    }
+    }.must_raise_on_line NameError, 3, "field 'invert' is a reserved name in ReservedNameRecord"
   end
 
   it "fails when field name shadows an existing method" do
@@ -96,9 +81,7 @@ describe BinData::Record, "when defining with errors" do
       class ExistingNameRecord < BinData::Record
         int8 :object_id
       end
-    }.should raise_error_on_line(NameError, 2) { |err|
-      err.message.should == "field 'object_id' shadows an existing method in #{ExistingNameRecord}"
-    }
+    }.must_raise_on_line NameError, 2, "field 'object_id' shadows an existing method in ExistingNameRecord"
   end
 
   it "fails on unknown endian" do
@@ -106,8 +89,7 @@ describe BinData::Record, "when defining with errors" do
       class BadEndianRecord < BinData::Record
         endian 'a bad value'
       end
-    }.should raise_error_on_line(ArgumentError, 2) { |err|
-      err.message.should == "unknown value for endian 'a bad value' in #{BadEndianRecord}"
+    }.must_raise_on_line ArgumentError, 2, "unknown value for endian 'a bad value' in BadEndianRecord"
     }
   end
 end
@@ -121,22 +103,22 @@ describe BinData::Record, "with anonymous fields" do
     int8 :value => :a
   end
 
-  subject { AnonymousRecord.new }
+  let(:obj) { AnonymousRecord.new }
 
   it "only shows non anonymous fields" do
-    subject.field_names.should == ["a"]
+    obj.field_names.must_equal ["a"]
   end
 
   it "does not include anonymous fields in snapshot" do
-    subject.a = 5
-    subject.snapshot.should == {"a" => 5}
+    obj.a = 5
+    obj.snapshot.must_equal({"a" => 5})
   end
 
   it "writes anonymous fields" do
     str = "\001\002\003\004\005"
-    subject.read(str)
-    subject.a.clear
-    subject.to_binary_s.should == "\012\002\003\004\012"
+    obj.read(str)
+    obj.a.clear
+    obj.to_binary_s.must_equal "\012\002\003\004\012"
   end
 end
 
@@ -149,23 +131,23 @@ describe BinData::Record, "with hidden fields" do
     int8 :d, :value => :b
   end
 
-  subject { HiddenRecord.new }
+  let(:obj) { HiddenRecord.new }
 
   it "only shows fields that aren't hidden" do
-    subject.field_names.should == ["a", "d"]
+    obj.field_names.must_equal ["a", "d"]
   end
 
   it "accesses hidden fields directly" do
-    subject.b.should == 10
-    subject.c = 15
-    subject.c.should == 15
+    obj.b.must_equal 10
+    obj.c = 15
+    obj.c.must_equal 15
 
-    subject.should respond_to(:b=)
+    obj.should respond_to(:b=)
   end
 
   it "does not include hidden fields in snapshot" do
-    subject.b = 5
-    subject.snapshot.should == {"a" => 0, "d" => 5}
+    obj.b = 5
+    obj.snapshot.must_equal({"a" => 0, "d" => 5})
   end
 end
 
@@ -175,12 +157,12 @@ describe BinData::Record, "with multiple fields" do
     int8 :b
   end
 
-  subject { MultiFieldRecord.new(:a => 1, :b => 2) }
+  let(:obj) { MultiFieldRecord.new(:a => 1, :b => 2) }
 
   it "returns num_bytes" do
-    subject.a.num_bytes.should == 1
-    subject.b.num_bytes.should == 1
-    subject.num_bytes.should     == 2
+    obj.a.num_bytes.must_equal 1
+    obj.b.num_bytes.must_equal 1
+    obj.num_bytes.should     == 2
   end
 
   it "identifies accepted parameters" do
@@ -189,43 +171,43 @@ describe BinData::Record, "with multiple fields" do
   end
 
   it "clears" do
-    subject.a = 6
-    subject.clear
-    subject.should be_clear
+    obj.a = 6
+    obj.clear
+    obj.should be_clear
   end
 
   it "clears individual elements" do
-    subject.a = 6
-    subject.b = 7
-    subject.a.clear
-    subject.a.should be_clear
-    subject.b.should_not be_clear
+    obj.a = 6
+    obj.b = 7
+    obj.a.clear
+    obj.a.should be_clear
+    obj.b.should_not be_clear
   end
 
   it "writes ordered" do
-    subject.to_binary_s.should == "\x01\x02"
+    obj.to_binary_s.must_equal "\x01\x02"
   end
 
   it "reads ordered" do
-    subject.read("\x03\x04")
+    obj.read("\x03\x04")
 
-    subject.a.should == 3
-    subject.b.should == 4
+    obj.a.must_equal 3
+    obj.b.must_equal 4
   end
 
   it "returns a snapshot" do
-    snap = subject.snapshot
-    snap.a.should == 1
-    snap.b.should == 2
-    snap.should == { "a" => 1, "b" => 2 }
+    snap = obj.snapshot
+    snap.a.must_equal 1
+    snap.b.must_equal 2
+    snap.must_equal({ "a" => 1, "b" => 2 })
   end
 
   it "returns field_names" do
-    subject.field_names.should == ["a", "b"]
+    obj.field_names.must_equal ["a", "b"]
   end
   
   it "fails on unknown method call" do
-    expect { subject.does_not_exist }.to raise_error(NoMethodError)
+    lambda { obj.does_not_exist }.must_raise NoMethodError
   end
 end
 
@@ -243,45 +225,45 @@ describe BinData::Record, "with nested structs" do
     end
   end
 
-  subject { NestedStructRecord.new }
+  let(:obj) { NestedStructRecord.new }
 
   it "includes nested field names" do
-    subject.field_names.should == ["a", "b", "c"]
+    obj.field_names.must_equal ["a", "b", "c"]
   end
 
   it "hides nested field names" do
-    subject.b.field_names.should == ["x"]
+    obj.b.field_names.must_equal ["x"]
   end
 
   it "accesses nested fields" do
-    subject.a.should   == 6
-    subject.b.w.should == 3
-    subject.b.x.should == 6
-    subject.c.y.should == 3
+    obj.a.should   == 6
+    obj.b.w.must_equal 3
+    obj.b.x.must_equal 6
+    obj.c.y.must_equal 3
   end
 
   it "returns correct offset" do
-    subject.offset.should == 0
-    subject.b.offset.should == 1
-    subject.b.w.offset.should == 1
-    subject.c.offset.should == 3
-    subject.c.z.offset.should == 4
+    obj.offset.must_equal 0
+    obj.b.offset.must_equal 1
+    obj.b.w.offset.must_equal 1
+    obj.c.offset.must_equal 3
+    obj.c.z.offset.must_equal 4
   end
 
   it "returns correct rel_offset" do
-    subject.rel_offset.should == 0
-    subject.b.rel_offset.should == 1
-    subject.b.w.rel_offset.should == 0
-    subject.c.rel_offset.should == 3
-    subject.c.z.rel_offset.should == 1
+    obj.rel_offset.must_equal 0
+    obj.b.rel_offset.must_equal 1
+    obj.b.w.rel_offset.must_equal 0
+    obj.c.rel_offset.must_equal 3
+    obj.c.z.rel_offset.must_equal 1
   end
 
   it "assigns nested fields" do
-    subject.assign(:a => 2, :b => {:w => 4})
-    subject.a.should   == 2
-    subject.b.w.should == 4
-    subject.b.x.should == 2
-    subject.c.y.should == 4
+    obj.assign(:a => 2, :b => {:w => 4})
+    obj.a.should   == 2
+    obj.b.w.must_equal 4
+    obj.b.x.must_equal 2
+    obj.c.y.must_equal 4
   end
 end
 
@@ -292,10 +274,10 @@ describe BinData::Record, "with nested array of primitives" do
     end
   end
 
-  subject { NestedPrimitiveArrayRecord.new }
+  let(:obj) { NestedPrimitiveArrayRecord.new }
 
   it "uses block as :type" do
-    subject.snapshot.should == {"a" => [0, 1, 2]}
+    obj.snapshot.must_equal({"a" => [0, 1, 2]})
   end
 end
 
@@ -307,11 +289,11 @@ describe BinData::Record, "with nested array of structs" do
     end
   end
 
-  subject { NestedStructArrayRecord.new }
+  let(:obj) { NestedStructArrayRecord.new }
 
   it "uses block as struct for :type" do
-    subject.a[0].b = 2
-    subject.snapshot.should == {"a" => [{"b" => 2, "c" => 0}]}
+    obj.a[0].b = 2
+    obj.snapshot.must_equal({"a" => [{"b" => 2, "c" => 0}]})
   end
 end
 
@@ -323,9 +305,9 @@ describe BinData::Record, "with nested choice with implied keys" do
     end
   end
 
-  subject { NestedChoiceWithImpliedKeysRecord.new }
+  let(:obj) { NestedChoiceWithImpliedKeysRecord.new }
 
-  its(:a) { should == 2 }
+  specify { obj.a.must_equal 2 }
 end
 
 describe BinData::Record, "with nested choice with explicit keys" do
@@ -336,9 +318,9 @@ describe BinData::Record, "with nested choice with explicit keys" do
     end
   end
 
-  subject { NestedChoiceWithKeysRecord.new }
+  let(:obj) { NestedChoiceWithKeysRecord.new }
 
-  its(:a) { should == 2 }
+  specify { obj.a.must_equal 2 }
 end
 
 describe BinData::Record, "with nested choice with names" do
@@ -349,9 +331,9 @@ describe BinData::Record, "with nested choice with names" do
     end
   end
 
-  subject { NestedChoiceWithNamesRecord.new }
+  let(:obj) { NestedChoiceWithNamesRecord.new }
 
-  its(:a) { should == 1 }
+  specify { obj.a.must_equal 2 }
 end
 
 describe BinData::Record, "with an endian defined" do
@@ -379,21 +361,21 @@ describe BinData::Record, "with an endian defined" do
     end
   end
 
-  subject { RecordWithEndian.new }
+  let(:obj) { RecordWithEndian.new }
 
   it "uses correct endian" do
-    subject.a = 1
-    subject.b = 2.0
-    subject.c[0] = 3
-    subject.c[1] = 4
-    subject.d = 5
-    subject.e.f = 6
-    subject.e.g = 7
-    subject.h.i.j = 8
+    obj.a = 1
+    obj.b = 2.0
+    obj.c[0] = 3
+    obj.c[1] = 4
+    obj.d = 5
+    obj.e.f = 6
+    obj.e.g = 7
+    obj.h.i.j = 8
 
-    expected = [1, 2.0, 3, 4, 5, 6, 7, 8].pack('veCCVvNn')
+    lambdaed = [1, 2.0, 3, 4, 5, 6, 7, 8].pack('veCCVvNn')
 
-    subject.to_binary_s.should == expected
+    obj.to_binary_s.must_equal lambdaed
   end
 end
 
@@ -406,30 +388,30 @@ describe BinData::Record, "defined recursively" do
   end
 
   it "can be created" do
-    subject = RecursiveRecord.new
+    obj = RecursiveRecord.new
   end
 
   it "reads" do
     str = "\x00\x01\x01\x00\x02\x01\x00\x03\x00"
-    subject = RecursiveRecord.read(str)
-    subject.val.should == 1
-    subject.nxt.val.should == 2
-    subject.nxt.nxt.val.should == 3
+    obj = RecursiveRecord.read(str)
+    obj.val.must_equal 1
+    obj.nxt.val.must_equal 2
+    obj.nxt.nxt.val.must_equal 3
   end
 
   it "is assignable on demand" do
-    subject = RecursiveRecord.new
-    subject.val = 13
-    subject.nxt.val = 14
-    subject.nxt.nxt.val = 15
+    obj = RecursiveRecord.new
+    obj.val = 13
+    obj.nxt.val = 14
+    obj.nxt.nxt.val = 15
   end
 
   it "writes" do
-    subject = RecursiveRecord.new
-    subject.val = 5
-    subject.nxt.val = 6
-    subject.nxt.nxt.val = 7
-    subject.to_binary_s.should == "\x00\x05\x01\x00\x06\x01\x00\x07\x00"
+    obj = RecursiveRecord.new
+    obj.val = 5
+    obj.nxt.val = 6
+    obj.nxt.nxt.val = 7
+    obj.to_binary_s.must_equal "\x00\x05\x01\x00\x06\x01\x00\x07\x00"
   end
 end
 
@@ -441,12 +423,12 @@ describe BinData::Record, "with custom mandatory parameters" do
   end
 
   it "raises error if mandatory parameter is not supplied" do
-    expect { MandatoryRecord.new }.to raise_error(ArgumentError)
+    lambda { MandatoryRecord.new }.must_raise ArgumentError
   end
 
   it "uses mandatory parameter" do
-    subject = MandatoryRecord.new(:arg1 => 5)
-    subject.a.should == 5
+    obj = MandatoryRecord.new(:arg1 => 5)
+    obj.a.must_equal 5
   end
 end
 
@@ -459,28 +441,28 @@ describe BinData::Record, "with custom default parameters" do
   end
 
   it "does not raise error if default parameter is not supplied" do
-    expect { DefaultRecord.new }.not_to raise_error(ArgumentError)
+    lambda { DefaultRecord.new }.not_must_raise ArgumentError
   end
 
   it "uses default parameter" do
-    subject = DefaultRecord.new
-    subject.a.should == 5
+    obj = DefaultRecord.new
+    obj.a.must_equal 5
   end
 
   it "overrides default parameter" do
-    subject = DefaultRecord.new(:arg1 => 7)
-    subject.a.should == 7
+    obj = DefaultRecord.new(:arg1 => 7)
+    obj.a.must_equal 7
   end
 
   it "accepts values" do
-    subject = DefaultRecord.new(:b => 2)
-    subject.b.should == 2
+    obj = DefaultRecord.new(:b => 2)
+    obj.b.must_equal 2
   end
 
   it "accepts values and parameters" do
-    subject = DefaultRecord.new({:b => 2}, :arg1 => 3)
-    subject.a.should == 3
-    subject.b.should == 2
+    obj = DefaultRecord.new({:b => 2}, :arg1 => 3)
+    obj.a.must_equal 3
+    obj.b.must_equal 2
   end
 end
 
@@ -491,15 +473,17 @@ describe BinData::Record, "with :onlyif" do
     uint8 :c, :initial_value => 7, :onlyif => lambda { a != 3 }
   end
 
-  subject { OnlyIfRecord.new }
+  let(:obj) { OnlyIfRecord.new }
 
-  its(:num_bytes) { should == 2 }
-  its(:snapshot) { should == {"a" => 3, "b" => 5} }
-  its(:to_binary_s) { should == "\x03\x05" }
+  it "initial state" do
+    obj.num_bytes.must_equal 2
+    obj.snapshot.must_equal({"a" => 3, "b" => 5})
+    obj.to_binary_s.must_equal "\x03\x05"
+  end
 
-  it "reads as expected" do
-    subject.read("\x01\x02")
-    subject.snapshot.should == {"a" => 1, "c" => 2}
+  it "reads as lambdaed" do
+    obj.read("\x01\x02")
+    obj.snapshot.must_equal({"a" => 1, "c" => 2})
   end
 end
 
@@ -517,14 +501,14 @@ describe BinData::Record, "derived classes" do
   end
 
   it "does not affect parent" do
-    ParentRecord.new.field_names.should == ["a"]
+    ParentRecord.new.field_names.must_equal ["a"]
   end
 
   it "inherits fields for first child" do
-    Child1Record.new.field_names.should == ["a", "b"]
+    Child1Record.new.field_names.must_equal ["a", "b"]
   end
 
   it "inherits fields for second child" do
-    Child2Record.new.field_names.should == ["a", "b", "c"]
+    Child2Record.new.field_names.must_equal ["a", "b", "c"]
   end
 end

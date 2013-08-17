@@ -1,48 +1,47 @@
 #!/usr/bin/env ruby
 
-require File.expand_path(File.join(File.dirname(__FILE__), "spec_common"))
-require 'bindata'
+require File.expand_path(File.join(File.dirname(__FILE__), "common"))
 
 describe BinData::Struct, "when initializing" do
   it "fails on non registered types" do
     params = {:fields => [[:non_registered_type, :a]]}
-    expect {
+    lambda {
       BinData::Struct.new(params)
-    }.to raise_error(BinData::UnRegisteredTypeError)
+    }.must_raise BinData::UnRegisteredTypeError
   end
 
   it "fails on duplicate names" do
     params = {:fields => [[:int8, :a], [:int8, :b], [:int8, :a]]}
-    expect {
+    lambda {
       BinData::Struct.new(params)
-    }.to raise_error(NameError)
+    }.must_raise NameError
   end
 
   it "fails on reserved names" do
     # note that #invert is from Hash.instance_methods
     params = {:fields => [[:int8, :a], [:int8, :invert]]}
-    expect {
+    lambda {
       BinData::Struct.new(params)
-    }.to raise_error(NameError)
+    }.must_raise NameError
   end
 
   it "fails when field name shadows an existing method" do
     params = {:fields => [[:int8, :object_id]]}
-    expect {
+    lambda {
       BinData::Struct.new(params)
-    }.to raise_error(NameError)
+    }.must_raise NameError
   end
 
   it "fails on unknown endian" do
     params = {:endian => 'bad value', :fields => []}
-    expect {
+    lambda {
       BinData::Struct.new(params)
-    }.to raise_error(ArgumentError)
+    }.must_raise ArgumentError
   end
 end
 
 describe BinData::Struct, "with anonymous fields" do
-  subject {
+  let(:obj) {
     params = { :fields => [
                             [:int8, :a, {:initial_value => 5}],
                             [:int8, nil],
@@ -52,23 +51,23 @@ describe BinData::Struct, "with anonymous fields" do
   }
 
   it "only shows non anonymous fields" do
-    subject.field_names.should == ["a"]
+    obj.field_names.must_equal ["a"]
   end
 
   it "does not include anonymous fields in snapshot" do
-    subject.a = 5
-    subject.snapshot.should == {"a" => 5}
+    obj.a = 5
+    obj.snapshot.must_equal({"a" => 5})
   end
 
   it "writes anonymous fields" do
-    subject.read("\001\002\003")
-    subject.a.clear
-    subject.to_binary_s.should == "\005\002\005"
+    obj.read("\001\002\003")
+    obj.a.clear
+    obj.to_binary_s.must_equal "\005\002\005"
   end
 end
 
 describe BinData::Struct, "with hidden fields" do
-  subject {
+  let(:obj) {
     params = { :hide => [:b, :c],
                :fields => [
                    [:int8, :a],
@@ -79,102 +78,102 @@ describe BinData::Struct, "with hidden fields" do
   }
 
   it "only shows fields that aren't hidden" do
-    subject.field_names.should == ["a", "d"]
+    obj.field_names.must_equal ["a", "d"]
   end
 
   it "accesses hidden fields directly" do
-    subject.b.should == 5
-    subject.c = 15
-    subject.c.should == 15
+    obj.b.must_equal 5
+    obj.c = 15
+    obj.c.must_equal 15
 
-    subject.should respond_to(:b=)
+    obj.must_respond_to :b=
   end
 
   it "does not include hidden fields in snapshot" do
-    subject.b = 7
-    subject.snapshot.should == {"a" => 0, "d" => 7}
+    obj.b = 7
+    obj.snapshot.must_equal({"a" => 0, "d" => 7})
   end
 
   it "detects hidden fields with has_key?" do
-    subject.should have_key("b")
+    assert obj.has_key?("b")
   end
 end
 
 describe BinData::Struct, "with multiple fields" do
   let(:params) { { :fields => [ [:int8, :a], [:int8, :b] ] } }
-  subject { BinData::Struct.new({:a => 1, :b => 2}, params) }
+  let(:obj) { BinData::Struct.new({:a => 1, :b => 2}, params) }
 
-  its(:field_names) { should == ["a", "b"] }
-  its(:to_binary_s) { should == "\x01\x02" }
+  specify { obj.field_names.must_equal ["a", "b"] }
+  specify { obj.to_binary_s.must_equal "\x01\x02" }
 
   it "returns num_bytes" do
-    subject.a.num_bytes.should == 1
-    subject.b.num_bytes.should == 1
-    subject.num_bytes.should   == 2
+    obj.a.num_bytes.must_equal 1
+    obj.b.num_bytes.must_equal 1
+    obj.num_bytes.must_equal   2
   end
 
   it "identifies accepted parameters" do
-    BinData::Struct.accepted_parameters.all.should include(:fields)
-    BinData::Struct.accepted_parameters.all.should include(:hide)
-    BinData::Struct.accepted_parameters.all.should include(:endian)
+    BinData::Struct.accepted_parameters.all.must_include :fields
+    BinData::Struct.accepted_parameters.all.must_include :hide
+    BinData::Struct.accepted_parameters.all.must_include :endian
   end
 
   it "clears" do
-    subject.a = 6
-    subject.clear
-    subject.should be_clear
+    obj.a = 6
+    obj.clear
+    assert obj.clear?
   end
 
   it "clears individual elements" do
-    subject.a = 6
-    subject.b = 7
-    subject.a.clear
-    subject.a.should be_clear
-    subject.b.should_not be_clear
+    obj.a = 6
+    obj.b = 7
+    obj.a.clear
+    assert obj.a.clear?
+    refute obj.b.clear?
   end
 
   it "reads elements dynamically" do
-    subject[:a].should == 1
+    obj[:a].must_equal 1
   end
 
   it "writes elements dynamically" do
-    subject[:a] = 2
-    subject.a.should == 2
+    obj[:a] = 2
+    obj.a.must_equal 2
   end
 
   it "implements has_key?" do
-    subject.should have_key("a")
+    assert obj.has_key?("a")
   end
 
   it "reads ordered" do
-    subject.read("\x03\x04")
+    obj.read("\x03\x04")
 
-    subject.a.should == 3
-    subject.b.should == 4
+    obj.a.must_equal 3
+    obj.b.must_equal 4
   end
 
   it "returns a snapshot" do
-    snap = subject.snapshot
-    snap.a.should == 1
-    snap.b.should == 2
-    snap.should == { "a" => 1, "b" => 2 }
+    snap = obj.snapshot
+    snap.a.must_equal 1
+    snap.b.must_equal 2
+    snap.must_equal({ "a" => 1, "b" => 2 })
   end
 
   it "assigns from partial hash" do
-    subject.assign("a" => 3)
-    subject.a.should == 3
-    subject.b.should == 0
+    obj.assign("a" => 3)
+    obj.a.must_equal 3
+    obj.b.must_equal 0
   end
 
   it "assigns from hash" do
-    subject.assign("a" => 3, "b" => 4)
-    subject.a.should == 3
-    subject.b.should == 4
+    obj.assign("a" => 3, "b" => 4)
+    obj.a.must_equal 3
+    obj.b.must_equal 4
   end
 
   it "assigns from nil" do
-    subject.assign(nil)
-    subject.should be_clear
+    obj.assign(nil)
+    assert obj.clear?
   end
 
   it "assigns from Struct" do
@@ -182,9 +181,9 @@ describe BinData::Struct, "with multiple fields" do
     src.a = 3
     src.b = 4
 
-    subject.assign(src)
-    subject.a.should == 3
-    subject.b.should == 4
+    obj.assign(src)
+    obj.a.must_equal 3
+    obj.b.must_equal 4
   end
 
   it "assigns from snapshot" do
@@ -192,36 +191,36 @@ describe BinData::Struct, "with multiple fields" do
     src.a = 3
     src.b = 4
 
-    subject.assign(src.snapshot)
-    subject.a.should == 3
-    subject.b.should == 4
+    obj.assign(src.snapshot)
+    obj.a.must_equal 3
+    obj.b.must_equal 4
   end
 
   it "fails on unknown method call" do
-    expect { subject.does_not_exist }.to raise_error(NoMethodError)
+    lambda { obj.does_not_exist }.must_raise NoMethodError
   end
 
-  context "#snapshot" do
+  describe "#snapshot" do
     it "has ordered #keys" do
-      subject.snapshot.keys.should == ["a", "b"]
+      obj.snapshot.keys.must_equal ["a", "b"]
     end
 
     it "has ordered #each" do
       keys = []
-      subject.snapshot.each { |el| keys << el[0] }
-      keys.should == ["a", "b"]
+      obj.snapshot.each { |el| keys << el[0] }
+      keys.must_equal ["a", "b"]
     end
 
     it "has ordered #each_pair" do
       keys = []
-      subject.snapshot.each_pair { |k, v| keys << k }
-      keys.should == ["a", "b"]
+      obj.snapshot.each_pair { |k, v| keys << k }
+      keys.must_equal ["a", "b"]
     end
   end
 end
 
 describe BinData::Struct, "with nested structs" do
-  subject {
+  let(:obj) {
     inner1 = [ [:int8, :w, {:initial_value => 3}],
                [:int8, :x, {:value => :the_val}] ]
 
@@ -235,32 +234,32 @@ describe BinData::Struct, "with nested structs" do
     BinData::Struct.new(params)
   }
 
-  its(:field_names) { should == ["a", "b", "c"] }
+  specify { obj.field_names.must_equal ["a", "b", "c"] }
 
   it "returns num_bytes" do
-    subject.b.num_bytes.should == 2
-    subject.c.num_bytes.should == 2
-    subject.num_bytes.should == 5
+    obj.b.num_bytes.must_equal 2
+    obj.c.num_bytes.must_equal 2
+    obj.num_bytes.must_equal 5
   end
 
   it "accesses nested fields" do
-    subject.a.should   == 6
-    subject.b.w.should == 3
-    subject.b.x.should == 6
-    subject.c.y.should == 3
-    subject.c.z.should == 0
+    obj.a.must_equal   6
+    obj.b.w.must_equal 3
+    obj.b.x.must_equal 6
+    obj.c.y.must_equal 3
+    obj.c.z.must_equal 0
   end
 
   it "returns correct offset" do
-    subject.b.offset.should == 1
-    subject.b.w.offset.should == 1
-    subject.c.offset.should == 3
-    subject.c.z.offset.should == 4
+    obj.b.offset.must_equal 1
+    obj.b.w.offset.must_equal 1
+    obj.c.offset.must_equal 3
+    obj.c.z.offset.must_equal 4
   end
 end
 
 describe BinData::Struct, "with an endian defined" do
-  subject {
+  let(:obj) {
     BinData::Struct.new(:endian => :little,
                         :fields => [
                                      [:uint16, :a],
@@ -280,44 +279,44 @@ describe BinData::Struct, "with an endian defined" do
   }
 
   it "uses correct endian" do
-    subject.a = 1
-    subject.b = 2.0
-    subject.c[0] = 3
-    subject.c[1] = 4
-    subject.d = 5
-    subject.e.f = 6
-    subject.e.g = 7
-    subject.h.i.j = 8
+    obj.a = 1
+    obj.b = 2.0
+    obj.c[0] = 3
+    obj.c[1] = 4
+    obj.d = 5
+    obj.e.f = 6
+    obj.e.g = 7
+    obj.h.i.j = 8
 
     expected = [1, 2.0, 3, 4, 5, 6, 7, 8].pack('veCCVvNv')
 
-    subject.to_binary_s.should == expected
+    obj.to_binary_s.must_equal expected
   end
 end
 
 describe BinData::Struct, "with bit fields" do
-  subject {
+  let(:obj) {
     params = { :fields => [ [:bit1le, :a], [:bit2le, :b], [:uint8, :c], [:bit1le, :d] ] }
     BinData::Struct.new({:a => 1, :b => 2, :c => 3, :d => 1}, params)
   }
 
-  its(:num_bytes) { should == 3 }
-  its(:to_binary_s) { should == [0b0000_0101, 3, 1].pack("C*") }
+  specify { obj.num_bytes.must_equal 3 }
+  specify { obj.to_binary_s.must_equal [0b0000_0101, 3, 1].pack("C*") }
 
   it "reads" do
     str = [0b0000_0110, 5, 0].pack("C*")
-    subject.read(str)
-    subject.a.should == 0
-    subject.b.should == 3
-    subject.c.should == 5
-    subject.d.should == 0
+    obj.read(str)
+    obj.a.must_equal 0
+    obj.b.must_equal 3
+    obj.c.must_equal 5
+    obj.d.must_equal 0
   end
 
   it "has correct offsets" do
-    subject.a.offset.should == 0
-    subject.b.offset.should == 0
-    subject.c.offset.should == 1
-    subject.d.offset.should == 2
+    obj.a.offset.must_equal 0
+    obj.b.offset.must_equal 0
+    obj.c.offset.must_equal 1
+    obj.d.offset.must_equal 2
   end
 end
 
@@ -329,13 +328,13 @@ describe BinData::Struct, "with nested endian" do
                :fields => [[:int16, :a],
                            [:struct, :s, nested_params],
                            [:int16, :d]] }
-    subject = BinData::Struct.new(params)
-    subject.read("\x00\x01\x02\x00\x03\x00\x00\x04")
+    obj = BinData::Struct.new(params)
+    obj.read("\x00\x01\x02\x00\x03\x00\x00\x04")
 
-    subject.a.should   == 1
-    subject.s.b.should == 2
-    subject.s.c.should == 3
-    subject.d.should   == 4
+    obj.a.must_equal   1
+    obj.s.b.must_equal 2
+    obj.s.c.must_equal 3
+    obj.d.must_equal   4
   end
 end
 
@@ -345,6 +344,6 @@ describe BinData::Struct, "with dynamically named types" do
 
     obj = BinData::Struct.new(:fields => [[:my_struct, :v]])
 
-    obj.v.a.should == 3
+    obj.v.a.must_equal 3
   end
 end

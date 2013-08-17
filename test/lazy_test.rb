@@ -1,7 +1,6 @@
 #!/usr/bin/env ruby
 
-require File.expand_path(File.join(File.dirname(__FILE__), "spec_common"))
-require 'bindata/lazy'
+require File.expand_path(File.join(File.dirname(__FILE__), "common"))
 
 # A mock data object with customizable fields.
 class MockBinDataObject
@@ -42,33 +41,33 @@ describe BinData::LazyEvaluator, "with no parents" do
   }
 
   it "evaluates raw value when instantiated" do
-    lazy_eval(5).should == 5
+    lazy_eval(5).must_equal 5
   end
 
   it "evaluates raw value" do
-    lazy_eval(5).should == 5
+    lazy_eval(5).must_equal 5
   end
 
   it "evaluates value" do
-    lazy_eval(lambda { 5 }).should == 5
+    lazy_eval(lambda { 5 }).must_equal 5
   end
 
   it "evaluates overrides" do
-    lazy_eval(lambda { o1 }, :o1 => 'o1').should == 'o1'
+    lazy_eval(lambda { o1 }, :o1 => 'o1').must_equal 'o1'
   end
 
   it "does not resolve any unknown methods" do
-    expect { lazy_eval(lambda { unknown }) }.to raise_error(NameError)
-    expect { lazy_eval(lambda { m1 }) }.to raise_error(NameError)
-    expect { lazy_eval(lambda { p1 }) }.to raise_error(NameError)
+    lambda { lazy_eval(lambda { unknown }) }.must_raise NameError
+    lambda { lazy_eval(lambda { m1 }) }.must_raise NameError
+    lambda { lazy_eval(lambda { p1 }) }.must_raise NameError
   end
 
   it "does not have a parent" do
-    lazy_eval(lambda { parent }).should be_nil
+    lazy_eval(lambda { parent }).must_be_nil
   end
 
   it "does not resolve #index" do
-    expect { lazy_eval(lambda { index }) }.to raise_error(NoMethodError)
+    lambda { lazy_eval(lambda { index }) }.must_raise NoMethodError
   end
 end
 
@@ -88,47 +87,47 @@ describe BinData::LazyEvaluator, "with one parent" do
   }
 
   it "evaluates raw value" do
-    lazy_eval(5).should == 5
+    lazy_eval(5).must_equal 5
   end
 
   it "evaluates value" do
-    lazy_eval(lambda { 5 }).should == 5
+    lazy_eval(lambda { 5 }).must_equal 5
   end
 
   it "evaluates overrides before params" do
-    lazy_eval(lambda { p1 }, :p1 => 'o1').should == 'o1'
+    lazy_eval(lambda { p1 }, :p1 => 'o1').must_equal 'o1'
   end
 
   it "evaluates overrides before methods" do
-    lazy_eval(lambda { m1 }, :m1 => 'o1').should == 'o1'
+    lazy_eval(lambda { m1 }, :m1 => 'o1').must_equal 'o1'
   end
 
   it "does not resolve any unknown methods" do
-    expect { lazy_eval(lambda { unknown }) }.to raise_error(NameError)
+    lambda { lazy_eval(lambda { unknown }) }.must_raise NoMethodError
   end
 
   it "resolves parameters in the parent" do
-    lazy_eval(lambda { p1 }).should == 'Pp1'
+    lazy_eval(lambda { p1 }).must_equal 'Pp1'
   end
 
   it "resolves methods in the parent" do
-    lazy_eval(lambda { m1 }).should == 'Pm1'
+    lazy_eval(lambda { m1 }).must_equal 'Pm1'
   end
 
   it "invokes methods in the parent" do
-    lazy_eval(lambda { echo(p1, m1) }).should == ['Pp1', 'Pm1']
+    lazy_eval(lambda { echo(p1, m1) }).must_equal ['Pp1', 'Pm1']
   end
 
   it "resolves parameters in preference to methods in the parent" do
-    lazy_eval(lambda { com }).should == 'PpC'
+    lazy_eval(lambda { com }).must_equal 'PpC'
   end
 
   it "has a parent" do
-    lazy_eval(lambda { parent }).should_not be_nil
+    lazy_eval(lambda { parent }).wont_be_nil
   end
 
   it "does not resolve #index" do
-    expect { lazy_eval(lambda { index }) }.to raise_error(NoMethodError)
+    lambda { lazy_eval(lambda { index }) }.must_raise NoMethodError
   end
 end
 
@@ -160,58 +159,58 @@ describe BinData::LazyEvaluator, "with nested parents" do
   }
 
   it "accepts symbols as a shortcut to lambdas" do
-    lazy_eval(:p1).should == 'Pp1'
-    lazy_eval(:p2).should == 'PPp2'
-    lazy_eval(:m1).should == 'Pm1'
-    lazy_eval(:m2).should == 'PPm2'
+    lazy_eval(:p1).must_equal 'Pp1'
+    lazy_eval(:p2).must_equal 'PPp2'
+    lazy_eval(:m1).must_equal 'Pm1'
+    lazy_eval(:m2).must_equal 'PPm2'
   end
 
   it "does not resolve any unknown methods" do
-    expect { lazy_eval(lambda { unknown }) }.to raise_error(NameError)
+    lambda { lazy_eval(lambda { unknown }) }.must_raise NoMethodError
   end
 
   it "resolves parameters in the parent" do
-    lazy_eval(lambda { p1 }).should == 'Pp1'
+    lazy_eval(lambda { p1 }).must_equal 'Pp1'
   end
 
   it "resolves methods in the parent" do
-    lazy_eval(lambda { m1 }).should == 'Pm1'
+    lazy_eval(lambda { m1 }).must_equal 'Pm1'
   end
 
   it "resolves parameters in the parent's parent" do
-    lazy_eval(lambda { p2 }).should == 'PPp2'
+    lazy_eval(lambda { p2 }).must_equal 'PPp2'
   end
 
   it "resolves methods in the parent's parent" do
-    lazy_eval(lambda { m2 }).should == 'PPm2'
+    lazy_eval(lambda { m2 }).must_equal 'PPm2'
   end
 
   it "invokes methods in the parent" do
-    lazy_eval(lambda { echo(m1) }).should == ['P', 'Pm1']
+    lazy_eval(lambda { echo(m1) }).must_equal ['P', 'Pm1']
   end
 
   it "invokes methods in the parent's parent" do
-    lazy_eval(lambda { parent.echo(m1) }, { :m1 => 'o1'}).should == ['PP', 'o1']
+    lazy_eval(lambda { parent.echo(m1) }, { :m1 => 'o1'}).must_equal ['PP', 'o1']
   end
 
   it "invokes methods in the parent's parent" do
-    lazy_eval(lambda { echo2(m1) }).should == ['PP2', 'Pm1']
+    lazy_eval(lambda { echo2(m1) }).must_equal ['PP2', 'Pm1']
   end
 
   it "resolves parameters in preference to methods in the parent" do
-    lazy_eval(lambda { com }).should == 'PpC'
+    lazy_eval(lambda { com }).must_equal 'PpC'
   end
 
   it "resolves methods in the parent explicitly" do
-    lazy_eval(lambda { parent.m1 }).should == 'PPm1'
+    lazy_eval(lambda { parent.m1 }).must_equal 'PPm1'
   end
 
   it "cascades lambdas " do
-    lazy_eval(lambda { sym1 }).should == 'PPm2'
-    lazy_eval(lambda { sym2 }).should == 'PPm2'
+    lazy_eval(lambda { sym1 }).must_equal 'PPm2'
+    lazy_eval(lambda { sym2 }).must_equal 'PPm2'
   end
 
   it "does not resolve #index" do
-    expect { lazy_eval(lambda { index }) }.to raise_error(NoMethodError)
+    lambda { lazy_eval(lambda { index }) }.must_raise NoMethodError
   end
 end

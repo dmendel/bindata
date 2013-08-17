@@ -1,23 +1,21 @@
 #!/usr/bin/env ruby
 
-require File.expand_path(File.join(File.dirname(__FILE__), "spec_common"))
-require 'bindata/io'
-require 'bindata/string'
+require File.expand_path(File.join(File.dirname(__FILE__), "common"))
 
 describe BinData::String, "with mutually exclusive parameters" do
   it ":value and :initial_value" do
     params = {:value => "", :initial_value => ""}
-    expect { BinData::String.new(params) }.to raise_error(ArgumentError)
+    lambda { BinData::String.new(params) }.must_raise ArgumentError
   end
 
   it ":length and :read_length" do
     params = {:length => 5, :read_length => 5}
-    expect { BinData::String.new(params) }.to raise_error(ArgumentError)
+    lambda { BinData::String.new(params) }.must_raise ArgumentError
   end
 
   it ":value and :length" do
     params = {:value => "", :length => 5}
-    expect { BinData::String.new(params) }.to raise_error(ArgumentError)
+    lambda { BinData::String.new(params) }.must_raise ArgumentError
   end
 end
 
@@ -27,140 +25,141 @@ describe BinData::String, "when assigning" do
 
   it "copies data from small to large" do
     large.assign(small)
-    large.should == "AAABB"
+    large.must_equal "AAABB"
   end
 
   it "copies data from large to small" do
     small.assign(large)
-    small.should == "BBB"
+    small.must_equal "BBB"
   end
 end
 
 describe BinData::String do
-  subject { BinData::String.new("testing") }
+  let(:obj) { BinData::String.new("testing") }
 
   it "compares with regexp" do
-    (/es/ =~ subject).should == 1
+    (/es/ =~ obj).must_equal 1
   end
 
   it "compares with regexp" do
-    (subject =~ /es/).should == 1
+    (obj =~ /es/).must_equal 1
   end
 end
 
 describe BinData::String, "with :read_length" do
-  subject { BinData::String.new(:read_length => 5) }
+  let(:obj) { BinData::String.new(:read_length => 5) }
 
-  its(:num_bytes) { should == 0 }
-  its(:value) { should == "" }
+  specify { obj.num_bytes.must_equal 0 }
+  specify { obj.value.must_equal "" }
 
   it "reads :read_length bytes" do
-    subject.read("abcdefghij")
-    subject.should == "abcde"
+    obj.read("abcdefghij")
+    obj.must_equal "abcde"
   end
 
   it "remembers :read_length after value is cleared" do
-    subject.assign("abc")
-    subject.num_bytes.should == 3
-    subject.clear
+    obj.assign("abc")
+    obj.num_bytes.must_equal 3
+    obj.clear
 
-    subject.read("abcdefghij")
-    subject.should == "abcde"
+    obj.read("abcdefghij")
+    obj.must_equal "abcde"
   end
 end
 
 describe BinData::String, "with :length" do
-  subject { BinData::String.new(:length => 5) }
+  let(:obj) { BinData::String.new(:length => 5) }
 
-  its(:num_bytes) { should == 5 }
-  its(:value) { should == "\0\0\0\0\0" }
+  specify { obj.num_bytes.must_equal 5 }
+  specify { obj.value.must_equal "\0\0\0\0\0" }
 
   it "retains :length after value is set" do
-    subject.assign("abcdefghij")
-    subject.num_bytes.should == 5
+    obj.assign("abcdefghij")
+    obj.num_bytes.must_equal 5
   end
 
   it "reads :length bytes" do
-    subject.read("abcdefghij")
-    subject.should == "abcde"
+    obj.read("abcdefghij")
+    obj.must_equal "abcde"
   end
 
   it "pads values less than :length" do
-    subject.assign("abc")
-    subject.should == "abc\0\0"
+    obj.assign("abc")
+    obj.must_equal "abc\0\0"
   end
 
   it "accepts values exactly :length" do
-    subject.assign("abcde")
-    subject.should == "abcde"
+    obj.assign("abcde")
+    obj.must_equal "abcde"
   end
 
   it "truncates values greater than :length" do
-    subject.assign("abcdefghij")
-    subject.should == "abcde"
+    obj.assign("abcdefghij")
+    obj.must_equal "abcde"
   end
 end
 
 describe BinData::String, "with :read_length and :initial_value" do
-  subject { BinData::String.new(:read_length => 5, :initial_value => "abcdefghij") }
+  let(:obj) { BinData::String.new(:read_length => 5, :initial_value => "abcdefghij") }
 
-  its(:num_bytes) { should == 10 }
-  its(:value) { should == "abcdefghij" }
+  specify { obj.num_bytes.must_equal 10 }
+  specify { obj.value.must_equal "abcdefghij" }
 
   it "uses :read_length for reading" do
     io = StringIO.new("ABCDEFGHIJKLMNOPQRST")
-    subject.read(io)
-    io.pos.should == 5
+    obj.read(io)
+    io.pos.must_equal 5
    end
 
   it "forgets :initial_value after reading" do
-    subject.read("ABCDEFGHIJKLMNOPQRST")
-    subject.num_bytes.should == 5
-    subject.should == "ABCDE"
+    obj.read("ABCDEFGHIJKLMNOPQRST")
+    obj.num_bytes.must_equal 5
+    obj.must_equal "ABCDE"
   end
 end
 
 describe BinData::String, "with :read_length and :value" do
-  subject { BinData::String.new(:read_length => 5, :value => "abcdefghij") }
+  let(:obj) { BinData::String.new(:read_length => 5, :value => "abcdefghij") }
 
-  its(:num_bytes) { should == 10 }
-  its(:value) { should == "abcdefghij" }
+  specify { obj.num_bytes.must_equal 10 }
+  specify { obj.value.must_equal "abcdefghij" }
 
   it "uses :read_length for reading" do
     io = StringIO.new("ABCDEFGHIJKLMNOPQRST")
-    subject.read(io)
-    io.pos.should == 5
+    obj.read(io)
+    io.pos.must_equal 5
   end
 
-  context "after reading" do
+  describe "after reading" do
     before(:each) do
-      subject.read("ABCDEFGHIJKLMNOPQRST")
+      obj.read("ABCDEFGHIJKLMNOPQRST")
     end
 
     it "is not affected by :read_length after reading" do
-      subject.num_bytes.should == 10
-      subject.should == "abcdefghij"
+      obj.num_bytes.must_equal 10
+      obj.must_equal "abcdefghij"
     end
 
     it "returns read value while reading" do
-      subject.stub(:reading?).and_return(true)
-      subject.should == "ABCDE"
+      obj.stub :reading?, true do
+        obj.must_equal "ABCDE"
+      end
     end
   end
 end
 
 describe BinData::String, "with :length and :initial_value" do
-  subject { BinData::String.new(:length => 5, :initial_value => "abcdefghij") }
+  let(:obj) { BinData::String.new(:length => 5, :initial_value => "abcdefghij") }
 
-  its(:num_bytes) { should == 5 }
-  its(:value) { should == "abcde" }
+  specify { obj.num_bytes.must_equal 5 }
+  specify { obj.value.must_equal "abcde" }
 
   it "forgets :initial_value after reading" do
     io = StringIO.new("ABCDEFGHIJKLMNOPQRST")
-    subject.read(io)
-    io.pos.should == 5
-    subject.num_bytes.should == 5
-    subject.should == "ABCDE"
+    obj.read(io)
+    io.pos.must_equal 5
+    obj.num_bytes.must_equal 5
+    obj.must_equal "ABCDE"
   end
 end
 
@@ -168,18 +167,18 @@ describe BinData::String, "with :pad_byte" do
   it "accepts a numeric value for :pad_byte" do
     str = BinData::String.new(:length => 5, :pad_byte => 6)
     str.assign("abc")
-    str.should == "abc\x06\x06"
+    str.must_equal "abc\x06\x06"
   end
 
   it "accepts a character for :pad_byte" do
     str = BinData::String.new(:length => 5, :pad_byte => "R")
     str.assign("abc")
-    str.should == "abcRR"
+    str.must_equal "abcRR"
   end
 
   it "does not accept a string for :pad_byte" do
     params = {:length => 5, :pad_byte => "RR"}
-    lambda { BinData::String.new(params) }.should raise_error(ArgumentError)
+    lambda { BinData::String.new(params) }.must_raise ArgumentError
   end
 end
 
@@ -189,31 +188,31 @@ describe BinData::String, "with :trim_padding" do
     str2 = BinData::String.new(:length => 5, :trim_padding => false)
     str1.assign("abc")
     str2.assign("abc")
-    str1.should == "abc\0\0"
-    str2.should == "abc\0\0"
+    str1.must_equal "abc\0\0"
+    str2.must_equal "abc\0\0"
   end
 
-  context "trim padding set" do
-    subject { BinData::String.new(:pad_byte => 'R', :trim_padding => true) }
+  describe "trim padding set" do
+    let(:obj) { BinData::String.new(:pad_byte => 'R', :trim_padding => true) }
 
     it "trims the value" do
-      subject.assign("abcRR")
-      subject.should == "abc"
+      obj.assign("abcRR")
+      obj.must_equal "abc"
     end
 
     it "does not affect num_bytes" do
-      subject.assign("abcRR")
-      subject.num_bytes.should == 5
+      obj.assign("abcRR")
+      obj.num_bytes.must_equal 5
     end
 
     it "trims if last char is :pad_byte" do
-      subject.assign("abcRR")
-      subject.should == "abc"
+      obj.assign("abcRR")
+      obj.must_equal "abc"
     end
 
     it "does not trim if value contains :pad_byte not at the end" do
-      subject.assign("abcRRde")
-      subject.should == "abcRRde"
+      obj.assign("abcRRde")
+      obj.must_equal "abcRRde"
     end
   end
 end
@@ -224,38 +223,38 @@ describe BinData::String, "with :pad_front" do
     str2 = BinData::String.new(:length => 5, :pad_front => false)
     str1.assign("abc")
     str2.assign("abc")
-    str1.should == "abc\0\0"
-    str2.should == "abc\0\0"
+    str1.must_equal "abc\0\0"
+    str2.must_equal "abc\0\0"
   end
 
   it "pads to the front" do
     str = BinData::String.new(:length => 5, :pad_byte => 'R', :pad_front => true)
     str.assign("abc")
-    str.should == "RRabc"
+    str.must_equal "RRabc"
   end
 
   it "can alternatively be accesses by :pad_left" do
     str = BinData::String.new(:length => 5, :pad_byte => 'R', :pad_left => true)
     str.assign("abc")
-    str.should == "RRabc"
+    str.must_equal "RRabc"
   end
 
-  context "and :trim_padding" do
-    subject { BinData::String.new(:length => 5, :pad_byte => 'R', :pad_front => true, :trim_padding => true) }
+  describe "and :trim_padding" do
+    let(:obj) { BinData::String.new(:length => 5, :pad_byte => 'R', :pad_front => true, :trim_padding => true) }
 
     it "assigns" do
-      subject.assign("abc")
-      subject.should == "abc"
+      obj.assign("abc")
+      obj.must_equal "abc"
     end
 
     it "has to_binary_s" do
-      subject.assign("abc")
-      subject.to_binary_s.should == "RRabc"
+      obj.assign("abc")
+      obj.to_binary_s.must_equal "RRabc"
     end
 
     it "reads" do
-      subject.read "RRabc"
-      subject.should == "abc"
+      obj.read "RRabc"
+      obj.must_equal "abc"
     end
   end
 end
@@ -268,32 +267,32 @@ describe BinData::String, "with Ruby 1.9 encodings" do
       end
     end
 
-    subject { UTF8String.new }
+    let(:obj) { UTF8String.new }
     let(:binary_str) { binary("\xC3\x85\xC3\x84\xC3\x96") }
     let(:utf8_str) { binary_str.dup.force_encoding('UTF-8') }
 
     it "stores assigned values as binary" do
-      subject.assign(utf8_str)
-      subject.to_binary_s.should == binary_str
+      obj.assign(utf8_str)
+      obj.to_binary_s.must_equal binary_str
     end
 
     it "stores read values as binary" do
-      subject = UTF8String.new(:read_length => binary_str.length)
-      subject.read(binary_str)
+      obj = UTF8String.new(:read_length => binary_str.length)
+      obj.read(binary_str)
 
-      subject.to_binary_s.should == binary_str
+      obj.to_binary_s.must_equal binary_str
     end
 
     it "returns values in correct encoding" do
-      subject.assign(utf8_str)
+      obj.assign(utf8_str)
 
-      subject.snapshot.should == utf8_str
+      obj.snapshot.must_equal utf8_str
     end
 
     it "has correct num_bytes" do
-      subject.assign(utf8_str)
+      obj.assign(utf8_str)
 
-      subject.num_bytes.should == binary_str.length
+      obj.num_bytes.must_equal binary_str.length
     end
   end
 end

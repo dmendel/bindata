@@ -1,7 +1,6 @@
 #!/usr/bin/env ruby
 
-require File.expand_path(File.join(File.dirname(__FILE__), "spec_common"))
-require 'bindata'
+require File.expand_path(File.join(File.dirname(__FILE__), "common"))
 
 describe BinData::ResumeByteAlignment do
   class ResumeAlignmentRecord < BinData::Record
@@ -10,29 +9,29 @@ describe BinData::ResumeByteAlignment do
     bit4 :b
   end
 
-  subject { ResumeAlignmentRecord.new }
+  let(:obj) { ResumeAlignmentRecord.new }
 
   it "resets read alignment" do
-    subject.read "\x12\x34"
+    obj.read "\x12\x34"
 
-    subject.a.should == 1
-    subject.b.should == 3
+    obj.a.must_equal 1
+    obj.b.must_equal 3
   end
 
   it "resets write alignment" do
-    subject.assign(:a => 2, :b => 7)
+    obj.assign(:a => 2, :b => 7)
 
-    subject.to_binary_s.should == "\x20\x70"
+    obj.to_binary_s.must_equal "\x20\x70"
   end
 end
 
 describe BinData::BitAligned do
   it "does not apply to BinData::Primitives" do
-    expect {
+    lambda {
       class BitAlignedPrimitive < BinData::Primitive
         bit_aligned
       end
-    }.to raise_error
+    }.must_raise RuntimeError
   end
 
   class BitString < BinData::String
@@ -45,17 +44,19 @@ describe BinData::BitAligned do
     bit4 :afterward
   end
 
-  subject { BitAlignedRecord.new }
+  let(:obj) { BitAlignedRecord.new }
 
-  its(:num_bytes) { should == 3 }
+  it "#num_bytes as expected" do
+    obj.num_bytes.must_equal 3
+  end
 
   it "reads as expected" do
-    subject.read("\x56\x36\x42")
-    subject.should == {"preamble" => 5, "str" => "cd", "afterward" => 2}
+    obj.read("\x56\x36\x42")
+    obj.snapshot.must_equal({"preamble" => 5, "str" => "cd", "afterward" => 2})
   end
 
   it "writes as expected" do
-    subject.assign(:preamble => 5, :str => "ab", :afterward => 1)
-    subject.to_binary_s.should == "\x56\x16\x21"
+    obj.assign(:preamble => 5, :str => "ab", :afterward => 1)
+    obj.to_binary_s.must_equal "\x56\x16\x21"
   end
 end

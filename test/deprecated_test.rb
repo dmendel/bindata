@@ -1,8 +1,6 @@
 #!/usr/bin/env ruby
 
-require File.expand_path(File.join(File.dirname(__FILE__), "spec_common"))
-require File.expand_path(File.join(File.dirname(__FILE__), "example"))
-require 'bindata'
+require File.expand_path(File.join(File.dirname(__FILE__), "common"))
 
 describe BinData::Base, "when defining" do
   it "fails if #initialize is overridden" do
@@ -12,9 +10,9 @@ describe BinData::Base, "when defining" do
       end
     end
 
-    expect {
+    lambda {
       BaseWithInitialize.new
-    }.to raise_error
+    }.must_raise RuntimeError
   end
 
   it "handles if #initialize is naively renamed to #initialize_instance" do
@@ -24,8 +22,8 @@ describe BinData::Base, "when defining" do
       end
     end
 
-    expect {
+    lambda {
       BaseWithInitializeInstance.new
-    }.to raise_error
+    }.must_raise RuntimeError
   end
 end

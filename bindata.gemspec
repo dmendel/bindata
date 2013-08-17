@@ -18,7 +18,7 @@ Gem::Specification.new do |s|
   s.license = 'Ruby'
 
   s.add_development_dependency('rake')
-  s.add_development_dependency('rspec', [">= 2.10.0"])
+  s.add_development_dependency('minitest', "> 5.0.0")
   s.add_development_dependency('haml', ["< 4.0.0"])
   s.add_development_dependency('maruku')
   s.add_development_dependency('syntax')

@@ -1,91 +1,62 @@
 #!/usr/bin/env ruby
 
-require File.expand_path(File.join(File.dirname(__FILE__), "spec_common"))
-require 'bindata/bits'
+require File.expand_path(File.join(File.dirname(__FILE__), "common"))
 
-describe "Bits of size 1" do
-  let(:bit_classes) { [BinData::Bit1, BinData::Bit1le] }
+module AllBitfields
 
-  it "accept true as value" do
-    bit_classes.each do |bit_class|
-      subject = bit_class.new
-      subject.assign(true)
-      subject.should == 1
-    end
-  end
-
-  it "accept false as value" do
-    bit_classes.each do |bit_class|
-      subject = bit_class.new
-      subject.assign(false)
-      subject.should == 0
-    end
-  end
-
-  it "accept nil as value" do
-    bit_classes.each do |bit_class|
-      subject = bit_class.new
-      subject.assign(nil)
-      subject.should == 0
-    end
-  end
-end
-
-shared_examples "All bitfields" do
-
-  it "have a sensible value of zero" do
+  def test_has_a_sensible_value_of_zero
     all_classes do |bit_class|
-      bit_class.new.should be_zero
+      bit_class.new.must_equal 0
     end
   end
 
-  it "avoid underflow" do
+  def test_avoids_underflow
     all_classes do |bit_class|
-      subject = bit_class.new
+      obj = bit_class.new
 
-      subject.assign(min_value - 1)
-      subject.should == min_value
+      obj.assign(min_value - 1)
+      obj.must_equal min_value
     end
   end
 
-  it "avoid overflow" do
+  def test_avoids_overflow
     all_classes do |bit_class|
-      subject = bit_class.new
+      obj = bit_class.new
 
-      subject.assign(max_value + 1)
-      subject.should == max_value
+      obj.assign(max_value + 1)
+      obj.must_equal max_value
     end
   end
 
-  it "assign values" do
+  def test_assign_values
     all_classes do |bit_class|
       some_values_within_range.each do |val|
-        subject = bit_class.new
-        subject.assign(val)
+        obj = bit_class.new
+        obj.assign(val)
 
-        subject.should == val
+        obj.must_equal val
       end
     end
   end
 
-  it "assign values from other bit objects" do
+  def test_assign_values_from_other_bit_objects
     all_classes do |bit_class|
       some_values_within_range.each do |val|
-        subject = bit_class.new
-        subject.assign(bit_class.new(val))
+        obj = bit_class.new
+        obj.assign(bit_class.new(val))
 
-        subject.should == val
+        obj.must_equal val
       end
     end
   end
 
-  it "symmetrically #read and #write" do
+  def test_symmetrically_read_and_write
     all_classes do |bit_class|
       some_values_within_range.each do |val|
-        subject = bit_class.new
-        subject.assign(val)
+        obj = bit_class.new
+        obj.assign(val)
 
-        subject.value_read_from_written.should == subject
+        obj.value_read_from_written.must_equal obj
       end
     end
   end
@@ -129,9 +100,9 @@ def generate_bit_classes_to_test(endian)
 end
 
 describe "Big endian bitfields" do
-  include_examples "All bitfields"
+  include AllBitfields
 
-  before(:all) do
+  before do
     @bits = generate_bit_classes_to_test(:big)
   end
 
@@ -140,15 +111,15 @@ describe "Big endian bitfields" do
       nbytes = (nbits + 7) / 8
       str = [0b1000_0000].pack("C") + "\000" * (nbytes - 1)
 
-      bit_class.read(str).should == 1 << (nbits - 1)
+      bit_class.read(str).must_equal 1 << (nbits - 1)
     end
   end
 end
 
 describe "Little endian bitfields" do
-  include_examples "All bitfields"
+  include AllBitfields
 
-  before(:all) do
+  before do
     @bits = generate_bit_classes_to_test(:little)
   end
 
@@ -157,7 +128,36 @@ describe "Little endian bitfields" do
       nbytes = (nbits + 7) / 8
       str = [0b0000_0001].pack("C") + "\000" * (nbytes - 1)
 
-      bit_class.read(str).should == 1
+      bit_class.read(str).must_equal 1
     end
   end
 end
+
+describe "Bits of size 1" do
+  let(:bit_classes) { [BinData::Bit1, BinData::Bit1le] }
+
+  it "accept true as value" do
+    bit_classes.each do |bit_class|
+      obj = bit_class.new
+      obj.assign(true)
+      obj.must_equal 1
+    end
+  end
+
+  it "accept false as value" do
+    bit_classes.each do |bit_class|
+      obj = bit_class.new
+      obj.assign(false)
+      obj.must_equal 0
+    end
+  end
+
+  it "accept nil as value" do
+    bit_classes.each do |bit_class|
+      obj = bit_class.new
+      obj.assign(nil)
+      obj.must_equal 0
+    end
+  end
+end
+

@@ -1,38 +1,41 @@
 #!/usr/bin/env ruby
 
-require File.expand_path(File.join(File.dirname(__FILE__), "spec_common"))
-require 'bindata/count_bytes_remaining'
+require File.expand_path(File.join(File.dirname(__FILE__), "common"))
 
 describe BinData::CountBytesRemaining do
-  it { should == 0 }
-  its(:num_bytes) { should be_zero }
+  let(:obj) { BinData::CountBytesRemaining.new }
+
+  it "initial state" do
+    obj.must_equal 0
+    obj.num_bytes.must_equal 0
+  end
 
   it "counts till end of stream" do
     data = "abcdefghij"
-    subject.read(data).should == 10
+    obj.read(data).must_equal 10
   end
 
   it "does not read any data" do
     io = StringIO.new "abcdefghij"
-    subject.read(io)
+    obj.read(io)
 
-    io.pos.should == 0
+    io.pos.must_equal 0
   end
 
   it "does not write any data" do
-    subject.to_binary_s.should == ""
+    obj.to_binary_s.must_equal ""
   end
 
   it "allows setting value for completeness" do
-    subject.assign("123")
-    subject.should == "123"
-    subject.to_binary_s.should == ""
+    obj.assign("123")
+    obj.must_equal "123"
+    obj.to_binary_s.must_equal ""
   end
 
   it "accepts BinData::BasePrimitive parameters" do
     count = BinData::CountBytesRemaining.new(:check_value => 2)
-    expect {
+    lambda {
       count.read("xyz")
-    }.to raise_error(BinData::ValidityError)
+    }.must_raise BinData::ValidityError
   end
 end
