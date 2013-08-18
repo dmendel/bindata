@@ -148,8 +148,8 @@ describe BinData::Base do
 
   it "#read is forwarded to #do_read" do
     calls = []
-    called_clear = lambda { calls << :clear }
-    called_do_read = lambda { calls << :do_read }
+    called_clear = lambda { |*a| calls << :clear }
+    called_do_read = lambda { |*a| calls << :do_read }
 
     obj.stub :clear, called_clear do
       obj.stub :do_read, called_do_read do
@@ -162,7 +162,7 @@ describe BinData::Base do
 
   it "#write is forwarded to #do_write" do
     calls = []
-    called_do_write = lambda { calls << :do_write }
+    called_do_write = lambda { |*a| calls << :do_write }
 
     obj.stub :do_write, called_do_write do
       obj.write(nil)
