@@ -157,10 +157,8 @@ module BinData
   end
 
   # Create classes on demand
-  class << self
-    alias_method :const_missing_without_int, :const_missing
-    def const_missing_with_int(name)
-      name = name.to_s
+  module IntFactory
+    def const_missing(name)
       mappings = {
         /^Uint(\d+)be$/ => [:big, :unsigned],
         /^Uint(\d+)le$/ => [:little, :unsigned],
@@ -169,7 +167,7 @@ module BinData
       }
 
       mappings.each_pair do |regex, args|
-        if regex =~ name
+        if regex =~ name.to_s
           nbits = $1.to_i
           if (nbits % 8).zero?
             return Int.define_class(nbits, *args)
@@ -177,8 +175,8 @@ module BinData
         end
       end
 
-      const_missing_without_int(name)
+      super
     end
-    alias_method :const_missing, :const_missing_with_int
   end
+  BinData.extend IntFactory
 end

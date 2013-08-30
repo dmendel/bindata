@@ -69,15 +69,11 @@ module BinData
     end
   end
 
-  class BasePrimitive < BinData::Base
-    def self.bit_aligned
-      include BitAligned
-    end
+  def BasePrimitive.bit_aligned
+    include BitAligned
   end
 
-  class Primitive < BinData::BasePrimitive
-    def self.bit_aligned
-      fail "'bit_aligned' is not needed for BinData::Primitives"
-    end
+  def Primitive.bit_aligned
+    fail "'bit_aligned' is not needed for BinData::Primitives"
   end
 end

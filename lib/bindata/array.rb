@@ -79,6 +79,7 @@ module BinData
 
     def initialize_shared_instance
       @element_prototype = get_parameter(:type)
+      super
     end
 
     def initialize_instance

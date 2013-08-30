@@ -15,77 +15,66 @@ module BinData
   #                           position before reading.  This is like
   #                           <tt>:check_offset</tt>, except that it will
   #                           adjust the IO offset instead of raising an error.
-  module CheckOrAdjustOffsetMixin
+  module CheckOrAdjustOffsetPlugin
 
     def self.included(base) #:nodoc:
       base.optional_parameters :check_offset, :adjust_offset
       base.mutually_exclusive_parameters :check_offset, :adjust_offset
     end
 
-    # Ideally these two methods should be protected,
-    # but Ruby 1.9.2 requires them to be public.
-    # see http://redmine.ruby-lang.org/issues/show/2375
-
-    def do_read_with_check_offset(io) #:nodoc:
-      check_offset(io)
-      do_read_without_check_offset(io)
+    def initialize_shared_instance
+      extend CheckOffsetMixin  if has_parameter?(:check_offset)
+      extend AdjustOffsetMixin if has_parameter?(:adjust_offset)
+      super
     end
 
-    def do_read_with_adjust_offset(io) #:nodoc:
-      adjust_offset(io)
-      do_read_without_adjust_offset(io)
-    end
-
-    #---------------
-    private
-
-    # To be called from BinData::Base#initialize.
-    #
-    # Monkey patches #do_read to check or adjust the stream offset
-    # as appropriate.
-    def add_methods_for_check_or_adjust_offset
-      if has_parameter?(:check_offset)
-        class << self
-          alias_method :do_read_without_check_offset, :do_read
-          alias_method :do_read, :do_read_with_check_offset
-        end
+    module CheckOffsetMixin
+      def do_read(io) #:nodoc:
+        check_offset(io)
+        super(io)
       end
-      if has_parameter?(:adjust_offset)
-        class << self
-          alias_method :do_read_without_adjust_offset, :do_read
-          alias_method :do_read, :do_read_with_adjust_offset
-        end
-      end
-    end
 
-    def check_offset(io)
-      actual_offset = io.offset
-      expected = eval_parameter(:check_offset, :offset => actual_offset)
+      #---------------
+      private
 
-      if not expected
-        raise ValidityError, "offset not as expected for #{debug_name}"
-      elsif actual_offset != expected and expected != true
-        raise ValidityError,
-              "offset is '#{actual_offset}' but " +
-              "expected '#{expected}' for #{debug_name}"
-      end
-    end
+      def check_offset(io)
+        actual_offset = io.offset
+        expected = eval_parameter(:check_offset, :offset => actual_offset)
 
-    def adjust_offset(io)
-      actual_offset = io.offset
-      expected = eval_parameter(:adjust_offset)
-      if actual_offset != expected
-        begin
-          seek = expected - actual_offset
-          io.seekbytes(seek)
-          warn "adjusting stream position by #{seek} bytes" if $VERBOSE
-        rescue
+        if not expected
+          raise ValidityError, "offset not as expected for #{debug_name}"
+        elsif actual_offset != expected and expected != true
           raise ValidityError,
-                "offset is '#{actual_offset}' but couldn't seek to " +
+                "offset is '#{actual_offset}' but " +
                 "expected '#{expected}' for #{debug_name}"
+        end
+      end
+    end
+
+    module AdjustOffsetMixin
+      def do_read(io) #:nodoc:
+        adjust_offset(io)
+        super(io)
+      end
+
+      #---------------
+      private
+
+      def adjust_offset(io)
+        actual_offset = io.offset
+        expected = eval_parameter(:adjust_offset)
+        if actual_offset != expected
+          begin
+            seek = expected - actual_offset
+            io.seekbytes(seek)
+            warn "adjusting stream position by #{seek} bytes" if $VERBOSE
+          rescue
+            raise ValidityError,
+                  "offset is '#{actual_offset}' but couldn't seek to " +
+                  "expected '#{expected}' for #{debug_name}"
+          end
         end
       end
     end
   end
 end
-

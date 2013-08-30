@@ -64,24 +64,22 @@ module BinData
   end
 
   # Create classes on demand
-  class << self
-    alias_method :const_missing_without_bits, :const_missing
-    def const_missing_with_bits(name)
-      name = name.to_s
+  module BitFieldFactory
+    def const_missing(name)
       mappings = {
         /^Bit(\d+)$/ => :big,
         /^Bit(\d+)le$/ => :little
       }
 
       mappings.each_pair do |regex, endian|
-        if regex =~ name
+        if regex =~ name.to_s
           nbits = $1.to_i
           return BitField.define_class(nbits, endian)
         end
       end
 
-      const_missing_without_bits(name)
+      super(name)
     end
-    alias_method :const_missing, :const_missing_with_bits
   end
+  BinData.extend BitFieldFactory
 end

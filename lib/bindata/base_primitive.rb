@@ -51,22 +51,10 @@ module BinData
     mutually_exclusive_parameters :initial_value, :value
 
     def initialize_shared_instance
-      if has_parameter?(:check_value)
-        class << self
-          alias_method :do_read_without_check_value, :do_read
-          alias_method :do_read, :do_read_with_check_value
-        end
-      end
-      if has_parameter?(:value)
-        class << self
-          alias_method :_value, :_value_with_value
-        end
-      end
-      if has_parameter?(:initial_value)
-        class << self
-          alias_method :_value, :_value_with_initial_value
-        end
-      end
+      extend InitialValuePlugin if has_parameter?(:initial_value)
+      extend ValuePlugin        if has_parameter?(:value)
+      extend CheckValuePlugin   if has_parameter?(:check_value)
+      super
     end
 
     def initialize_instance
@@ -84,15 +72,13 @@ module BinData
     def assign(val)
       raise ArgumentError, "can't set a nil value for #{debug_name}" if val.nil?
 
-      unless has_parameter?(:value)
-        raw_val = val.respond_to?(:snapshot) ? val.snapshot : val
-        @value = begin
-                   raw_val.dup
-                 rescue TypeError
-                   # can't dup Fixnums
-                   raw_val
-                 end
-      end
+      raw_val = val.respond_to?(:snapshot) ? val.snapshot : val
+      @value = begin
+                 raw_val.dup
+               rescue TypeError
+                 # can't dup Fixnums
+                 raw_val
+               end
     end
 
     def snapshot
@@ -136,11 +122,6 @@ module BinData
       hook_after_do_read
     end
 
-    def do_read_with_check_value(io) #:nodoc:
-      do_read_without_check_value(io)
-      check_value(snapshot)
-    end
-
     def do_write(io) #:nodoc:
       io.writebytes(value_to_binary_string(_value))
     end
@@ -154,40 +135,49 @@ module BinData
 
     def hook_after_do_read; end
 
-    def check_value(current_value)
-      expected = eval_parameter(:check_value, :value => current_value)
-      if not expected
-        raise ValidityError,
-              "value '#{current_value}' not as expected for #{debug_name}"
-      elsif current_value != expected and expected != true
-        raise ValidityError,
-              "value is '#{current_value}' but " +
-              "expected '#{expected}' for #{debug_name}"
-      end
-    end
-
     # The unmodified value of this data object.  Note that #snapshot calls this
     # method.  This indirection is so that #snapshot can be overridden in
     # subclasses to modify the presentation value.
-    #
-    # Table of possible preconditions and expected outcome
-    #   1. :value and !reading?         ->   :value
-    #   2. :value and reading?          ->   @value
-    #   3. :initial_value and clear?    ->   :initial_value
-    #   4. :initial_value and !clear?   ->   @value
-    #   5. clear?                       ->   sensible_default
-    #   6. !clear?                      ->   @value
-
     def _value
       @value != nil ? @value : sensible_default()
     end
 
-    def _value_with_value #:nodoc:
-      reading?      ? @value : eval_parameter(:value)
+    # Logic for the :value parameter
+    module ValuePlugin
+      def assign(val)
+        # Ignored
+      end
+
+      def _value
+        reading? ? @value : eval_parameter(:value)
+      end
     end
 
-    def _value_with_initial_value #:nodoc:
-      @value != nil ? @value : eval_parameter(:initial_value)
+    # Logic for the :initial_value parameter
+    module InitialValuePlugin
+      def _value
+        @value != nil ? @value : eval_parameter(:initial_value)
+      end
+    end
+
+    # Logic for the :check_value parameter
+    module CheckValuePlugin
+      def do_read(io) #:nodoc:
+        super(io)
+        check_value(snapshot)
+      end
+
+      def check_value(current_value)
+        expected = eval_parameter(:check_value, :value => current_value)
+        if not expected
+          raise ValidityError,
+                "value '#{current_value}' not as expected for #{debug_name}"
+        elsif current_value != expected and expected != true
+          raise ValidityError,
+                "value is '#{current_value}' but " +
+                "expected '#{expected}' for #{debug_name}"
+        end
+      end
     end
 
     ###########################################################################

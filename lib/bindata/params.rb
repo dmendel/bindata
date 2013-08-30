@@ -1,53 +1,45 @@
 require 'bindata/lazy'
 
 module BinData
-  module AcceptedParametersMixin
-    def self.included(base) #:nodoc:
-      base.extend ClassMethods
+  module AcceptedParametersPlugin
+    # Mandatory parameters must be present when instantiating a data object.
+    def mandatory_parameters(*args)
+      accepted_parameters.mandatory(*args)
     end
 
-    # Class methods to mix in to BinData::Base
-    module ClassMethods
-      # Mandatory parameters must be present when instantiating a data object.
-      def mandatory_parameters(*args)
-        accepted_parameters.mandatory(*args)
-      end
+    # Optional parameters may be present when instantiating a data object.
+    def optional_parameters(*args)
+      accepted_parameters.optional(*args)
+    end
 
-      # Optional parameters may be present when instantiating a data object.
-      def optional_parameters(*args)
-        accepted_parameters.optional(*args)
-      end
+    # Default parameters can be overridden when instantiating a data object.
+    def default_parameters(*args)
+      accepted_parameters.default(*args)
+    end
 
-      # Default parameters can be overridden when instantiating a data object.
-      def default_parameters(*args)
-        accepted_parameters.default(*args)
-      end
+    # Mutually exclusive parameters may not all be present when
+    # instantiating a data object.
+    def mutually_exclusive_parameters(*args)
+      accepted_parameters.mutually_exclusive(*args)
+    end
 
-      # Mutually exclusive parameters may not all be present when
-      # instantiating a data object.
-      def mutually_exclusive_parameters(*args)
-        accepted_parameters.mutually_exclusive(*args)
-      end
+    alias_method :mandatory_parameter, :mandatory_parameters
+    alias_method :optional_parameter, :optional_parameters
+    alias_method :default_parameter, :default_parameters
 
-      alias_method :mandatory_parameter, :mandatory_parameters
-      alias_method :optional_parameter, :optional_parameters
-      alias_method :default_parameter, :default_parameters
-
-      def accepted_parameters #:nodoc:
-        unless defined? @accepted_parameters
-          ancestor_params = superclass.respond_to?(:accepted_parameters) ?
-                              superclass.accepted_parameters : nil
-          @accepted_parameters = AcceptedParameters.new(ancestor_params)
-        end
-        @accepted_parameters
+    def accepted_parameters #:nodoc:
+      unless defined? @accepted_parameters
+        ancestor_params = superclass.respond_to?(:accepted_parameters) ?
+                            superclass.accepted_parameters : nil
+        @accepted_parameters = AcceptedParameters.new(ancestor_params)
       end
+      @accepted_parameters
     end
 
     # BinData objects accept parameters when initializing.  AcceptedParameters
     # allow a BinData class to declaratively identify accepted parameters as
     # mandatory, optional, default or mutually exclusive.
     class AcceptedParameters
-
       def initialize(ancestor_parameters = nil)
         if ancestor_parameters
           @mandatory = ancestor_parameters.mandatory.dup

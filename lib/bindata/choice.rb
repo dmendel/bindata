@@ -112,6 +112,7 @@ module BinData
           alias_method :hook_after_current_choice, :copy_previous_value
         end
       end
+      super
     end
 
     def initialize_instance

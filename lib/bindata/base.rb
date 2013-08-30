@@ -1,16 +1,15 @@
+require 'bindata/framework'
 require 'bindata/io'
 require 'bindata/lazy'
+require 'bindata/name'
 require 'bindata/offset'
 require 'bindata/params'
 require 'bindata/registry'
 require 'bindata/sanitize'
 
 module BinData
-  # Error raised when unexpected results occur when reading data from IO.
-  class ValidityError < StandardError ; end
-
   # ArgExtractors take the arguments passed to BinData::Base.new and
-  # separates them into [value, parameters, parent].
+  # separate them into [value, parameters, parent].
   class BaseArgExtractor
     @@empty_hash = Hash.new.freeze
 
@@ -38,8 +37,10 @@ module BinData
 
   # This is the abstract base class for all data objects.
   class Base
-    include AcceptedParametersMixin
-    include CheckOrAdjustOffsetMixin
+    extend AcceptedParametersPlugin
+    include Framework
+    include CheckOrAdjustOffsetPlugin
+    include RegisterNamePlugin
 
     class << self
 
@@ -82,9 +83,6 @@ module BinData
     # Register all subclasses of this class.
     register_subclasses
 
-    # The registered name may be provided explicitly.
-    optional_parameter :name
-
     # Creates a new data object.
     #
     # Args are optional, but if present, must be in the following order.
@@ -97,27 +95,11 @@ module BinData
     # +parent+ is the parent data object (e.g. struct, array, choice) this
     # object resides under.
     #
-    # == Parameters
-    #
-    # Parameters may be provided at initialisation to control the behaviour of
-    # an object.  These params are:
-    #
-    # <tt>:name</tt>:: The name that this object can be referred to may be
-    #                  set explicitly.  This is only useful when dynamically
-    #                  generating types.
-    #                  <code><pre>
-    #                    BinData::Struct.new(:name => :my_struct, :fields => ...)
-    #                    array = BinData::Array.new(:type => :my_struct)
-    #                  </pre></code>
-    #
     def initialize(*args)
       value, parameters, parent = extract_args(args)
 
       @params = SanitizedParameters.sanitize(parameters, self.class)
       @parent = parent
-
-      register_prototype
-      add_methods_for_check_or_adjust_offset
 
       initialize_shared_instance
       initialize_instance
@@ -283,12 +265,6 @@ module BinData
       self.class.arg_extractor.extract(self.class, the_args)
     end
 
-    def register_prototype
-      if has_parameter?(:name)
-        RegisteredClasses.register(get_parameter(:name), self)
-      end
-    end
-
     def furthest_ancestor
       if parent.nil?
         self
@@ -306,83 +282,5 @@ module BinData
         str.dup
       end
     end
-
-    ###########################################################################
-    # To be implemented by subclasses
-
-    # Performs sanity checks on the given parameters.  This method converts
-    # the parameters to the form expected by this data object.
-    def self.sanitize_parameters!(parameters) #:nodoc:
-    end
-
-    # Initializes the state of the object.  All instance variables that
-    # are used by the object must be initialized here.
-    def initialize_instance
-    end
-
-    # Initialises state that is shared by objects with the same parameters.
-    #
-    # This should only be used when optimising for performance.  Instance
-    # variables set here, and changes to the singleton class will be shared
-    # between all objects that are initialized with the same parameters.
-    # This method is called only once for a particular set of parameters.
-    def initialize_shared_instance
-    end
-
-    # Resets the internal state to that of a newly created object.
-    def clear
-      raise NotImplementedError
-    end
-
-    # Returns true if the object has not been changed since creation.
-    def clear?
-      raise NotImplementedError
-    end
-
-    # Assigns the value of +val+ to this data object.  Note that +val+ must
-    # always be deep copied to ensure no aliasing problems can occur.
-    def assign(val)
-      raise NotImplementedError
-    end
-
-    # Returns a snapshot of this data object.
-    def snapshot
-      raise NotImplementedError
-    end
-
-    # Returns the debug name of +child+.  This only needs to be implemented
-    # by objects that contain child objects.
-    def debug_name_of(child) #:nodoc:
-      debug_name
-    end
-
-    # Returns the offset of +child+.  This only needs to be implemented
-    # by objects that contain child objects.
-    def offset_of(child) #:nodoc:
-      0
-    end
-
-    # Reads the data for this data object from +io+.
-    def do_read(io) #:nodoc:
-      raise NotImplementedError
-    end
-
-    # Writes the value for this data to +io+.
-    def do_write(io) #:nodoc:
-      raise NotImplementedError
-    end
-
-    # Returns the number of bytes it will take to write this data.
-    def do_num_bytes #:nodoc:
-      raise NotImplementedError
-    end
-
-    # Set visibility requirements of methods to implement
-    public :clear, :clear?, :assign, :snapshot, :debug_name_of, :offset_of
-    protected :initialize_instance, :initialize_shared_instance
-    protected :do_read, :do_write, :do_num_bytes
-
-    # End To be implemented by subclasses
-    ###########################################################################
   end
 end
