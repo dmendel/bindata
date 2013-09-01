@@ -19,10 +19,10 @@ class Gzip
   class Header < BinData::Record
     endian :little
 
-    uint16  :ident,      :value => 0x8b1f, :check_value => 0x8b1f
+    uint16  :ident,      :asserted_value => 0x8b1f
     uint8   :compression_method, :initial_value => DEFLATE
 
-    bit3    :freserved,  :value => 0, :check_value => 0
+    bit3    :freserved,  :asserted_value => 0
     bit1    :fcomment,   :value => lambda { comment.length > 0 ? 1 : 0 }
     bit1    :ffile_name, :value => lambda { file_name.length > 0 ? 1 : 0 }
     bit1    :fextra,     :value => lambda { extra.len > 0 ? 1 : 0 }

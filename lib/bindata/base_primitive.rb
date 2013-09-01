@@ -31,29 +31,42 @@ module BinData
   # Parameters may be provided at initialisation to control the behaviour of
   # an object.  These params include those for BinData::Base as well as:
   #
-  # [<tt>:initial_value</tt>] This is the initial value to use before one is
-  #                           either #read or explicitly set with #value=.
-  # [<tt>:value</tt>]         The object will always have this value.
-  #                           Calls to #value= are ignored when
-  #                           using this param.  While reading, #value
-  #                           will return the value of the data read from the
-  #                           IO, not the result of the <tt>:value</tt> param.
-  # [<tt>:check_value</tt>]   Raise an error unless the value read in meets
-  #                           this criteria.  The variable +value+ is made
-  #                           available to any lambda assigned to this
-  #                           parameter.  A boolean return indicates success
-  #                           or failure.  Any other return is compared to
-  #                           the value just read in.
+  # [<tt>:initial_value</tt>]  This is the initial value to use before one is
+  #                            either #read or explicitly set with #value=.
+  # [<tt>:value</tt>]          The object will always have this value.
+  #                            Calls to #value= are ignored when
+  #                            using this param.  While reading, #value
+  #                            will return the value of the data read from the
+  #                            IO, not the result of the <tt>:value</tt> param.
+  # [<tt>:assert</tt>]         Raise an error unless the value read or assigned
+  #                            meets this criteria.  The variable +value+ is
+  #                            made available to any lambda assigned to this
+  #                            parameter.  A boolean return indicates success
+  #                            or failure.  Any other return is compared to
+  #                            the value just read in.
+  # [<tt>:asserted_value</tt>] Equavalent to <tt>:assert</tt> and <tt>:value</tt>.
+  #
   class BasePrimitive < BinData::Base
     unregister_self
 
-    optional_parameters :initial_value, :value, :check_value
+    optional_parameters :initial_value, :value, :check_value, :assert, :asserted_value
     mutually_exclusive_parameters :initial_value, :value
+    mutually_exclusive_parameters :asserted_value, :value, :assert
+    mutually_exclusive_parameters :check_value, :assert
+    mutually_exclusive_parameters :check_value, :asserted_value
 
     def initialize_shared_instance
-      extend InitialValuePlugin if has_parameter?(:initial_value)
-      extend ValuePlugin        if has_parameter?(:value)
-      extend CheckValuePlugin   if has_parameter?(:check_value)
+      if has_parameter?(:check_value) and has_parameter?(:value)
+        warn ":check_value has been deprecated.  Consider using :asserted_value instead of :check_value and :value in #{self.class}."
+      elsif has_parameter?(:check_value)
+        warn ":check_value has been deprecated.  Use :assert instead in #{self.class}."
+      end
+
+      extend InitialValuePlugin  if has_parameter?(:initial_value)
+      extend ValuePlugin         if has_parameter?(:value)
+      extend CheckValuePlugin    if has_parameter?(:check_value)
+      extend AssertPlugin        if has_parameter?(:assert)
+      extend AssertedValuePlugin if has_parameter?(:asserted_value)
       super
     end
 
@@ -162,6 +175,60 @@ module BinData
 
       def check_value(current_value)
         expected = eval_parameter(:check_value, :value => current_value)
+        if not expected
+          raise ValidityError,
+                "value '#{current_value}' not as expected for #{debug_name}"
+        elsif current_value != expected and expected != true
+          raise ValidityError,
+                "value is '#{current_value}' but " +
+                "expected '#{expected}' for #{debug_name}"
+        end
+      end
+    end
+
+    # Logic for the :assert parameter
+    module AssertPlugin
+      def assign(val)
+        assert(val)
+        super(val)
+      end
+
+      def do_read(io) #:nodoc:
+        super(io)
+        assert(snapshot)
+      end
+
+      def assert(current_value)
+        expected = eval_parameter(:assert, :value => current_value)
+        if not expected
+          raise ValidityError,
+                "value '#{current_value}' not as expected for #{debug_name}"
+        elsif current_value != expected and expected != true
+          raise ValidityError,
+                "value is '#{current_value}' but " +
+                "expected '#{expected}' for #{debug_name}"
+        end
+      end
+    end
+
+    # Logic for the :asserted_value parameter
+    module AssertedValuePlugin
+      def assign(val)
+        assert(val)
+        super(val)
+      end
+
+      def _value
+        reading? ? @value : eval_parameter(:asserted_value)
+      end
+
+      def do_read(io) #:nodoc:
+        super(io)
+        assert(snapshot)
+      end
+
+      def assert(current_value)
+        expected = eval_parameter(:asserted_value, :value => current_value)
         if not expected
           raise ValidityError,
                 "value '#{current_value}' not as expected for #{debug_name}"

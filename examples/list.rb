@@ -20,12 +20,12 @@ require 'bindata'
 # A first attempt at a declaration would be:
 #
 #     class Atom < BinData::Record
-#       string  :tag, :length => 1, :check_value => 'a'
+#       string  :tag, :length => 1, :assert => 'a'
 #       int32be :val
 #     end
 #
 #     class List < BinData::Record
-#       string  :tag,  :length => 1, :check_value => 'l'
+#       string  :tag,  :length => 1, :assert => 'l'
 #       int32be :num,  :value => lambda { vals.length }
 #       array   :vals, :initial_length => :num do
 #         choice :selection => ??? do

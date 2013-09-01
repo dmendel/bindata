@@ -389,20 +389,28 @@ There are several parameters that are specific to all primitives.
         list.len #=> 3
     {:ruby}
 
-`:check_value`
+`:assert`
 
-:   When reading, will raise a `ValidityError` if the value read does
-    not match the value of this parameter.  This is useful when
-    [debugging](#debugging), rather than as a general error detection
-    system.
+:   When reading or assigning, will raise a `ValidityError` if the value
+    read or assigned does not match the value of this parameter.
 
-        obj = BinData::String.new(:check_value => lambda { /aaa/ =~ value })
+        obj = BinData::String.new(:assert => lambda { /aaa/ =~ value })
         obj.read("baaa!") #=> "baaa!"
         obj.read("bbb") #=> raises ValidityError
 
-        obj = BinData::String.new(:check_value => "foo")
+        obj = BinData::String.new(:assert => "foo")
         obj.read("foo") #=> "foo"
-        obj.read("bar") #=> raises ValidityError
+        obj.assign("bar") #=> raises ValidityError
+    {:ruby}
+
+`:asserted_value`
+
+:   A combination of `:assert` and `:value`.  Used as a shortcut when
+    both `:assert` and `:value` have the same values.  The following
+    are equivalent.
+
+        obj = BinData::Uint32Be.new(:assert => 42, :value => 42)
+        obj = BinData::Uint32Be.new(:asserted_value => 42)
     {:ruby}
 
 ## Numerics

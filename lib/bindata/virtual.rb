@@ -23,8 +23,8 @@ module BinData
 
     class << self
       def sanitize_parameters!(params) #:nodoc:
-        if params.has_parameter?(:assert_value)
-          fail ":assert_value can not be used on virtual field"
+        if params.has_parameter?(:asserted_value)
+          fail ":asserted_value can not be used on virtual field"
         end
       end
     end

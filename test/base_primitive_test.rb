@@ -200,6 +200,69 @@ describe BinData::BasePrimitive, "checking read value" do
   end
 end
 
+describe BinData::BasePrimitive, "asserting value" do
+  let(:io) { ExampleSingle.io_with_value(12) }
+
+  describe ":assert is non boolean" do
+    it "succeeds when assert is correct" do
+      data = ExampleSingle.new(:assert => 12)
+      data.read(io)
+      data.value.must_equal 12
+    end
+
+    it "fails when assert is incorrect" do
+      data = ExampleSingle.new(:assert => lambda { 99 })
+      lambda { data.read(io) }.must_raise BinData::ValidityError
+    end
+  end
+
+  describe ":assert is boolean" do
+    it "succeeds when assert is true" do
+      data = ExampleSingle.new(:assert => lambda { value < 20 })
+      data.read(io)
+      data.value.must_equal 12
+    end
+
+    it "fails when assert is false" do
+      data = ExampleSingle.new(:assert => lambda { value > 20 })
+      lambda { data.read(io) }.must_raise BinData::ValidityError
+    end
+  end
+
+  describe "assigning with :assert" do
+    it "succeeds when assert is correct" do
+      data = ExampleSingle.new(:assert => 12)
+      data.assign(12)
+      data.value.must_equal 12
+    end
+
+    it "fails when assert is incorrect" do
+      data = ExampleSingle.new(:assert => 12)
+      lambda { data.assign(99) }.must_raise BinData::ValidityError
+    end
+  end
+end
+
+describe BinData::BasePrimitive, ":asserted_value" do
+  it "has :value" do
+    data = ExampleSingle.new(:asserted_value => lambda { 12 })
+    data.value.must_equal 12
+  end
+
+  describe "assigning with :assert" do
+    it "succeeds when assert is correct" do
+      data = ExampleSingle.new(:asserted_value => lambda { 12 })
+      data.assign(12)
+      data.value.must_equal 12
+    end
+
+    it "fails when assert is incorrect" do
+      data = ExampleSingle.new(:asserted_value => lambda { 12 })
+      lambda { data.assign(99) }.must_raise BinData::ValidityError
+    end
+  end
+end
+
 describe BinData::BasePrimitive do
   it "conforms to rule 1 for returning a value" do
     data = ExampleSingle.new(:value => 5)
