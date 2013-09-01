@@ -4,6 +4,7 @@
 
 * Added license to .gemspec
 * Moved test suite from RSpec to Minitest.
+* :check_value has been deprecated. Use :assert instead.
 
 == Version 1.5.1 (2013-08-16)
 
