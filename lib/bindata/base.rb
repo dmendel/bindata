@@ -256,7 +256,7 @@ module BinData
     def safe_respond_to?(symbol, include_private = false) #:nodoc:
       respond_to?(symbol, include_private)
     end
-    alias_method :orig_respond_to?, :respond_to? #:nodoc:
+    alias_method :base_respond_to?, :respond_to? #:nodoc:
 
     #---------------
     private

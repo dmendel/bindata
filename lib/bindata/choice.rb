@@ -107,11 +107,7 @@ module BinData
     end
 
     def initialize_shared_instance
-      if eval_parameter(:copy_on_change) == true
-        class << self
-          alias_method :hook_after_current_choice, :copy_previous_value
-        end
-      end
+      extend CopyOnChangePlugin if eval_parameter(:copy_on_change) == true
       super
     end
 
@@ -120,9 +116,13 @@ module BinData
       @last_selection = nil
     end
 
-    # A convenience method that returns the current selection.
+    # Returns the current selection.
     def selection
-      eval_parameter(:selection)
+      selection = eval_parameter(:selection)
+      if selection.nil?
+        raise IndexError, ":selection returned nil for #{debug_name}"
+      end
+      selection
     end
 
     def clear #:nodoc:
@@ -146,7 +146,7 @@ module BinData
     end
 
     def safe_respond_to?(symbol, include_private = false) #:nodoc:
-      orig_respond_to?(symbol, include_private)
+      base_respond_to?(symbol, include_private)
     end
 
     def method_missing(symbol, *args, &block) #:nodoc:
@@ -168,22 +168,9 @@ module BinData
     #---------------
     private
 
-    def hook_after_current_choice(*args); end
-
     def current_choice
-      selection = eval_parameter(:selection)
-      if selection.nil?
-        raise IndexError, ":selection returned nil for #{debug_name}"
-      end
-
-      obj = get_or_instantiate_choice(selection)
-      hook_after_current_choice(selection, obj)
-
-      obj
-    end
-
-    def get_or_instantiate_choice(selection)
-      @choices[selection] ||= instantiate_choice(selection)
+      current_selection = selection
+      @choices[current_selection] ||= instantiate_choice(current_selection)
     end
 
     def instantiate_choice(selection)
@@ -193,11 +180,21 @@ module BinData
       end
       prototype.instantiate(nil, self)
     end
+  end
 
-    def copy_previous_value(selection, obj)
-      prev = get_previous_choice(selection)
+  # Logic for the :copy_on_change parameter
+  module CopyOnChangePlugin
+    def current_choice
+      obj = super
+      copy_previous_value(obj)
+      obj
+    end
+
+    def copy_previous_value(obj)
+      current_selection = selection
+      prev = get_previous_choice(current_selection)
       obj.assign(prev) unless prev.nil?
-      remember_current_selection(selection)
+      remember_current_selection(current_selection)
     end
 
     def get_previous_choice(selection)
