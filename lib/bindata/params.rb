@@ -81,10 +81,13 @@ module BinData
       end
 
       def mutually_exclusive(*args)
-        arg1, arg2 = args
-        if arg1 != nil && arg2 != nil
-          @mutually_exclusive.push([arg1.to_sym, arg2.to_sym])
-          @mutually_exclusive.uniq!
+        arg1 = args.shift
+        while not args.empty?
+          args.each do |arg2|
+            @mutually_exclusive.push([arg1.to_sym, arg2.to_sym])
+            @mutually_exclusive.uniq!
+          end
+          arg1 = args.shift
         end
         @mutually_exclusive
       end

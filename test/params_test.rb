@@ -97,12 +97,14 @@ end
 
 describe BinData::Base, ".mutually_exclusive_parameters" do
   class MutexParamBase < BinData::Base
-    optional_parameters :p1, :p2
-    mutually_exclusive_parameters :p1, :p2
+    optional_parameters :p1, :p2, :p3
+    mutually_exclusive_parameters :p1, :p2, :p3
   end
 
-  it "fails when both those parameters are present" do
+  it "fails when any two of those parameters are present" do
     lambda { MutexParamBase.new(:p1 => "a", :p2 => "b") }.must_raise ArgumentError
+    lambda { MutexParamBase.new(:p1 => "a", :p3 => "c") }.must_raise ArgumentError
+    lambda { MutexParamBase.new(:p2 => "b", :p3 => "c") }.must_raise ArgumentError
   end
 end
 
