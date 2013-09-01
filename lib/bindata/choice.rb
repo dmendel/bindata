@@ -154,7 +154,6 @@ module BinData
     end
 
     def do_read(io) #:nodoc:
-      hook_before_do_read
       current_choice.do_read(io)
     end
 
@@ -169,7 +168,6 @@ module BinData
     #---------------
     private
 
-    def hook_before_do_read; end
     def hook_after_current_choice(*args); end
 
     def current_choice

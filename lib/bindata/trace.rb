@@ -25,14 +25,12 @@ module BinData
   # This is useful for debugging a BinData declaration.
   def trace_reading(io = STDERR, &block)
     @tracer = Tracer.new(io)
-    BasePrimitive.turn_on_tracing
-    Choice.turn_on_tracing
+    [BasePrimitive, Choice].each { |traced| traced.turn_on_tracing }
     if block_given?
       begin
         block.call
       ensure
-        BasePrimitive.turn_off_tracing
-        Choice.turn_off_tracing
+        [BasePrimitive, Choice].each { |traced| traced.turn_off_tracing }
         @tracer = nil
       end
     end
@@ -47,18 +45,19 @@ module BinData
   class BasePrimitive < BinData::Base
     class << self
       def turn_on_tracing
-        alias_method :hook_after_do_read, :trace_value
+        alias_method :do_read_without_hook, :do_read
+        alias_method :do_read, :do_read_with_hook
       end
 
       def turn_off_tracing
-        alias_method :hook_after_do_read, :null_method
+        alias_method :do_read, :do_read_without_hook
       end
     end
 
-    #---------------
-    private
-
-    def null_method; end
+    def do_read_with_hook(io)
+      do_read_without_hook(io)
+      trace_value
+    end
 
     def trace_value
       BinData::trace_message do |tracer|
@@ -71,18 +70,19 @@ module BinData
   class Choice < BinData::Base
     class << self
       def turn_on_tracing
-        alias_method :hook_before_do_read, :trace_selection
+        alias_method :do_read_without_hook, :do_read
+        alias_method :do_read, :do_read_with_hook
       end
 
       def turn_off_tracing
-        alias_method :hook_before_do_read, :null_method
+        alias_method :do_read, :do_read_without_hook
       end
     end
 
-    #---------------
-    private
-
-    def null_method; end
+    def do_read_with_hook(io)
+      trace_selection
+      do_read_without_hook(io)
+    end
 
     def trace_selection
       BinData::trace_message do |tracer|

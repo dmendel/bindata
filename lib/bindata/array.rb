@@ -79,6 +79,14 @@ module BinData
 
     def initialize_shared_instance
       @element_prototype = get_parameter(:type)
+      if get_parameter(:read_until) == :eof
+        extend ReadUntilEOFPlugin
+      elsif has_parameter?(:read_until)
+        extend ReadUntilPlugin
+      elsif has_parameter?(:initial_length)
+        extend InitialLengthPlugin
+      end
+
       super
     end
 
@@ -235,14 +243,6 @@ module BinData
       child.do_num_bytes.is_a?(Integer) ? sum.ceil : sum.floor
     end
 
-    def do_read(io) #:nodoc:
-      if has_parameter?(:initial_length)
-        elements.each { |el| el.do_read(io) }
-      elsif has_parameter?(:read_until)
-        read_until(io)
-      end
-    end
-
     def do_write(io) #:nodoc:
       elements.each { |el| el.do_write(io) }
     end
@@ -265,46 +265,8 @@ module BinData
       els.collect { |el| new_element(el) }
     end
 
-    def read_until(io)
-      if get_parameter(:read_until) == :eof
-        read_until_eof(io)
-      else
-        read_until_condition(io)
-      end
-    end
-
-    def read_until_eof(io)
-      loop do
-        element = append_new_element
-        begin
-          element.do_read(io)
-        rescue EOFError, IOError
-          elements.pop
-          break
-        end
-      end
-    end
-
-    def read_until_condition(io)
-      loop do
-        element = append_new_element
-        element.do_read(io)
-        variables = { :index => self.length - 1, :element => self.last,
-                      :array => self }
-        break if eval_parameter(:read_until, variables)
-      end
-    end
-
     def elements
-      if @element_list.nil?
-        @element_list = []
-        if has_parameter?(:initial_length)
-          eval_parameter(:initial_length).times do
-            @element_list << new_element
-          end
-        end
-      end
-      @element_list
+      @element_list ||= []
     end
 
     def append_new_element
@@ -331,6 +293,53 @@ module BinData
           sum + nbytes
         end
       end
+    end
+  end
+
+  # Logic for the :read_until parameter
+  module ReadUntilPlugin
+    def do_read(io)
+      loop do
+        element = append_new_element
+        element.do_read(io)
+        variables = { :index => self.length - 1, :element => self.last,
+                      :array => self }
+        break if eval_parameter(:read_until, variables)
+      end
+    end
+
+  end
+
+  # Logic for the :read_until => :eof parameter
+  module ReadUntilEOFPlugin
+    def do_read(io)
+      loop do
+        element = append_new_element
+        begin
+          element.do_read(io)
+        rescue EOFError, IOError
+          elements.pop
+          break
+        end
+      end
+    end
+  end
+
+  # Logic for the :initial_length parameter
+  module InitialLengthPlugin
+    def do_read(io)
+      elements.each { |el| el.do_read(io) }
+    end
+
+    def elements
+      if @element_list.nil?
+        @element_list = []
+        eval_parameter(:initial_length).times do
+          @element_list << new_element
+        end
+      end
+
+      @element_list
     end
   end
 end

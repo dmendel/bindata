@@ -119,7 +119,6 @@ module BinData
 
     def do_read(io) #:nodoc:
       @value = read_and_return_value(io)
-      hook_after_do_read
     end
 
     def do_write(io) #:nodoc:
@@ -132,8 +131,6 @@ module BinData
 
     #---------------
     private
-
-    def hook_after_do_read; end
 
     # The unmodified value of this data object.  Note that #snapshot calls this
     # method.  This indirection is so that #snapshot can be overridden in
