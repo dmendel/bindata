@@ -28,7 +28,6 @@ describe "BinData::Base", "framework" do
   end
 
   it "raises errors on unimplemented methods" do
-    lambda { obj.clear         }.must_raise NotImplementedError
     lambda { obj.clear?        }.must_raise NotImplementedError
     lambda { obj.assign(nil)   }.must_raise NotImplementedError
     lambda { obj.snapshot      }.must_raise NotImplementedError
@@ -83,7 +82,6 @@ end
 describe BinData::Base do
   class BaseStub < BinData::Base
     # Override to avoid NotImplemented errors
-    def clear; end
     def clear?; end
     def assign(x); @data = x; end
     def snapshot; @data; end

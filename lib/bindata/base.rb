@@ -154,6 +154,11 @@ module BinData
       @params.has_parameter?(key)
     end
 
+    # Resets the internal state to that of a newly created object.
+    def clear
+      initialize_instance
+    end
+
     # Reads data into this data object.
     def read(io)
       io = BinData::IO.new(io) unless BinData::IO === io

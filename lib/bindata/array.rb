@@ -98,10 +98,6 @@ module BinData
       @element_list.nil? or elements.all? { |el| el.clear? }
     end
 
-    def clear
-      initialize_instance
-    end
-
     def assign(array)
       raise ArgumentError, "can't set a nil value for #{debug_name}" if array.nil?
 

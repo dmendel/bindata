@@ -30,11 +30,6 @@ module BinData
     def initialize_shared_instance
     end
 
-    # Resets the internal state to that of a newly created object.
-    def clear
-      raise NotImplementedError
-    end
-
     # Returns true if the object has not been changed since creation.
     def clear?
       raise NotImplementedError
@@ -79,7 +74,7 @@ module BinData
     end
 
     # Set visibility requirements of methods to implement
-    public :clear, :clear?, :assign, :snapshot, :debug_name_of, :offset_of
+    public :clear?, :assign, :snapshot, :debug_name_of, :offset_of
     protected :initialize_instance, :initialize_shared_instance
     protected :do_read, :do_write, :do_num_bytes
   end

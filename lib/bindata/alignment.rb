@@ -13,7 +13,6 @@ module BinData
   #    MyRec.read("\x12\x34") #=> {"a" => 1, "b" => 3}
   #
   class ResumeByteAlignment < BinData::Base
-    def clear; end
     def clear?; true; end
     def assign(val); end
     def snapshot; nil; end

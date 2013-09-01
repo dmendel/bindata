@@ -61,10 +61,6 @@ module BinData
       @value = nil
     end
 
-    def clear #:nodoc:
-      @value = nil
-    end
-
     def clear? #:nodoc:
       @value.nil?
     end
