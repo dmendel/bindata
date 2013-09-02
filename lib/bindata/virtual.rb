@@ -15,7 +15,7 @@ module BinData
   #
   #   obj = A.read("abcdeabcde")
   #   obj.a #=> "abcde"
-  #   obj.b.offset #=> 10
+  #   obj.c.offset #=> 10
   #
   class Virtual < BinData::BasePrimitive
 
