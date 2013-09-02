@@ -189,16 +189,17 @@ module BinData
     # Logic for the :assert parameter
     module AssertPlugin
       def assign(val)
-        assert(val)
         super(val)
+        assert!
       end
 
       def do_read(io) #:nodoc:
         super(io)
-        assert(snapshot)
+        assert!
       end
 
-      def assert(current_value)
+      def assert!
+        current_value = snapshot
         expected = eval_parameter(:assert, :value => current_value)
         if not expected
           raise ValidityError,
@@ -214,7 +215,7 @@ module BinData
     # Logic for the :asserted_value parameter
     module AssertedValuePlugin
       def assign(val)
-        assert(val)
+        assert_value(val)
         super(val)
       end
 
@@ -224,10 +225,14 @@ module BinData
 
       def do_read(io) #:nodoc:
         super(io)
-        assert(snapshot)
+        assert!
       end
 
-      def assert(current_value)
+      def assert!
+        assert_value(snapshot)
+      end
+
+      def assert_value(current_value)
         expected = eval_parameter(:asserted_value, :value => current_value)
         if not expected
           raise ValidityError,
