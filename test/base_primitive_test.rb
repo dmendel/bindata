@@ -175,12 +175,14 @@ describe BinData::BasePrimitive, "checking read value" do
 
   describe ":check_value is non boolean" do
     it "succeeds when check_value is correct" do
+      skip "deprecated"
       data = ExampleSingle.new(:check_value => 12)
       data.read(io)
       data.value.must_equal 12
     end
 
     it "fails when check_value is incorrect" do
+      skip "deprecated"
       data = ExampleSingle.new(:check_value => lambda { 99 })
       lambda { data.read(io) }.must_raise BinData::ValidityError
     end
@@ -188,12 +190,14 @@ describe BinData::BasePrimitive, "checking read value" do
 
   describe ":check_value is boolean" do
     it "succeeds when check_value is true" do
+      skip "deprecated"
       data = ExampleSingle.new(:check_value => lambda { value < 20 })
       data.read(io)
       data.value.must_equal 12
     end
 
     it "fails when check_value is false" do
+      skip "deprecated"
       data = ExampleSingle.new(:check_value => lambda { value > 20 })
       lambda { data.read(io) }.must_raise BinData::ValidityError
     end
