@@ -1,3 +1,14 @@
+= 1.6.0
+
+Added :assert as a replacement for :check_value.  Note that :assert performs
+the checking on assignment as well as reading.
+
+The parameter :asserted_value is a new shortcut for combining :assert and :value
+    int8 :magic, :assert => 42, :value => 42
+
+Can be written more concisely as
+    int8 :magic, :asserted_value => 42
+
 = 1.5.0
 
 Finally moved the source code to github.

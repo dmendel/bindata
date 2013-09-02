@@ -1,9 +1,10 @@
 = BinData Changelog
 
-== Version next
+== Version 1.6.0 (2013-09-02)
 
 * Added license to .gemspec
 * Moved test suite from RSpec to Minitest.
+* Added :assert and :asserted_value.
 * :check_value has been deprecated. Use :assert instead.
 
 == Version 1.5.1 (2013-08-16)

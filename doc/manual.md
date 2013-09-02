@@ -40,7 +40,7 @@ manipulating.
 It supports all the common datatypes that are found in structured binary
 data. Support for dependent and variable length fields is built in. 
 
-Last updated: 2013-05-21
+Last updated: 2013-09-02
 
 ## Source code
 
