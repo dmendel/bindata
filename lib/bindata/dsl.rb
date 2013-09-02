@@ -53,12 +53,7 @@ module BinData
 
       def hide(*args)
         if option?(:hidden_fields)
-          hidden = args.collect do |name|
-                     unless Symbol === name
-                       warn "Hidden field '#{name}' should be provided as a symbol.  Using strings is deprecated"
-                     end
-                     name.to_sym
-                   end
+          hidden = args.collect { |name| name.to_sym }
 
           unless defined? @hide
             @hide = parent_attribute(:hide, []).dup

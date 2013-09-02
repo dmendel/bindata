@@ -113,12 +113,7 @@ module BinData
       end
 
       def hidden_field_names(hidden)
-        (hidden || []).collect do |h|
-          unless Symbol === h
-            warn "Hidden field '#{h}' should be provided as a symbol.  Using strings is deprecated"
-          end
-          h.to_sym
-        end
+        (hidden || []).collect { |h| h.to_sym }
       end
 
       def ensure_field_names_are_valid(field_names)
