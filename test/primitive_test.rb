@@ -188,3 +188,23 @@ describe BinData::Primitive, "subclassed with default parameter" do
     a.to_binary_s.must_equal "\000\005"
   end
 end
+
+describe BinData::Primitive, "with mutating #get and #set" do
+  class MutatingPrimitive < BinData::Primitive
+    uint16le :a
+    def get; self.a; end
+    def set(v); self.a = v.abs; end
+  end
+
+  it "#assign applies mutator" do
+    obj = MutatingPrimitive.new
+    obj.assign(-50)
+    obj.snapshot.must_equal 50
+  end
+
+  it "#to_binary_s applies mutator" do
+    obj = MutatingPrimitive.new
+    obj.assign(-50)
+    obj.to_binary_s.must_equal "\062\000"
+  end
+end

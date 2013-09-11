@@ -89,6 +89,12 @@ module BinData
       end
     end
 
+    def assign(val)
+      super(val)
+      set(_value)
+      @value = get
+    end
+
     def debug_name_of(child) #:nodoc:
       debug_name + "-internal-"
     end
