@@ -409,8 +409,8 @@ There are several parameters that are specific to all primitives.
     both `:assert` and `:value` have the same values.  The following
     are equivalent.
 
-        obj = BinData::Uint32Be.new(:assert => 42, :value => 42)
-        obj = BinData::Uint32Be.new(:asserted_value => 42)
+        obj = BinData::Uint32be.new(:assert => 42, :value => 42)
+        obj = BinData::Uint32be.new(:asserted_value => 42)
     {:ruby}
 
 ## Numerics
