@@ -97,6 +97,20 @@ module BinData
         append_field(type, name, params)
       end
 
+      # calling patterns:
+      #   type
+      #   type, name
+      #   type, params
+      #   type, name, params
+      def record(type, *args, &block)
+        raise "Type is required" if type.nil?
+        name   = name_from_field_declaration(args)
+        params = params_from_args(args)
+        params = params.merge(params_from_block(type, &block)) unless block.nil?
+
+        append_field(type, name, params)
+      end
+
       #-------------
       private
 
@@ -158,7 +172,7 @@ module BinData
         bindata_classes = {
           :array  => BinData::Array,
           :choice => BinData::Choice,
-          :struct => BinData::Struct
+          :struct => BinData::Struct,
         }
 
         if bindata_classes.include?(type)

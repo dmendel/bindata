@@ -101,4 +101,30 @@ describe BinData::Registry, "with numerics" do
     r.lookup("bit2", :little).to_s.must_equal "BinData::Bit2"
     r.lookup("bit3le", :little).to_s.must_equal "BinData::Bit3le"
   end
+
+  it "lookup custom types with endian" do
+    fields = [
+      [:uint32, :x],
+      [:uint32, :y],
+      [:uint32, :z],
+    ]
+    BinData::Struct.new(
+      name: :vector_le,
+      endian: :little,
+      fields: fields
+    )
+    BinData::Struct.new(
+      name: :vector_be,
+      endian: :big,
+      fields: fields
+    )
+    BinData::Struct.new(
+      endian: :little,
+      fields: [[:vector, :position]]
+    )
+    BinData::Struct.new(
+      endian: :big,
+      fields: [[:vector, :position]]
+    )
+  end
 end

@@ -10,11 +10,7 @@ module BinData
       endian = endian.endian if endian.respond_to? :endian
       obj_params ||= {}
 
-      if BinData::Base === obj_type
-        obj_class = obj_type
-      else
-        obj_class = RegisteredClasses.lookup(obj_type, endian)
-      end
+      obj_class = RegisteredClasses.lookup(obj_type, endian)
 
       if BinData::Base === obj_class
         @factory = obj_class

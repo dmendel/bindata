@@ -18,28 +18,27 @@ module BinData
     def register(name, class_to_register)
       return if class_to_register.nil?
 
-      formatted_name = lookup_key(name)
+      formatted_name = underscore_name(name)
       warn_if_name_is_already_registered(formatted_name, class_to_register)
 
       @registry[formatted_name] = class_to_register
     end
 
     def unregister(name)
-      formatted_name = lookup_key(name)
+      formatted_name = underscore_name(name)
       @registry.delete(formatted_name)
     end
 
     def lookup(name, endian = nil)
-      key = lookup_key(name, endian)
-      try_registering_key(key) unless @registry.has_key?(key)
+      return name if BinData::Base === name || Module === name && BinData::Base > name
 
-      @registry[key] || raise(UnRegisteredTypeError, name.to_s)
-    end
+      keys = lookup_keys(name, endian)
 
-    def normalize_name(name, endian = nil)
-      if lookup(name, endian)
-        lookup_key(name, endian)
+      keys.each do |key|
+        try_registering_key(key) unless @registry.has_key?(key)
+        return @registry[key] if @registry.has_key?(key)
       end
+      raise(UnRegisteredTypeError, name.to_s)
     end
 
     # Convert CamelCase +name+ to underscore style.
@@ -54,18 +53,22 @@ module BinData
     #---------------
     private
 
-    def lookup_key(name, endian = nil)
+    def lookup_keys(name, endian = nil)
       name = underscore_name(name)
 
-      result = name
-      if endian != nil
-        if /^u?int\d+$/ =~ name
-          result = name + ((endian == :little) ? "le" : "be")
-        elsif /^(float|double)$/ =~ name
-          result = name + ((endian == :little) ? "_le" : "_be")
-        end
+      return [name] if endian.nil? || /^bit\d+?$/ =~ name
+
+      suffix = endian == :big ? 'be' : 'le'
+
+      if /^u?int\d+$/ =~ name
+        [name + suffix]
+      elsif /^(float|double)$/ =~ name
+        [name + '_' + suffix]
+      elsif /_[bl]e$/ =~ name
+        [name]
+      else
+        [name, name + '_' + suffix]
       end
-      result
     end
 
     def try_registering_key(key)
