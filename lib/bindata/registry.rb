@@ -18,28 +18,29 @@ module BinData
     def register(name, class_to_register)
       return if class_to_register.nil?
 
-      formatted_name = lookup_key(name)
+      formatted_name = underscore_name(name)
       warn_if_name_is_already_registered(formatted_name, class_to_register)
 
       @registry[formatted_name] = class_to_register
     end
 
     def unregister(name)
-      formatted_name = lookup_key(name)
-      @registry.delete(formatted_name)
+      @registry.delete(underscore_name(name))
     end
 
     def lookup(name, endian = nil)
-      key = lookup_key(name, endian)
-      try_registering_key(key) unless @registry.has_key?(key)
-
+      key = normalize_name(name, endian)
       @registry[key] || raise(UnRegisteredTypeError, name.to_s)
     end
 
     def normalize_name(name, endian = nil)
-      if lookup(name, endian)
-        lookup_key(name, endian)
-      end
+      name = underscore_name(name)
+      return name if is_registered?(name)
+
+      name = name_with_endian(name, endian)
+      return name if is_registered?(name)
+
+      name
     end
 
     # Convert CamelCase +name+ to underscore style.
@@ -54,25 +55,29 @@ module BinData
     #---------------
     private
 
-    def lookup_key(name, endian = nil)
-      name = underscore_name(name)
-
+    def name_with_endian(name, endian)
       result = name
       if endian != nil
         if /^u?int\d+$/ =~ name
           result = name + ((endian == :little) ? "le" : "be")
-        elsif /^(float|double)$/ =~ name
+        else
           result = name + ((endian == :little) ? "_le" : "_be")
         end
       end
       result
     end
 
-    def try_registering_key(key)
-      if /^u?int\d+(le|be)$/ =~ key or /^bit\d+(le)?$/ =~ key
-        class_name = key.gsub(/(?:^|_)(.)/) { $1.upcase }
+    def is_registered?(name)
+      register_dynamic_class(name) unless @registry.has_key?(name)
+
+      @registry.has_key?(name)
+    end
+
+    def register_dynamic_class(name)
+      if /^u?int\d+(le|be)$/ =~ name or /^bit\d+(le)?$/ =~ name
+        class_name = name.gsub(/(?:^|_)(.)/) { $1.upcase }
         begin
-          register(key, BinData::const_get(class_name))
+          BinData::const_get(class_name)
         rescue NameError
         end
       end

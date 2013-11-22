@@ -196,6 +196,31 @@ The increase in clarity can be seen with the above example.  The
 `endian` keyword will cascade to nested types, as illustrated with the
 array in the above example.
 
+The endian keyword can also be used to identify custom types that have
+endianness.  To do this, the class name of the custom types must end with `Le`
+for little endian, and `Be` for big endian.
+
+    class CoordLe < BinData::Record
+      endian :little
+       int16  :x
+      int16  :y
+    end
+
+    class CoordBe < BinData::Record
+      endian :big
+      int16  :x
+      int16  :y
+    end
+
+    class Rectangle < BinData::Record
+      endian :little
+
+      coord  :upper_left
+      coord  :lower_right
+    end
+{:ruby}
+
+
 ## Dependencies between fields
 
 A common occurence in binary file formats is one field depending upon

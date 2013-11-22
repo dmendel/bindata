@@ -1,5 +1,9 @@
 = BinData Changelog
 
+== Version 1.x.x (2013-xx-xx)
+
+* Allow custom types to have endian, not just numerics.
+
 == Version 1.6.0 (2013-09-02)
 
 * Added license to .gemspec

@@ -102,3 +102,26 @@ describe BinData::Registry, "with numerics" do
     r.lookup("bit3le", :little).to_s.must_equal "BinData::Bit3le"
   end
 end
+
+describe BinData::Registry, "with endian specific types" do
+  let(:r) { BinData::Registry.new }
+
+  before do
+    r.register('a_le', A)
+    r.register('b_be', B)
+  end
+  
+  it "lookup little endian types" do
+    r.lookup('a', :little).must_equal A
+  end
+
+  it "lookup big endian types" do
+    r.lookup('b', :big).must_equal B
+  end
+
+  it "does not lookup types with non existent endian" do
+    lambda {
+      r.lookup('a', :big)
+    }.must_raise BinData::UnRegisteredTypeError
+  end
+end
