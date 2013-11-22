@@ -70,7 +70,7 @@ module BinData
         { big: 'be', little: 'le' }.each do |endianness, suffix|
           Class.new(RegisteredClasses.lookup(supertype, endianness)) do
             endian endianness
-            instance_eval(&block)
+            class_exec(&block)
             RegisteredClasses.register("#{name}_#{suffix}",self)
           end
         end
