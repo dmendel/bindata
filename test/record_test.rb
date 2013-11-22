@@ -507,3 +507,38 @@ describe BinData::Record, "derived classes" do
     Child2Record.new.field_names.must_equal ["a", "b", "c"]
   end
 end
+
+describe BinData::Record, '#endian' do
+  it "defines multiple records" do
+    BinData::Record.multiendian(:vector) do
+      uint32 :x
+      uint32 :y
+      uint32 :z
+    end
+
+    [:little, :big].each do |endianness|
+      Class.new(BinData::Record) do
+        endian endianness
+        vector :position
+        uint32 :radius
+      end
+    end
+  end
+
+  it "works with inheritance" do
+    BinData::Record.multiendian(:vector2d) do
+      uint32 :x
+      uint32 :y
+    end
+
+    BinData::Record.multiendian(:vector3d, :vector2d) do
+      uint32 :z
+    end
+
+    Class.new(BinData::Record) do
+      endian :little
+      vector3d :position
+      uint32 :radius
+    end.new.position.field_names.must_equal ["x", "y", "z"]
+  end
+end

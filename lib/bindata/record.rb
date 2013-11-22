@@ -66,6 +66,16 @@ module BinData
     dsl_parser :struct
 
     class << self
+      def multiendian(name, supertype = Record, &block)
+        { big: 'be', little: 'le' }.each do |endianness, suffix|
+          Class.new(RegisteredClasses.lookup(supertype, endianness)) do
+            endian endianness
+            class_exec(&block)
+            RegisteredClasses.register("#{name}_#{suffix}",self)
+          end
+        end
+        name
+      end
 
       def arg_extractor
         RecordArgExtractor
