@@ -5,28 +5,14 @@ require File.expand_path(File.join(File.dirname(__FILE__), "common"))
 describe BinData::IO, "reading from non seekable stream" do
   before do
     @rd, @wr = IO::pipe
-    if fork
-      # parent
-      @wr.close
-      @io = BinData::IO.new(@rd)
-    else
-      # child
-      begin
-        @rd.close
-        @wr.write "a" * 5000
-        @wr.write "b" * 5000
-        @wr.close
-      rescue Exception
-        # ignore it
-      ensure
-        exit!
-      end
-    end
+    @io = BinData::IO.new(@rd)
+    @wr.write "a" * 5000
+    @wr.write "b" * 5000
+    @wr.close
   end
 
   after do
     @rd.close
-    Process.wait
   end
 
   it "always has an offset of 0" do
