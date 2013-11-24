@@ -6,8 +6,8 @@ describe BinData::IO, "reading from non seekable stream" do
   before do
     @rd, @wr = IO::pipe
     @io = BinData::IO.new(@rd)
-    @wr.write "a" * 5000
-    @wr.write "b" * 5000
+    @wr.write "a" * 2000
+    @wr.write "b" * 2000
     @wr.close
   end
 
@@ -21,7 +21,7 @@ describe BinData::IO, "reading from non seekable stream" do
   end
 
   it "seeks correctly" do
-    @io.seekbytes(4999)
+    @io.seekbytes(1999)
     @io.readbytes(5).must_equal "abbbb"
   end
 
@@ -40,7 +40,7 @@ describe BinData::IO, "when reading" do
 
   it "does not wrap IO objects" do
     io.raw_io.must_equal stream
-  end
+
 
   it "raises error when io is BinData::IO" do
     lambda {
