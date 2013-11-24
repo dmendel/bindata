@@ -3,6 +3,9 @@
 == Version 1.x.x (2013-xx-xx)
 
 * Allow custom types to have endian, not just numerics.
+* Added missing field to TCP example.  Thanks to Bertrand Paquet.
+* Made tests compatible with JRuby.  Thanks to Charles Oliver Nutter.
+* Support travis ci for those that use it.  Thanks to Charles Oliver Nutter.
 
 == Version 1.6.0 (2013-09-02)
 
