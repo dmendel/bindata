@@ -40,7 +40,7 @@ describe BinData::IO, "when reading" do
 
   it "does not wrap IO objects" do
     io.raw_io.must_equal stream
-
+  end
 
   it "raises error when io is BinData::IO" do
     lambda {
