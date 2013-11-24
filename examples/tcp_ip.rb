@@ -53,6 +53,7 @@ class TCP_PDU < BinData::Record
   bit1   :urg
   bit1   :ack
   bit1   :psh
+  bit1   :rst
   bit1   :syn
   bit1   :fin
   uint16 :window
