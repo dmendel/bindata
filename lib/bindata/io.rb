@@ -3,11 +3,7 @@ require 'stringio'
 module BinData
   # A wrapper around an IO object.  The wrapper provides a consistent
   # interface for BinData objects to use when accessing the IO.
-  class IO
-
-    # The underlying IO is unseekable
-    class Unseekable < StandardError; end
-
+  module IO
     # Creates a StringIO around +str+.
     def self.create_string_io(str = "")
       if str.respond_to?(:force_encoding)
@@ -16,10 +12,10 @@ module BinData
       StringIO.new(str)
     end
 
-    # Create a new IO wrapper around +io+.  +io+ must support #read if used
-    # for reading, #write if used for writing, #pos if reading the current
-    # stream position and #seek if setting the current stream position.  If
-    # +io+ is a string it will be automatically wrapped in an StringIO object.
+    # Create a new IO Read wrapper around +io+.  +io+ must provide #read,
+    # #pos if reading the current stream position and #seek if setting the
+    # current stream position.  If +io+ is a string it will be automatically
+    # wrapped in an StringIO object.
     #
     # The IO can handle bitstreams in either big or little endian format.
     #
@@ -33,242 +29,373 @@ module BinData
     # In little endian format:
     #   readbits(6), readbits(5) #=> [543210, a9876]
     #
-    def initialize(io)
-      raise ArgumentError, "io must not be a BinData::IO" if BinData::IO === io
+    class Read
+      def initialize(io)
+        raise ArgumentError, "io must not be a BinData::IO::Read" if BinData::IO::Read === io
 
-      # wrap strings in a StringIO
-      if io.respond_to?(:to_str)
-        io = BinData::IO.create_string_io(io.to_str)
+        # wrap strings in a StringIO
+        if io.respond_to?(:to_str)
+          io = BinData::IO.create_string_io(io.to_str)
+        end
+
+        @raw_io = io
+
+        # bits when reading
+        @rnbits  = 0
+        @rval    = 0
+        @rendian = nil
+
+        @buffer_end_pos = nil
+
+        extend seekable? ? SeekableStream : UnSeekableStream
       end
 
-      @raw_io = io
+      # Sets a buffer of +n+ bytes on the io stream.  Any reading or seeking
+      # calls inside the +block+ will be contained within this buffer.
+      def with_buffer(n, &block)
+        prev = @buffer_end_pos
+        @buffer_end_pos = offset + n
+        begin
+          block.call
+          read
+        ensure
+          @buffer_end_pos = prev
+        end
+      end
 
-      # initial stream position if stream supports positioning
-      @initial_pos = current_position rescue 0
-
-      # bits when reading
-      @rnbits  = 0
-      @rval    = 0
-      @rendian = nil
-
-      # bits when writing
-      @wnbits  = 0
-      @wval    = 0
-      @wendian = nil
-    end
-
-    # Access to the underlying raw io.
-    attr_reader :raw_io
-
-    # Returns the current offset of the io stream.  The exact value of
-    # the offset when reading bitfields is not defined.
-    def offset
-      current_position - @initial_pos
-    rescue Unseekable
-      0
-    end
-
-    # The number of bytes remaining in the input stream.
-    def num_bytes_remaining
-      pos = current_position
-      @raw_io.seek(0, ::IO::SEEK_END)
-      bytes_remaining = current_position - pos
-      @raw_io.seek(pos, ::IO::SEEK_SET)
-
-      bytes_remaining
-    rescue Unseekable
-      0
-    end
-
-    # Seek +n+ bytes from the current position in the io stream.
-    def seekbytes(n)
-      reset_read_bits
-      @raw_io.seek(n, ::IO::SEEK_CUR)
-    rescue NoMethodError, Errno::ESPIPE, Errno::EPIPE
-      skipbytes(n)
-    end
-
-    # Reads exactly +n+ bytes from +io+.
-    #
-    # If the data read is nil an EOFError is raised.
-    #
-    # If the data read is too short an IOError is raised.
-    def readbytes(n)
-      reset_read_bits
-
-      str = @raw_io.read(n)
-      raise EOFError, "End of file reached" if str.nil?
-      raise IOError, "data truncated" if str.size < n
-      str
-    end
-
-    # Reads all remaining bytes from the stream.
-    def read_all_bytes
-      reset_read_bits
-      @raw_io.read
-    end
-
-    # Reads exactly +nbits+ bits from the stream. +endian+ specifies whether
-    # the bits are stored in +:big+ or +:little+ endian format.
-    def readbits(nbits, endian)
-      if @rendian != endian
-        # don't mix bits of differing endian
+      # Seek +n+ bytes from the current position in the io stream.
+      def seekbytes(n)
         reset_read_bits
-        @rendian = endian
+        seek(n)
       end
 
-      if endian == :big
-        read_big_endian_bits(nbits)
-      else
-        read_little_endian_bits(nbits)
+      # Reads exactly +n+ bytes from +io+.
+      #
+      # If the data read is nil an EOFError is raised.
+      #
+      # If the data read is too short an IOError is raised.
+      def readbytes(n)
+        reset_read_bits
+
+        str = read(n)
+        raise EOFError, "End of file reached" if str.nil?
+        raise IOError, "data truncated" if str.size < n
+        str
+      end
+
+      # Reads all remaining bytes from the stream.
+      def read_all_bytes
+        reset_read_bits
+        read
+      end
+
+      # Reads exactly +nbits+ bits from the stream. +endian+ specifies whether
+      # the bits are stored in +:big+ or +:little+ endian format.
+      def readbits(nbits, endian)
+        if @rendian != endian
+          # don't mix bits of differing endian
+          reset_read_bits
+          @rendian = endian
+        end
+
+        if endian == :big
+          read_big_endian_bits(nbits)
+        else
+          read_little_endian_bits(nbits)
+        end
+      end
+
+      # Discards any read bits so the stream becomes aligned at the
+      # next byte boundary.
+      def reset_read_bits
+        @rnbits = 0
+        @rval   = 0
+      end
+
+      #---------------
+      private
+
+      def seekable?
+        @raw_io.pos
+      rescue NoMethodError, Errno::ESPIPE, Errno::EPIPE
+        nil
+      end
+
+      def seek(n)
+        seek_raw(buffer_limited_n(n))
+      end
+
+      def read(n = nil)
+        read_raw(buffer_limited_n(n))
+      end
+
+      def buffer_limited_n(n)
+        if @buffer_end_pos
+          max = @buffer_end_pos - offset
+          n = max if n.nil? or n > max
+        end
+
+        n
+      end
+
+      def read_big_endian_bits(nbits)
+        while @rnbits < nbits
+          accumulate_big_endian_bits
+        end
+
+        val     = (@rval >> (@rnbits - nbits)) & mask(nbits)
+        @rnbits -= nbits
+        @rval   &= mask(@rnbits)
+
+        val
+      end
+
+      def accumulate_big_endian_bits
+        byte = read(1)
+        raise EOFError, "End of file reached" if byte.nil?
+        byte = byte.unpack('C').at(0) & 0xff
+
+        @rval = (@rval << 8) | byte
+        @rnbits += 8
+      end
+
+      def read_little_endian_bits(nbits)
+        while @rnbits < nbits
+          accumulate_little_endian_bits
+        end
+
+        val     = @rval & mask(nbits)
+        @rnbits -= nbits
+        @rval   >>= nbits
+
+        val
+      end
+
+      def accumulate_little_endian_bits
+        byte = read(1)
+        raise EOFError, "End of file reached" if byte.nil?
+        byte = byte.unpack('C').at(0) & 0xff
+
+        @rval = @rval | (byte << @rnbits)
+        @rnbits += 8
+      end
+
+      def mask(nbits)
+        (1 << nbits) - 1
+      end
+
+      # Use #seek and #pos on seekable streams
+      module SeekableStream
+        # Returns the current offset of the io stream.  The exact value of
+        # the offset when reading bitfields is not defined.
+        def offset
+          raw_io.pos - @initial_pos
+        end
+
+        # The number of bytes remaining in the input stream.
+        def num_bytes_remaining
+          mark = raw_io.pos
+          raw_io.seek(0, ::IO::SEEK_END)
+          bytes_remaining = raw_io.pos - mark
+          raw_io.seek(mark, ::IO::SEEK_SET)
+
+          bytes_remaining
+        end
+
+        #-----------
+        private
+
+        def read_raw(n)
+          raw_io.read(n)
+        end
+
+        def seek_raw(n)
+          raw_io.seek(n, ::IO::SEEK_CUR)
+        end
+
+        def raw_io
+          @initial_pos ||= @raw_io.pos
+          @raw_io
+        end
+      end
+
+      # Manually keep track of offset for unseekable streams.
+      module UnSeekableStream
+        # Returns the current offset of the io stream.  The exact value of
+        # the offset when reading bitfields is not defined.
+        def offset
+          @read_count ||= 0
+        end
+
+        # The number of bytes remaining in the input stream.
+        def num_bytes_remaining
+          raise IOError, "stream is unseekable"
+        end
+
+        #-----------
+        private
+
+        def read_raw(n)
+          @read_count ||= 0
+
+          data = @raw_io.read(n)
+          @read_count += data.size if data
+          data
+        end
+
+        def seek_raw(n)
+          raise IOError, "stream is unseekable" if n < 0
+
+          # skip over data in 8k blocks
+          while n > 0
+            bytes_to_read = [n, 8192].min
+            read_raw(bytes_to_read)
+            n -= bytes_to_read
+          end
+        end
       end
     end
 
-    # Discards any read bits so the stream becomes aligned at the
-    # next byte boundary.
-    def reset_read_bits
-      @rnbits = 0
-      @rval   = 0
-    end
+    # Create a new IO Write wrapper around +io+.  +io+ must provide #write.
+    # If +io+ is a string it will be automatically wrapped in an StringIO
+    # object.
+    #
+    # The IO can handle bitstreams in either big or little endian format.
+    #
+    # See IO::Read for more information.
+    class Write
+      def initialize(io)
+        if BinData::IO::Write === io
+          raise ArgumentError, "io must not be a BinData::IO::Write"
+        end
 
-    # Writes the given string of bytes to the io stream.
-    def writebytes(str)
-      flushbits
-      @raw_io.write(str)
-    end
+        # wrap strings in a StringIO
+        if io.respond_to?(:to_str)
+          io = BinData::IO.create_string_io(io.to_str)
+        end
 
-    # Writes +nbits+ bits from +val+ to the stream. +endian+ specifies whether
-    # the bits are to be stored in +:big+ or +:little+ endian format.
-    def writebits(val, nbits, endian)
-      if @wendian != endian
-        # don't mix bits of differing endian
+        @raw_io = io
+
+        @wnbits  = 0
+        @wval    = 0
+        @wendian = nil
+
+        @bytes_remaining = nil
+      end
+
+      # Sets a buffer of +n+ bytes on the io stream.  Any writes inside the
+      # +block+ will be contained within this buffer.  If less than +n+ bytes
+      # are written inside the block, the remainder will be padded with '\0'
+      # bytes.
+      def with_buffer(n, &block)
+        prev = @bytes_remaining
+        if prev
+          n = prev if n > prev
+          prev -= n
+        end
+
+        @bytes_remaining = n
+        begin
+          block.call
+          write_raw("\0" * @bytes_remaining)
+        ensure
+          @bytes_remaining = prev
+        end
+      end
+
+      # Writes the given string of bytes to the io stream.
+      def writebytes(str)
         flushbits
-        @wendian = endian
+        write_raw(str)
       end
 
-      clamped_val = val & mask(nbits)
+      # Writes +nbits+ bits from +val+ to the stream. +endian+ specifies whether
+      # the bits are to be stored in +:big+ or +:little+ endian format.
+      def writebits(val, nbits, endian)
+        if @wendian != endian
+          # don't mix bits of differing endian
+          flushbits
+          @wendian = endian
+        end
 
-      if endian == :big
-        write_big_endian_bits(clamped_val, nbits)
-      else
-        write_little_endian_bits(clamped_val, nbits)
-      end
-    end
+        clamped_val = val & mask(nbits)
 
-    # To be called after all +writebits+ have been applied.
-    def flushbits
-      raise "Internal state error nbits = #{@wnbits}" if @wnbits >= 8
-
-      if @wnbits > 0
-        writebits(0, 8 - @wnbits, @wendian)
-      end
-    end
-    alias_method :flush, :flushbits
-
-    #---------------
-    private
-
-    def current_position
-      @raw_io.pos
-    rescue NoMethodError, Errno::ESPIPE
-      raise Unseekable
-    end
-
-    def skipbytes(n)
-      # skip over data in 8k blocks
-      while n > 0
-        bytes_to_read = [n, 8192].min
-        @raw_io.read(bytes_to_read)
-        n -= bytes_to_read
-      end
-    end
-
-    def read_big_endian_bits(nbits)
-      while @rnbits < nbits
-        accumulate_big_endian_bits
-      end
-
-      val     = (@rval >> (@rnbits - nbits)) & mask(nbits)
-      @rnbits -= nbits
-      @rval   &= mask(@rnbits)
-
-      val
-    end
-
-    def accumulate_big_endian_bits
-      byte = @raw_io.read(1)
-      raise EOFError, "End of file reached" if byte.nil?
-      byte = byte.unpack('C').at(0) & 0xff
-
-      @rval = (@rval << 8) | byte
-      @rnbits += 8
-    end
-
-    def read_little_endian_bits(nbits)
-      while @rnbits < nbits
-        accumulate_little_endian_bits
-      end
-
-      val     = @rval & mask(nbits)
-      @rnbits -= nbits
-      @rval   >>= nbits
-
-      val
-    end
-
-    def accumulate_little_endian_bits
-      byte = @raw_io.read(1)
-      raise EOFError, "End of file reached" if byte.nil?
-      byte = byte.unpack('C').at(0) & 0xff
-
-      @rval = @rval | (byte << @rnbits)
-      @rnbits += 8
-    end
-
-    def write_big_endian_bits(val, nbits)
-      while nbits > 0
-        bits_req = 8 - @wnbits
-        if nbits >= bits_req
-          msb_bits = (val >> (nbits - bits_req)) & mask(bits_req)
-          nbits -= bits_req
-          val &= mask(nbits)
-
-          @wval   = (@wval << bits_req) | msb_bits
-          @raw_io.write(@wval.chr)
-
-          @wval   = 0
-          @wnbits = 0
+        if endian == :big
+          write_big_endian_bits(clamped_val, nbits)
         else
-          @wval = (@wval << nbits) | val
-          @wnbits += nbits
-          nbits = 0
+          write_little_endian_bits(clamped_val, nbits)
         end
       end
-    end
 
-    def write_little_endian_bits(val, nbits)
-      while nbits > 0
-        bits_req = 8 - @wnbits
-        if nbits >= bits_req
-          lsb_bits = val & mask(bits_req)
-          nbits -= bits_req
-          val >>= bits_req
+      # To be called after all +writebits+ have been applied.
+      def flushbits
+        raise "Internal state error nbits = #{@wnbits}" if @wnbits >= 8
 
-          @wval   = @wval | (lsb_bits << @wnbits)
-          @raw_io.write(@wval.chr)
-
-          @wval   = 0
-          @wnbits = 0
-        else
-          @wval   = @wval | (val << @wnbits)
-          @wnbits += nbits
-          nbits = 0
+        if @wnbits > 0
+          writebits(0, 8 - @wnbits, @wendian)
         end
       end
-    end
+      alias_method :flush, :flushbits
 
-    def mask(nbits)
-      (1 << nbits) - 1
+      #---------------
+      private
+
+      def write_big_endian_bits(val, nbits)
+        while nbits > 0
+          bits_req = 8 - @wnbits
+          if nbits >= bits_req
+            msb_bits = (val >> (nbits - bits_req)) & mask(bits_req)
+            nbits -= bits_req
+            val &= mask(nbits)
+
+            @wval   = (@wval << bits_req) | msb_bits
+            write_raw(@wval.chr)
+
+            @wval   = 0
+            @wnbits = 0
+          else
+            @wval = (@wval << nbits) | val
+            @wnbits += nbits
+            nbits = 0
+          end
+        end
+      end
+
+      def write_little_endian_bits(val, nbits)
+        while nbits > 0
+          bits_req = 8 - @wnbits
+          if nbits >= bits_req
+            lsb_bits = val & mask(bits_req)
+            nbits -= bits_req
+            val >>= bits_req
+
+            @wval   = @wval | (lsb_bits << @wnbits)
+            write_raw(@wval.chr)
+
+            @wval   = 0
+            @wnbits = 0
+          else
+            @wval   = @wval | (val << @wnbits)
+            @wnbits += nbits
+            nbits = 0
+          end
+        end
+      end
+
+      def write_raw(data)
+        if @bytes_remaining
+          if data.size > @bytes_remaining
+            data = data[0, @bytes_remaining]
+          end
+          @bytes_remaining -= data.size
+        end
+
+        @raw_io.write(data)
+      end
+
+      def mask(nbits)
+        (1 << nbits) - 1
+      end
     end
   end
 end

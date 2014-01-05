@@ -30,7 +30,7 @@ end
 
 class ExampleSingle < BinData::BasePrimitive
   def self.io_with_value(val)
-    BinData::IO.new([val].pack("V"))
+    StringIO.new([val].pack("V"))
   end
 
   private

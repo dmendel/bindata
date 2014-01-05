@@ -161,7 +161,7 @@ module BinData
 
     # Reads data into this data object.
     def read(io)
-      io = BinData::IO.new(io) unless BinData::IO === io
+      io = BinData::IO::Read.new(io) unless BinData::IO::Read === io
 
       @in_read = true
       clear
@@ -184,7 +184,7 @@ module BinData
 
     # Writes the value for this data object to +io+.
     def write(io)
-      io = BinData::IO.new(io) unless BinData::IO === io
+      io = BinData::IO::Write.new(io) unless BinData::IO::Write === io
 
       do_write(io)
       io.flush

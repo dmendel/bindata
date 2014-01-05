@@ -2,10 +2,10 @@
 
 require File.expand_path(File.join(File.dirname(__FILE__), "common"))
 
-describe BinData::IO, "reading from non seekable stream" do
+describe BinData::IO::Read, "reading from non seekable stream" do
   before do
     @rd, @wr = IO::pipe
-    @io = BinData::IO.new(@rd)
+    @io = BinData::IO::Read.new(@rd)
     @wr.write "a" * 2000
     @wr.write "b" * 2000
     @wr.close
@@ -15,9 +15,9 @@ describe BinData::IO, "reading from non seekable stream" do
     @rd.close
   end
 
-  it "always has an offset of 0" do
+  it "has correct offset" do
     @io.readbytes(10)
-    @io.offset.must_equal 0
+    @io.offset.must_equal 10
   end
 
   it "seeks correctly" do
@@ -25,26 +25,20 @@ describe BinData::IO, "reading from non seekable stream" do
     @io.readbytes(5).must_equal "abbbb"
   end
 
-  it "returns zero for num bytes remaining" do
-    @io.num_bytes_remaining.must_equal 0
+  it "#num_bytes_remaining raises IOError" do
+    lambda {
+      @io.num_bytes_remaining
+    }.must_raise IOError
   end
 end
 
-describe BinData::IO, "when reading" do
+describe BinData::IO::Read, "when reading" do
   let(:stream) { StringIO.new "abcdefghij" }
-  let(:io) { BinData::IO.new(stream) }
+  let(:io) { BinData::IO::Read.new(stream) }
 
-  it "wraps strings in StringIO" do
-    io.raw_io.class.must_equal StringIO
-  end
-
-  it "does not wrap IO objects" do
-    io.raw_io.must_equal stream
-  end
-
-  it "raises error when io is BinData::IO" do
+  it "raises error when io is BinData::IO::Read" do
     lambda {
-      BinData::IO.new(BinData::IO.new(""))
+      BinData::IO::Read.new(BinData::IO::Read.new(""))
     }.must_raise ArgumentError
   end
 
@@ -86,17 +80,58 @@ describe BinData::IO, "when reading" do
   end
 end
 
-describe BinData::IO, "when writing" do
-  let(:stream) { StringIO.new }
-  let(:io) { BinData::IO.new(stream) }
+describe BinData::IO::Read, "#with_buffer" do
+  let(:stream) { StringIO.new "abcdefghijklmnopqrst" }
+  let(:io) { BinData::IO::Read.new(stream) }
 
-  it "does not wrap IO objects" do
-    io.raw_io.must_equal stream
+  it "consumes entire buffer on short reads" do
+    io.with_buffer(10) do
+      io.readbytes(4).must_equal "abcd"
+    end
+    io.offset.must_equal(10)
   end
+
+  it "consumes entire buffer on read_all_bytes" do
+    io.with_buffer(10) do
+      io.read_all_bytes.must_equal "abcdefghij"
+    end
+    io.offset.must_equal(10)
+  end
+
+  it "restricts large reads" do
+    io.with_buffer(10) do
+      lambda {
+        io.readbytes(15)
+      }.must_raise IOError
+    end
+  end
+
+  it "is nestable" do
+    io.with_buffer(10) do
+      io.readbytes(2).must_equal "ab"
+      io.with_buffer(5) do
+        io.read_all_bytes.must_equal "cdefg"
+      end
+      io.offset.must_equal(2 + 5)
+    end
+    io.offset.must_equal(10)
+  end
+
+  it "restricts large seeks" do
+    io.with_buffer(10) do
+      io.seekbytes(15)
+    end
+    io.offset.must_equal(10)
+  end
+end
+
+describe BinData::IO::Write, "when writing" do
+  let(:stream) { StringIO.new }
+  let(:io) { BinData::IO::Write.new(stream) }
 
   it "raises error when io is BinData::IO" do
     lambda {
-      BinData::IO.new(BinData::IO.new(""))
+      BinData::IO::Write.new(BinData::IO::Write.new(""))
     }.must_raise ArgumentError
   end
 
@@ -114,11 +149,43 @@ describe BinData::IO, "when writing" do
   end
 end
 
-describe BinData::IO, "reading bits in big endian" do
+describe BinData::IO::Write, "#with_buffer" do
+  let(:stream) { StringIO.new }
+  let(:io) { BinData::IO::Write.new(stream) }
+
+  it "pads entire buffer on short reads" do
+    io.with_buffer(10) do
+      io.writebytes "abcde"
+    end
+
+    stream.value.must_equal "abcde\0\0\0\0\0"
+  end
+
+  it "discards excess on large writes" do
+    io.with_buffer(5) do
+      io.writebytes "abcdefghij"
+    end
+
+    stream.value.must_equal "abcde"
+  end
+
+  it "is nestable" do
+    io.with_buffer(10) do
+      io.with_buffer(5) do
+        io.writebytes "abc"
+      end
+      io.writebytes "de"
+    end
+
+    stream.value.must_equal "abc\0\0de\0\0\0"
+  end
+end
+
+describe BinData::IO::Read, "reading bits in big endian" do
   let(:b1) { 0b1111_1010 }
   let(:b2) { 0b1100_1110 }
   let(:b3) { 0b0110_1010 }
-  let(:io) { BinData::IO.new([b1, b2, b3].pack("CCC")) }
+  let(:io) { BinData::IO::Read.new([b1, b2, b3].pack("CCC")) }
 
   it "reads a bitfield less than 1 byte" do
     io.readbits(3, :big).must_equal 0b111
@@ -160,11 +227,11 @@ describe BinData::IO, "reading bits in big endian" do
   end
 end
 
-describe BinData::IO, "reading bits in little endian" do
+describe BinData::IO::Read, "reading bits in little endian" do
   let(:b1) { 0b1111_1010 }
   let(:b2) { 0b1100_1110 }
   let(:b3) { 0b0110_1010 }
-  let(:io) { BinData::IO.new([b1, b2, b3].pack("CCC")) }
+  let(:io) { BinData::IO::Read.new([b1, b2, b3].pack("CCC")) }
 
   it "reads a bitfield less than 1 byte" do
     io.readbits(3, :little).must_equal 0b010
@@ -209,7 +276,7 @@ end
 class BitWriterHelper
   def initialize
     @stringio = BinData::IO.create_string_io
-    @io = BinData::IO.new(@stringio)
+    @io = BinData::IO::Write.new(@stringio)
   end
 
   def writebits(val, nbits, endian)
@@ -227,7 +294,7 @@ class BitWriterHelper
   end
 end
 
-describe BinData::IO, "writing bits in big endian" do
+describe BinData::IO::Write, "writing bits in big endian" do
   let(:io) { BitWriterHelper.new }
 
   it "writes a bitfield less than 1 byte" do
@@ -272,7 +339,7 @@ describe BinData::IO, "writing bits in big endian" do
   end
 end
 
-describe BinData::IO, "writing bits in little endian" do
+describe BinData::IO::Write, "writing bits in little endian" do
   let(:io) { BitWriterHelper.new }
 
   it "writes a bitfield less than 1 byte" do
@@ -317,17 +384,19 @@ describe BinData::IO, "writing bits in little endian" do
   end
 end
 
-describe BinData::IO, "with changing endian" do
+describe BinData::IO::Read, "with changing endian" do
   it "does not mix different endianess when reading" do
     b1 = 0b0110_1010
     b2 = 0b1110_0010
     str = [b1, b2].pack("CC")
-    io = BinData::IO.new(str)
+    io = BinData::IO::Read.new(str)
 
     io.readbits(3, :big).must_equal 0b011
     io.readbits(4, :little).must_equal 0b0010
   end
+end
 
+describe BinData::IO::Write, "with changing endian" do
   it "does not mix different endianess when writing" do
     io = BitWriterHelper.new
     io.writebits(0b110, 3, :big)
