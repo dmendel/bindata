@@ -17,6 +17,7 @@ require 'bindata/string'
 require 'bindata/stringz'
 require 'bindata/struct'
 require 'bindata/trace'
+require 'bindata/virtual'
 require 'bindata/alignment'
 require 'bindata/deprecated'
 

@@ -24,18 +24,21 @@ module BinData
   # Parameters may be provided at initialisation to control the behaviour of
   # an object.  These params include those for BinData::Base as well as:
   #
-  # [<tt>:assert</tt>]    Raise an error when reading if the value of this
-  #                       evaluated parameter is false.
+  # [<tt>:assert</tt>]    Raise an error when reading or assigning if the value
+  #                       of this evaluated parameter is false.
   #
   class Virtual < BinData::Base
 
     optional_parameter :assert
 
     def clear?; true; end
-    def assign(val); end
     def snapshot; nil; end
     def do_num_bytes; 0; end
     def do_write(io); end
+
+    def assign(val)
+      assert!
+    end
 
     def do_read(io)
       assert!

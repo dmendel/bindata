@@ -1,12 +1,13 @@
 = BinData Changelog
 
-== Version 1.x.x (2013-xx-xx)
+== Version 1.8.0 (2014-01-xx)
 
 * Allow custom types to have endian, not just numerics.
 * Added missing field to TCP example.  Thanks to Bertrand Paquet.
 * Made tests compatible with JRuby.  Thanks to Charles Oliver Nutter.
 * Support travis ci for those that use it.  Thanks to Charles Oliver Nutter.
 * Added Buffer for easier handling of nested streams.
+* Added Virtual field.
 
 == Version 1.6.0 (2013-09-02)
 
