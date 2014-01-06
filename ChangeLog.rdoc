@@ -6,6 +6,7 @@
 * Added missing field to TCP example.  Thanks to Bertrand Paquet.
 * Made tests compatible with JRuby.  Thanks to Charles Oliver Nutter.
 * Support travis ci for those that use it.  Thanks to Charles Oliver Nutter.
+* Added Buffer for easier handling of nested streams.
 
 == Version 1.6.0 (2013-09-02)
 

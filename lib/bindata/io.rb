@@ -54,6 +54,10 @@ module BinData
       # calls inside the +block+ will be contained within this buffer.
       def with_buffer(n, &block)
         prev = @buffer_end_pos
+        if prev
+          avail = prev - offset
+          n = avail if n > avail
+        end
         @buffer_end_pos = offset + n
         begin
           block.call

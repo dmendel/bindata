@@ -1,4 +1,40 @@
 module BinData
+  # Extracts args for Records and Buffers.
+  #
+  # Foo.new(:bar => "baz) is ambiguous as to whether :bar is a value or parameter.
+  #
+  # BaseArgExtractor always assumes :bar is parameter.  This extractor correctly
+  # identifies it as value or parameter.
+  class MultiFieldArgExtractor
+    class << self
+      def extract(the_class, the_args)
+        value, parameters, parent = BaseArgExtractor.extract(the_class, the_args)
+
+        if parameters_is_value?(the_class, value, parameters)
+          value = parameters
+          parameters = {}
+        end
+
+        [value, parameters, parent]
+      end
+
+      def parameters_is_value?(the_class, value, parameters)
+        if value.nil? and parameters.length > 0
+          field_names_in_parameters?(the_class, parameters)
+        else
+          false
+        end
+      end
+
+      def field_names_in_parameters?(the_class, parameters)
+        field_names = the_class.fields.field_names
+        param_keys = parameters.keys
+
+        (field_names & param_keys).length > 0
+      end
+    end
+  end
+
   module DSLMixin
     def self.included(base) #:nodoc:
       base.extend ClassMethods
@@ -80,6 +116,8 @@ module BinData
           to_struct_params
         when :array
           to_array_params
+        when :buffer
+          to_array_params
         when :choice
           to_choice_params
         when :primitive
@@ -109,6 +147,8 @@ module BinData
         when :struct
           [:multiple_fields, :optional_fieldnames, :hidden_fields]
         when :array
+          [:multiple_fields, :optional_fieldnames]
+        when :buffer
           [:multiple_fields, :optional_fieldnames]
         when :choice
           [:multiple_fields, :all_or_none_fieldnames, :fieldnames_are_values]
@@ -157,6 +197,7 @@ module BinData
       def params_from_block(type, &block)
         bindata_classes = {
           :array  => BinData::Array,
+          :buffer => BinData::Buffer,
           :choice => BinData::Choice,
           :struct => BinData::Struct
         }

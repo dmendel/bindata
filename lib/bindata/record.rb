@@ -3,42 +3,6 @@ require 'bindata/sanitize'
 require 'bindata/struct'
 
 module BinData
-  # Extracts args for Records.
-  #
-  # Foo.new(:bar => "baz) is ambiguous as to whether :bar is a value or parameter.
-  #
-  # BaseArgExtractor always assumes :bar is parameter.  This extractor correctly
-  # identifies it as value or parameter.
-  class RecordArgExtractor
-    class << self
-      def extract(the_class, the_args)
-        value, parameters, parent = BaseArgExtractor.extract(the_class, the_args)
-
-        if parameters_is_value?(the_class, value, parameters)
-          value = parameters
-          parameters = {}
-        end
-
-        [value, parameters, parent]
-      end
-
-      def parameters_is_value?(the_class, value, parameters)
-        if value.nil? and parameters.length > 0
-          field_names_in_parameters?(the_class, parameters)
-        else
-          false
-        end
-      end
-
-      def field_names_in_parameters?(the_class, parameters)
-        field_names = the_class.fields.field_names
-        param_keys = parameters.keys
-
-        (field_names & param_keys).length > 0
-      end
-    end
-  end
-
   # A Record is a declarative wrapper around Struct.
   #
   #    require 'bindata'
@@ -68,7 +32,7 @@ module BinData
     class << self
 
       def arg_extractor
-        RecordArgExtractor
+        MultiFieldArgExtractor
       end
 
       def sanitize_parameters!(params) #:nodoc:

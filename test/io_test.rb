@@ -117,6 +117,17 @@ describe BinData::IO::Read, "#with_buffer" do
     io.offset.must_equal(10)
   end
 
+  it "restricts large nested buffers" do
+    io.with_buffer(10) do
+      io.readbytes(2).must_equal "ab"
+      io.with_buffer(20) do
+        io.read_all_bytes.must_equal "cdefghij"
+        io.offset.must_equal(10)
+      end
+    end
+    io.offset.must_equal(10)
+  end
+
   it "restricts large seeks" do
     io.with_buffer(10) do
       io.seekbytes(15)
