@@ -1,3 +1,8 @@
+= 2.0.0
+
+BinData 2.0.0 requires ruby 1.9 or greater.  Support for ruby 1.8 is found in
+BinData versions 1.8.x.
+
 = 1.6.0
 
 Added :assert as a replacement for :check_value.  Note that :assert performs
