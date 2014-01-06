@@ -43,9 +43,9 @@ for dependent and variable length fields is built in.
 
     $ gem install bindata
 
--or-
+-or if running ruby 1.8-
 
-    $ sudo ruby setup.rb
+    $ gem install bindata -v '~> 1.8.0'
 
 # Documentation
 
