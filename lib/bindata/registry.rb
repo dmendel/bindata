@@ -56,15 +56,14 @@ module BinData
     private
 
     def name_with_endian(name, endian)
-      result = name
-      if endian != nil
-        if /^u?int\d+$/ =~ name
-          result = name + ((endian == :little) ? "le" : "be")
-        else
-          result = name + ((endian == :little) ? "_le" : "_be")
-        end
+      return name if endian.nil?
+
+      suffix = (endian == :little) ? "le" : "be"
+      if /^u?int\d+$/ =~ name
+        name + suffix
+      else
+        name + "_" + suffix
       end
-      result
     end
 
     def is_registered?(name)
