@@ -19,9 +19,6 @@ Gem::Specification.new do |s|
 
   s.add_development_dependency('rake')
   s.add_development_dependency('minitest', "> 5.0.0")
-  s.add_development_dependency('haml', ["< 4.0.0"])
-  s.add_development_dependency('maruku')
-  s.add_development_dependency('syntax')
   s.description = <<-END.gsub(/^ +/, "")
     BinData is a declarative way to read and write binary file formats.
 

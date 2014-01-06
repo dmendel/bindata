@@ -260,40 +260,38 @@ describe BinData::String, "with :pad_front" do
 end
 
 describe BinData::String, "with Ruby 1.9 encodings" do
-  if RUBY_VERSION >= "1.9"
-    class UTF8String < BinData::String
-      def snapshot
-        super.force_encoding('UTF-8')
-      end
+  class UTF8String < BinData::String
+    def snapshot
+      super.force_encoding('UTF-8')
     end
+  end
 
-    let(:obj) { UTF8String.new }
-    let(:binary_str) { binary("\xC3\x85\xC3\x84\xC3\x96") }
-    let(:utf8_str) { binary_str.dup.force_encoding('UTF-8') }
+  let(:obj) { UTF8String.new }
+  let(:binary_str) { binary("\xC3\x85\xC3\x84\xC3\x96") }
+  let(:utf8_str) { binary_str.dup.force_encoding('UTF-8') }
 
-    it "stores assigned values as binary" do
-      obj.assign(utf8_str)
-      obj.to_binary_s.must_equal binary_str
-    end
+  it "stores assigned values as binary" do
+    obj.assign(utf8_str)
+    obj.to_binary_s.must_equal binary_str
+  end
 
-    it "stores read values as binary" do
-      obj = UTF8String.new(:read_length => binary_str.length)
-      obj.read(binary_str)
+  it "stores read values as binary" do
+    obj = UTF8String.new(:read_length => binary_str.length)
+    obj.read(binary_str)
 
-      obj.to_binary_s.must_equal binary_str
-    end
+    obj.to_binary_s.must_equal binary_str
+  end
 
-    it "returns values in correct encoding" do
-      obj.assign(utf8_str)
+  it "returns values in correct encoding" do
+    obj.assign(utf8_str)
 
-      obj.snapshot.must_equal utf8_str
-    end
+    obj.snapshot.must_equal utf8_str
+  end
 
-    it "has correct num_bytes" do
-      obj.assign(utf8_str)
+  it "has correct num_bytes" do
+    obj.assign(utf8_str)
 
-      obj.num_bytes.must_equal binary_str.length
-    end
+    obj.num_bytes.must_equal binary_str.length
   end
 end
 

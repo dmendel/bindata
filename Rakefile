@@ -14,5 +14,3 @@ Rake::TestTask.new do |t|
 end
 
 task :default => :test
-
-Dir['tasks/**/*.rake'].each { |t| load t }

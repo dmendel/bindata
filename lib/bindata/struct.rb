@@ -326,38 +326,8 @@ module BinData
       not obj.has_parameter?(:onlyif) or obj.eval_parameter(:onlyif)
     end
 
-    if RUBY_VERSION <= "1.9"
-      module OrderedHash #:nodoc:
-        def keys
-          @order ||= []
-          k = super
-          @order & k
-        end
-
-        def []=(key, value)
-          @order ||= []
-          @order << key
-          super(key, value)
-        end
-
-        def each
-          keys.each do |k|
-            yield [k, self[k]]
-          end
-        end
-
-        def each_pair
-          each do |el|
-            yield *el
-          end
-        end
-      end
-    end
-
     # A hash that can be accessed via attributes.
     class Snapshot < ::Hash #:nodoc:
-      include OrderedHash if RUBY_VERSION <= "1.9"
-
       def has_key?(key)
         super(key.to_s)
       end

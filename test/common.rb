@@ -49,11 +49,7 @@ class ExampleSingle < BinData::BasePrimitive
 end
 
 def binary(str)
-  if str.respond_to?(:force_encoding)
-    str.dup.force_encoding(Encoding::BINARY)
-  else
-    str
-  end
+  str.dup.force_encoding(Encoding::BINARY)
 end
 
 module Kernel

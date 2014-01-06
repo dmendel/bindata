@@ -43,17 +43,13 @@ for dependent and variable length fields is built in.
 
     $ gem install bindata
 
--or if running ruby 1.8-
+or if running ruby 1.8
 
     $ gem install bindata -v '~> 1.8.0'
 
 # Documentation
 
 [Read the wiki](http://github.com/dmendel/bindata/wiki).
-
--or-
-
-    $ rake manual
 
 # Contact
 

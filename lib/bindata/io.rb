@@ -6,10 +6,7 @@ module BinData
   module IO
     # Creates a StringIO around +str+.
     def self.create_string_io(str = "")
-      if str.respond_to?(:force_encoding)
-        str = str.dup.force_encoding(Encoding::BINARY)
-      end
-      StringIO.new(str)
+      StringIO.new(str.dup.force_encoding(Encoding::BINARY))
     end
 
     # Create a new IO Read wrapper around +io+.  +io+ must provide #read,
