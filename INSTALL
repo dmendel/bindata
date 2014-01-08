@@ -1,11 +1,12 @@
-This package is designed to be installed with rubygems.  If you don't
-have rubygems installed on your system, the older setup.rb is
-included as a convenience.
+This package is designed to be installed with rubygems.
 
-  ($ su)
-  # ruby setup.rb
+    $ gem install bindata
 
-This simple step installs bindata under the default location for Ruby
-libraries.  You can also customize the installation by supplying some
-options to setup.rb.
-Try "ruby setup.rb --help".
+If you are using ruby 1.8
+
+    $ gem install bindata -v '~> 1.8.0'
+
+If you are not using rubygems, you may like to install BinData with
+Minero Aoki's setup.rb found at:
+
+    https://github.com/rubyworks/setup
