@@ -20,7 +20,7 @@ module BinData
   #                              :fields => [ [:int32le, :a],
   #                                           [:int16le, :b],
   #                                           [:tuple, :s] ])
-  #    obj.field_names   =># ["b", "s"]
+  #    obj.field_names   =># [:b, :s]
   #
   #
   # == Parameters
@@ -176,7 +176,7 @@ module BinData
       else
         hidden = get_parameter(:hide) || []
         @field_names.compact - hidden
-      end.collect { |x| x.to_s }
+      end
     end
 
     def respond_to?(symbol, include_private = false) #:nodoc:
@@ -328,18 +328,8 @@ module BinData
 
     # A hash that can be accessed via attributes.
     class Snapshot < ::Hash #:nodoc:
-      def has_key?(key)
-        super(key.to_s)
-      end
-
-      def [](key)
-        super(key.to_s)
-      end
-
       def []=(key, value)
-        if value != nil
-          super(key.to_s, value)
-        end
+        super(key, value) unless value.nil?
       end
 
       def respond_to?(symbol, include_private = false)

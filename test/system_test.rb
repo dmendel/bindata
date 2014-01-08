@@ -17,7 +17,7 @@ describe "lambdas with index" do
   it "uses index of nearest containing array" do
     arr = BinData::Array.new(:type => :nested_lambda_with_index,
                              :initial_length => 3)
-    arr.snapshot.must_equal [{"a" => 0}, {"a" => 10}, {"a" => 20}]
+    arr.snapshot.must_equal [{:a => 0}, {:a => 10}, {:a => 20}]
   end
 
   it "fails if there is no containing array" do
@@ -240,17 +240,17 @@ describe "Forward referencing with Primitive" do
   let(:obj) { FRPrimitive.new }
 
   it "initialises" do
-    obj.snapshot.must_equal({"len" => 0, "data" => ""})
+    obj.snapshot.must_equal({:len => 0, :data => ""})
   end
 
   it "reads" do
     obj.read("\x04test")
-    obj.snapshot.must_equal({"len" => 4, "data" => "test"})
+    obj.snapshot.must_equal({:len => 4, :data => "test"})
   end
 
   it "sets value" do
     obj.data = "hello"
-    obj.snapshot.must_equal({"len" => 5, "data" => "hello"})
+    obj.snapshot.must_equal({:len => 5, :data => "hello"})
   end
 end
 
@@ -263,17 +263,17 @@ describe "Forward referencing with Array" do
   let(:obj) { FRArray.new }
 
   it "initialises" do
-    obj.snapshot.must_equal({"len" => 0, "data" => []})
+    obj.snapshot.must_equal({:len => 0, :data => []})
   end
 
   it "reads" do
     obj.read("\x04\x01\x02\x03\x04")
-    obj.snapshot.must_equal({"len" => 4, "data" => [1, 2, 3, 4]})
+    obj.snapshot.must_equal({:len => 4, :data => [1, 2, 3, 4]})
   end
 
   it "sets value" do
     obj.data = [1, 2, 3]
-    obj.snapshot.must_equal({"len" => 3, "data" => [1, 2, 3]})
+    obj.snapshot.must_equal({:len => 3, :data => [1, 2, 3]})
   end
 end
 
@@ -299,7 +299,7 @@ describe BinData::Record, "with custom sized integers" do
 
   it "reads as expected" do
     str = "\x00\x00\x00\x00\x05"
-    CustomIntRecord.read(str).snapshot.must_equal({"a" => 5})
+    CustomIntRecord.read(str).snapshot.must_equal({:a => 5})
   end
 end
 

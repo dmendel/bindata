@@ -3,6 +3,7 @@
 == Version 2.0.0 (2014-xx-xx)
 
 * Ruby 1.8 now has its own separate branch.
+* Struct now uses symbols for field names instead of strings.
 
 == Version 1.8.0 (2014-01-06)
 

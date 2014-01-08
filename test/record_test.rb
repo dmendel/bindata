@@ -105,12 +105,12 @@ describe BinData::Record, "with anonymous fields" do
   let(:obj) { AnonymousRecord.new }
 
   it "only shows non anonymous fields" do
-    obj.field_names.must_equal ["a"]
+    obj.field_names.must_equal [:a]
   end
 
   it "does not include anonymous fields in snapshot" do
     obj.a = 5
-    obj.snapshot.must_equal({"a" => 5})
+    obj.snapshot.must_equal({:a => 5})
   end
 
   it "writes anonymous fields" do
@@ -133,7 +133,7 @@ describe BinData::Record, "with hidden fields" do
   let(:obj) { HiddenRecord.new }
 
   it "only shows fields that aren't hidden" do
-    obj.field_names.must_equal ["a", "d"]
+    obj.field_names.must_equal [:a, :d]
   end
 
   it "accesses hidden fields directly" do
@@ -146,7 +146,7 @@ describe BinData::Record, "with hidden fields" do
 
   it "does not include hidden fields in snapshot" do
     obj.b = 5
-    obj.snapshot.must_equal({"a" => 0, "d" => 5})
+    obj.snapshot.must_equal({:a => 0, :d => 5})
   end
 end
 
@@ -198,11 +198,11 @@ describe BinData::Record, "with multiple fields" do
     snap = obj.snapshot
     snap.a.must_equal 1
     snap.b.must_equal 2
-    snap.must_equal({ "a" => 1, "b" => 2 })
+    snap.must_equal({ :a => 1, :b => 2 })
   end
 
   it "returns field_names" do
-    obj.field_names.must_equal ["a", "b"]
+    obj.field_names.must_equal [:a, :b]
   end
   
   it "fails on unknown method call" do
@@ -227,11 +227,11 @@ describe BinData::Record, "with nested structs" do
   let(:obj) { NestedStructRecord.new }
 
   it "includes nested field names" do
-    obj.field_names.must_equal ["a", "b", "c"]
+    obj.field_names.must_equal [:a, :b, :c]
   end
 
   it "hides nested field names" do
-    obj.b.field_names.must_equal ["x"]
+    obj.b.field_names.must_equal [:x]
   end
 
   it "accesses nested fields" do
@@ -276,7 +276,7 @@ describe BinData::Record, "with nested array of primitives" do
   let(:obj) { NestedPrimitiveArrayRecord.new }
 
   it "uses block as :type" do
-    obj.snapshot.must_equal({"a" => [0, 1, 2]})
+    obj.snapshot.must_equal({:a => [0, 1, 2]})
   end
 end
 
@@ -292,7 +292,7 @@ describe BinData::Record, "with nested array of structs" do
 
   it "uses block as struct for :type" do
     obj.a[0].b = 2
-    obj.snapshot.must_equal({"a" => [{"b" => 2, "c" => 0}]})
+    obj.snapshot.must_equal({:a => [{:b => 2, :c => 0}]})
   end
 end
 
@@ -472,13 +472,13 @@ describe BinData::Record, "with :onlyif" do
 
   it "initial state" do
     obj.num_bytes.must_equal 2
-    obj.snapshot.must_equal({"a" => 3, "b" => 5})
+    obj.snapshot.must_equal({:a => 3, :b => 5})
     obj.to_binary_s.must_equal "\x03\x05"
   end
 
   it "reads as lambdaed" do
     obj.read("\x01\x02")
-    obj.snapshot.must_equal({"a" => 1, "c" => 2})
+    obj.snapshot.must_equal({:a => 1, :c => 2})
   end
 end
 
@@ -496,14 +496,14 @@ describe BinData::Record, "derived classes" do
   end
 
   it "does not affect parent" do
-    ParentRecord.new.field_names.must_equal ["a"]
+    ParentRecord.new.field_names.must_equal [:a]
   end
 
   it "inherits fields for first child" do
-    Child1Record.new.field_names.must_equal ["a", "b"]
+    Child1Record.new.field_names.must_equal [:a, :b]
   end
 
   it "inherits fields for second child" do
-    Child2Record.new.field_names.must_equal ["a", "b", "c"]
+    Child2Record.new.field_names.must_equal [:a, :b, :c]
   end
 end

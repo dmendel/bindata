@@ -20,8 +20,8 @@ module BinData
   #    end
   #
   #    obj = SomeDataType.new
-  #    obj.field_names   =># ["b", "s"]
-  #    obj.s.field_names =># ["x", "y", "z"]
+  #    obj.field_names   =># [:b, :s]
+  #    obj.s.field_names =># [:x, :y, :z]
   #
   class Record < BinData::Struct
     include DSLMixin

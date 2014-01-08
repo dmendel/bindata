@@ -52,7 +52,7 @@ describe BinData::BitAligned do
 
   it "reads as expected" do
     obj.read("\x56\x36\x42")
-    obj.snapshot.must_equal({"preamble" => 5, "str" => "cd", "afterward" => 2})
+    obj.snapshot.must_equal({:preamble => 5, :str => "cd", :afterward => 2})
   end
 
   it "writes as expected" do

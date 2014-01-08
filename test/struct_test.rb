@@ -51,12 +51,12 @@ describe BinData::Struct, "with anonymous fields" do
   }
 
   it "only shows non anonymous fields" do
-    obj.field_names.must_equal ["a"]
+    obj.field_names.must_equal [:a]
   end
 
   it "does not include anonymous fields in snapshot" do
     obj.a = 5
-    obj.snapshot.must_equal({"a" => 5})
+    obj.snapshot.must_equal({:a => 5})
   end
 
   it "writes anonymous fields" do
@@ -78,7 +78,7 @@ describe BinData::Struct, "with hidden fields" do
   }
 
   it "only shows fields that aren't hidden" do
-    obj.field_names.must_equal ["a", "d"]
+    obj.field_names.must_equal [:a, :d]
   end
 
   it "accesses hidden fields directly" do
@@ -91,7 +91,7 @@ describe BinData::Struct, "with hidden fields" do
 
   it "does not include hidden fields in snapshot" do
     obj.b = 7
-    obj.snapshot.must_equal({"a" => 0, "d" => 7})
+    obj.snapshot.must_equal({:a => 0, :d => 7})
   end
 
   it "detects hidden fields with has_key?" do
@@ -103,7 +103,7 @@ describe BinData::Struct, "with multiple fields" do
   let(:params) { { :fields => [ [:int8, :a], [:int8, :b] ] } }
   let(:obj) { BinData::Struct.new({:a => 1, :b => 2}, params) }
 
-  specify { obj.field_names.must_equal ["a", "b"] }
+  specify { obj.field_names.must_equal [:a, :b] }
   specify { obj.to_binary_s.must_equal "\x01\x02" }
 
   it "returns num_bytes" do
@@ -156,17 +156,17 @@ describe BinData::Struct, "with multiple fields" do
     snap = obj.snapshot
     snap.a.must_equal 1
     snap.b.must_equal 2
-    snap.must_equal({ "a" => 1, "b" => 2 })
+    snap.must_equal({ :a => 1, :b => 2 })
   end
 
   it "assigns from partial hash" do
-    obj.assign("a" => 3)
+    obj.assign(:a => 3)
     obj.a.must_equal 3
     obj.b.must_equal 0
   end
 
   it "assigns from hash" do
-    obj.assign("a" => 3, "b" => 4)
+    obj.assign(:a => 3, :b => 4)
     obj.a.must_equal 3
     obj.b.must_equal 4
   end
@@ -202,19 +202,19 @@ describe BinData::Struct, "with multiple fields" do
 
   describe "#snapshot" do
     it "has ordered #keys" do
-      obj.snapshot.keys.must_equal ["a", "b"]
+      obj.snapshot.keys.must_equal [:a, :b]
     end
 
     it "has ordered #each" do
       keys = []
       obj.snapshot.each { |el| keys << el[0] }
-      keys.must_equal ["a", "b"]
+      keys.must_equal [:a, :b]
     end
 
     it "has ordered #each_pair" do
       keys = []
       obj.snapshot.each_pair { |k, v| keys << k }
-      keys.must_equal ["a", "b"]
+      keys.must_equal [:a, :b]
     end
   end
 end
@@ -234,7 +234,7 @@ describe BinData::Struct, "with nested structs" do
     BinData::Struct.new(params)
   }
 
-  specify { obj.field_names.must_equal ["a", "b", "c"] }
+  specify { obj.field_names.must_equal [:a, :b, :c] }
 
   it "returns num_bytes" do
     obj.b.num_bytes.must_equal 2

@@ -3,6 +3,20 @@
 BinData 2.0.0 requires ruby 1.9 or greater.  Support for ruby 1.8 is found in
 BinData versions 1.8.x.
 
+Prior to version 2.0.0, BinData used the Ruby 1.8 conversion of strings for
+method names.  As of 2.0.0, BinData uses symbols.
+
+    class A < BinData::Record
+      uint8 :a
+      uint8 :b
+    end
+
+    # BinData 1.8.x
+    A.read "\001\002" #=> {"a"=>1, "b"=>2}
+
+    # BinData >= 2.0.0
+    A.read "\001\002" #=> {:a=>1, :b=>2}
+
 = 1.6.0
 
 Added :assert as a replacement for :check_value.  Note that :assert performs
