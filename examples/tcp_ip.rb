@@ -39,8 +39,6 @@ end
 
 # TCP Protocol Data Unit
 class TCP_PDU < BinData::Record
-  mandatory_parameter :packet_length
-
   endian :big
 
   uint16 :src_port
@@ -60,7 +58,7 @@ class TCP_PDU < BinData::Record
   uint16 :checksum
   uint16 :urg_ptr
   string :options, :read_length => :options_length_in_bytes
-  string :payload, :read_length => lambda { packet_length - payload.rel_offset }
+  rest   :payload
 
   def options_length_in_bytes
     (doff - 5 ) * 4
@@ -69,15 +67,13 @@ end
 
 # UDP Protocol Data Unit
 class UDP_PDU < BinData::Record
-  mandatory_parameter :packet_length
-
   endian :big
 
   uint16 :src_port
   uint16 :dst_port
   uint16 :len
   uint16 :checksum
-  string :payload, :read_length => lambda { packet_length - payload.rel_offset }
+  rest   :payload
 end
 
 # IP Protocol Data Unit
@@ -97,10 +93,12 @@ class IP_PDU < BinData::Record
   ip_addr :src_addr
   ip_addr :dest_addr
   string :options, :read_length => :options_length_in_bytes
-  choice :payload, :selection => :protocol do
-    tcp_pdu  6, :packet_length => :payload_length_in_bytes
-    udp_pdu 17, :packet_length => :payload_length_in_bytes
-    string :default, :read_length => :payload_length_in_bytes
+  buffer :payload, :length => :payload_length_in_bytes do
+    choice :payload, :selection => :protocol do
+      tcp_pdu  6
+      udp_pdu 17
+      rest    :default
+    end
   end
 
   def header_length_in_bytes
