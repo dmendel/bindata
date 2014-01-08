@@ -1,6 +1,10 @@
 # BinData -- Binary data manipulator.
 # Copyright (c) 2007 - 2014 Dion Mendel.
 
+if RUBY_VERSION <= "1.9"
+  fail "BinData requires ruby >= 1.9.3. Use BinData version 1.8.x instead"
+end
+
 require 'bindata/version'
 require 'bindata/array'
 require 'bindata/bits'
