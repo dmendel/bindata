@@ -73,7 +73,7 @@ module BinData
     end
 
     def register_dynamic_class(name)
-      if /^u?int\d+(le|be)$/ =~ name or /^bit\d+(le)?$/ =~ name
+      if /^u?int\d+(le|be)$/ =~ name or /^s?bit\d+(le)?$/ =~ name
         class_name = name.gsub(/(?:^|_)(.)/) { $1.upcase }
         begin
           BinData::const_get(class_name)

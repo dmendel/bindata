@@ -69,11 +69,19 @@ module AllBitfields
   end
 
   def min_value
-    0
+    if @signed
+      -max_value - 1
+    else
+      0
+    end
   end
 
   def max_value
-    (1 << @nbits) - 1
+    if @signed
+      (1 << (@nbits - 1)) - 1
+    else
+      (1 << @nbits) - 1
+    end
   end
 
   def some_values_within_range
@@ -89,21 +97,31 @@ module AllBitfields
   end
 end
 
-def generate_bit_classes_to_test(endian)
+def generate_bit_classes_to_test(endian, signed)
   bits = {}
-  (1 .. 50).each do |nbits|
-    name = (endian == :big) ? "Bit#{nbits}" : "Bit#{nbits}le"
+  if signed
+    base  = "Sbit"
+    start = 2
+  else
+    base  = "Bit"
+    start = 1
+  end
+
+  (start .. 50).each do |nbits|
+    name = "#{base}#{nbits}"
+    name << "le" if endian == :little
     bit_class = BinData.const_get(name)
     bits[bit_class] = nbits
   end
   bits
 end
 
-describe "Big endian bitfields" do
+describe "Unsigned big endian bitfields" do
   include AllBitfields
 
   before do
-    @bits = generate_bit_classes_to_test(:big)
+    @signed = false
+    @bits = generate_bit_classes_to_test(:big, @signed)
   end
 
   it "read big endian values" do
@@ -116,11 +134,48 @@ describe "Big endian bitfields" do
   end
 end
 
-describe "Little endian bitfields" do
+describe "Signed big endian bitfields" do
   include AllBitfields
 
   before do
-    @bits = generate_bit_classes_to_test(:little)
+    @signed = true
+    @bits = generate_bit_classes_to_test(:big, @signed)
+  end
+
+  it "read big endian values" do
+    @bits.each_pair do |bit_class, nbits|
+      nbytes = (nbits + 7) / 8
+      str = [0b0100_0000].pack("C") + "\000" * (nbytes - 1)
+
+      bit_class.read(str).must_equal 1 << (nbits - 2)
+    end
+  end
+end
+
+describe "Unsigned little endian bitfields" do
+  include AllBitfields
+
+  before do
+    @signed = false
+    @bits = generate_bit_classes_to_test(:little, @signed)
+  end
+
+  it "read little endian values" do
+    @bits.each_pair do |bit_class, nbits|
+      nbytes = (nbits + 7) / 8
+      str = [0b0000_0001].pack("C") + "\000" * (nbytes - 1)
+
+      bit_class.read(str).must_equal 1
+    end
+  end
+end
+
+describe "Signed little endian bitfields" do
+  include AllBitfields
+
+  before do
+    @signed = true
+    @bits = generate_bit_classes_to_test(:little, @signed)
   end
 
   it "read little endian values" do
@@ -160,4 +215,3 @@ describe "Bits of size 1" do
     end
   end
 end
-
