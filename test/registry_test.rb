@@ -92,6 +92,7 @@ describe BinData::Registry, "with numerics" do
 
   it "lookup bits" do
     r.lookup("bit5").to_s.must_equal "BinData::Bit5"
+    r.lookup("sbit5").to_s.must_equal "BinData::Sbit5"
     r.lookup("bit6le").to_s.must_equal "BinData::Bit6le"
   end
 
@@ -100,6 +101,13 @@ describe BinData::Registry, "with numerics" do
     r.lookup("bit3le", :big).to_s.must_equal "BinData::Bit3le"
     r.lookup("bit2", :little).to_s.must_equal "BinData::Bit2"
     r.lookup("bit3le", :little).to_s.must_equal "BinData::Bit3le"
+  end
+
+  it "lookup signed bits by ignoring endian" do
+    r.lookup("sbit2", :big).to_s.must_equal "BinData::Sbit2"
+    r.lookup("sbit3le", :big).to_s.must_equal "BinData::Sbit3le"
+    r.lookup("sbit2", :little).to_s.must_equal "BinData::Sbit2"
+    r.lookup("sbit3le", :little).to_s.must_equal "BinData::Sbit3le"
   end
 end
 
