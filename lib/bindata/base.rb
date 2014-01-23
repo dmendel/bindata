@@ -281,7 +281,7 @@ module BinData
     end
 
     def binary_string(str)
-      str.dup.force_encoding(Encoding::BINARY)
+      str.to_s.dup.force_encoding(Encoding::BINARY)
     end
   end
 end
