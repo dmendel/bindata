@@ -97,7 +97,10 @@ module BinData
     def value
       snapshot
     end
-    alias_method :value=, :assign
+
+    def value=(val)
+      assign(val)
+    end
 
     def respond_to?(symbol, include_private = false) #:nodoc:
       child = snapshot
