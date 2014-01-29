@@ -282,7 +282,7 @@ module BinData
 
     def binary_string(str)
       if str.respond_to?(:force_encoding)
-        str.dup.force_encoding(Encoding::BINARY)
+        str.to_s.dup.force_encoding(Encoding::BINARY)
       else
         str.dup
       end
