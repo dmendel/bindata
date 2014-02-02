@@ -1,5 +1,10 @@
 = BinData Changelog
 
+== Version 1.8.2 (2014-02-02)
+
+* Virtual fields can now have values.
+* Bug fixes.
+
 == Version 1.8.1 (2014-01-15)
 
 * Added signed bitfields.  Requested by redood.
