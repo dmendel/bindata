@@ -1,10 +1,12 @@
 = BinData Changelog
 
-== Version 2.0.0 (2014-xx-xx)
+== Version 2.0.0 (2014-02-02)
 
 * Ruby 1.8 now has its own separate branch.
 * Struct now uses symbols for field names instead of strings.
 * Added signed bitfields.  Requested by redood.
+* Virtual fields can now have names.
+* Bug fixes.
 
 == Version 1.8.0 (2014-01-06)
 
