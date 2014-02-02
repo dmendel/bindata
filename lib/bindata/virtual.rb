@@ -1,9 +1,9 @@
 require "bindata/base"
 
 module BinData
-  # A virtual field is one that is neither read, written nor occupies space.
-  # It is used to make assertions or as a convenient label for determining
-  # offsets.
+  # A virtual field is one that is neither read, written nor occupies space in
+  # the data stream.  It is used to make assertions or as a convenient label
+  # for determining offsets or storing values.
   #
   #   require 'bindata'
   #
@@ -26,28 +26,20 @@ module BinData
   #
   # [<tt>:assert</tt>]    Raise an error when reading or assigning if the value
   #                       of this evaluated parameter is false.
+  # [<tt>:value</tt>]     The virtual object will always have this value.
   #
-  class Virtual < BinData::Base
+  class Virtual < BinData::BasePrimitive
 
-    optional_parameter :assert
-
-    def clear?; true; end
-    def snapshot; nil; end
-    def do_num_bytes; 0; end
-    def do_write(io); end
-
-    def assign(val)
-      assert!
+    def value_to_binary_string(val)
+      ""
     end
 
-    def do_read(io)
-      assert!
+    def read_and_return_value(io)
+      nil
     end
 
-    def assert!
-      if has_parameter?(:assert) and not eval_parameter(:assert)
-        raise ValidityError, "assertion failed for #{debug_name}"
-      end
+    def sensible_default
+      nil
     end
   end
 end
