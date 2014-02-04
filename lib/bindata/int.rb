@@ -115,13 +115,14 @@ module BinData
 
         bits_per_word = bytes_per_word(nbits) * 8
         nwords        = nbits / bits_per_word
+        mask          = (1 << bits_per_word) - 1
 
         vals = (0 ... nwords).collect do |i|
                  i.zero? ? "val" : "val >> #{bits_per_word * i}"
                end
         vals.reverse! if (endian == :big)
 
-        array_str = "[" + vals.join(", ") + "]"
+        array_str = "[" + vals.collect { |val| "#{val} & #{mask}" }.join(", ") + "]" # TODO: "& mask" is needed to work around jruby bug
         pack_str  = "#{array_str}.pack('#{pack_directive(nbits, endian, signed)}')"
 
         if need_conversion_code?(nbits, signed)
