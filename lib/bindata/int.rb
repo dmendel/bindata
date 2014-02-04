@@ -48,14 +48,11 @@ module BinData
 
           def value_to_binary_string(val)
             #{create_clamp_code(nbits, signed)}
-            #{create_int2uint_code(nbits) if signed == :signed}
-            #{create_to_binary_s_code(nbits, endian)}
+            #{create_to_binary_s_code(nbits, endian, signed)}
           end
 
           def read_and_return_value(io)
-            val = #{create_read_code(nbits, endian)}
-            #{create_uint2int_code(nbits) if signed == :signed}
-            val
+            #{create_read_code(nbits, endian, signed)}
           end
         END
       end
@@ -68,79 +65,114 @@ module BinData
           max = (1 << (nbits - 1)) - 1
           min = -(max + 1)
         else
-          min = 0
           max = (1 << nbits) - 1
+          min = 0
         end
 
         "val = (val < #{min}) ? #{min} : (val > #{max}) ? #{max} : val"
       end
 
-      def create_int2uint_code(nbits)
-        "val = val & #{(1 << nbits) - 1}"
+      def create_read_code(nbits, endian, signed)
+        unpack_str   = create_read_unpack_code(nbits, endian, signed)
+        assemble_str = create_read_assemble_code(nbits, endian, signed)
+
+        read_str = "(#{unpack_str} ; #{assemble_str})"
+
+        if need_conversion_code?(nbits, signed)
+          "val = #{read_str} ; #{create_uint2int_code(nbits)}"
+        else
+          read_str
+        end
       end
 
-      def create_uint2int_code(nbits)
-        "val = val - #{1 << nbits} if (val >= #{1 << (nbits - 1)})"
+      def create_read_unpack_code(nbits, endian, signed)
+        nbytes = nbits / 8
+
+        "ints = io.readbytes(#{nbytes}).unpack('#{pack_directive(nbits, endian, signed)}')"
       end
 
-      def create_read_code(nbits, endian)
+      def create_read_assemble_code(nbits, endian, signed)
         bits_per_word = bytes_per_word(nbits) * 8
         nwords        = nbits / bits_per_word
-        nbytes        = nbits / 8
 
         idx = (0 ... nwords).to_a
         idx.reverse! if (endian == :big)
 
         parts = (0 ... nwords).collect do |i|
                   if i.zero?
-                    "a.at(#{idx[i]})"
+                    "ints.at(#{idx[i]})"
                   else
-                    "(a.at(#{idx[i]}) << #{bits_per_word * i})"
+                    "(ints.at(#{idx[i]}) << #{bits_per_word * i})"
                   end
                 end
 
-        unpack_str = "a = io.readbytes(#{nbytes}).unpack('#{pack_directive(nbits, endian)}')"
         assemble_str = parts.join(" + ")
-
-        "(#{unpack_str}; #{assemble_str})"
       end
 
-      def create_to_binary_s_code(nbits, endian)
+      def create_to_binary_s_code(nbits, endian, signed)
         # special case 8bit integers for speed
-        return "val.chr" if nbits == 8
+        return "(val & 0xff).chr" if nbits == 8
 
         bits_per_word = bytes_per_word(nbits) * 8
         nwords        = nbits / bits_per_word
-        mask          = (1 << bits_per_word) - 1
 
         vals = (0 ... nwords).collect do |i|
-                 i.zero? ? "val" : "(val >> #{bits_per_word * i})"
+                 i.zero? ? "val" : "val >> #{bits_per_word * i}"
                end
         vals.reverse! if (endian == :big)
 
-        parts = (0 ... nwords).collect { |i| "#{vals[i]} & #{mask}" }
-        array_str = "[" + parts.join(", ") + "]"
+        array_str = "[" + vals.join(", ") + "]"
+        pack_str  = "#{array_str}.pack('#{pack_directive(nbits, endian, signed)}')"
 
-        "#{array_str}.pack('#{pack_directive(nbits, endian)}')"
+        if need_conversion_code?(nbits, signed)
+          "#{create_int2uint_code(nbits)} ; #{pack_str}"
+        else
+          pack_str
+        end
+      end
+
+      def create_int2uint_code(nbits)
+        "val &= #{(1 << nbits) - 1}"
+      end
+
+      def create_uint2int_code(nbits)
+        "(val >= #{1 << (nbits - 1)}) ? val - #{1 << nbits} : val"
       end
 
       def bytes_per_word(nbits)
-        (nbits % 32).zero? ? 4 : (nbits % 16).zero? ? 2 : 1
+        (nbits % 64).zero? ? 8 :
+        (nbits % 32).zero? ? 4 :
+        (nbits % 16).zero? ? 2 :
+                             1
       end
 
-      def pack_directive(nbits, endian)
+      def pack_directive(nbits, endian, signed)
         bits_per_word = bytes_per_word(nbits) * 8
         nwords        = nbits / bits_per_word
 
-        if (nbits % 32).zero?
-          d = (endian == :big) ? 'N' : 'V'
+        if (nbits % 64).zero?
+          d = (endian == :big) ? 'Q>' : 'Q<'
+        elsif (nbits % 32).zero?
+          d = (endian == :big) ? 'L>' : 'L<'
         elsif (nbits % 16).zero?
-          d = (endian == :big) ? 'n' : 'v'
+          d = (endian == :big) ? 'S>' : 'S<'
         else
           d = 'C'
         end
 
-        d * nwords
+        if pack_directive_signed?(nbits, signed)
+          (d * nwords).downcase
+        else
+          d * nwords
+        end
+      end
+
+      def need_conversion_code?(nbits, signed)
+        signed == :signed and not pack_directive_signed?(nbits, signed)
+      end
+
+      def pack_directive_signed?(nbits, signed)
+        signed == :signed and [64, 32, 16, 8].include?(nbits)
       end
     end
   end
@@ -160,10 +192,10 @@ module BinData
   module IntFactory
     def const_missing(name)
       mappings = {
-        /^Uint(\d+)be$/ => [:big, :unsigned],
+        /^Uint(\d+)be$/ => [:big,    :unsigned],
         /^Uint(\d+)le$/ => [:little, :unsigned],
-        /^Int(\d+)be$/ => [:big, :signed],
-        /^Int(\d+)le$/ => [:little, :signed],
+        /^Int(\d+)be$/  => [:big,    :signed],
+        /^Int(\d+)le$/  => [:little, :signed],
       }
 
       mappings.each_pair do |regex, args|
