@@ -20,10 +20,10 @@ module BinData
   #   obj.assign(5)
   #   obj #=> 42
   #
-  #   obj = BinData::Uint8.new(:check_value => 3)
+  #   obj = BinData::Uint8.new(:assert_value => 3)
   #   obj.read("\005") #=> BinData::ValidityError: value is '5' but expected '3'
   #
-  #   obj = BinData::Uint8.new(:check_value => lambda { value < 5 })
+  #   obj = BinData::Uint8.new(:assert_value => lambda { value < 5 })
   #   obj.read("\007") #=> BinData::ValidityError: value not as expected
   #
   # == Parameters
@@ -49,22 +49,13 @@ module BinData
   class BasePrimitive < BinData::Base
     unregister_self
 
-    optional_parameters :initial_value, :value, :check_value, :assert, :asserted_value
+    optional_parameters :initial_value, :value, :assert, :asserted_value
     mutually_exclusive_parameters :initial_value, :value
     mutually_exclusive_parameters :asserted_value, :value, :assert
-    mutually_exclusive_parameters :check_value, :assert
-    mutually_exclusive_parameters :check_value, :asserted_value
 
     def initialize_shared_instance
-      if has_parameter?(:check_value) and has_parameter?(:value)
-        warn ":check_value has been deprecated.  Consider using :asserted_value instead of :check_value and :value in #{self.class}."
-      elsif has_parameter?(:check_value)
-        warn ":check_value has been deprecated.  Use :assert instead in #{self.class}."
-      end
-
       extend InitialValuePlugin  if has_parameter?(:initial_value)
       extend ValuePlugin         if has_parameter?(:value)
-      extend CheckValuePlugin    if has_parameter?(:check_value)
       extend AssertPlugin        if has_parameter?(:assert)
       extend AssertedValuePlugin if has_parameter?(:asserted_value)
       super
@@ -166,26 +157,6 @@ module BinData
     module InitialValuePlugin
       def _value
         @value != nil ? @value : eval_parameter(:initial_value)
-      end
-    end
-
-    # Logic for the :check_value parameter
-    module CheckValuePlugin
-      def do_read(io) #:nodoc:
-        super(io)
-        check_value(snapshot)
-      end
-
-      def check_value(current_value)
-        expected = eval_parameter(:check_value, :value => current_value)
-        if not expected
-          raise ValidityError,
-                "value '#{current_value}' not as expected for #{debug_name}"
-        elsif current_value != expected and expected != true
-          raise ValidityError,
-                "value is '#{current_value}' but " +
-                "expected '#{expected}' for #{debug_name}"
-        end
       end
     end
 

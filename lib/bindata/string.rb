@@ -117,8 +117,6 @@ module BinData
   class StringArgProcessor < BaseArgProcessor
     def sanitize_parameters!(obj_class, params)
       params.warn_replacement_parameter(:initial_length, :read_length)
-
-      params.warn_renamed_parameter(:pad_char, :pad_byte) # Remove this line in the future
       params.must_be_integer(:read_length, :length)
 
       if params.has_parameter?(:pad_left)
@@ -135,12 +133,11 @@ module BinData
     private
 
     def sanitized_pad_byte(byte)
-      result = byte.is_a?(Integer) ? byte.chr : byte.to_s
-      len = result.respond_to?(:bytesize) ? result.bytesize : result.length
-      if len > 1
+      pad_byte = byte.is_a?(Integer) ? byte.chr : byte.to_s
+      if pad_byte.bytesize > 1
         raise ArgumentError, ":pad_byte must not contain more than 1 byte"
       end
-      result
+      pad_byte
     end
   end
 end
