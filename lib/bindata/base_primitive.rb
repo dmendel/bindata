@@ -93,7 +93,7 @@ module BinData
       assign(val)
     end
 
-    def respond_to?(symbol, include_private = false) #:nodoc:
+    def respond_to_missing?(symbol, include_private = false) #:nodoc:
       child = snapshot
       child.respond_to?(symbol, include_private) || super
     end
