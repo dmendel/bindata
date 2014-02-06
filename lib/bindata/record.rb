@@ -30,44 +30,41 @@ module BinData
     dsl_parser :struct
 
     class << self
-
       def arg_extractor
         MultiFieldArgExtractor
       end
 
       def sanitize_parameters!(params) #:nodoc:
-        params.merge!(dsl_params)
-
-        super(params)
-
-        define_field_accessors(params[:fields].fields)
+        super(params.merge!(dsl_params))
       end
+    end
 
-      # Defines accessor methods to avoid the overhead of going through
-      # Struct#method_missing.  This is purely a speed optimisation.
-      # Removing this method will not have any effect on correctness.
-      def define_field_accessors(fields) #:nodoc:
-        unless method_defined?(:bindata_defined_accessors_for_fields?)
-          fields.each_with_index do |field, i|
-            name = field.name_as_sym
-            if name
-              define_field_accessors_for(name, i)
-            end
-          end
+    def initialize_shared_instance
+      define_field_accessors
+      super
+    end
 
-          define_method(:bindata_defined_accessors_for_fields?) { true }
-        end
+    #---------------
+    private
+
+    # Defines accessor methods to avoid the overhead of going through
+    # Struct#method_missing.  This is purely a speed optimisation.
+    # Removing this method will not affect correctness.
+    def define_field_accessors
+      get_parameter(:fields).each_with_index do |field, i|
+        name = field.name_as_sym
+        define_field_accessors_for(name, i) if name
       end
+    end
 
-      def define_field_accessors_for(name, index)
-        define_method(name) do
-          instantiate_obj_at(index) unless @field_objs[index]
-          @field_objs[index]
-        end
-        define_method(name.to_s + "=") do |*vals|
-          instantiate_obj_at(index) unless @field_objs[index]
-          @field_objs[index].assign(*vals)
-        end
+    def define_field_accessors_for(name, index)
+      self.class.send(:define_method, name) do
+        instantiate_obj_at(index) unless @field_objs[index]
+        @field_objs[index]
+      end
+      self.class.send(:define_method, name.to_s + "=") do |*vals|
+        instantiate_obj_at(index) unless @field_objs[index]
+        @field_objs[index].assign(*vals)
       end
     end
   end

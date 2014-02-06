@@ -55,6 +55,8 @@ module BinData
   #----------------------------------------------------------------------------
 
   class SanitizedFields < SanitizedParameter
+    include Enumerable
+
     def initialize(endian)
       @fields = []
       @endian = endian
@@ -81,10 +83,6 @@ module BinData
 
     def each(&block)
       @fields.each(&block)
-    end
-
-    def collect(&block)
-      @fields.collect(&block)
     end
 
     def field_names
