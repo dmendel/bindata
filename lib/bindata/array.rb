@@ -51,31 +51,12 @@ module BinData
     include DSLMixin
     include Enumerable
 
-    dsl_parser :array
+    dsl_parser    :array
+    arg_processor :array
 
     mandatory_parameter :type
     optional_parameters :initial_length, :read_until
     mutually_exclusive_parameters :initial_length, :read_until
-
-    class << self
-
-      def sanitize_parameters!(params) #:nodoc:
-        unless params.has_parameter?(:initial_length) or
-                 params.has_parameter?(:read_until)
-          # ensure one of :initial_length and :read_until exists
-          params[:initial_length] = 0
-        end
-
-        params.warn_replacement_parameter(:read_length, :initial_length)
-
-        params.merge!(dsl_params)
-
-        if params.needs_sanitizing?(:type)
-          el_type, el_params = params[:type]
-          params[:type] = params.create_sanitized_object_prototype(el_type, el_params)
-        end
-      end
-    end
 
     def initialize_shared_instance
       @element_prototype = get_parameter(:type)
@@ -288,6 +269,26 @@ module BinData
         else
           sum + nbytes
         end
+      end
+    end
+  end
+
+  class ArrayArgProcessor < BaseArgProcessor
+    def sanitize_parameters!(obj_class, params) #:nodoc:
+      unless params.has_parameter?(:initial_length) or
+               params.has_parameter?(:read_until)
+        # ensure one of :initial_length and :read_until exists
+        params[:initial_length] = 0
+      end
+
+      params.warn_replacement_parameter(:read_length, :initial_length)
+      params.must_be_integer(:initial_length, :read_length)
+
+      params.merge!(obj_class.dsl_params)
+
+      if params.needs_sanitizing?(:type)
+        el_type, el_params = params[:type]
+        params[:type] = params.create_sanitized_object_prototype(el_type, el_params)
       end
     end
   end

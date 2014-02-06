@@ -1,5 +1,11 @@
 = BinData Changelog
 
+== Version 2.0.x (2014-xx-xx)
+
+* Performance improvements.
+* Removed deprecated parameters.
+* Code refactored to use Ruby 1.9 features.
+
 == Version 2.0.0 (2014-02-02)
 
 * Ruby 1.8 now has its own separate branch.

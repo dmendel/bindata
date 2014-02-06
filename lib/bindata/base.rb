@@ -8,33 +8,6 @@ require 'bindata/registry'
 require 'bindata/sanitize'
 
 module BinData
-  # ArgExtractors take the arguments passed to BinData::Base.new and
-  # separate them into [value, parameters, parent].
-  class BaseArgExtractor
-    @@empty_hash = Hash.new.freeze
-
-    def self.extract(the_class, the_args)
-      args = the_args.dup
-      value = parameters = parent = nil
-
-      if args.length > 1 and args.last.is_a? BinData::Base
-        parent = args.pop
-      end
-
-      if args.length > 0 and args.last.is_a? Hash
-        parameters = args.pop
-      end
-
-      if args.length > 0
-        value = args.pop
-      end
-
-      parameters ||= @@empty_hash
-
-      return [value, parameters, parent]
-    end
-  end
-
   # This is the abstract base class for all data objects.
   class Base
     extend AcceptedParametersPlugin
@@ -43,7 +16,6 @@ module BinData
     include RegisterNamePlugin
 
     class << self
-
       # Instantiates this class and reads from +io+, returning the newly
       # created data object.
       def read(io)
@@ -52,9 +24,17 @@ module BinData
         obj
       end
 
-      # The arg extractor for this class.
-      def arg_extractor
-        BaseArgExtractor
+      # The arg processor for this class.
+      def arg_processor(name = nil)
+        if name
+          @arg_processor = "#{name}_arg_processor".gsub(/(?:^|_)(.)/) { $1.upcase }.to_sym
+        elsif @arg_processor.is_a? Symbol
+          @arg_processor = BinData::const_get(@arg_processor).new
+        elsif @arg_processor.nil?
+          @arg_processor = superclass.arg_processor
+        else
+          @arg_processor
+        end
       end
 
       # The name of this class as used by Records, Arrays etc.
@@ -69,11 +49,9 @@ module BinData
 
       # Registers all subclasses of this class for use
       def register_subclasses #:nodoc:
-        class << self
-          define_method(:inherited) do |subclass|
-            RegisteredClasses.register(subclass.name, subclass)
-            register_subclasses
-          end
+        define_singleton_method(:inherited) do |subclass|
+          RegisteredClasses.register(subclass.name, subclass)
+          register_subclasses
         end
       end
 
@@ -82,6 +60,9 @@ module BinData
 
     # Register all subclasses of this class.
     register_subclasses
+
+    # Set the initial arg processor.
+    arg_processor :base
 
     # Creates a new data object.
     #
@@ -96,10 +77,7 @@ module BinData
     # object resides under.
     #
     def initialize(*args)
-      value, parameters, parent = extract_args(args)
-
-      @params = SanitizedParameters.sanitize(parameters, self.class)
-      @parent = parent
+      value, @params, @parent = extract_args(args)
 
       initialize_shared_instance
       initialize_instance
@@ -266,8 +244,8 @@ module BinData
     #---------------
     private
 
-    def extract_args(the_args)
-      self.class.arg_extractor.extract(self.class, the_args)
+    def extract_args(args)
+      self.class.arg_processor.extract_args(self.class, args)
     end
 
     def furthest_ancestor
@@ -282,6 +260,53 @@ module BinData
 
     def binary_string(str)
       str.to_s.dup.force_encoding(Encoding::BINARY)
+    end
+  end
+
+  # ArgProcessors process the arguments passed to BinData::Base.new into
+  # the form required to initialise the BinData object.
+  #
+  # Any passed parameters are sanitized so the BinData object doesn't
+  # need to perform error checking on the parameters.
+  class BaseArgProcessor
+    @@empty_hash = Hash.new.freeze
+
+    # Takes the arguments passed to BinData::Base.new and
+    # extracts [value, sanitized_parameters, parent].
+    def extract_args(obj_class, obj_args)
+      value, params, parent = separate_args(obj_class, obj_args)
+      sanitized_params = SanitizedParameters.sanitize(params, obj_class)
+
+      [value, sanitized_params, parent]
+    end
+
+    # Separates the arguments passed to BinData::Base.new into
+    # [value, parameters, parent].  Called by #extract_args.
+    def separate_args(obj_class, obj_args)
+      args = obj_args.dup
+      value = parameters = parent = nil
+
+      if args.length > 1 and args.last.is_a? BinData::Base
+        parent = args.pop
+      end
+
+      if args.length > 0 and args.last.is_a? Hash
+        parameters = args.pop
+      end
+
+      if args.length > 0
+        value = args.pop
+      end
+
+      parameters ||= @@empty_hash
+
+      return [value, parameters, parent]
+    end
+
+    # Performs sanity checks on the given parameters.
+    # This method converts the parameters to the form expected
+    # by the data object.
+    def sanitize_parameters!(obj_class, obj_params) 
     end
   end
 end

@@ -51,6 +51,7 @@ module BinData
   #                      if +false+, this object will not be included in any
   #                      calls to #read, #write, #num_bytes or #snapshot.
   class Struct < BinData::Base
+    arg_processor :struct
 
     mandatory_parameter :fields
     optional_parameters :endian, :hide
@@ -65,76 +66,6 @@ module BinData
                   %w{array element index value} ).collect { |name| name.to_sym }.
                   uniq.collect { |key| [key, true] }.flatten
                ]
-
-    class << self
-
-      def sanitize_parameters!(params) #:nodoc:
-        sanitize_endian(params)
-        sanitize_fields(params)
-        sanitize_hide(params)
-      end
-
-      #-------------
-      private
-
-      def sanitize_endian(params)
-        if params.needs_sanitizing?(:endian)
-          endian = params.create_sanitized_endian(params[:endian])
-          params[:endian] = endian
-          params.endian   = endian # sync params[:endian] and params.endian
-        end
-      end
-
-      def sanitize_fields(params)
-        if params.needs_sanitizing?(:fields)
-          fields = params[:fields]
-
-          params[:fields] = params.create_sanitized_fields
-          fields.each do |ftype, fname, fparams|
-            params[:fields].add_field(ftype, fname, fparams)
-          end
-
-          field_names = sanitized_field_names(params[:fields])
-          ensure_field_names_are_valid(field_names)
-        end
-      end
-
-      def sanitize_hide(params)
-        if params.needs_sanitizing?(:hide) and params.has_parameter?(:fields)
-          field_names  = sanitized_field_names(params[:fields])
-          hfield_names = hidden_field_names(params[:hide])
-
-          params[:hide] = (hfield_names & field_names)
-        end
-      end
-
-      def sanitized_field_names(sanitized_fields)
-        sanitized_fields.field_names.compact
-      end
-
-      def hidden_field_names(hidden)
-        (hidden || []).collect { |h| h.to_sym }
-      end
-
-      def ensure_field_names_are_valid(field_names)
-        reserved_names = RESERVED
-
-        field_names.each do |name|
-          if self.class.method_defined?(name)
-            raise NameError.new("Rename field '#{name}' in #{self}, " +
-                                "as it shadows an existing method.", name)
-          end
-          if reserved_names.include?(name)
-            raise NameError.new("Rename field '#{name}' in #{self}, " +
-                                "as it is a reserved name.", name)
-          end
-          if field_names.count(name) != 1
-            raise NameError.new("field '#{name}' in #{self}, " +
-                                "is defined multiple times.", name)
-          end
-        end
-      end
-    end
 
     def initialize_shared_instance
       @field_names = get_parameter(:fields).field_names.freeze
@@ -338,6 +269,75 @@ module BinData
 
       def method_missing(symbol, *args)
         self[symbol] || super
+      end
+    end
+  end
+
+  class StructArgProcessor < BaseArgProcessor
+    def sanitize_parameters!(obj_class, params)
+      sanitize_endian(params)
+      sanitize_fields(obj_class, params)
+      sanitize_hide(params)
+    end
+
+    #-------------
+    private
+
+    def sanitize_endian(params)
+      if params.needs_sanitizing?(:endian)
+        endian = params.create_sanitized_endian(params[:endian])
+        params[:endian] = endian
+        params.endian   = endian # sync params[:endian] and params.endian
+      end
+    end
+
+    def sanitize_fields(obj_class, params)
+      if params.needs_sanitizing?(:fields)
+        fields = params[:fields]
+
+        params[:fields] = params.create_sanitized_fields
+        fields.each do |ftype, fname, fparams|
+          params[:fields].add_field(ftype, fname, fparams)
+        end
+
+        field_names = sanitized_field_names(params[:fields])
+        ensure_field_names_are_valid(obj_class, field_names)
+      end
+    end
+
+    def sanitize_hide(params)
+      if params.needs_sanitizing?(:hide) and params.has_parameter?(:fields)
+        field_names  = sanitized_field_names(params[:fields])
+        hfield_names = hidden_field_names(params[:hide])
+
+        params[:hide] = (hfield_names & field_names)
+      end
+    end
+
+    def sanitized_field_names(sanitized_fields)
+      sanitized_fields.field_names.compact
+    end
+
+    def hidden_field_names(hidden)
+      (hidden || []).collect { |h| h.to_sym }
+    end
+
+    def ensure_field_names_are_valid(obj_class, field_names)
+      reserved_names = BinData::Struct::RESERVED
+
+      field_names.each do |name|
+        if obj_class.method_defined?(name)
+          raise NameError.new("Rename field '#{name}' in #{obj_class}, " +
+                              "as it shadows an existing method.", name)
+        end
+        if reserved_names.include?(name)
+          raise NameError.new("Rename field '#{name}' in #{obj_class}, " +
+                              "as it is a reserved name.", name)
+        end
+        if field_names.count(name) != 1
+          raise NameError.new("field '#{name}' in #{obj_class}, " +
+                              "is defined multiple times.", name)
+        end
       end
     end
   end

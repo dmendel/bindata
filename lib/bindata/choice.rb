@@ -60,51 +60,11 @@ module BinData
   class Choice < BinData::Base
     include DSLMixin
 
-    dsl_parser :choice
+    dsl_parser    :choice
+    arg_processor :choice
 
     mandatory_parameters :choices, :selection
     optional_parameter   :copy_on_change
-
-    class << self
-
-      def sanitize_parameters!(params) #:nodoc:
-        params.merge!(dsl_params)
-
-        if params.needs_sanitizing?(:choices)
-          choices = choices_as_hash(params[:choices])
-          ensure_valid_keys(choices)
-          params[:choices] = params.create_sanitized_choices(choices)
-        end
-      end
-
-      #-------------
-      private
-
-      def choices_as_hash(choices)
-        if choices.respond_to?(:to_ary)
-          key_array_by_index(choices.to_ary)
-        else
-          choices
-        end
-      end
-
-      def key_array_by_index(array)
-        result = {}
-        array.each_with_index do |el, i|
-          result[i] = el unless el.nil?
-        end
-        result
-      end
-
-      def ensure_valid_keys(choices)
-        if choices.has_key?(nil)
-          raise ArgumentError, ":choices hash may not have nil key"
-        end
-        if choices.keys.detect { |key| key.is_a?(Symbol) and key != :default }
-          raise ArgumentError, ":choices hash may not have symbols for keys"
-        end
-      end
-    end
 
     def initialize_shared_instance
       extend CopyOnChangePlugin if eval_parameter(:copy_on_change) == true
@@ -175,6 +135,46 @@ module BinData
         raise IndexError, "selection '#{selection}' does not exist in :choices for #{debug_name}"
       end
       prototype.instantiate(nil, self)
+    end
+  end
+
+  class ChoiceArgProcessor < BaseArgProcessor
+    def sanitize_parameters!(obj_class, params) #:nodoc:
+      params.merge!(obj_class.dsl_params)
+
+      if params.needs_sanitizing?(:choices)
+        choices = choices_as_hash(params[:choices])
+        ensure_valid_keys(choices)
+        params[:choices] = params.create_sanitized_choices(choices)
+      end
+    end
+
+    #-------------
+    private
+
+    def choices_as_hash(choices)
+      if choices.respond_to?(:to_ary)
+        key_array_by_index(choices.to_ary)
+      else
+        choices
+      end
+    end
+
+    def key_array_by_index(array)
+      result = {}
+      array.each_with_index do |el, i|
+        result[i] = el unless el.nil?
+      end
+      result
+    end
+
+    def ensure_valid_keys(choices)
+      if choices.has_key?(nil)
+        raise ArgumentError, ":choices hash may not have nil key"
+      end
+      if choices.keys.detect { |key| key.is_a?(Symbol) and key != :default }
+        raise ArgumentError, ":choices hash may not have symbols for keys"
+      end
     end
   end
 

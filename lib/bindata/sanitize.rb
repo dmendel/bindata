@@ -205,6 +205,20 @@ module BinData
       end
     end
 
+    def must_be_integer(*keys)
+      keys.each do |key|
+        if has_parameter?(key)
+          parameter = self[key]
+          unless Symbol === parameter or
+                 parameter.respond_to? :arity or
+                 parameter.respond_to? :to_int
+            raise ArgumentError, "parameter '#{key}' in #{@the_class} must " +
+                                 "evaluate to an integer, got #{parameter.class}"
+          end
+        end
+      end
+    end
+
     def endian
       @endian || self[:endian]
     end
@@ -243,7 +257,7 @@ module BinData
       ensure_no_nil_values
       merge_default_parameters!
 
-      @the_class.sanitize_parameters!(self)
+      @the_class.arg_processor.sanitize_parameters!(@the_class, self)
 
       ensure_mandatory_parameters_exist
       ensure_mutual_exclusion_of_parameters

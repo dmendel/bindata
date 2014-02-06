@@ -53,24 +53,10 @@ module BinData
   class Buffer < BinData::Base
     include DSLMixin
 
-    dsl_parser :buffer
+    dsl_parser    :buffer
+    arg_processor :buffer
 
     mandatory_parameters :length, :type
-
-    class << self
-      def arg_extractor
-        MultiFieldArgExtractor
-      end
-
-      def sanitize_parameters!(params) #:nodoc:
-        params.merge!(dsl_params)
-
-        if params.needs_sanitizing?(:type)
-          el_type, el_params = params[:type]
-          params[:type] = params.create_sanitized_object_prototype(el_type, el_params)
-        end
-      end
-    end
 
     def initialize_instance
       @type = get_parameter(:type).instantiate(nil, self)
@@ -114,6 +100,20 @@ module BinData
 
     def do_num_bytes #:nodoc:
       eval_parameter(:length)
+    end
+  end
+
+  class BufferArgProcessor < BaseArgProcessor
+    include MultiFieldArgSeparator
+
+    def sanitize_parameters!(obj_class, params)
+      params.merge!(obj_class.dsl_params)
+
+      if params.needs_sanitizing?(:type)
+        el_type, el_params = params[:type]
+        params[:type] = params.create_sanitized_object_prototype(el_type, el_params)
+        params.must_be_integer(:length)
+      end
     end
   end
 end

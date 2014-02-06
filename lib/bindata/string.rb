@@ -49,41 +49,12 @@ module BinData
   #                            from the end of the string.  The value will
   #                            not be trimmed when writing.
   class String < BinData::BasePrimitive
+    arg_processor :string
 
     optional_parameters :read_length, :length, :trim_padding, :pad_front, :pad_left
     default_parameters  :pad_byte => "\0"
     mutually_exclusive_parameters :read_length, :length
     mutually_exclusive_parameters :length, :value
-
-    class << self
-
-      def sanitize_parameters!(params) #:nodoc:
-        params.warn_replacement_parameter(:initial_length, :read_length)
-
-        params.warn_renamed_parameter(:pad_char, :pad_byte) # Remove this line in the future
-
-        if params.has_parameter?(:pad_left)
-          params[:pad_front] = params.delete(:pad_left)
-        end
-
-        if params.has_parameter?(:pad_byte)
-          byte = params[:pad_byte]
-          params[:pad_byte] = sanitized_pad_byte(byte)
-        end
-      end
-
-      #-------------
-      private
-
-      def sanitized_pad_byte(byte)
-        result = byte.is_a?(Integer) ? byte.chr : byte.to_s
-        len = result.respond_to?(:bytesize) ? result.bytesize : result.length
-        if len > 1
-          raise ArgumentError, ":pad_byte must not contain more than 1 byte"
-        end
-        result
-      end
-    end
 
     def assign(val)
       super(binary_string(val))
@@ -140,6 +111,36 @@ module BinData
 
     def sensible_default
       ""
+    end
+  end
+
+  class StringArgProcessor < BaseArgProcessor
+    def sanitize_parameters!(obj_class, params)
+      params.warn_replacement_parameter(:initial_length, :read_length)
+
+      params.warn_renamed_parameter(:pad_char, :pad_byte) # Remove this line in the future
+      params.must_be_integer(:read_length, :length)
+
+      if params.has_parameter?(:pad_left)
+        params[:pad_front] = params.delete(:pad_left)
+      end
+
+      if params.has_parameter?(:pad_byte)
+        byte = params[:pad_byte]
+        params[:pad_byte] = sanitized_pad_byte(byte)
+      end
+    end
+
+    #-------------
+    private
+
+    def sanitized_pad_byte(byte)
+      result = byte.is_a?(Integer) ? byte.chr : byte.to_s
+      len = result.respond_to?(:bytesize) ? result.bytesize : result.length
+      if len > 1
+        raise ArgumentError, ":pad_byte must not contain more than 1 byte"
+      end
+      result
     end
   end
 end

@@ -5,17 +5,6 @@ module BinData
   # All methods provided by the framework are to be implemented or overridden 
   # by subclasses of BinData::Base.
   module Framework
-    def self.included(base) #:nodoc:
-      base.extend ClassMethods
-    end
-
-    module ClassMethods #:nodoc:
-      # Performs sanity checks on the given parameters.  This method converts
-      # the parameters to the form expected by this data object.
-      def sanitize_parameters!(parameters)
-      end
-    end
-
     # Initializes the state of the object.  All instance variables that
     # are used by the object must be initialized here.
     def initialize_instance

@@ -63,13 +63,8 @@ module BinData
     include DSLMixin
 
     unregister_self
-    dsl_parser :primitive
-
-    class << self
-      def sanitize_parameters!(params) #:nodoc:
-        params[:struct_params] = params.create_sanitized_params(dsl_params, BinData::Struct)
-      end
-    end
+    dsl_parser    :primitive
+    arg_processor :primitive
 
     mandatory_parameter :struct_params
 
@@ -137,5 +132,11 @@ module BinData
 
     # To be implemented by subclasses
     ###########################################################################
+  end
+
+  class PrimitiveArgProcessor < BaseArgProcessor
+    def sanitize_parameters!(obj_class, params)
+      params[:struct_params] = params.create_sanitized_params(obj_class.dsl_params, BinData::Struct)
+    end
   end
 end

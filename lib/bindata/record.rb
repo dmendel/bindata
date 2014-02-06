@@ -27,17 +27,8 @@ module BinData
     include DSLMixin
 
     unregister_self
-    dsl_parser :struct
-
-    class << self
-      def arg_extractor
-        MultiFieldArgExtractor
-      end
-
-      def sanitize_parameters!(params) #:nodoc:
-        super(params.merge!(dsl_params))
-      end
-    end
+    dsl_parser    :struct
+    arg_processor :record
 
     def initialize_shared_instance
       define_field_accessors
@@ -66,6 +57,14 @@ module BinData
         instantiate_obj_at(index) unless @field_objs[index]
         @field_objs[index].assign(*vals)
       end
+    end
+  end
+
+  class RecordArgProcessor < StructArgProcessor
+    include MultiFieldArgSeparator
+
+    def sanitize_parameters!(obj_class, params)
+      super(obj_class, params.merge!(obj_class.dsl_params))
     end
   end
 end
