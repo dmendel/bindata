@@ -110,7 +110,7 @@ module BinData
       end
     end
 
-    def respond_to_missing?(symbol, include_private = false) #:nodoc:
+    def respond_to?(symbol, include_private = false) #:nodoc:
       @field_names.include?(base_field_name(symbol)) || super
     end
 
@@ -263,7 +263,7 @@ module BinData
         super(key, value) unless value.nil?
       end
 
-      def respond_to_missing?(symbol, include_private = false)
+      def respond_to?(symbol, include_private = false)
         has_key?(symbol) || super
       end
 

@@ -72,7 +72,7 @@ module BinData
       @struct = BinData::Struct.new(get_parameter(:struct_params), self)
     end
 
-    def respond_to_missing?(symbol, include_private = false) #:nodoc:
+    def respond_to?(symbol, include_private = false) #:nodoc:
       @struct.respond_to?(symbol, include_private) || super
     end
 
