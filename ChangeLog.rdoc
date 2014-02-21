@@ -5,6 +5,8 @@
 * Performance improvements.
 * Removed deprecated parameters.
 * Code refactored to use Ruby 1.9 features.
+* #eval_parameters can now call private methods.  Requested by Ole Rasmussen.
+* Can now determine state of :onlyif fields.  Requested by Ole Rasmussen.
 
 == Version 2.0.0 (2014-02-02)
 
