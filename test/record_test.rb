@@ -476,6 +476,12 @@ describe BinData::Record, "with :onlyif" do
     obj.to_binary_s.must_equal "\x03\x05"
   end
 
+  it "identifies if fields are included" do
+    obj.a?.must_equal true
+    obj.b?.must_equal true
+    obj.c?.must_equal false
+  end
+
   it "reads as lambdaed" do
     obj.read("\x01\x02")
     obj.snapshot.must_equal({"a" => 1, "c" => 2})

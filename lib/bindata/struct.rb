@@ -162,7 +162,7 @@ module BinData
       snapshot = Snapshot.new
       field_names.each do |name|
         obj = find_obj_for_name(name)
-        snapshot[name] = obj.snapshot if include_obj(obj)
+        snapshot[name] = obj.snapshot if include_obj?(obj)
       end
       snapshot
     end
@@ -205,12 +205,12 @@ module BinData
 
     def do_read(io) #:nodoc:
       instantiate_all_objs
-      @field_objs.each { |f| f.do_read(io) if include_obj(f) }
+      @field_objs.each { |f| f.do_read(io) if include_obj?(f) }
     end
 
     def do_write(io) #:nodoc
       instantiate_all_objs
-      @field_objs.each { |f| f.do_write(io) if include_obj(f) }
+      @field_objs.each { |f| f.do_write(io) if include_obj?(f) }
     end
 
     def do_num_bytes #:nodoc:
@@ -243,15 +243,18 @@ module BinData
     private
 
     def base_field_name(name)
-      name.to_s.chomp("=").to_sym
+      name.to_s.sub(/(=|\?)\z/, "").to_sym
     end
 
     def invoke_field(obj, symbol, args)
       name = symbol.to_s
       is_writer = (name[-1, 1] == "=")
+      is_query = (name[-1, 1] == "?")
 
       if is_writer
         obj.assign(*args)
+      elsif is_query
+        include_obj?(obj)
       else
         obj
       end
@@ -313,7 +316,7 @@ module BinData
       sum = 0
       (0...index).each do |i|
         obj = @field_objs[i]
-        if include_obj(obj)
+        if include_obj?(obj)
           nbytes = obj.do_num_bytes
           sum = (nbytes.is_a?(Integer) ? sum.ceil : sum) + nbytes
         end
@@ -322,7 +325,7 @@ module BinData
       sum
     end
 
-    def include_obj(obj)
+    def include_obj?(obj)
       not obj.has_parameter?(:onlyif) or obj.eval_parameter(:onlyif)
     end
 
