@@ -105,7 +105,7 @@ if __FILE__ == $0
                                                    g.footer.uncompressed_size,
                                                    ratio,
                                                    g.file_name]
-  puts "Comment: #{g.comment}" if g.comment != ""
+  puts "Comment: #{g.comment}" if g.comment?
   puts
 
   puts "Executing gzip -l -v"
