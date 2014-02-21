@@ -73,12 +73,16 @@ end
 
 describe BinData::LazyEvaluator, "with one parent" do
   subject {
-    parent_methods = {:m1 => 'Pm1', :com1 => 'PmC', :mm => 3}
+    parent_methods = {:m1 => 'Pm1', :m2 => 'Pm2', :com1 => 'PmC', :mm => 3}
     parent_params  = {:p1 => 'Pp1', :com1 => 'PpC'}
     parent_obj = MockBinDataObject.new(parent_methods, parent_params)
 
-    def parent_obj.echo(a1, a2)
-      [a1, a2]
+    class << parent_obj
+      def echo(a1, a2)
+        [a1, a2]
+      end
+
+      private :m2
     end
 
     methods = {:m1 => 'm1', :com1 => 'mC'}
@@ -116,6 +120,10 @@ describe BinData::LazyEvaluator, "with one parent" do
 
   it "invokes methods in the parent" do
     lazy_eval(lambda { echo(p1, m1) }).must_equal ['Pp1', 'Pm1']
+  end
+
+  it "invokes private methods in the parent" do
+    lazy_eval(lambda { m2 }).must_equal 'Pm2'
   end
 
   it "resolves parameters in preference to methods in the parent" do
