@@ -85,7 +85,7 @@ module BinData
 
       if obj_parent.has_parameter?(symbol)
         obj_parent.get_parameter(symbol)
-      elsif obj_parent.safe_respond_to?(symbol)
+      elsif obj_parent.safe_respond_to?(symbol, true)
         obj_parent.__send__(symbol, *args)
       else
         symbol
