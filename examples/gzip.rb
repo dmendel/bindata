@@ -59,7 +59,7 @@ class Gzip
 
   attr_accessor :compressed
   def_delegators :@header, :file_name=, :file_name
-  def_delegators :@header, :comment=, :comment
+  def_delegators :@header, :comment=, :comment, :comment?
   def_delegators :@header, :compression_method
   def_delegators :@footer, :crc32, :uncompressed_size
 
@@ -153,7 +153,7 @@ if __FILE__ == $0
                                                    g.uncompressed_size,
                                                    ratio,
                                                    g.file_name]
-  puts "Comment: #{g.comment}" if g.comment != ""
+  puts "Comment: #{g.comment}" if g.comment?
   puts
 
   puts "Executing gzip -l -v"
