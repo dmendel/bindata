@@ -360,6 +360,30 @@ describe BinData::Record, "with an endian defined" do
     end
   end
 
+  class RecordWithMultiEndian < BinData::Record
+    endian :both
+
+    uint16 :a
+    float  :b
+    array  :c, :initial_length => 2 do
+      int8
+    end
+    choice :d, :selection => 1 do
+      uint16
+      uint32
+    end
+    struct :e do
+      uint16   :f
+      uint32be :g
+    end
+    struct :h do
+      endian :big
+      struct :i do
+        uint16 :j
+      end
+    end
+  end
+
   let(:obj) { RecordWithEndian.new }
 
   it "uses correct endian" do
@@ -375,6 +399,44 @@ describe BinData::Record, "with an endian defined" do
     lambdaed = [1, 2.0, 3, 4, 5, 6, 7, 8].pack('veCCVvNn')
 
     obj.to_binary_s.must_equal lambdaed
+  end
+  
+  it "supports multi-endian (little)" do
+    obj = RecordWithMultiEndian.new(:endian => :little)
+    obj.a = 1
+    obj.b = 2.0
+    obj.c[0] = 3
+    obj.c[1] = 4
+    obj.d = 5
+    obj.e.f = 6
+    obj.e.g = 7
+    obj.h.i.j = 8
+
+    lambdaed = [1, 2.0, 3, 4, 5, 6, 7, 8].pack('veCCVvNn')
+
+    obj.to_binary_s.must_equal lambdaed
+  end
+  
+  it "supports multi-endian (big)" do
+    obj = RecordWithMultiEndian.new(:endian => :big)
+    obj.a = 1
+    obj.b = 2.0
+    obj.c[0] = 3
+    obj.c[1] = 4
+    obj.d = 5
+    obj.e.f = 6
+    obj.e.g = 7
+    obj.h.i.j = 8
+
+    lambdaed = [1, 2.0, 3, 4, 5, 6, 7, 8].pack('ngCCNnNn')
+
+    obj.to_binary_s.must_equal lambdaed
+  end
+
+  it "requires endian to be specified for multiendian" do
+    lambda {
+      RecordWithMultiEndian.new
+    }.must_raise ArgumentError, "Missing required parameter :endian"
   end
 end
 

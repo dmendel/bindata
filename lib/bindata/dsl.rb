@@ -79,6 +79,9 @@ module BinData
           @endian
         elsif endian == :big or endian == :little
           @endian = endian
+        elsif endian == :both
+          @the_class.send(:unregister_self)
+          @endian = endian
         else
           dsl_raise ArgumentError, "unknown value for endian '#{endian}'"
         end
@@ -125,15 +128,51 @@ module BinData
       end
 
       def method_missing(symbol, *args, &block) #:nodoc:
-        type   = symbol
-        name   = name_from_field_declaration(args)
-        params = params_from_field_declaration(type, args, &block)
+        if @endian == :both
+          endian_subclasses.each do |subclass|
+            subclass.send(symbol, *args, &block)
+          end
+        else
+          type   = symbol
+          name   = name_from_field_declaration(args)
+          params = params_from_field_declaration(type, args, &block)
 
-        append_field(type, name, params)
+          append_field(type, name, params)
+        end
       end
 
       #-------------
       private
+
+      def endian_subclasses
+        @endian_subclasses ||= begin
+          # to make the_class available to :new
+          the_class = @the_class
+          @the_class.define_singleton_method(:new) do |*args|
+            # if called directly, look for :endian key
+            if self == the_class
+              if args.last.is_a? Hash
+                options = args.last
+                if options.key? :endian
+                  # instantiate the appropriate subclass instead
+                  endian = options.delete(:endian)
+                  subclass = RegisteredClasses.lookup(name, endian)
+                  return subclass.new(*args)
+                end
+              end
+              # raise an error if :endian isn't found
+              raise ArgumentError, "Missing required parameter :endian"
+            end
+            super(*args)
+          end
+
+          { :little => '_le', :big => '_be' }.map do |endian,suffix|
+            subclass = Class.new(@the_class)
+            subclass.send(:endian, endian)
+            RegisteredClasses.register(@the_class.name + suffix, subclass)
+          end
+        end
+      end
 
       def option?(opt)
         options.include?(opt)
