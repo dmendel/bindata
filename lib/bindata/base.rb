@@ -52,6 +52,7 @@ module BinData
         define_singleton_method(:inherited) do |subclass|
           RegisteredClasses.register(subclass.name, subclass)
           register_subclasses
+          super(subclass)
         end
       end
 

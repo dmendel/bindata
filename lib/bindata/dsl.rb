@@ -80,7 +80,7 @@ module BinData
         elsif endian == :big or endian == :little
           @endian = endian
         elsif endian == :both
-          @the_class.send(:unregister_self)
+          define_endian_subclasses
           @endian = endian
         else
           dsl_raise ArgumentError, "unknown value for endian '#{endian}'"
@@ -129,8 +129,12 @@ module BinData
 
       def method_missing(symbol, *args, &block) #:nodoc:
         if @endian == :both
-          endian_subclasses.each do |subclass|
+          @endian_subclasses.each do |endian,subclass|
             subclass.send(symbol, *args, &block)
+          end
+          @replay_cache << [symbol, args, block]
+          @subclasses.each do |subclass|
+            subclass.dsl_parser.send(:rebuild_endian_subclasses, @replay_cache)
           end
         else
           type   = symbol
@@ -144,34 +148,81 @@ module BinData
       #-------------
       private
 
-      def endian_subclasses
-        @endian_subclasses ||= begin
-          # to make the_class available to :new
-          the_class = @the_class
-          @the_class.define_singleton_method(:new) do |*args|
-            # if called directly, look for :endian key
-            if self == the_class
+      class EndianModuleManager < Module
+        def initialize(the_class)
+          module_eval do
+            define_method :inherited do |subclass|
+              super(subclass)
+              if self == the_class
+                dsl_parser.send(:add_subclass, subclass)
+              end
+            end
+
+            define_method :new do |*args|
+              # if not called directly, just call super
+              return super(*args) unless self == the_class
+              # if called directly, look for :endian key
               if args.last.is_a? Hash
                 options = args.last
                 if options.key? :endian
                   # instantiate the appropriate subclass instead
                   endian = options.delete(:endian)
-                  subclass = RegisteredClasses.lookup(name, endian)
+                  subclass = dsl_parser.instance_variable_get(:@endian_subclasses)[endian.to_sym]
                   return subclass.new(*args)
                 end
               end
               # raise an error if :endian isn't found
               raise ArgumentError, "Missing required parameter :endian"
             end
-            super(*args)
-          end
-
-          { :little => '_le', :big => '_be' }.map do |endian,suffix|
-            subclass = Class.new(@the_class)
-            subclass.send(:endian, endian)
-            RegisteredClasses.register(@the_class.name + suffix, subclass)
           end
         end
+      end
+
+      def add_subclass(subclass)
+        return if @endian_subclasses.nil?
+        @subclasses << subclass
+        subclass.send(:define_endian_subclasses, full_replay_cache)
+      end
+
+      def define_endian_subclasses(parent_replay_cache = [])
+        if @endian_subclasses.nil?
+          @subclasses ||= []
+          @replay_cache ||= []
+          @endian_subclasses = begin
+            { :little => '_le', :big => '_be' }.each_with_object({}) do |(endian,suffix),hash|
+              subclass = Class.new(@the_class)
+              subclass.send(:endian, endian)
+              unless @the_class.name.nil?
+                RegisteredClasses.register(@the_class.name + suffix, subclass)
+              end
+              hash[endian] = subclass
+            end
+          end
+          @the_class.extend(EndianModuleManager.new(@the_class))
+          @the_class.send(:unregister_self)
+        end
+        
+        @parent_replay_cache = parent_replay_cache
+        @endian_subclasses.each do |endian,subclass|
+          full_replay_cache.each {|(symbol, args, block)| subclass.send(symbol, *args, &block) }
+        end
+        @subclasses.each do |subclass|
+          subclass.send(:rebuild_endian_subclasses, full_replay_cache)
+        end
+      end
+
+      def rebuild_endian_subclasses(replay_cache)
+        unless @the_class.name.nil?
+          ['_le', '_be'].each do |suffix|
+            RegisteredClasses.unregister(@the_class.name + suffix)
+          end
+        end
+        @endian_subclasses = nil
+        define_endian_subclasses(replay_cache)
+      end
+
+      def full_replay_cache
+        @parent_replay_cache + @replay_cache
       end
 
       def option?(opt)

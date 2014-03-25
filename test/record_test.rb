@@ -385,6 +385,8 @@ describe BinData::Record, "with an endian defined" do
   end
 
   let(:obj) { RecordWithEndian.new }
+  let(:obj_little) { RecordWithMultiEndian.new(:endian => :little) }
+  let(:obj_big) { RecordWithMultiEndian.new(:endian => :big) }
 
   it "uses correct endian" do
     obj.a = 1
@@ -402,41 +404,130 @@ describe BinData::Record, "with an endian defined" do
   end
   
   it "supports multi-endian (little)" do
-    obj = RecordWithMultiEndian.new(:endian => :little)
-    obj.a = 1
-    obj.b = 2.0
-    obj.c[0] = 3
-    obj.c[1] = 4
-    obj.d = 5
-    obj.e.f = 6
-    obj.e.g = 7
-    obj.h.i.j = 8
+    obj_little.a = 1
+    obj_little.b = 2.0
+    obj_little.c[0] = 3
+    obj_little.c[1] = 4
+    obj_little.d = 5
+    obj_little.e.f = 6
+    obj_little.e.g = 7
+    obj_little.h.i.j = 8
 
     lambdaed = [1, 2.0, 3, 4, 5, 6, 7, 8].pack('veCCVvNn')
 
-    obj.to_binary_s.must_equal lambdaed
+    obj_little.to_binary_s.must_equal lambdaed
   end
   
   it "supports multi-endian (big)" do
-    obj = RecordWithMultiEndian.new(:endian => :big)
-    obj.a = 1
-    obj.b = 2.0
-    obj.c[0] = 3
-    obj.c[1] = 4
-    obj.d = 5
-    obj.e.f = 6
-    obj.e.g = 7
-    obj.h.i.j = 8
+    obj_big.a = 1
+    obj_big.b = 2.0
+    obj_big.c[0] = 3
+    obj_big.c[1] = 4
+    obj_big.d = 5
+    obj_big.e.f = 6
+    obj_big.e.g = 7
+    obj_big.h.i.j = 8
 
     lambdaed = [1, 2.0, 3, 4, 5, 6, 7, 8].pack('ngCCNnNn')
 
-    obj.to_binary_s.must_equal lambdaed
+    obj_big.to_binary_s.must_equal lambdaed
   end
 
   it "requires endian to be specified for multiendian" do
     lambda {
       RecordWithMultiEndian.new
     }.must_raise ArgumentError, "Missing required parameter :endian"
+  end
+end
+
+describe BinData::Record, "multi-endian subclassing" do
+  class Vector2d < BinData::Record
+    endian :both
+    uint8 :x
+    uint8 :y
+    
+    def coords
+      [x,y]
+    end
+  end
+  
+  class Vector3d < Vector2d
+    uint8 :z
+    
+    def coords
+      super + [z]
+    end
+  end
+  
+  class Vector4d < Vector3d
+    uint8 :w
+    
+    def coords
+      super + [w]
+    end
+  end
+  
+  [:little, :big].each do |endian|
+    it "inherits properties (#{endian})" do
+      obj = Vector4d.new(endian: endian)
+      obj.x = 2
+      obj.y = 3
+      obj.z = 4
+      obj.w = 5
+      
+      expected = "\02\03\04\05"
+      
+      obj.to_binary_s.must_equal expected
+    end
+  end
+end
+
+describe BinData::Record, "out-of-order multi-endian subclassing" do
+  class Point2d < BinData::Record
+    endian :both
+    uint8 :x
+    
+    def coords
+      [x]
+    end
+  end
+  
+  class Point3d < Point2d
+    uint8 :z
+    
+    def coords
+      super + [z]
+    end
+  end
+  
+  class Point4d < Point3d
+    uint8 :w
+    
+    def coords
+      super + [w]
+    end
+  end
+  
+  class Point2d
+    uint8 :y
+    
+    def coords
+      [x,y]
+    end
+  end
+  
+  [:little, :big].each do |endian|
+    it "inherits properties (#{endian})" do
+      obj = Point4d.new(endian: endian)
+      obj.x = 2
+      obj.y = 3
+      obj.z = 4
+      obj.w = 5
+      
+      expected = "\02\03\04\05"
+      
+      obj.to_binary_s.must_equal expected
+    end
   end
 end
 
