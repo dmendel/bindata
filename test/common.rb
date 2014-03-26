@@ -2,11 +2,11 @@ require 'rubygems'
 require 'minitest/autorun'
 require 'stringio'
 
-$LOAD_PATH.unshift File.expand_path("../lib", File.dirname(__FILE__))
-require 'bindata'
-
 require 'coveralls'
 Coveralls.wear!
+
+$LOAD_PATH.unshift File.expand_path("../lib", File.dirname(__FILE__))
+require 'bindata'
 
 class Object
   def expose_methods_for_testing
