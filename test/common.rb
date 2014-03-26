@@ -5,6 +5,9 @@ require 'stringio'
 $LOAD_PATH.unshift File.expand_path("../lib", File.dirname(__FILE__))
 require 'bindata'
 
+require 'coveralls'
+Coveralls.wear!
+
 class Object
   def expose_methods_for_testing
     cls = (Class === self) ? self : (class << self ; self; end)
