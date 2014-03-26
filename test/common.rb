@@ -1,9 +1,10 @@
 require 'rubygems'
-require 'minitest/autorun'
-require 'stringio'
 
 require 'coveralls'
 Coveralls.wear!
+
+require 'minitest/autorun'
+require 'stringio'
 
 $LOAD_PATH.unshift File.expand_path("../lib", File.dirname(__FILE__))
 require 'bindata'
