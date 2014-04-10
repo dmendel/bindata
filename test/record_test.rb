@@ -241,12 +241,12 @@ describe BinData::Record, "with nested structs" do
     obj.c.y.must_equal 3
   end
 
-  it "returns correct offset" do
-    obj.offset.must_equal 0
-    obj.b.offset.must_equal 1
-    obj.b.w.offset.must_equal 1
-    obj.c.offset.must_equal 3
-    obj.c.z.offset.must_equal 4
+  it "returns correct abs_offset" do
+    obj.abs_offset.must_equal 0
+    obj.b.abs_offset.must_equal 1
+    obj.b.w.abs_offset.must_equal 1
+    obj.c.abs_offset.must_equal 3
+    obj.c.z.abs_offset.must_equal 4
   end
 
   it "returns correct rel_offset" do

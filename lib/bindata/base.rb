@@ -211,16 +211,23 @@ module BinData
       end
     end
 
-    # Returns the offset of this object wrt to its most distant ancestor.
-    def offset
+    # Returns the offset (in bytes) of this object with respect to its most
+    # distant ancestor.
+    def abs_offset
       if @parent
-        @parent.offset + @parent.offset_of(self)
+        @parent.abs_offset + @parent.offset_of(self)
       else
         0
       end
     end
 
-    # Returns the offset of this object wrt to its parent.
+    # Returns the offset of this object with respect to its most distant ancestor.
+    def offset
+      warn "#offset is deprecated in #{debug_name}. Use #abs_offset instead"
+      abs_offset
+    end
+
+    # Returns the offset (in bytes) of this object with respect to its parent.
     def rel_offset
       if @parent
         @parent.offset_of(self)
