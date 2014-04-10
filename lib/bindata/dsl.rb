@@ -129,12 +129,15 @@ module BinData
 
       def method_missing(symbol, *args, &block) #:nodoc:
         if @endian == :both
+          # forward the method to the endian subclasses
           @endian_subclasses.each do |endian,subclass|
             subclass.send(symbol, *args, &block)
           end
+          # update our replay cache
           @replay_cache << [symbol, args, block]
+          # force our normal subclasses to rebuild their endian subclasses
           @subclasses.each do |subclass|
-            subclass.dsl_parser.send(:rebuild_endian_subclasses, @replay_cache)
+            subclass.dsl_parser.send(:rebuild_endian_subclasses)
           end
         else
           type   = symbol
@@ -146,6 +149,16 @@ module BinData
       end
 
       #-------------
+      protected
+
+      def full_replay_cache
+        # recursively generate the entire replay cache
+        # this is because we cannot rely on inheritance to get the superclass's fields
+        parent = parent_dsl_parser
+        (parent ? parent.full_replay_cache : []) + (@replay_cache || [])
+      end
+
+      #-------------
       private
 
       class EndianModuleManager < Module
@@ -154,6 +167,7 @@ module BinData
             define_method :inherited do |subclass|
               super(subclass)
               if self == the_class
+                # record subclasses in the dsl parser
                 dsl_parser.send(:add_subclass, subclass)
               end
             end
@@ -161,68 +175,74 @@ module BinData
             define_method :new do |*args|
               # if not called directly, just call super
               return super(*args) unless self == the_class
-              # if called directly, look for :endian key
-              if args.last.is_a? Hash
-                options = args.last
-                if options.key? :endian
-                  # instantiate the appropriate subclass instead
-                  endian = options.delete(:endian)
-                  subclass = dsl_parser.instance_variable_get(:@endian_subclasses)[endian.to_sym]
-                  return subclass.new(*args)
-                end
-              end
-              # raise an error if :endian isn't found
-              raise ArgumentError, "Missing required parameter :endian"
+              # instead of instantiating self, instantiate an endian-subclass based on the :endian option
+              value, options, parent = arg_processor.separate_args(self, args)
+              dsl_parser.send(:instantiate_endian_subclass, options[:endian], args)
             end
           end
         end
       end
 
       def add_subclass(subclass)
+        # if @endian_subclasses is nil, we're creating them, and we don't want them in the @subclasses array
         return if @endian_subclasses.nil?
         @subclasses << subclass
-        subclass.send(:define_endian_subclasses, full_replay_cache)
+        subclass.send(:define_endian_subclasses)
       end
 
-      def define_endian_subclasses(parent_replay_cache = [])
+      def instantiate_endian_subclass(endian, args)
+        raise ArgumentError, "Missing required parameter :endian" unless endian
+        subclass = @endian_subclasses[endian.to_sym]
+        subclass.new(*args)
+      end
+
+      def define_endian_subclasses
         if @endian_subclasses.nil?
+          # we need to keep track of our subclasses, so we can tell them to rebuild
           @subclasses ||= []
+          # we need to keep track of the fields defined, so we can replay them if our superclass adds a field
           @replay_cache ||= []
+          # create two subclasses: one for big-endian, one for little-endian
           @endian_subclasses = begin
             { :little => '_le', :big => '_be' }.each_with_object({}) do |(endian,suffix),hash|
               subclass = Class.new(@the_class)
               subclass.send(:endian, endian)
+              # if the base class doesn't have a name, it's assumed that the class will be used directly, instead of through the registration system
               unless @the_class.name.nil?
                 RegisteredClasses.register(@the_class.name + suffix, subclass)
               end
+              # we need to keep track of the classes so we can instantiate them if someone calls new
               hash[endian] = subclass
             end
           end
+          # this module is used to keep track of subclasses as well as make new return the appropriate subclass
           @the_class.extend(EndianModuleManager.new(@the_class))
           @the_class.send(:unregister_self)
-        end
-        
-        @parent_replay_cache = parent_replay_cache
-        @endian_subclasses.each do |endian,subclass|
-          full_replay_cache.each {|(symbol, args, block)| subclass.send(symbol, *args, &block) }
-        end
-        @subclasses.each do |subclass|
-          subclass.send(:rebuild_endian_subclasses, full_replay_cache)
+          
+          # update the subclasses with the attributes known so far
+          @endian_subclasses.each do |endian,subclass|
+            full_replay_cache.each {|(symbol, args, block)| subclass.send(symbol, *args, &block) }
+          end
         end
       end
 
-      def rebuild_endian_subclasses(replay_cache)
+      def rebuild_endian_subclasses
+        # this method can cause issues if there are existing instances of the subclasses. however, it's a terrible idea to modify your fields after you create instances, so I'm not too worried
+        
+        # deregister the existing subclasses
         unless @the_class.name.nil?
           ['_le', '_be'].each do |suffix|
             RegisteredClasses.unregister(@the_class.name + suffix)
           end
         end
+        # forget the existing subclasses
         @endian_subclasses = nil
-        define_endian_subclasses(replay_cache)
-      end
-
-      def full_replay_cache
-        @parent_replay_cache + @replay_cache
+        # create new subclasses
+        define_endian_subclasses
+        # force our normal subclasses to rebuild their endian subclasses
+        @subclasses.each do |subclass|
+          subclass.dsl_parser.send(:rebuild_endian_subclasses)
+        end
       end
 
       def option?(opt)
@@ -246,8 +266,12 @@ module BinData
         end
       end
 
+      def parent_dsl_parser
+        @the_class.superclass.respond_to?(:dsl_parser) ? @the_class.superclass.dsl_parser : nil
+      end
+
       def parent_attribute(attr, default = nil)
-        parent = @the_class.superclass.respond_to?(:dsl_parser) ? @the_class.superclass.dsl_parser : nil
+        parent = parent_dsl_parser
         if parent and parent.respond_to?(attr)
           parent.send(attr)
         else
