@@ -93,7 +93,7 @@ describe BinData::Record, "with choice field" do
 
   it "has correct offset" do
     obj = RecordWithNestedChoiceField.new
-    obj.x.b.offset.must_equal 2
+    obj.x.b.abs_offset.must_equal 2
   end
 end
 

@@ -250,11 +250,11 @@ describe BinData::Struct, "with nested structs" do
     obj.c.z.must_equal 0
   end
 
-  it "returns correct offset" do
-    obj.b.offset.must_equal 1
-    obj.b.w.offset.must_equal 1
-    obj.c.offset.must_equal 3
-    obj.c.z.offset.must_equal 4
+  it "returns correct abs_offset" do
+    obj.b.abs_offset.must_equal 1
+    obj.b.w.abs_offset.must_equal 1
+    obj.c.abs_offset.must_equal 3
+    obj.c.z.abs_offset.must_equal 4
   end
 end
 
@@ -313,10 +313,10 @@ describe BinData::Struct, "with bit fields" do
   end
 
   it "has correct offsets" do
-    obj.a.offset.must_equal 0
-    obj.b.offset.must_equal 0
-    obj.c.offset.must_equal 1
-    obj.d.offset.must_equal 2
+    obj.a.rel_offset.must_equal 0
+    obj.b.rel_offset.must_equal 0
+    obj.c.rel_offset.must_equal 1
+    obj.d.rel_offset.must_equal 2
   end
 end
 

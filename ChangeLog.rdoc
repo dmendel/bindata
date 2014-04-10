@@ -4,6 +4,7 @@
 
 * #eval_parameters can now call private methods.  Requested by Ole Rasmussen.
 * Can now determine state of :onlyif fields.  Requested by Ole Rasmussen.
+* Renamed #offset to #abs_offset for clarity.  #offset is now deprecated.
 
 == Version 1.8.2 (2014-02-02)
 

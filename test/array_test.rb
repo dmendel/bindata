@@ -168,7 +168,7 @@ describe BinData::Array, "with several elements" do
   end
 
   it "has correct offset" do
-    obj[2].offset.must_equal ExampleSingle.new.num_bytes * 2
+    obj[2].rel_offset.must_equal ExampleSingle.new.num_bytes * 2
   end
 
   it "has correct num_bytes" do
@@ -364,8 +364,8 @@ describe BinData::Array, "of bits" do
   end
 
   it "has correct offset" do
-    obj[7].offset.must_equal 0
-    obj[8].offset.must_equal 1
+    obj[7].rel_offset.must_equal 0
+    obj[8].rel_offset.must_equal 1
   end
 end
 
