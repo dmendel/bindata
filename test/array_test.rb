@@ -320,6 +320,13 @@ describe BinData::Array, "subclassed" do
     uint16 :initial_value => :initial_element_value
   end
 
+  class MultiIntArray < BinData::Array
+    endian :both
+    default_parameter :initial_element_value => 0
+
+    uint16 :initial_value => :initial_element_value
+  end
+
   it "forwards parameters" do
     obj = IntArray.new(:initial_length => 7)
     obj.length.must_equal 7
@@ -328,6 +335,16 @@ describe BinData::Array, "subclassed" do
   it "overrides default parameters" do
     obj = IntArray.new(:initial_length => 3, :initial_element_value => 5)
     obj.to_binary_s.must_equal "\x00\x05\x00\x05\x00\x05"
+  end
+
+  it "overrides default parameters (multiendian, big)" do
+    obj = MultiIntArray.new(:endian => :big, :initial_length => 3, :initial_element_value => 5)
+    obj.to_binary_s.must_equal "\x00\x05\x00\x05\x00\x05"
+  end
+
+  it "overrides default parameters (multiendian, little)" do
+    obj = MultiIntArray.new(:endian => :little, :initial_length => 3, :initial_element_value => 5)
+    obj.to_binary_s.must_equal "\x05\x00\x05\x00\x05\x00"
   end
 end
 
