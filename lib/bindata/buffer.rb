@@ -62,7 +62,7 @@ module BinData
       @type = get_parameter(:type).instantiate(nil, self)
     end
 
-    def clear? #:nodoc:
+    def clear?
       @type.clear?
     end
 

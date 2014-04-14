@@ -62,13 +62,14 @@ module BinData
 
     def snapshot
       # override to trim padding
-      result = super
-      result = clamp_to_length(result)
+      snap = super
+      snap = clamp_to_length(snap)
 
       if get_parameter(:trim_padding)
-        result = trim_padding(result)
+        trim_padding(snap)
+      else
+        snap
       end
-      result
     end
 
     #---------------

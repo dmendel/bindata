@@ -85,40 +85,24 @@ module BinData
       selection
     end
 
-    def clear? #:nodoc:
-      current_choice.clear?
-    end
-
-    def assign(val)
-      current_choice.assign(val)
-    end
-
-    def snapshot
-      current_choice.snapshot
+    def safe_respond_to?(symbol, include_private = false) #:nodoc:
+      base_respond_to?(symbol, include_private)
     end
 
     def respond_to?(symbol, include_private = false) #:nodoc:
       current_choice.respond_to?(symbol, include_private) || super
     end
 
-    def safe_respond_to?(symbol, include_private = false) #:nodoc:
-      base_respond_to?(symbol, include_private)
-    end
-
     def method_missing(symbol, *args, &block) #:nodoc:
       current_choice.__send__(symbol, *args, &block)
     end
 
-    def do_read(io) #:nodoc:
-      current_choice.do_read(io)
-    end
-
-    def do_write(io) #:nodoc:
-      current_choice.do_write(io)
-    end
-
-    def do_num_bytes #:nodoc:
-      current_choice.do_num_bytes
+    %w(clear? assign snapshot do_read do_write do_num_bytes).each do |m|
+      self.module_eval <<-END
+        def #{m}(*args)
+          current_choice.#{m}(*args)
+        end
+      END
     end
 
     #---------------

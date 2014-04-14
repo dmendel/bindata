@@ -3,12 +3,12 @@ module BinData
 
     # Don't override initialize.  If you are defining a new kind of datatype
     # (list, array, choice etc) then put your initialization code in
-    # #initialize_instance.  This is because BinData objects can be initialized
-    # as prototypes and your initialization code may not be called.
+    # #initialize_instance.  BinData objects might be initialized as prototypes
+    # and your initialization code may not be called.
     #
     # If you're subclassing BinData::Record, you are definitely doing the wrong
     # thing.  Read the documentation on how to use BinData.
-    # http://bindata.rubyforge.org/manual.html#records
+    # http://github.com/dmendel/bindata/wiki/Records
     alias_method :initialize_without_warning, :initialize
     def initialize_with_warning(*args)
       owner = method(:initialize).owner

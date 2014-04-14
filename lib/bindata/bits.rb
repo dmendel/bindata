@@ -31,7 +31,7 @@ module BinData
           def do_write(io)
             #{create_nbits_code(nbits)}
             val = _value
-            #{create_int2uint_code(nbits) if signed == :signed}
+            #{create_int2uint_code(nbits, signed)}
             io.writebits(val, #{nbits}, :#{endian})
           end
 
@@ -47,7 +47,7 @@ module BinData
           def read_and_return_value(io)
             #{create_nbits_code(nbits)}
             val = io.readbits(#{nbits}, :#{endian})
-            #{create_uint2int_code(nbits) if signed == :signed}
+            #{create_uint2int_code(nbits, signed)}
             val
           end
 
@@ -65,14 +65,6 @@ module BinData
         end
       end
 
-      def create_do_num_bytes_code(nbits)
-        if nbits == :nbits
-          "nbits / 8.0"
-        else
-          nbits / 8.0
-        end
-      end
-
       def create_nbits_code(nbits)
         if nbits == :nbits
           "nbits = eval_parameter(:nbits)"
@@ -81,30 +73,19 @@ module BinData
         end
       end
 
+      def create_do_num_bytes_code(nbits)
+        if nbits == :nbits
+          "nbits / 8.0"
+        else
+          nbits / 8.0
+        end
+      end
+
       def create_clamp_code(nbits, signed)
         if nbits == :nbits
           create_dynamic_clamp_code(nbits, signed)
         else
-          if nbits == 1 and signed == :signed
-            raise "signed bitfield must have more than one bit" 
-          end
-
-          if signed == :signed
-            max = (1 << (nbits - 1)) - 1
-            min = -(max + 1)
-          else
-            min = 0
-            max = (1 << nbits) - 1
-          end
-
-          clamp = "(val < #{min}) ? #{min} : (val > #{max}) ? #{max} : val"
-
-          if nbits == 1
-            # allow single bits to be used as booleans
-            clamp = "(val == true) ? 1 : (not val) ? 0 : #{clamp}"
-          end
-
-          "val = #{clamp}"
+          create_fixed_clamp_code(nbits, signed)
         end
       end
 
@@ -120,16 +101,43 @@ module BinData
         "#{max}; #{min}; val = (val < min) ? min : (val > max) ? max : val"
       end
 
-      def create_int2uint_code(nbits)
-        if nbits == :nbits
-          "val = val & (1 << nbits) - 1"
+      def create_fixed_clamp_code(nbits, signed)
+        if nbits == 1 and signed == :signed
+          raise "signed bitfield must have more than one bit" 
+        end
+
+        if signed == :signed
+          max = (1 << (nbits - 1)) - 1
+          min = -(max + 1)
         else
-          "val = val & #{(1 << nbits) - 1}"
+          min = 0
+          max = (1 << nbits) - 1
+        end
+
+        clamp = "(val < #{min}) ? #{min} : (val > #{max}) ? #{max} : val"
+
+        if nbits == 1
+          # allow single bits to be used as booleans
+          clamp = "(val == true) ? 1 : (not val) ? 0 : #{clamp}"
+        end
+
+        "val = #{clamp}"
+      end
+
+      def create_int2uint_code(nbits, signed)
+        if signed != :signed
+          ""
+        elsif nbits == :nbits
+          "val &= (1 << nbits) - 1"
+        else
+          "val &= #{(1 << nbits) - 1}"
         end
       end
 
-      def create_uint2int_code(nbits)
-        if nbits == :nbits
+      def create_uint2int_code(nbits, signed)
+        if signed != :signed
+          ""
+        elsif nbits == :nbits
           "val -= (1 << nbits) if (val >= (1 << (nbits - 1)))"
         else
           "val -= #{1 << nbits} if (val >= #{1 << (nbits - 1)})"

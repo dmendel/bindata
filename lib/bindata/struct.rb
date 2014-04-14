@@ -71,6 +71,7 @@ module BinData
 
     def initialize_shared_instance
       @field_names = get_parameter(:fields).field_names.freeze
+      define_field_accessors
       super
     end
 
@@ -109,19 +110,6 @@ module BinData
       else
         hidden = get_parameter(:hide) || []
         @field_names.compact - hidden
-      end
-    end
-
-    def respond_to?(symbol, include_private = false) #:nodoc:
-      @field_names.include?(base_field_name(symbol)) || super
-    end
-
-    def method_missing(symbol, *args, &block) #:nodoc:
-      obj = find_obj_for_name(symbol)
-      if obj
-        invoke_field(obj, symbol, args)
-      else
-        super
       end
     end
 
@@ -191,21 +179,25 @@ module BinData
     #---------------
     private
 
-    def base_field_name(name)
-      name.to_s.sub(/(=|\?)\z/, "").to_sym
+    def define_field_accessors
+      get_parameter(:fields).each_with_index do |field, i|
+        name = field.name_as_sym
+        define_field_accessors_for(name, i) if name
+      end
     end
 
-    def invoke_field(obj, symbol, args)
-      name = symbol.to_s
-      is_writer = (name[-1, 1] == "=")
-      is_query = (name[-1, 1] == "?")
-
-      if is_writer
-        obj.assign(*args)
-      elsif is_query
-        include_obj?(obj)
-      else
-        obj
+    def define_field_accessors_for(name, index)
+      define_singleton_method(name) do
+        instantiate_obj_at(index) if @field_objs[index].nil?
+        @field_objs[index]
+      end
+      define_singleton_method("#{name}=") do |*vals|
+        instantiate_obj_at(index) if @field_objs[index].nil?
+        @field_objs[index].assign(*vals)
+      end
+      define_singleton_method("#{name}?") do
+        instantiate_obj_at(index) if @field_objs[index].nil?
+        include_obj?(@field_objs[index])
       end
     end
 
@@ -221,6 +213,10 @@ module BinData
       else
         nil
       end
+    end
+
+    def base_field_name(name)
+      name.to_s.sub(/(=|\?)\z/, "").to_sym
     end
 
     def instantiate_all_objs
