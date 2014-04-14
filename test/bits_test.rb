@@ -5,66 +5,58 @@ require File.expand_path(File.join(File.dirname(__FILE__), "common"))
 module AllBitfields
 
   def test_has_a_sensible_value_of_zero
-    all_classes do |bit_class|
-      bit_class.new.must_equal 0
+    all_objects do |obj, nbits|
+      obj.must_equal 0
     end
   end
 
   def test_avoids_underflow
-    all_classes do |bit_class|
-      obj = bit_class.new
-
+    all_objects do |obj, nbits|
       obj.assign(min_value - 1)
       obj.must_equal min_value
     end
   end
 
   def test_avoids_overflow
-    all_classes do |bit_class|
-      obj = bit_class.new
-
+    all_objects do |obj, nbits|
       obj.assign(max_value + 1)
       obj.must_equal max_value
     end
   end
 
   def test_assign_values
-    all_classes do |bit_class|
+    all_objects do |obj, nbits|
       some_values_within_range.each do |val|
-        obj = bit_class.new
         obj.assign(val)
-
         obj.must_equal val
       end
     end
   end
 
   def test_assign_values_from_other_bit_objects
-    all_classes do |bit_class|
+    all_objects do |obj, nbits|
       some_values_within_range.each do |val|
-        obj = bit_class.new
-        obj.assign(bit_class.new(val))
-
+        obj.assign(obj.new(val))
         obj.must_equal val
       end
     end
   end
 
   def test_symmetrically_read_and_write
-    all_classes do |bit_class|
+    all_objects do |obj, nbits|
       some_values_within_range.each do |val|
-        obj = bit_class.new
         obj.assign(val)
-
-        obj.value_read_from_written.must_equal obj
+        other = obj.new
+        other.read(obj.to_binary_s)
+        other.must_equal obj
       end
     end
   end
 
-  def all_classes(&block)
-    @bits.each_pair do |bit_class, nbits|
+  def all_objects(&block)
+    @bits.each do |obj, nbits|
       @nbits = nbits
-      yield bit_class
+      yield obj, nbits
     end
   end
 
@@ -98,7 +90,7 @@ module AllBitfields
 end
 
 def generate_bit_classes_to_test(endian, signed)
-  bits = {}
+  bits = []
   if signed
     base  = "Sbit"
     start = 2
@@ -107,12 +99,20 @@ def generate_bit_classes_to_test(endian, signed)
     start = 1
   end
 
-  (start .. 50).each do |nbits|
+  (start .. 64).each do |nbits|
     name = "#{base}#{nbits}"
     name << "le" if endian == :little
-    bit_class = BinData.const_get(name)
-    bits[bit_class] = nbits
+    obj = BinData.const_get(name).new
+    bits << [obj, nbits]
   end
+
+  (start .. 64).each do |nbits|
+    name = "#{base}"
+    name << "Le" if endian == :little
+    obj = BinData.const_get(name).new(:nbits => nbits)
+    bits << [obj, nbits]
+  end
+
   bits
 end
 
@@ -125,11 +125,12 @@ describe "Unsigned big endian bitfields" do
   end
 
   it "read big endian values" do
-    @bits.each_pair do |bit_class, nbits|
+    all_objects do |obj, nbits|
       nbytes = (nbits + 7) / 8
       str = [0b1000_0000].pack("C") + "\000" * (nbytes - 1)
 
-      bit_class.read(str).must_equal 1 << (nbits - 1)
+      obj.read(str)
+      obj.must_equal 1 << (nbits - 1)
     end
   end
 end
@@ -143,11 +144,12 @@ describe "Signed big endian bitfields" do
   end
 
   it "read big endian values" do
-    @bits.each_pair do |bit_class, nbits|
+    all_objects do |obj, nbits|
       nbytes = (nbits + 7) / 8
       str = [0b0100_0000].pack("C") + "\000" * (nbytes - 1)
 
-      bit_class.read(str).must_equal 1 << (nbits - 2)
+      obj.read(str)
+      obj.must_equal 1 << (nbits - 2)
     end
   end
 end
@@ -161,11 +163,12 @@ describe "Unsigned little endian bitfields" do
   end
 
   it "read little endian values" do
-    @bits.each_pair do |bit_class, nbits|
+    all_objects do |obj, nbits|
       nbytes = (nbits + 7) / 8
       str = [0b0000_0001].pack("C") + "\000" * (nbytes - 1)
 
-      bit_class.read(str).must_equal 1
+      obj.read(str)
+      obj.must_equal 1
     end
   end
 end
@@ -179,11 +182,12 @@ describe "Signed little endian bitfields" do
   end
 
   it "read little endian values" do
-    @bits.each_pair do |bit_class, nbits|
+    all_objects do |obj, nbits|
       nbytes = (nbits + 7) / 8
       str = [0b0000_0001].pack("C") + "\000" * (nbytes - 1)
 
-      bit_class.read(str).must_equal 1
+      obj.read(str)
+      obj.must_equal 1
     end
   end
 end
