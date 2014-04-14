@@ -187,8 +187,8 @@ module BinData
 
       # Use #seek and #pos on seekable streams
       module SeekableStream
-        # Returns the current offset of the io stream.  The exact value of
-        # the offset when reading bitfields is not defined.
+        # Returns the current offset of the io stream.  Offset will be rounded
+        # up when reading bitfields.
         def offset
           raw_io.pos - @initial_pos
         end
@@ -222,8 +222,8 @@ module BinData
 
       # Manually keep track of offset for unseekable streams.
       module UnSeekableStream
-        # Returns the current offset of the io stream.  The exact value of
-        # the offset when reading bitfields is not defined.
+        # Returns the current offset of the io stream.  Offset will be rounded
+        # up when reading bitfields.
         def offset
           @read_count ||= 0
         end
@@ -281,6 +281,8 @@ module BinData
         @wval    = 0
         @wendian = nil
 
+        @write_count = 0
+
         @bytes_remaining = nil
       end
 
@@ -302,6 +304,12 @@ module BinData
         ensure
           @bytes_remaining = prev
         end
+      end
+
+      # Returns the current offset of the io stream.  Offset will be rounded
+      # up when writing bitfields.
+      def offset
+        @write_count + (@wnbits > 0 ? 1 : 0)
       end
 
       # Writes the given string of bytes to the io stream.
@@ -391,6 +399,7 @@ module BinData
           @bytes_remaining -= data.size
         end
 
+        @write_count += data.size
         @raw_io.write(data)
       end
 

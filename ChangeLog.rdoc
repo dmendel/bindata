@@ -8,6 +8,7 @@
 * #eval_parameters can now call private methods.  Requested by Ole Rasmussen.
 * Can now determine state of :onlyif fields.  Requested by Ole Rasmussen.
 * Renamed #offset to #abs_offset for clarity.  #offset is now deprecated.
+* Support :byte_align for fields in structs.  Requested by Igor Yamolov.
 
 == Version 2.0.0 (2014-02-02)
 

@@ -3,7 +3,7 @@ require 'bindata/base'
 module BinData
 
   class Base
-    optional_parameter :onlyif  # Used by Struct
+    optional_parameter :onlyif, :byte_align  # Used by Struct
   end
 
   # A Struct is an ordered collection of named data objects.
@@ -47,9 +47,11 @@ module BinData
   #
   # Fields may have have extra parameters as listed below:
   #
-  # [<tt>:onlyif</tt>]   Used to indicate a data object is optional.
-  #                      if +false+, this object will not be included in any
-  #                      calls to #read, #write, #num_bytes or #snapshot.
+  # [<tt>:onlyif</tt>]     Used to indicate a data object is optional.
+  #                        if +false+, this object will not be included in any
+  #                        calls to #read, #write, #num_bytes or #snapshot.
+  # [<tt>:byte_align</tt>] This field's rel_offset must be a multiple of
+  #                        <tt>:byte_align</tt>.
   class Struct < BinData::Base
     arg_processor :struct
 
@@ -135,13 +137,29 @@ module BinData
     end
 
     def do_read(io) #:nodoc:
+      initial_offset = io.offset
       instantiate_all_objs
-      @field_objs.each { |f| f.do_read(io) if include_obj?(f) }
+      @field_objs.each do |f|
+        if include_obj?(f)
+          if align_obj?(f)
+            io.seekbytes(bytes_to_align(f, io.offset - initial_offset))
+          end
+          f.do_read(io)
+        end
+      end
     end
 
     def do_write(io) #:nodoc
+      initial_offset = io.offset
       instantiate_all_objs
-      @field_objs.each { |f| f.do_write(io) if include_obj?(f) }
+      @field_objs.each do |f|
+        if include_obj?(f)
+          if align_obj?(f)
+            io.writebytes("\x00" * bytes_to_align(f, io.offset - initial_offset))
+          end
+          f.do_write(io)
+        end
+      end
     end
 
     def do_num_bytes #:nodoc:
@@ -245,9 +263,13 @@ module BinData
 
     def sum_num_bytes_below_index(index)
       sum = 0
-      (0...index).each do |i|
+      (0...@field_objs.length).each do |i|
         obj = @field_objs[i]
         if include_obj?(obj)
+          sum = sum.ceil + bytes_to_align(obj, sum.ceil) if align_obj?(obj)
+
+          break if i >= index
+
           nbytes = obj.do_num_bytes
           sum = (nbytes.is_a?(Integer) ? sum.ceil : sum) + nbytes
         end
@@ -256,8 +278,17 @@ module BinData
       sum
     end
 
+    def bytes_to_align(obj, rel_offset)
+      align = obj.eval_parameter(:byte_align)
+      (align - (rel_offset % align)) % align
+    end
+
     def include_obj?(obj)
       not obj.has_parameter?(:onlyif) or obj.eval_parameter(:onlyif)
+    end
+
+    def align_obj?(obj)
+      obj.has_parameter?(:byte_align)
     end
 
     # A hash that can be accessed via attributes.
