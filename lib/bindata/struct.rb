@@ -184,7 +184,7 @@ module BinData
     def respond_to?(symbol, include_private = false) #:nodoc:
       @field_names.include?(base_field_name(symbol)) || super
     end
-
+    
     def method_missing(symbol, *args, &block) #:nodoc:
       obj = find_obj_for_name(symbol)
       if obj
@@ -260,10 +260,6 @@ module BinData
     #---------------
     private
 
-    def base_field_name(name)
-      name.to_s.sub(/(=|\?)\z/, "").to_sym
-    end
-
     def invoke_field(obj, symbol, args)
       name = symbol.to_s
       is_writer = (name[-1, 1] == "=")
@@ -290,6 +286,10 @@ module BinData
       else
         nil
       end
+    end
+
+    def base_field_name(name)
+      name.to_s.sub(/(=|\?)\z/, "").to_sym
     end
 
     def instantiate_all_objs

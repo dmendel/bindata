@@ -83,6 +83,10 @@ module BinData
       @fields.each(&block)
     end
 
+    def each_with_index(&block)
+      @fields.each_with_index(&block)
+    end
+
     def collect(&block)
       @fields.collect(&block)
     end

@@ -6,8 +6,7 @@ module BinData
 
   module Int #:nodoc: all
     class << self
-      def define_class(nbits, endian, signed)
-        name = class_name(nbits, endian, signed)
+      def define_class(name, nbits, endian, signed)
         unless BinData.const_defined?(name)
           BinData.module_eval <<-END
             class #{name} < BinData::BasePrimitive
@@ -17,13 +16,6 @@ module BinData
         end
 
         BinData.const_get(name)
-      end
-
-      def class_name(nbits, endian, signed)
-        endian_str = (endian == :big) ? "be" : "le"
-        base = (signed == :signed) ? "Int" : "Uint"
-
-        "#{base}#{nbits}#{endian_str}"
       end
 
       def define_methods(int_class, nbits, endian, signed)
@@ -170,7 +162,7 @@ module BinData
         if regex =~ name.to_s
           nbits = $1.to_i
           if (nbits % 8).zero?
-            return Int.define_class(nbits, *args)
+            return Int.define_class(name, nbits, *args)
           end
         end
       end

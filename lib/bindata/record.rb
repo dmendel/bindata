@@ -1,28 +1,10 @@
 require 'bindata/dsl'
-require 'bindata/sanitize'
 require 'bindata/struct'
 
 module BinData
   # A Record is a declarative wrapper around Struct.
   #
-  #    require 'bindata'
-  #
-  #    class SomeDataType < BinData::Record
-  #      hide :a
-  #
-  #      int32le :a
-  #      int16le :b
-  #      struct  :s do
-  #        int8  :x
-  #        int8  :y
-  #        int8  :z
-  #      end
-  #    end
-  #
-  #    obj = SomeDataType.new
-  #    obj.field_names   =># ["b", "s"]
-  #    obj.s.field_names =># ["x", "y", "z"]
-  #
+  # See +Struct+ for more info.
   class Record < BinData::Struct
     include DSLMixin
 
