@@ -6,13 +6,11 @@ module BinData
 
   module BitField #:nodoc: all
     class << self
-      def define_class(nbits, endian, signed = :unsigned)
-        name = ((signed == :signed ) ? "Sbit" : "Bit") + nbits.to_s
-        name << "le" if endian == :little
+      def define_class(name, nbits, endian, signed = :unsigned)
         unless BinData.const_defined?(name)
           BinData.module_eval <<-END
             class #{name} < BinData::BasePrimitive
-              BitField.define_methods(self, #{nbits}, :#{endian}, :#{signed})
+              BitField.define_methods(self, #{nbits.inspect}, #{endian.inspect}, #{signed.inspect})
             end
           END
         end
@@ -22,25 +20,32 @@ module BinData
 
       def define_methods(bit_class, nbits, endian, signed)
         bit_class.module_eval <<-END
+          #{create_params_code(nbits)}
+
           def assign(val)
+            #{create_nbits_code(nbits)}
             #{create_clamp_code(nbits, signed)}
             super(val)
           end
 
           def do_write(io)
+            #{create_nbits_code(nbits)}
             val = _value
             #{create_int2uint_code(nbits) if signed == :signed}
             io.writebits(val, #{nbits}, :#{endian})
           end
 
           def do_num_bytes
-            #{nbits / 8.0}
+            #{create_nbits_code(nbits)}
+            #{create_do_num_bytes_code(nbits)}
           end
 
           #---------------
           private
 
+
           def read_and_return_value(io)
+            #{create_nbits_code(nbits)}
             val = io.readbits(#{nbits}, :#{endian})
             #{create_uint2int_code(nbits) if signed == :signed}
             val
@@ -52,53 +57,109 @@ module BinData
         END
       end
 
-      def create_clamp_code(nbits, signed)
-        if nbits == 1 and signed == :signed
-          raise "signed bitfield must have more than one bit" 
-        end
-
-        if signed == :signed
-          max = (1 << (nbits - 1)) - 1
-          min = -(max + 1)
+      def create_params_code(nbits)
+        if nbits == :nbits
+          "mandatory_parameter :nbits"
         else
-          min = 0
-          max = (1 << nbits) - 1
+          ""
+        end
+      end
+
+      def create_do_num_bytes_code(nbits)
+        if nbits == :nbits
+          "nbits / 8.0"
+        else
+          nbits / 8.0
+        end
+      end
+
+      def create_nbits_code(nbits)
+        if nbits == :nbits
+          "nbits = eval_parameter(:nbits)"
+        else
+          ""
+        end
+      end
+
+      def create_clamp_code(nbits, signed)
+        if nbits == :nbits
+          create_dynamic_clamp_code(nbits, signed)
+        else
+          if nbits == 1 and signed == :signed
+            raise "signed bitfield must have more than one bit" 
+          end
+
+          if signed == :signed
+            max = (1 << (nbits - 1)) - 1
+            min = -(max + 1)
+          else
+            min = 0
+            max = (1 << nbits) - 1
+          end
+
+          clamp = "(val < #{min}) ? #{min} : (val > #{max}) ? #{max} : val"
+
+          if nbits == 1
+            # allow single bits to be used as booleans
+            clamp = "(val == true) ? 1 : (not val) ? 0 : #{clamp}"
+          end
+
+          "val = #{clamp}"
+        end
+      end
+
+      def create_dynamic_clamp_code(nbits, signed)
+        if signed == :signed
+          max = "max = (1 << (nbits - 1)) - 1"
+          min = "min = -(max + 1)"
+        else
+          max = "max = (1 << nbits) - 1"
+          min = "min = 0"
         end
 
-        clamp = "(val < #{min}) ? #{min} : (val > #{max}) ? #{max} : val"
-
-        if nbits == 1
-          # allow single bits to be used as booleans
-          clamp = "(val == true) ? 1 : (not val) ? 0 : #{clamp}"
-        end
-
-        "val = #{clamp}"
+        "#{max}; #{min}; val = (val < min) ? min : (val > max) ? max : val"
       end
 
       def create_int2uint_code(nbits)
-        "val = val & #{(1 << nbits) - 1}"
+        if nbits == :nbits
+          "val = val & (1 << nbits) - 1"
+        else
+          "val = val & #{(1 << nbits) - 1}"
+        end
       end
 
       def create_uint2int_code(nbits)
-        "val = val - #{1 << nbits} if (val >= #{1 << (nbits - 1)})"
+        if nbits == :nbits
+          "val -= (1 << nbits) if (val >= (1 << (nbits - 1)))"
+        else
+          "val -= #{1 << nbits} if (val >= #{1 << (nbits - 1)})"
+        end
       end
     end
   end
+
+  # Create classes for dynamic bitfields
+  {
+    "Bit"    => :big,
+    "BitLe"  => :little,
+    "Sbit"   => [:big, :signed],
+    "SbitLe" => [:little, :signed],
+  }.each_pair { |name, args| BitField.define_class(name, :nbits, *args) }
 
   # Create classes on demand
   module BitFieldFactory
     def const_missing(name)
       mappings = {
-        /^Bit(\d+)$/ => :big,
-        /^Bit(\d+)le$/ => :little,
-        /^Sbit(\d+)$/ => [:big, :signed],
+        /^Bit(\d+)$/    => :big,
+        /^Bit(\d+)le$/  => :little,
+        /^Sbit(\d+)$/   => [:big, :signed],
         /^Sbit(\d+)le$/ => [:little, :signed]
       }
 
       mappings.each_pair do |regex, args|
         if regex =~ name.to_s
           nbits = $1.to_i
-          return BitField.define_class(nbits, *args)
+          return BitField.define_class(name, nbits, *args)
         end
       end
 
