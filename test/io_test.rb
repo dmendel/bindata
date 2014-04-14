@@ -152,6 +152,21 @@ describe BinData::IO::Write, "when writing" do
     stream.value.must_equal "abcd"
   end
 
+  it "has #offset" do
+    io.offset.must_equal 0
+
+    io.writebytes("abcd")
+    io.offset.must_equal 4
+
+    io.writebytes("ABCD")
+    io.offset.must_equal 8
+  end
+
+  it "rounds up #offset when writing bits" do
+    io.writebits(123, 9, :little)
+    io.offset.must_equal 2
+  end
+
   it "flushes" do
     io.writebytes("abcd")
     io.flush

@@ -338,6 +338,37 @@ describe BinData::Struct, "with nested endian" do
   end
 end
 
+describe BinData::Struct, "with byte_align" do
+  let(:obj) {
+    params = { :fields => [[:int8, :a],
+                           [:int8, :b, {:byte_align => 5}],
+                           [:bit2, :c],
+                           [:int8, :d, {:byte_align => 3}]] }
+    BinData::Struct.new(params)
+  }
+
+  it "has #num_bytes" do
+    obj.num_bytes.must_equal 10
+  end
+
+  it "reads" do
+    obj.read("\x01\x00\x00\x00\x00\x02\xc0\x00\x00\x04")
+    obj.snapshot.must_equal({ "a" => 1, "b" => 2, "c" => 3, "d" => 4 })
+  end
+
+  it "writes" do
+    obj.assign(:a => 1, :b => 2, :c => 3, :d => 4)
+    obj.to_binary_s.must_equal binary("\x01\x00\x00\x00\x00\x02\xc0\x00\x00\x04")
+  end
+
+  it "has correct offsets" do
+    obj.a.rel_offset.must_equal 0
+    obj.b.rel_offset.must_equal 5
+    obj.c.rel_offset.must_equal 6
+    obj.d.rel_offset.must_equal 9
+  end
+end
+
 describe BinData::Struct, "with dynamically named types" do
   it "instantiates" do
     dyn = BinData::Struct.new(:name => :my_struct, :fields => [[:int8, :a, {:initial_value => 3}]])
