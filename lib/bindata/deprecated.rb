@@ -46,5 +46,11 @@ module BinData
       end
     end
 
+    # #offset has been renamed to #abs_offset.
+    # Eventually #rel_offset will be renamed to #offset.
+    def offset
+      warn "#offset is deprecated in #{debug_name}. Use #abs_offset instead"
+      abs_offset
+    end
   end
 end

@@ -24,6 +24,14 @@ module BinData
       end
     end
 
+    def has_parameter?(param)
+      if @factory
+        @factory.has_parameter?(param)
+      else
+        @obj_params.has_parameter?(param)
+      end
+    end
+
     def instantiate(value = nil, parent = nil)
       @factory ||= @obj_class.new(@obj_params)
 
@@ -46,6 +54,10 @@ module BinData
 
     def name
       @name
+    end
+
+    def has_parameter?(param)
+      @prototype.has_parameter?(param)
     end
 
     def instantiate(value = nil, parent = nil)
@@ -105,6 +117,10 @@ module BinData
 
     def no_field_names_blank?
       @fields.all? { |f| f.name != nil }
+    end
+
+    def any_field_has_parameter?(parameter)
+      @fields.any? { |f| f.has_parameter?(parameter) }
     end
 
     def copy_fields(other)

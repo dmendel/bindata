@@ -139,7 +139,9 @@ module BinData
     end
 
     def initialize_shared_instance
-      @field_names = get_parameter(:fields).field_names.freeze
+      fields = get_parameter(:fields)
+      @field_names = fields.field_names.freeze
+      extend ByteAlignPlugin if fields.any_field_has_parameter?(:byte_align)
       super
     end
 
@@ -206,29 +208,13 @@ module BinData
     end
 
     def do_read(io) #:nodoc:
-      initial_offset = io.offset
       instantiate_all_objs
-      @field_objs.each do |f|
-        if include_obj?(f)
-          if align_obj?(f)
-            io.seekbytes(bytes_to_align(f, io.offset - initial_offset))
-          end
-          f.do_read(io)
-        end
-      end
+      @field_objs.each { |f| f.do_read(io) if include_obj?(f) }
     end
 
     def do_write(io) #:nodoc
-      initial_offset = io.offset
       instantiate_all_objs
-      @field_objs.each do |f|
-        if include_obj?(f)
-          if align_obj?(f)
-            io.writebytes("\x00" * bytes_to_align(f, io.offset - initial_offset))
-          end
-          f.do_write(io)
-        end
-      end
+      @field_objs.each { |f| f.do_write(io) if include_obj?(f) }
     end
 
     def do_num_bytes #:nodoc:
@@ -331,33 +317,19 @@ module BinData
     end
 
     def sum_num_bytes_below_index(index)
-      sum = 0
-      (0...@field_objs.length).each do |i|
+      (0...index).inject(0) do |sum, i|
         obj = @field_objs[i]
         if include_obj?(obj)
-          sum = sum.ceil + bytes_to_align(obj, sum.ceil) if align_obj?(obj)
-
-          break if i >= index
-
           nbytes = obj.do_num_bytes
-          sum = (nbytes.is_a?(Integer) ? sum.ceil : sum) + nbytes
+          (nbytes.is_a?(Integer) ? sum.ceil : sum) + nbytes
+        else
+          sum
         end
       end
-
-      sum
-    end
-
-    def bytes_to_align(obj, rel_offset)
-      align = obj.eval_parameter(:byte_align)
-      (align - (rel_offset % align)) % align
     end
 
     def include_obj?(obj)
       not obj.has_parameter?(:onlyif) or obj.eval_parameter(:onlyif)
-    end
-
-    def align_obj?(obj)
-      obj.has_parameter?(:byte_align)
     end
 
     if RUBY_VERSION <= "1.9"
@@ -413,6 +385,61 @@ module BinData
       def method_missing(symbol, *args)
         self[symbol] || super
       end
+    end
+  end
+
+  # Align fields to a multiple of :byte_align
+  module ByteAlignPlugin
+    def do_read(io)
+      initial_offset = io.offset
+      instantiate_all_objs
+      @field_objs.each do |f|
+        if include_obj?(f)
+          if align_obj?(f)
+            io.seekbytes(bytes_to_align(f, io.offset - initial_offset))
+          end
+          f.do_read(io)
+        end
+      end
+    end
+
+    def do_write(io)
+      initial_offset = io.offset
+      instantiate_all_objs
+      @field_objs.each do |f|
+        if include_obj?(f)
+          if align_obj?(f)
+            io.writebytes("\x00" * bytes_to_align(f, io.offset - initial_offset))
+          end
+          f.do_write(io)
+        end
+      end
+    end
+
+    def sum_num_bytes_below_index(index)
+      sum = 0
+      (0...@field_objs.length).each do |i|
+        obj = @field_objs[i]
+        if include_obj?(obj)
+          sum = sum.ceil + bytes_to_align(obj, sum.ceil) if align_obj?(obj)
+
+          break if i >= index
+
+          nbytes = obj.do_num_bytes
+          sum = (nbytes.is_a?(Integer) ? sum.ceil : sum) + nbytes
+        end
+      end
+
+      sum
+    end
+
+    def bytes_to_align(obj, rel_offset)
+      align = obj.eval_parameter(:byte_align)
+      (align - (rel_offset % align)) % align
+    end
+
+    def align_obj?(obj)
+      obj.has_parameter?(:byte_align)
     end
   end
 end
