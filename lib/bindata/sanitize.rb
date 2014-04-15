@@ -245,6 +245,8 @@ module BinData
         BIG_ENDIAN
       elsif endian == :little
         LITTLE_ENDIAN
+      elsif endian == :big_and_little
+        raise ArgumentError, ":endian => :big or :endian => :little is required"
       else
         raise ArgumentError, "unknown value for endian '#{endian}'"
       end

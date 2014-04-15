@@ -10,6 +10,8 @@
 * Renamed #offset to #abs_offset for clarity.  #offset is now deprecated.
 * Support :byte_align for fields in structs.  Requested by Igor Yamolov.
 * Added bit fields with dynamic length.  Requested by Jacob Dam.
+* Added "endian :big_and_little" option which creates :big and :little
+  versions of the class.
 
 == Version 2.0.0 (2014-02-02)
 

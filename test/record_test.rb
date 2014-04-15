@@ -378,6 +378,77 @@ describe BinData::Record, "with an endian defined" do
   end
 end
 
+describe BinData::Record, "with endian :big_and_little" do
+  class RecordWithBnLEndian < BinData::Record
+    endian :big_and_little
+    int16 :a, :value => 1
+  end
+
+  it "is not registered" do
+    lambda {
+      BinData::RegisteredClasses.lookup("RecordWithBnLEndian")
+    }.must_raise BinData::UnRegisteredTypeError
+  end
+
+  it "creates big endian version" do
+    obj = RecordWithBnLEndianBe.new
+    obj.to_binary_s.must_equal binary("\x00\x01")
+  end
+
+  it "creates little endian version" do
+    obj = RecordWithBnLEndianLe.new
+    obj.to_binary_s.must_equal binary("\x01\x00")
+  end
+
+  it "requires :endian as argument" do
+    lambda {
+      RecordWithBnLEndian.new
+    }.must_raise ArgumentError
+  end
+
+  it "accepts :endian as argument" do
+    obj = RecordWithBnLEndian.new(:endian => :little)
+    obj.to_binary_s.must_equal binary("\x01\x00")
+  end
+end
+
+describe BinData::Record, "with endian :big_and_little when subclassed" do
+  class ARecordWithBnLEndian < BinData::Record
+    endian :big_and_little
+    int16 :a, :value => 1
+  end
+  class BRecordWithBnLEndian < ARecordWithBnLEndian
+    int16 :b, :value => 2
+  end
+
+  it "is not registered" do
+    lambda {
+      BinData::RegisteredClasses.lookup("BRecordWithBnLEndian")
+    }.must_raise BinData::UnRegisteredTypeError
+  end
+
+  it "creates big endian version" do
+    obj = BRecordWithBnLEndianBe.new
+    obj.to_binary_s.must_equal binary("\x00\x01\x00\x02")
+  end
+
+  it "creates little endian version" do
+    obj = BRecordWithBnLEndianLe.new
+    obj.to_binary_s.must_equal binary("\x01\x00\x02\x00")
+  end
+
+  it "requires :endian as argument" do
+    lambda {
+      BRecordWithBnLEndian.new
+    }.must_raise ArgumentError
+  end
+
+  it "accepts :endian as argument" do
+    obj = BRecordWithBnLEndian.new(:endian => :little)
+    obj.to_binary_s.must_equal binary("\x01\x00\x02\x00")
+  end
+end
+
 describe BinData::Record, "defined recursively" do
   class RecursiveRecord < BinData::Record
     endian  :big

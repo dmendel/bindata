@@ -17,9 +17,9 @@ module BinData
 
     class << self
       # Instantiates this class and reads from +io+, returning the newly
-      # created data object.
-      def read(io)
-        obj = self.new
+      # created data object.  +args+ will be used when instantiating.
+      def read(io, *args)
+        obj = self.new(*args)
         obj.read(io)
         obj
       end
