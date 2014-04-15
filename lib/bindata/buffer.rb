@@ -109,10 +109,11 @@ module BinData
     def sanitize_parameters!(obj_class, params)
       params.merge!(obj_class.dsl_params)
 
+      params.must_be_integer(:length)
+
       if params.needs_sanitizing?(:type)
         el_type, el_params = params[:type]
         params[:type] = params.create_sanitized_object_prototype(el_type, el_params)
-        params.must_be_integer(:length)
       end
     end
   end

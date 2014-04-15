@@ -70,7 +70,9 @@ module BinData
                ]
 
     def initialize_shared_instance
-      @field_names = get_parameter(:fields).field_names.freeze
+      fields = get_parameter(:fields)
+      @field_names = fields.field_names.freeze
+      extend ByteAlignPlugin if fields.any_field_has_parameter?(:byte_align)
       define_field_accessors
       super
     end
@@ -125,29 +127,13 @@ module BinData
     end
 
     def do_read(io) #:nodoc:
-      initial_offset = io.offset
       instantiate_all_objs
-      @field_objs.each do |f|
-        if include_obj?(f)
-          if align_obj?(f)
-            io.seekbytes(bytes_to_align(f, io.offset - initial_offset))
-          end
-          f.do_read(io)
-        end
-      end
+      @field_objs.each { |f| f.do_read(io) if include_obj?(f) }
     end
 
     def do_write(io) #:nodoc
-      initial_offset = io.offset
       instantiate_all_objs
-      @field_objs.each do |f|
-        if include_obj?(f)
-          if align_obj?(f)
-            io.writebytes("\x00" * bytes_to_align(f, io.offset - initial_offset))
-          end
-          f.do_write(io)
-        end
-      end
+      @field_objs.each { |f| f.do_write(io) if include_obj?(f) }
     end
 
     def do_num_bytes #:nodoc:
@@ -258,6 +244,66 @@ module BinData
     end
 
     def sum_num_bytes_below_index(index)
+      (0...index).inject(0) do |sum, i|
+        obj = @field_objs[i]
+        if include_obj?(obj)
+          nbytes = obj.do_num_bytes
+          (nbytes.is_a?(Integer) ? sum.ceil : sum) + nbytes
+        else
+          sum
+        end
+      end
+    end
+
+    def include_obj?(obj)
+      not obj.has_parameter?(:onlyif) or obj.eval_parameter(:onlyif)
+    end
+
+    # A hash that can be accessed via attributes.
+    class Snapshot < ::Hash #:nodoc:
+      def []=(key, value)
+        super unless value.nil?
+      end
+
+      def respond_to?(symbol, include_private = false)
+        has_key?(symbol) || super
+      end
+
+      def method_missing(symbol, *args)
+        self[symbol] || super
+      end
+    end
+  end
+
+  # Align fields to a multiple of :byte_align
+  module ByteAlignPlugin
+    def do_read(io)
+      initial_offset = io.offset
+      instantiate_all_objs
+      @field_objs.each do |f|
+        if include_obj?(f)
+          if align_obj?(f)
+            io.seekbytes(bytes_to_align(f, io.offset - initial_offset))
+          end
+          f.do_read(io)
+        end
+      end
+    end
+
+    def do_write(io)
+      initial_offset = io.offset
+      instantiate_all_objs
+      @field_objs.each do |f|
+        if include_obj?(f)
+          if align_obj?(f)
+            io.writebytes("\x00" * bytes_to_align(f, io.offset - initial_offset))
+          end
+          f.do_write(io)
+        end
+      end
+    end
+
+    def sum_num_bytes_below_index(index)
       sum = 0
       (0...@field_objs.length).each do |i|
         obj = @field_objs[i]
@@ -279,27 +325,8 @@ module BinData
       (align - (rel_offset % align)) % align
     end
 
-    def include_obj?(obj)
-      not obj.has_parameter?(:onlyif) or obj.eval_parameter(:onlyif)
-    end
-
     def align_obj?(obj)
       obj.has_parameter?(:byte_align)
-    end
-
-    # A hash that can be accessed via attributes.
-    class Snapshot < ::Hash #:nodoc:
-      def []=(key, value)
-        super(key, value) unless value.nil?
-      end
-
-      def respond_to?(symbol, include_private = false)
-        has_key?(symbol) || super
-      end
-
-      def method_missing(symbol, *args)
-        self[symbol] || super
-      end
     end
   end
 
