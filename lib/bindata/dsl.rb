@@ -33,28 +33,23 @@ module BinData
     end
   end
 
+  # BinData classes that are part of the DSL must be extended by this.
   module DSLMixin
-    def self.included(base) #:nodoc:
-      base.extend ClassMethods
+    def dsl_parser(parser_type = nil)
+      unless defined? @dsl_parser
+        parser_type = superclass.dsl_parser.parser_type if parser_type.nil?
+        @dsl_parser = DSLParser.new(self, parser_type)
+      end
+      @dsl_parser
     end
 
-    module ClassMethods
-      def dsl_parser(parser_type = nil)
-        unless defined? @dsl_parser
-          parser_type = superclass.dsl_parser.parser_type if parser_type.nil?
-          @dsl_parser = DSLParser.new(self, parser_type)
-        end
-        @dsl_parser
-      end
-
-      def method_missing(symbol, *args, &block) #:nodoc:
-        dsl_parser.__send__(symbol, *args, &block)
-      end
-
-      # Assert object is not an array or string.
-      def to_ary; nil; end
-      def to_str; nil; end
+    def method_missing(symbol, *args, &block) #:nodoc:
+      dsl_parser.__send__(symbol, *args, &block)
     end
+
+    # Assert object is not an array or string.
+    def to_ary; nil; end
+    def to_str; nil; end
 
     # A DSLParser parses and accumulates field definitions of the form
     #

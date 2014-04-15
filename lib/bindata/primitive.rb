@@ -60,7 +60,7 @@ module BinData
   # Primitive objects accept all the parameters that BinData::BasePrimitive do.
   #
   class Primitive < BasePrimitive
-    include DSLMixin
+    extend DSLMixin
 
     unregister_self
     dsl_parser    :primitive

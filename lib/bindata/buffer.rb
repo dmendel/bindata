@@ -51,7 +51,7 @@ module BinData
   # <tt>:type</tt>::     The single type inside the buffer.  Use a struct if
   #                      multiple fields are required.
   class Buffer < BinData::Base
-    include DSLMixin
+    extend DSLMixin
 
     dsl_parser    :buffer
     arg_processor :buffer

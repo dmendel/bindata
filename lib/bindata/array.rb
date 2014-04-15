@@ -48,7 +48,7 @@ module BinData
   # Each data object in an array has the variable +index+ made available
   # to any lambda evaluated as a parameter of that data object.
   class Array < BinData::Base
-    include DSLMixin
+    extend DSLMixin
     include Enumerable
 
     dsl_parser    :array

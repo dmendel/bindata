@@ -58,7 +58,7 @@ module BinData
   #                            selection to the current selection whenever the
   #                            selection changes.  Default is false.
   class Choice < BinData::Base
-    include DSLMixin
+    extend DSLMixin
 
     dsl_parser    :choice
     arg_processor :choice

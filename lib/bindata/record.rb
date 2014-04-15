@@ -6,7 +6,7 @@ module BinData
   #
   # See +Struct+ for more info.
   class Record < BinData::Struct
-    include DSLMixin
+    extend DSLMixin
 
     unregister_self
     dsl_parser    :struct
