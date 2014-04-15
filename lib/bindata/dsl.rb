@@ -67,9 +67,12 @@ module BinData
     #
     class DSLParser
       def initialize(the_class, parser_type)
+        raise "unknown parser type #{parser_type}" unless parser_abilities[parser_type]
+
         @the_class   = the_class
         @parser_type = parser_type
         @endian      = parent_attribute(:endian, nil)
+        @validator   = DSLFieldValidator.new(the_class, self)
       end
 
       attr_reader :parser_type
@@ -108,20 +111,7 @@ module BinData
       end
 
       def dsl_params
-        case @parser_type
-        when :struct
-          to_struct_params
-        when :array
-          to_array_params
-        when :buffer
-          to_array_params
-        when :choice
-          to_choice_params
-        when :primitive
-          to_struct_params
-        else
-          raise "unknown parser type #{@parser_type}"
-        end
+        send(parser_abilities[@parser_type].at(0))
       end
 
       def method_missing(symbol, *args, &block) #:nodoc:
@@ -135,25 +125,18 @@ module BinData
       #-------------
       private
 
-      def option?(opt)
-        options.include?(opt)
+      def parser_abilities
+        @abilities ||= {
+          :struct    => [:to_struct_params, [:multiple_fields, :optional_fieldnames, :hidden_fields]],
+          :array     => [:to_array_params,  [:multiple_fields, :optional_fieldnames]],
+          :buffer    => [:to_array_params,  [:multiple_fields, :optional_fieldnames]],
+          :choice    => [:to_choice_params, [:multiple_fields, :all_or_none_fieldnames, :fieldnames_are_values]],
+          :primitive => [:to_struct_params, [:multiple_fields, :optional_fieldnames]]
+        }
       end
 
-      def options
-        case @parser_type
-        when :struct
-          [:multiple_fields, :optional_fieldnames, :hidden_fields]
-        when :array
-          [:multiple_fields, :optional_fieldnames]
-        when :buffer
-          [:multiple_fields, :optional_fieldnames]
-        when :choice
-          [:multiple_fields, :all_or_none_fieldnames, :fieldnames_are_values]
-        when :primitive
-          [:multiple_fields, :optional_fieldnames]
-        else
-          raise "unknown parser type #{parser_type}"
-        end
+      def option?(opt)
+        parser_abilities[@parser_type].at(1).include?(opt)
       end
 
       def parent_attribute(attr, default = nil)
@@ -211,92 +194,13 @@ module BinData
       end
 
       def append_field(type, name, params)
-        ensure_valid_field(name)
+        @validator.validate_field(name)
 
         fields.add_field(type, name, params)
-      rescue ArgumentError => err
-        dsl_raise ArgumentError, err.message
-      rescue UnRegisteredTypeError => err
+      rescue BinData::UnRegisteredTypeError => err
         dsl_raise TypeError, "unknown type '#{err.message}'"
-      end
-
-      def ensure_valid_field(field_name)
-        if too_many_fields?
-          dsl_raise SyntaxError, "attempting to wrap more than one type"
-        end
-
-        if must_not_have_a_name_failed?(field_name)
-          dsl_raise SyntaxError, "field must not have a name"
-        end
-
-        if all_or_none_names_failed?(field_name)
-          dsl_raise SyntaxError, "fields must either all have names, or none must have names"
-        end
-
-        if must_have_a_name_failed?(field_name)
-          dsl_raise SyntaxError, "field must have a name"
-        end
-
-        ensure_valid_name(field_name)
-      end
-
-      def ensure_valid_name(name)
-        if name and not option?(:fieldnames_are_values)
-          if malformed_name?(name)
-            dsl_raise NameError.new("", name), "field '#{name}' is an illegal fieldname"
-          end
-
-          if duplicate_name?(name)
-            dsl_raise SyntaxError, "duplicate field '#{name}'"
-          end
-
-          if name_shadows_method?(name)
-            dsl_raise NameError.new("", name), "field '#{name}' shadows an existing method"
-          end
-
-          if name_is_reserved?(name)
-            dsl_raise NameError.new("", name), "field '#{name}' is a reserved name"
-          end
-        end
-      end
-
-      def too_many_fields?
-        option?(:only_one_field) and not fields.empty?
-      end
-
-      def must_not_have_a_name_failed?(name)
-        option?(:no_fieldnames) and name != nil
-      end
-
-      def must_have_a_name_failed?(name)
-        option?(:mandatory_fieldnames) and name.nil?
-      end
-
-      def all_or_none_names_failed?(name)
-        if option?(:all_or_none_fieldnames) and not fields.empty?
-          all_names_blank = fields.all_field_names_blank?
-          no_names_blank = fields.no_field_names_blank?
-
-          (name != nil and all_names_blank) or (name == nil and no_names_blank)
-        else
-          false
-        end
-      end
-
-      def malformed_name?(name)
-        /^[a-z_]\w*$/ !~ name.to_s
-      end
-
-      def duplicate_name?(name)
-        fields.has_field_name?(name)
-      end
-
-      def name_shadows_method?(name)
-        @the_class.method_defined?(name)
-      end
-
-      def name_is_reserved?(name)
-        BinData::Struct::RESERVED.include?(name.to_sym)
+      rescue Exception => err
+        dsl_raise err.class, err.message
       end
 
       def dsl_raise(exception, message)
@@ -339,6 +243,93 @@ module BinData
         end
 
         result
+      end
+    end
+
+    # Validates a field defined in a DSLMixin.
+    class DSLFieldValidator
+      def initialize(the_class, parser)
+        @the_class = the_class
+        @dsl_parser = parser
+      end
+
+      def validate_field(name)
+        if must_not_have_a_name_failed?(name)
+          raise SyntaxError, "field must not have a name"
+        end
+
+        if all_or_none_names_failed?(name)
+          raise SyntaxError, "fields must either all have names, or none must have names"
+        end
+
+        if must_have_a_name_failed?(name)
+          raise SyntaxError, "field must have a name"
+        end
+
+        ensure_valid_name(name)
+      end
+
+      def ensure_valid_name(name)
+        if name and not option?(:fieldnames_are_values)
+          if malformed_name?(name)
+            raise NameError.new("", name), "field '#{name}' is an illegal fieldname"
+          end
+
+          if duplicate_name?(name)
+            raise SyntaxError, "duplicate field '#{name}'"
+          end
+
+          if name_shadows_method?(name)
+            raise NameError.new("", name), "field '#{name}' shadows an existing method"
+          end
+
+          if name_is_reserved?(name)
+            raise NameError.new("", name), "field '#{name}' is a reserved name"
+          end
+        end
+      end
+
+      def must_not_have_a_name_failed?(name)
+        option?(:no_fieldnames) and name != nil
+      end
+
+      def must_have_a_name_failed?(name)
+        option?(:mandatory_fieldnames) and name.nil?
+      end
+
+      def all_or_none_names_failed?(name)
+        if option?(:all_or_none_fieldnames) and not fields.empty?
+          all_names_blank = fields.all_field_names_blank?
+          no_names_blank = fields.no_field_names_blank?
+
+          (name != nil and all_names_blank) or (name == nil and no_names_blank)
+        else
+          false
+        end
+      end
+
+      def malformed_name?(name)
+        /^[a-z_]\w*$/ !~ name.to_s
+      end
+
+      def duplicate_name?(name)
+        fields.has_field_name?(name)
+      end
+
+      def name_shadows_method?(name)
+        @the_class.method_defined?(name)
+      end
+
+      def name_is_reserved?(name)
+        BinData::Struct::RESERVED.include?(name.to_sym)
+      end
+
+      def fields
+        @dsl_parser.fields
+      end
+
+      def option?(opt)
+        @dsl_parser.send(:option?, opt)
       end
     end
   end
