@@ -1,5 +1,10 @@
 = BinData Changelog
 
+== Version 1.8.3 (2014-04-16)
+
+* #eval_parameters can now call private methods.  Requested by Ole Rasmussen.
+* Can now determine state of :onlyif fields.  Requested by Ole Rasmussen.
+
 == Version 1.8.2 (2014-02-02)
 
 * Virtual fields can now have values.
