@@ -62,7 +62,7 @@ describe BinData::Struct, "with anonymous fields" do
   it "writes anonymous fields" do
     obj.read("\001\002\003")
     obj.a.clear
-    obj.to_binary_s.must_equal "\005\002\005"
+    obj.to_binary_s.must_equal_binary "\005\002\005"
   end
 end
 
@@ -104,7 +104,7 @@ describe BinData::Struct, "with multiple fields" do
   let(:obj) { BinData::Struct.new({:a => 1, :b => 2}, params) }
 
   specify { obj.field_names.must_equal [:a, :b] }
-  specify { obj.to_binary_s.must_equal "\x01\x02" }
+  specify { obj.to_binary_s.must_equal_binary "\x01\x02" }
 
   it "returns num_bytes" do
     obj.a.num_bytes.must_equal 1
@@ -290,7 +290,7 @@ describe BinData::Struct, "with an endian defined" do
 
     expected = [1, 2.0, 3, 4, 5, 6, 7, 8].pack('veCCVvNv')
 
-    obj.to_binary_s.must_equal expected
+    obj.to_binary_s.must_equal_binary expected
   end
 end
 
@@ -301,7 +301,7 @@ describe BinData::Struct, "with bit fields" do
   }
 
   specify { obj.num_bytes.must_equal 3 }
-  specify { obj.to_binary_s.must_equal [0b0000_0101, 3, 1].pack("C*") }
+  specify { obj.to_binary_s.must_equal_binary [0b0000_0101, 3, 1].pack("C*") }
 
   it "reads" do
     str = [0b0000_0110, 5, 0].pack("C*")
@@ -358,7 +358,7 @@ describe BinData::Struct, "with byte_align" do
 
   it "writes" do
     obj.assign(:a => 1, :b => 2, :c => 3, :d => 4)
-    obj.to_binary_s.must_equal binary("\x01\x00\x00\x00\x00\x02\xc0\x00\x00\x04")
+    obj.to_binary_s.must_equal_binary "\x01\x00\x00\x00\x00\x02\xc0\x00\x00\x04"
   end
 
   it "has correct offsets" do

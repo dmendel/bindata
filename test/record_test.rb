@@ -117,7 +117,7 @@ describe BinData::Record, "with anonymous fields" do
     str = "\001\002\003\004\005"
     obj.read(str)
     obj.a.clear
-    obj.to_binary_s.must_equal "\012\002\003\004\012"
+    obj.to_binary_s.must_equal_binary "\012\002\003\004\012"
   end
 end
 
@@ -184,7 +184,7 @@ describe BinData::Record, "with multiple fields" do
   end
 
   it "writes ordered" do
-    obj.to_binary_s.must_equal "\x01\x02"
+    obj.to_binary_s.must_equal_binary "\x01\x02"
   end
 
   it "reads ordered" do
@@ -374,7 +374,7 @@ describe BinData::Record, "with an endian defined" do
 
     lambdaed = [1, 2.0, 3, 4, 5, 6, 7, 8].pack('veCCVvNn')
 
-    obj.to_binary_s.must_equal lambdaed
+    obj.to_binary_s.must_equal_binary lambdaed
   end
 end
 
@@ -392,12 +392,12 @@ describe BinData::Record, "with endian :big_and_little" do
 
   it "creates big endian version" do
     obj = RecordWithBnLEndianBe.new
-    obj.to_binary_s.must_equal binary("\x00\x01")
+    obj.to_binary_s.must_equal_binary "\x00\x01"
   end
 
   it "creates little endian version" do
     obj = RecordWithBnLEndianLe.new
-    obj.to_binary_s.must_equal binary("\x01\x00")
+    obj.to_binary_s.must_equal_binary "\x01\x00"
   end
 
   it "requires :endian as argument" do
@@ -408,7 +408,7 @@ describe BinData::Record, "with endian :big_and_little" do
 
   it "accepts :endian as argument" do
     obj = RecordWithBnLEndian.new(:endian => :little)
-    obj.to_binary_s.must_equal binary("\x01\x00")
+    obj.to_binary_s.must_equal_binary "\x01\x00"
   end
 end
 
@@ -429,12 +429,12 @@ describe BinData::Record, "with endian :big_and_little when subclassed" do
 
   it "creates big endian version" do
     obj = BRecordWithBnLEndianBe.new
-    obj.to_binary_s.must_equal binary("\x00\x01\x00\x02")
+    obj.to_binary_s.must_equal_binary "\x00\x01\x00\x02"
   end
 
   it "creates little endian version" do
     obj = BRecordWithBnLEndianLe.new
-    obj.to_binary_s.must_equal binary("\x01\x00\x02\x00")
+    obj.to_binary_s.must_equal_binary "\x01\x00\x02\x00"
   end
 
   it "requires :endian as argument" do
@@ -445,7 +445,7 @@ describe BinData::Record, "with endian :big_and_little when subclassed" do
 
   it "accepts :endian as argument" do
     obj = BRecordWithBnLEndian.new(:endian => :little)
-    obj.to_binary_s.must_equal binary("\x01\x00\x02\x00")
+    obj.to_binary_s.must_equal_binary "\x01\x00\x02\x00"
   end
 end
 
@@ -481,7 +481,7 @@ describe BinData::Record, "defined recursively" do
     obj.val = 5
     obj.nxt.val = 6
     obj.nxt.nxt.val = 7
-    obj.to_binary_s.must_equal "\x00\x05\x01\x00\x06\x01\x00\x07\x00"
+    obj.to_binary_s.must_equal_binary "\x00\x05\x01\x00\x06\x01\x00\x07\x00"
   end
 end
 
@@ -544,7 +544,7 @@ describe BinData::Record, "with :onlyif" do
   it "initial state" do
     obj.num_bytes.must_equal 2
     obj.snapshot.must_equal({:a => 3, :b => 5})
-    obj.to_binary_s.must_equal "\x03\x05"
+    obj.to_binary_s.must_equal_binary "\x03\x05"
   end
 
   it "identifies if fields are included" do

@@ -249,7 +249,7 @@ describe BinData::String, "with :pad_front" do
 
     it "has to_binary_s" do
       obj.assign("abc")
-      obj.to_binary_s.must_equal "RRabc"
+      obj.to_binary_s.must_equal_binary "RRabc"
     end
 
     it "reads" do
@@ -267,19 +267,19 @@ describe BinData::String, "with Ruby 1.9 encodings" do
   end
 
   let(:obj) { UTF8String.new }
-  let(:binary_str) { binary("\xC3\x85\xC3\x84\xC3\x96") }
+  let(:binary_str) { "\xC3\x85\xC3\x84\xC3\x96" }
   let(:utf8_str) { binary_str.dup.force_encoding('UTF-8') }
 
   it "stores assigned values as binary" do
     obj.assign(utf8_str)
-    obj.to_binary_s.must_equal binary_str
+    obj.to_binary_s.must_equal_binary binary_str
   end
 
   it "stores read values as binary" do
-    obj = UTF8String.new(:read_length => binary_str.length)
+    obj = UTF8String.new(:read_length => binary_str.bytesize)
     obj.read(binary_str)
 
-    obj.to_binary_s.must_equal binary_str
+    obj.to_binary_s.must_equal_binary binary_str
   end
 
   it "returns values in correct encoding" do
@@ -291,7 +291,7 @@ describe BinData::String, "with Ruby 1.9 encodings" do
   it "has correct num_bytes" do
     obj.assign(utf8_str)
 
-    obj.num_bytes.must_equal binary_str.length
+    obj.num_bytes.must_equal binary_str.bytesize
   end
 end
 

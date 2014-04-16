@@ -30,7 +30,7 @@ describe "A FloatLe" do
   end
 
   it "#to_binary_s" do
-    @obj.to_binary_s.must_equal [Math::PI].pack('e')
+    @obj.to_binary_s.must_equal_binary [Math::PI].pack('e')
   end
 end
 
@@ -42,7 +42,7 @@ describe "A FloatBe" do
   end
 
   it "#to_binary_s" do
-    @obj.to_binary_s.must_equal [Math::PI].pack('g')
+    @obj.to_binary_s.must_equal_binary [Math::PI].pack('g')
   end
 end
 
@@ -54,7 +54,7 @@ describe "A DoubleLe" do
   end
 
   it "#to_binary_s" do
-    @obj.to_binary_s.must_equal [Math::PI].pack('E')
+    @obj.to_binary_s.must_equal_binary [Math::PI].pack('E')
   end
 end
 
@@ -67,6 +67,6 @@ describe "A DoubleBe" do
   end
 
   it "#to_binary_s" do
-    @obj.to_binary_s.must_equal [Math::PI].pack('G')
+    @obj.to_binary_s.must_equal_binary [Math::PI].pack('G')
   end
 end

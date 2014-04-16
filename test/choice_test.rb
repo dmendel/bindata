@@ -46,12 +46,12 @@ describe BinData::Choice, "when instantiating" do
   end
 
   it "fails when :choices Hash has a symbol as key" do
-    args = {:choices => {:a => :example_single}, :selection => 0}
+    args = {:choices => {:a => :uint8}, :selection => 0}
     lambda { BinData::Choice.new(args) }.must_raise ArgumentError
   end
 
   it "fails when :choices Hash has a nil key" do
-    args = {:choices => {nil => :example_single}, :selection => 0}
+    args = {:choices => {nil => :uint8}, :selection => 0}
     lambda { BinData::Choice.new(args) }.must_raise ArgumentError
   end
 end
@@ -103,7 +103,7 @@ module ChoiceInitializedWithArrayOrHash
 
   def test_delegates_methods_to_the_selected_single_choice
     obj.choice = 5
-    obj.num_bytes.must_equal ExampleSingle.new.num_bytes
+    obj.num_bytes.must_equal 1
   end
 end
 
@@ -112,9 +112,9 @@ describe BinData::Choice, "with sparse choices array" do
 
   let(:obj) {
     choices = [nil, nil, nil,
-               [:example_single, {:value => 30}], nil,
-               [:example_single, {:value => 50}], nil,
-               [:example_single, {:value => 70}]]
+               [:uint8, {:value => 30}], nil,
+               [:uint8, {:value => 50}], nil,
+               [:uint8, {:value => 70}]]
     create_choice(choices)
   }
 end
@@ -123,19 +123,16 @@ describe BinData::Choice, "with choices hash" do
   include ChoiceInitializedWithArrayOrHash
 
   let(:obj) {
-    choices = {3 => [:example_single, {:value => 30}],
-               5 => [:example_single, {:value => 50}],
-               7 => [:example_single, {:value => 70}]}
+    choices = {3 => [:uint8, {:value => 30}],
+               5 => [:uint8, {:value => 50}],
+               7 => [:uint8, {:value => 70}]}
     create_choice(choices)
   }
 end
 
 describe BinData::Choice, "with single values" do
   let(:obj) {
-    choices = {3 => :example_single,
-               5 => :example_single,
-               7 => :example_single}
-    create_choice(choices)
+    create_choice({3 => :uint8, 5 => :uint8, 7 => :uint8})
   }
 
   it "assigns raw values" do
@@ -144,8 +141,8 @@ describe BinData::Choice, "with single values" do
     obj.must_equal 254
   end
 
-  it "assigns Single values" do
-    data = ExampleSingle.new(11)
+  it "assigns BinData values" do
+    data = BinData::Uint8.new(11)
 
     obj.choice = 3
     obj.assign(data)
@@ -204,9 +201,7 @@ end
 
 describe BinData::Choice, "with copy_on_change => true" do
   let(:obj) {
-    choices = {3 => :example_single,
-               5 => :example_single,
-               7 => :example_single}
+    choices = {3 => :uint8, 5 => :uint8, 7 => :uint8}
     create_choice(choices, :copy_on_change => true)
   }
 

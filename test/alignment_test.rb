@@ -21,7 +21,7 @@ describe BinData::ResumeByteAlignment do
   it "resets write alignment" do
     obj.assign(:a => 2, :b => 7)
 
-    obj.to_binary_s.must_equal "\x20\x70"
+    obj.to_binary_s.must_equal_binary "\x20\x70"
   end
 end
 
@@ -57,6 +57,6 @@ describe BinData::BitAligned do
 
   it "writes as expected" do
     obj.assign(:preamble => 5, :str => "ab", :afterward => 1)
-    obj.to_binary_s.must_equal "\x56\x16\x21"
+    obj.to_binary_s.must_equal_binary "\x56\x16\x21"
   end
 end

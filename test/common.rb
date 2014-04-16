@@ -9,7 +9,15 @@ require 'stringio'
 $LOAD_PATH.unshift File.expand_path("../lib", File.dirname(__FILE__))
 require 'bindata'
 
-class Object
+class StringIO
+  # Returns the value that was written to the io
+  def value
+    rewind
+    read
+  end
+end
+
+module Kernel
   def expose_methods_for_testing
     cls = (Class === self) ? self : (class << self ; self; end)
     private_method_names = cls.private_instance_methods - Object.private_instance_methods
@@ -22,41 +30,11 @@ class Object
   def value_read_from_written
     self.class.read(self.to_binary_s)
   end
-end
 
-class StringIO
-  # Returns the value that was written to the io
-  def value
-    rewind
-    read
-  end
-end
-
-class ExampleSingle < BinData::BasePrimitive
-  def self.io_with_value(val)
-    StringIO.new([val].pack("V"))
+  def must_equal_binary(expected)
+    must_equal expected.dup.force_encoding(Encoding::BINARY)
   end
 
-  private
-
-  def value_to_binary_string(val)
-    [val].pack("V")
-  end
-
-  def read_and_return_value(io)
-    io.readbytes(4).unpack("V").at(0)
-  end
-
-  def sensible_default
-    0
-  end
-end
-
-def binary(str)
-  str.dup.force_encoding(Encoding::BINARY)
-end
-
-module Kernel
   def must_raise_on_line(exp, line, msg = nil)
     ex = self.must_raise exp
     ex.message.must_equal msg if msg
@@ -70,4 +48,3 @@ module Kernel
     (err_line - ref_line).must_equal line
   end
 end
-

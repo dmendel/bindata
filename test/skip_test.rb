@@ -8,7 +8,7 @@ describe BinData::Skip do
 
   it "initial state" do
     obj.must_equal ""
-    obj.to_binary_s.must_equal "\000" * 5
+    obj.to_binary_s.must_equal_binary "\000" * 5
   end
 
   it "skips bytes" do
@@ -18,11 +18,11 @@ describe BinData::Skip do
 
   it "has expected binary representation after setting value" do
     obj.assign("123")
-    obj.to_binary_s.must_equal "\000" * 5
+    obj.to_binary_s.must_equal_binary "\000" * 5
   end
 
   it "has expected binary representation after reading" do
     obj.read(io)
-    obj.to_binary_s.must_equal "\000" * 5
+    obj.to_binary_s.must_equal_binary "\000" * 5
   end
 end

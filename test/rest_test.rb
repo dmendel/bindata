@@ -17,7 +17,7 @@ describe BinData::Rest do
   it "allows setting value for completeness" do
     obj.assign("123")
     obj.must_equal "123"
-    obj.to_binary_s.must_equal "123"
+    obj.to_binary_s.must_equal_binary "123"
   end
 
   it "accepts BinData::BasePrimitive parameters" do

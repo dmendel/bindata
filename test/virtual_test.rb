@@ -12,7 +12,7 @@ describe BinData::Virtual do
 
   it "must not write to a stream" do
     obj = BinData::Virtual.new
-    obj.to_binary_s.must_equal ""
+    obj.to_binary_s.must_equal_binary ""
   end
 
   it "occupies no space" do

@@ -23,13 +23,13 @@ describe BinData::CountBytesRemaining do
   end
 
   it "does not write any data" do
-    obj.to_binary_s.must_equal ""
+    obj.to_binary_s.must_equal_binary ""
   end
 
   it "allows setting value for completeness" do
     obj.assign("123")
     obj.must_equal "123"
-    obj.to_binary_s.must_equal ""
+    obj.to_binary_s.must_equal_binary ""
   end
 
   it "accepts BinData::BasePrimitive parameters" do

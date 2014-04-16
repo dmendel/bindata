@@ -82,7 +82,7 @@ module AllIntegers
       subject = int_class.new
       subject.assign(val)
 
-      subject.to_binary_s.must_equal int_to_binary_str(val)
+      subject.to_binary_s.must_equal_binary int_to_binary_str(val)
     end
   end
 
@@ -94,7 +94,7 @@ module AllIntegers
         subject = int_class.new
         subject.assign(val)
 
-        subject.to_binary_s.must_equal int_to_binary_str(val)
+        subject.to_binary_s.must_equal_binary int_to_binary_str(val)
       end
     end
   end
@@ -128,7 +128,7 @@ module AllIntegers
   end
 
   def int_to_binary_str(val)
-    str = binary("")
+    str = "".force_encoding(Encoding::BINARY)
     v = val & ((1 << (@nbytes * 8)) - 1)
     @nbytes.times do
       str.concat(v & 0xff)

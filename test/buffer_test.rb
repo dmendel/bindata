@@ -49,7 +49,7 @@ describe BinData::Buffer, "subclassed with a single type" do
 
   it "writes data" do
     obj = IntBuffer.new(3)
-    obj.to_binary_s.must_equal "\000\003\000\000\000"
+    obj.to_binary_s.must_equal_binary "\000\003\000\000\000"
   end
 
   it "has total num_bytes" do
@@ -86,7 +86,7 @@ describe BinData::Buffer, "subclassed with multiple types" do
 
   it "writes data" do
     obj = TupleBuffer.new(:a => 1, :b => 2)
-    obj.to_binary_s.must_equal "\000\001\000\002\000"
+    obj.to_binary_s.must_equal_binary "\000\001\000\002\000"
   end
 end
 
@@ -108,7 +108,7 @@ describe BinData::Buffer, "inside a Record" do
 
   it "writes" do
     obj = BufferRecord.new(:list => [1, 2, 3, 4, 5])
-    obj.to_binary_s.must_equal "\013\000\001\000\002\000\003\000\004\000\005\000\000ZZ"
+    obj.to_binary_s.must_equal_binary "\013\000\001\000\002\000\003\000\004\000\005\000\000ZZ"
   end
 end
 
@@ -138,7 +138,7 @@ describe BinData::Buffer, "nested buffers" do
     obj.a.bb = "ABCDEFGHIJ"
     obj.b = "12345"
 
-    obj.to_binary_s.must_equal "abcdeABCDE12345"
+    obj.to_binary_s.must_equal_binary "abcdeABCDE12345"
   end
 end
 

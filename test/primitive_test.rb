@@ -76,7 +76,7 @@ describe BinData::Primitive do
 
   it "produces binary string" do
     obj.assign(5)
-    obj.to_binary_s.must_equal "\x05\x00"
+    obj.to_binary_s.must_equal_binary "\x05\x00"
   end
 
   it "reads value" do
@@ -86,7 +86,7 @@ describe BinData::Primitive do
 
   it "accepts standard parameters" do
     obj = PrimitiveWithEndian.new(:initial_value => 2)
-    obj.to_binary_s.must_equal "\x02\x00"
+    obj.to_binary_s.must_equal_binary "\x02\x00"
   end
 
   it "returns num_bytes" do
@@ -180,12 +180,12 @@ describe BinData::Primitive, "subclassed with default parameter" do
 
   it "overrides initial_value" do
     a = ChildDerivedPrimitive.new(:initial_value => 7)
-    a.to_binary_s.must_equal "\000\007"
+    a.to_binary_s.must_equal_binary "\000\007"
   end
 
   it "uses default parameter" do
     a = ChildDerivedPrimitive.new
-    a.to_binary_s.must_equal "\000\005"
+    a.to_binary_s.must_equal_binary "\000\005"
   end
 end
 
@@ -205,6 +205,6 @@ describe BinData::Primitive, "with mutating #get and #set" do
   it "#to_binary_s applies mutator" do
     obj = MutatingPrimitive.new
     obj.assign(-50)
-    obj.to_binary_s.must_equal "\062\000"
+    obj.to_binary_s.must_equal_binary "\062\000"
   end
 end

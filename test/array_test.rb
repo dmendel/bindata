@@ -35,7 +35,7 @@ describe BinData::Array, "when instantiating" do
 end
 
 describe BinData::Array, "with no elements" do
-  let(:obj) { BinData::Array.new(:type => :example_single) }
+  let(:obj) { BinData::Array.new(:type => :uint32le) }
 
   it "initial state" do
     assert obj.clear?
@@ -56,7 +56,7 @@ end
 
 describe BinData::Array, "with several elements" do
   let(:obj) {
-    type = [:example_single, {:initial_value => lambda { index + 1 }}]
+    type = [:uint32le, {:initial_value => lambda { index + 1 }}]
     BinData::Array.new(:type => type, :initial_length => 5)
   }
 
@@ -83,12 +83,12 @@ describe BinData::Array, "with several elements" do
   end
 
   it "assigns bindata objects" do
-    obj.assign([ExampleSingle.new(4), ExampleSingle.new(5), ExampleSingle.new(6)])
+    obj.assign([BinData::Uint32le.new(4), BinData::Uint32le.new(5), BinData::Uint32le.new(6)])
     obj.must_equal [4, 5, 6]
   end
 
   it "assigns a bindata array" do
-    array = BinData::Array.new([4, 5, 6], :type => :example_single)
+    array = BinData::Array.new([4, 5, 6], :type => :uint32le)
     obj.assign(array)
     obj.must_equal [4, 5, 6]
   end
@@ -168,21 +168,21 @@ describe BinData::Array, "with several elements" do
   end
 
   it "has correct offset" do
-    obj[2].rel_offset.must_equal ExampleSingle.new.num_bytes * 2
+    obj[2].rel_offset.must_equal 2 * 4
   end
 
   it "has correct num_bytes" do
-    obj.num_bytes.must_equal 5 * ExampleSingle.new.num_bytes
+    obj.num_bytes.must_equal 5 * 4
   end
 
   it "has correct num_bytes for individual elements" do
-    obj[0].num_bytes.must_equal ExampleSingle.new.num_bytes
+    obj[0].num_bytes.must_equal 4
   end
 end
 
 describe BinData::Array, "when accessing elements" do
   let(:obj) {
-    type = [:example_single, {:initial_value => lambda { index + 1 }}]
+    type = [:uint32le, {:initial_value => lambda { index + 1 }}]
     data = BinData::Array.new(:type => type, :initial_length => 5)
     data.assign([1, 2, 3, 4, 5])
     data
@@ -327,7 +327,7 @@ describe BinData::Array, "subclassed" do
 
   it "overrides default parameters" do
     obj = IntArray.new(:initial_length => 3, :initial_element_value => 5)
-    obj.to_binary_s.must_equal "\x00\x05\x00\x05\x00\x05"
+    obj.to_binary_s.must_equal_binary "\x00\x05\x00\x05\x00\x05"
   end
 end
 
@@ -356,7 +356,7 @@ describe BinData::Array, "of bits" do
 
   it "writes" do
     obj[3] = 1
-    obj.to_binary_s.must_equal [0b0001_0000, 0b0000_0000].pack("CC")
+    obj.to_binary_s.must_equal_binary [0b0001_0000, 0b0000_0000].pack("CC")
   end
 
   it "returns num_bytes" do

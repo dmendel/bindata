@@ -8,7 +8,7 @@ describe BinData::Stringz, "when empty" do
   it "initial state" do
     obj.value.must_equal ""
     obj.num_bytes.must_equal 1
-    obj.to_binary_s.must_equal "\0"
+    obj.to_binary_s.must_equal_binary "\0"
   end
 end
 
@@ -18,7 +18,7 @@ describe BinData::Stringz, "with value set" do
   it "initial state" do
     obj.value.must_equal "abcd"
     obj.num_bytes.must_equal 5
-    obj.to_binary_s.must_equal "abcd\0"
+    obj.to_binary_s.must_equal_binary "abcd\0"
   end
 end
 
@@ -112,16 +112,16 @@ describe BinData::Stringz, "with max_length" do
 
   it "writes values greater than max_length" do
     obj.assign("abcde")
-    obj.to_binary_s.must_equal "abcd\0"
+    obj.to_binary_s.must_equal_binary "abcd\0"
   end
 
   it "writes values less than max_length" do
     obj.assign("abc")
-    obj.to_binary_s.must_equal "abc\0"
+    obj.to_binary_s.must_equal_binary "abc\0"
   end
 
   it "writes values exactly max_length" do
     obj.assign("abcd")
-    obj.to_binary_s.must_equal "abcd\0"
+    obj.to_binary_s.must_equal_binary "abcd\0"
   end
 end

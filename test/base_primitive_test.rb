@@ -2,6 +2,26 @@
 
 require File.expand_path(File.join(File.dirname(__FILE__), "common"))
 
+class ExampleSingle < BinData::BasePrimitive
+  def self.io_with_value(val)
+    StringIO.new([val].pack("V"))
+  end
+
+  private
+
+  def value_to_binary_string(val)
+    [val].pack("V")
+  end
+
+  def read_and_return_value(io)
+    io.readbytes(4).unpack("V").at(0)
+  end
+
+  def sensible_default
+    0
+  end
+end
+
 describe BinData::BasePrimitive do
   it "is not registered" do
     lambda {

@@ -152,34 +152,34 @@ describe BinData::Record, "containing bitfields" do
     obj.c.x = 1
     obj.d = 850
     obj.e = 35
-    obj.to_binary_s.must_equal [0b0011_0010, 0b0100_0011, 0b0000_1010, 0b0001_0001, 0b1000_0000].pack("CCCCC")
+    obj.to_binary_s.must_equal_binary [0b0011_0010, 0b0100_0011, 0b0000_1010, 0b0001_0001, 0b1000_0000].pack("CCCCC")
   end
 end
 
 describe "Objects with debug_name" do
   it "haves default name of obj" do
-    el = ExampleSingle.new
+    el = BinData::Uint8.new
     el.debug_name.must_equal "obj"
   end
 
   it "includes array index" do
-    arr = BinData::Array.new(:type => :example_single, :initial_length => 2)
+    arr = BinData::Array.new(:type => :uint8, :initial_length => 2)
     arr[2].debug_name.must_equal "obj[2]"
   end
 
   it "includes field name" do
-    s = BinData::Struct.new(:fields => [[:example_single, :a]])
+    s = BinData::Struct.new(:fields => [[:uint8, :a]])
     s.a.debug_name.must_equal "obj.a"
   end
 
   it "delegates to choice" do
-    choice_params = {:choices => [:example_single], :selection => 0}
+    choice_params = {:choices => [:uint8], :selection => 0}
     s = BinData::Struct.new(:fields => [[:choice, :a, choice_params]])
     s.a.debug_name.must_equal "obj.a"
   end
 
   it "nests" do
-    nested_struct_params = {:fields => [[:example_single, :c]]}
+    nested_struct_params = {:fields => [[:uint8, :c]]}
     struct_params = {:fields => [[:struct, :b, nested_struct_params]]}
     s = BinData::Struct.new(:fields => [[:struct, :a, struct_params]])
     s.a.b.c.debug_name.must_equal "obj.a.b.c"
