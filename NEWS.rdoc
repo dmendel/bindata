@@ -1,3 +1,19 @@
+= 2.1.0
+
+Several new features in this release.
+
+* Fields can be aligned on n-bytes boundaries.  This make it easier to write
+  parsers for aligned structures.
+* The endian value :big_and_little can be used to automatically create :big and
+  :little endian versions of the class.
+* Bit fields can be defined to have their length determined at runtime.
+* The state of :onlyif fields can be determined by #field?
+
+== Deprecations
+
+The #offset method has been renamed to #abs_offset.  This make an obvious
+distinction to #rel_offset.
+
 = 2.0.0
 
 BinData 2.0.0 requires ruby 1.9 or greater.  Support for ruby 1.8 is found in
