@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-require File.expand_path(File.join(File.dirname(__FILE__), "common"))
+require File.expand_path(File.join(File.dirname(__FILE__), "test_helper"))
 
 describe BinData::ResumeByteAlignment do
   class ResumeAlignmentRecord < BinData::Record

@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-require File.expand_path(File.join(File.dirname(__FILE__), "common"))
+require File.expand_path(File.join(File.dirname(__FILE__), "test_helper"))
 
 class ExampleSingle < BinData::BasePrimitive
   def self.io_with_value(val)
