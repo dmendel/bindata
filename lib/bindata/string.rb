@@ -56,6 +56,13 @@ module BinData
     mutually_exclusive_parameters :read_length, :length
     mutually_exclusive_parameters :length, :value
 
+    def initialize_shared_instance
+      if has_parameter?(:asserted_value) && ! has_parameter?(:length)
+        extend WarnNoLengthPlugin
+      end
+      super
+    end
+
     def assign(val)
       super(binary_string(val))
     end
@@ -139,6 +146,14 @@ module BinData
         raise ArgumentError, ":pad_byte must not contain more than 1 byte"
       end
       pad_byte
+    end
+  end
+
+  # Warns when reading if :asserted_value && not :length
+  module WarnNoLengthPlugin
+    def read_and_return_value(io)
+      warn "#{debug_name} does not have a :length parameter - returning empty string"
+      ""
     end
   end
 end

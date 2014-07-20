@@ -1,5 +1,10 @@
 = BinData Changelog
 
+== Version 2.x.x (2014-xx-xx)
+
+* Warn if String has :asserted_value but no :length.  Requested by Michael
+  Genereux.
+
 == Version 2.1.0 (2014-04-16)
 
 * Performance improvements.
