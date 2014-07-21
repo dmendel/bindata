@@ -311,7 +311,7 @@ end
 describe BinData::String, "warnings" do
   it "warns if has :asserted_value but no :length" do
     obj = BinData::String.new(:asserted_value => "ABC")
-    obj.must_warn "obj does not have a :length parameter - returning empty string" do
+    obj.must_warn "obj does not have a :read_length parameter - returning empty string" do
       lambda { obj.read("abcde") }.must_raise BinData::ValidityError
     end
   end

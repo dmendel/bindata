@@ -57,10 +57,8 @@ module BinData
     mutually_exclusive_parameters :length, :value
 
     def initialize_shared_instance
-      if has_parameter?(:asserted_value) && ! has_parameter?(:length)
-        extend WarnNoLengthPlugin
-      end
-      if has_parameter?(:value) && ! has_parameter?(:read_length)
+      if (has_parameter?(:value) || has_parameter?(:asserted_value)) &&
+          ! has_parameter?(:read_length)
         extend WarnNoReadLengthPlugin
       end
       super
@@ -152,15 +150,7 @@ module BinData
     end
   end
 
-  # Warns when reading if :asserted_value && not :length
-  module WarnNoLengthPlugin
-    def read_and_return_value(io)
-      warn "#{debug_name} does not have a :length parameter - returning empty string"
-      ""
-    end
-  end
-
-  # Warns when reading if :value && not :read_length
+  # Warns when reading if :value && no :read_length
   module WarnNoReadLengthPlugin
     def read_and_return_value(io)
       warn "#{debug_name} does not have a :read_length parameter - returning empty string"

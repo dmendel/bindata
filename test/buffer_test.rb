@@ -98,7 +98,7 @@ describe BinData::Buffer, "inside a Record" do
     buffer :list, :length => :buffer_length do
       array :type => :int16, :read_until => :eof
     end
-    string :footer, :length => 2, :asserted_value => "ZZ"
+    string :footer, :read_length => 2, :asserted_value => "ZZ"
   end
 
   it "reads" do
