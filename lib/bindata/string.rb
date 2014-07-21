@@ -60,6 +60,9 @@ module BinData
       if has_parameter?(:asserted_value) && ! has_parameter?(:length)
         extend WarnNoLengthPlugin
       end
+      if has_parameter?(:value) && ! has_parameter?(:read_length)
+        extend WarnNoReadLengthPlugin
+      end
       super
     end
 
@@ -153,6 +156,14 @@ module BinData
   module WarnNoLengthPlugin
     def read_and_return_value(io)
       warn "#{debug_name} does not have a :length parameter - returning empty string"
+      ""
+    end
+  end
+
+  # Warns when reading if :value && not :read_length
+  module WarnNoReadLengthPlugin
+    def read_and_return_value(io)
+      warn "#{debug_name} does not have a :read_length parameter - returning empty string"
       ""
     end
   end

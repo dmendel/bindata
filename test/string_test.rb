@@ -315,4 +315,11 @@ describe BinData::String, "warnings" do
       lambda { obj.read("abcde") }.must_raise BinData::ValidityError
     end
   end
+
+  it "warns if has :value but no :read_length" do
+    obj = BinData::String.new(:value => "ABC")
+    obj.must_warn "obj does not have a :read_length parameter - returning empty string" do
+      obj.read("abcde")
+    end
+  end
 end

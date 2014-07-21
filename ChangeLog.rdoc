@@ -4,6 +4,7 @@
 
 * Warn if String has :asserted_value but no :length.  Requested by Michael
   Genereux.
+* Warn if String has :value but no :read_length.
 
 == Version 2.1.0 (2014-04-16)
 
