@@ -5,6 +5,10 @@ if RUBY_VERSION <= "1.9"
   fail "BinData requires ruby >= 1.9.3. Use BinData version 1.8.x instead"
 end
 
+if RUBY_VERSION == "2.1.0" and RUBY_PATCHLEVEL == "0"
+  fail "Ruby 2.1.0p0 has a bug that causes BinData to fail. Upgrade your ruby version"
+end
+
 require 'bindata/version'
 require 'bindata/array'
 require 'bindata/bits'
