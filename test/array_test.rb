@@ -261,6 +261,7 @@ describe BinData::Array, "with :read_until" do
     end
   end
 
+
   describe "containing +array+ and +index+" do
     it "reads until the sentinel is reached" do
       read_until = lambda { index >= 2 and array[index - 2] == 5 }
@@ -268,6 +269,16 @@ describe BinData::Array, "with :read_until" do
 
       obj.read "\x01\x02\x03\x04\x05\x06\x07\x08"
       obj.must_equal [1, 2, 3, 4, 5, 6, 7]
+    end
+  end
+
+  describe "containing empty +array+" do
+    it "reads until the sentinel is reached, but the sentinel is always true" do
+      read_until = lambda { true }
+      obj = BinData::Array.new(:type => :int8, :read_until => read_until)
+
+      obj.read "\x01"
+      obj.must_equal []
     end
   end
 

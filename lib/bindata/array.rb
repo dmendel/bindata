@@ -44,6 +44,8 @@ module BinData
   #                            this parameter.  If the value of this parameter
   #                            is the symbol :eof, then the array will read
   #                            as much data from the stream as possible.
+  #                            The condition is evaluated before each element
+  #                            being read allowing to read empty arrays.
   #
   # Each data object in an array has the variable +index+ made available
   # to any lambda evaluated as a parameter of that data object.
@@ -297,11 +299,12 @@ module BinData
   module ReadUntilPlugin
     def do_read(io)
       loop do
-        element = append_new_element
-        element.do_read(io)
         variables = { :index => self.length - 1, :element => self.last,
                       :array => self }
         break if eval_parameter(:read_until, variables)
+
+        element = append_new_element
+        element.do_read(io)
       end
     end
 
