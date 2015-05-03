@@ -20,10 +20,10 @@ module BinData
   #   obj.assign(5)
   #   obj #=> 42
   #
-  #   obj = BinData::Uint8.new(:assert_value => 3)
+  #   obj = BinData::Uint8.new(:assert => 3)
   #   obj.read("\005") #=> BinData::ValidityError: value is '5' but expected '3'
   #
-  #   obj = BinData::Uint8.new(:assert_value => lambda { value < 5 })
+  #   obj = BinData::Uint8.new(:assert => lambda { value < 5 })
   #   obj.read("\007") #=> BinData::ValidityError: value not as expected
   #
   # == Parameters
