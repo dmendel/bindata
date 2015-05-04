@@ -7,7 +7,7 @@ Gem::Specification.new do |s|
   s.platform = Gem::Platform::RUBY
   s.summary = 'A declarative way to read and write binary file formats'
   s.author = 'Dion Mendel'
-  s.email = 'dion@lostrealm.com'
+  s.email = 'bindata@dm9.info'
   s.homepage = 'http://github.com/dmendel/bindata'
   s.rubyforge_project = 'bindata'
   s.require_path = 'lib'

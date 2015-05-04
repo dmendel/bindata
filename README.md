@@ -59,4 +59,4 @@ or if running ruby 1.8
 # Contact
 
 If you have any queries / bug reports / suggestions, please contact me
-(Dion Mendel) via email at dion@lostrealm.com
+(Dion Mendel) via email at bindata@dm9.info
