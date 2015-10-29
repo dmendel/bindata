@@ -108,6 +108,12 @@ describe BinData::Base do
     obj.write("").must_equal obj
   end
 
+  it "#to_hex uses #to_binary_s representation" do
+    obj.stub :to_binary_s, "\x01\xab\xCD" do
+      obj.to_hex.must_equal "01abcd"
+    end
+  end
+
   it "#inspect is forwarded to snapshot" do
     obj.stub :snapshot, [1, 2, 3] do
       obj.inspect.must_equal obj.snapshot.inspect

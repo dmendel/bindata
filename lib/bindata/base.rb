@@ -182,6 +182,11 @@ module BinData
       io.read
     end
 
+    # Returns the hexadecimal string representation of this data object.
+    def to_hex
+      to_binary_s.unpack('H*')[0]
+    end
+
     # Return a human readable representation of this data object.
     def inspect
       snapshot.inspect
