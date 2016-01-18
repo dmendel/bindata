@@ -65,15 +65,24 @@ module BinData
       end
 
       def create_read_code(nbits, endian, signed)
-        unpack_str   = create_read_unpack_code(nbits, endian, signed)
-        assemble_str = create_read_assemble_code(nbits, endian, signed)
-
-        read_str = "(#{unpack_str} ; #{assemble_str})"
+        read_str = create_raw_read_code(nbits, endian, signed)
 
         if need_conversion_code?(nbits, signed)
           "val = #{read_str} ; #{create_uint2int_code(nbits)}"
         else
           read_str
+        end
+      end
+
+      def create_raw_read_code(nbits, endian, signed)
+        # special case 8bit integers for speed
+        if nbits == 8
+          "io.readbytes(1).ord"
+        else
+          unpack_str   = create_read_unpack_code(nbits, endian, signed)
+          assemble_str = create_read_assemble_code(nbits, endian, signed)
+
+          "(#{unpack_str} ; #{assemble_str})"
         end
       end
 
@@ -166,7 +175,7 @@ module BinData
       end
 
       def system_pack_directive?(nbits)
-        [64, 32, 16, 8].include?(nbits)
+        [64, 32, 16].include?(nbits)
       end
     end
   end
