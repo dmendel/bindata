@@ -130,6 +130,7 @@ module BinData
         vals[0].sub!(/ >> 0\b/, "")  # Remove " >> 0" for optimisation
         vals.reverse! if (endian == :big)
 
+        vals = vals.collect { |val| "#{val} & #{mask}" }  # TODO: "& mask" is needed to work around jruby bug. Remove this line when fixed.
         vals.join(",")
       end
 
