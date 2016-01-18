@@ -67,7 +67,7 @@ module BinData
       def create_read_code(nbits, endian, signed)
         read_str = create_raw_read_code(nbits, endian, signed)
 
-        if need_conversion_code?(nbits, signed)
+        if need_signed_conversion_code?(nbits, signed)
           "val = #{read_str} ; #{create_uint2int_code(nbits)}"
         else
           read_str
@@ -87,25 +87,22 @@ module BinData
       end
 
       def create_read_unpack_code(nbits, endian, signed)
-        nbytes = nbits / 8
+        nbytes         = nbits / 8
+        pack_directive = pack_directive(nbits, endian, signed)
 
-        "ints = io.readbytes(#{nbytes}).unpack('#{pack_directive(nbits, endian, signed)}')"
+        "ints = io.readbytes(#{nbytes}).unpack('#{pack_directive}')"
       end
 
       def create_read_assemble_code(nbits, endian, signed)
-        bits_per_word = bytes_per_word(nbits) * 8
-        nwords        = nbits / bits_per_word
+        nwords = nbits / bits_per_word(nbits)
 
         idx = (0 ... nwords).to_a
         idx.reverse! if (endian == :big)
 
         parts = (0 ... nwords).collect do |i|
-                  if i.zero?
-                    "ints.at(#{idx[i]})"
-                  else
-                    "(ints.at(#{idx[i]}) << #{bits_per_word * i})"
-                  end
+                  "(ints.at(#{idx[i]}) << #{bits_per_word(nbits) * i})"
                 end
+        parts[0].sub!(/ << 0\b/, "")  # Remove " << 0" for optimisation
 
         assemble_str = parts.join(" + ")
       end
@@ -114,10 +111,11 @@ module BinData
         # special case 8bit integers for speed
         return "(val & 0xff).chr" if nbits == 8
 
-        array_els = val_as_packed_words(nbits, endian, signed)
-        pack_str  = "[#{array_els}].pack('#{pack_directive(nbits, endian, signed)}')"
+        pack_directive = pack_directive(nbits, endian, signed)
+        words          = val_as_packed_words(nbits, endian, signed)
+        pack_str       = "[#{words}].pack('#{pack_directive}')"
 
-        if need_conversion_code?(nbits, signed)
+        if need_signed_conversion_code?(nbits, signed)
           "#{create_int2uint_code(nbits)} ; #{pack_str}"
         else
           pack_str
@@ -125,13 +123,11 @@ module BinData
       end
 
       def val_as_packed_words(nbits, endian, signed)
-        bits_per_word = bytes_per_word(nbits) * 8
-        nwords        = nbits / bits_per_word
-        mask          = (1 << bits_per_word) - 1
+        nwords = nbits / bits_per_word(nbits)
+        mask   = (1 << bits_per_word(nbits)) - 1
 
-        vals = (0 ... nwords).collect do |i|
-                 i.zero? ? "val" : "val >> #{bits_per_word * i}"
-               end
+        vals = (0 ... nwords).collect { |i| "val >> #{bits_per_word(nbits) * i}" }
+        vals[0].sub!(/ >> 0\b/, "")  # Remove " >> 0" for optimisation
         vals.reverse! if (endian == :big)
 
         vals = vals.collect { |val| "#{val} & #{mask}" }  # TODO: "& mask" is needed to work around jruby bug. Remove this line when fixed.
@@ -146,36 +142,30 @@ module BinData
         "(val >= #{1 << (nbits - 1)}) ? val - #{1 << nbits} : val"
       end
 
-      def bytes_per_word(nbits)
-        (nbits % 64).zero? ? 8 :
-        (nbits % 32).zero? ? 4 :
-        (nbits % 16).zero? ? 2 :
-                             1
+      def bits_per_word(nbits)
+        (nbits % 64).zero? ? 64 :
+        (nbits % 32).zero? ? 32 :
+        (nbits % 16).zero? ? 16 :
+                              8
       end
 
       def pack_directive(nbits, endian, signed)
-        bits_per_word = bytes_per_word(nbits) * 8
-        nwords        = nbits / bits_per_word
+        nwords = nbits / bits_per_word(nbits)
 
-        d = (nbits % 64).zero? ? "Q" :
-            (nbits % 32).zero? ? "L" :
-            (nbits % 16).zero? ? "S" :
-                                 "C"
+        directives = { 8 => "C", 16 => "S", 32 => "L", 64 => "Q" }
+
+        d = directives[bits_per_word(nbits)]
         d << ((endian == :big) ? ">" : "<") unless d == "C"
 
-        if system_pack_directive?(nbits) and signed == :signed
+        if signed == :signed and directives.has_key?(nbits)
           (d * nwords).downcase
         else
           d * nwords
         end
       end
 
-      def need_conversion_code?(nbits, signed)
-        signed == :signed and not system_pack_directive?(nbits)
-      end
-
-      def system_pack_directive?(nbits)
-        [64, 32, 16].include?(nbits)
+      def need_signed_conversion_code?(nbits, signed)
+        signed == :signed and not [64, 32, 16].include?(nbits)
       end
     end
   end
