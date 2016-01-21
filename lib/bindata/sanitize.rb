@@ -188,11 +188,14 @@ module BinData
       end
     end
 
-    def initialize(parameters, the_class, endian)
+    def initialize(parameters, the_class, default_endian)
       parameters.each_pair { |key, value| self[key.to_sym] = value }
 
       @the_class = the_class
-      @endian    = endian
+
+      if default_endian
+        self[:endian] ||= default_endian
+      end
 
       sanitize!
     end
@@ -236,9 +239,8 @@ module BinData
     end
 
     def endian
-      @endian || self[:endian]
+      self[:endian]
     end
-    attr_writer :endian
 
     def create_sanitized_endian(endian)
       if endian == :big

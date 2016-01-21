@@ -344,7 +344,6 @@ module BinData
       if params.needs_sanitizing?(:endian)
         endian = params.create_sanitized_endian(params[:endian])
         params[:endian] = endian
-        params.endian   = endian # sync params[:endian] and params.endian
       end
     end
 
