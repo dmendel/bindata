@@ -1,6 +1,6 @@
 = BinData Changelog
 
-== Version 2.x.x (2014-xx-xx)
+== Version 2.2.0 (2016-01-30)
 
 * Warn if String has :value but no :read_length.  Requested by Michael
   Genereux.

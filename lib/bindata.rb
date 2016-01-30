@@ -1,5 +1,5 @@
 # BinData -- Binary data manipulator.
-# Copyright (c) 2007 - 2014 Dion Mendel.
+# Copyright (c) 2007 - 2016 Dion Mendel.
 
 if RUBY_VERSION <= "1.9"
   fail "BinData requires ruby >= 1.9.3. Use BinData version 1.8.x instead"
@@ -40,4 +40,4 @@ require 'bindata/warnings'
 #
 # BinData is released under the same license as Ruby.
 #
-# Copyright (c) 2007 - 2014 Dion Mendel.
+# Copyright (c) 2007 - 2016 Dion Mendel.
