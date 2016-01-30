@@ -81,6 +81,23 @@ module BinData
         @endian
       end
 
+      def search_prefix(*args)
+        unless defined? @search_prefix
+          @search_prefix = parent_attribute(:search_prefix, []).dup
+        end
+
+        prefix = args.collect { |name| name.to_sym }.compact
+        if prefix.size > 0
+          if has_fields?
+            dsl_raise SyntaxError, "search_prefix must be called before defining fields"
+          end
+
+          @search_prefix = prefix.concat(@search_prefix)
+        end
+
+        @search_prefix
+      end
+
       def hide(*args)
         if option?(:hidden_fields)
           hidden = args.collect { |name| name.to_sym }
@@ -97,7 +114,7 @@ module BinData
       def fields
         unless defined? @fields
           fields = parent_fields
-          @fields = SanitizedFields.new(endian)
+          @fields = SanitizedFields.new(hints)
           @fields.copy_fields(fields) if fields
         end
 
@@ -109,7 +126,7 @@ module BinData
       end
 
       def method_missing(*args, &block)
-        ensure_endian
+        ensure_hints
         parse_and_append_field(*args, &block)
       end
 
@@ -130,8 +147,16 @@ module BinData
         parser_abilities[@parser_type].at(1).include?(opt)
       end
 
-      def ensure_endian
-        endian(nil)
+      def ensure_hints
+        endian
+        search_prefix
+      end
+
+      def hints
+        {
+          :endian => endian,
+          :search_prefix => search_prefix,
+        }
       end
 
       def set_endian(endian)
@@ -164,7 +189,7 @@ module BinData
       end
 
       def parse_and_append_field(*args, &block)
-        parser = DSLFieldParser.new(endian, *args, &block)
+        parser = DSLFieldParser.new(hints, *args, &block)
         begin
           @validator.validate_field(parser.name)
           append_field(parser.type, parser.name, parser.params)
@@ -223,6 +248,9 @@ module BinData
         result = {:fields => fields}
         if not endian.nil?
           result[:endian] = endian
+        end
+        if not search_prefix.empty?
+          result[:search_prefix] = search_prefix
         end
         if option?(:hidden_fields) and not hide.empty?
           result[:hide] = hide
@@ -304,7 +332,11 @@ module BinData
         end
 
         def class_with_endian(class_name, endian)
-          RegisteredClasses.lookup(class_name, endian)
+          hints = {
+            :endian => endian,
+            :search_prefix => class_name.dsl_parser.search_prefix,
+          }
+          RegisteredClasses.lookup(class_name, hints)
         end
 
         def obj_attribute(obj, attr, default = nil)
@@ -320,8 +352,8 @@ module BinData
 
     # Extracts the details from a field declaration.
     class DSLFieldParser
-      def initialize(endian, symbol, *args, &block)
-        @endian = endian
+      def initialize(hints, symbol, *args, &block)
+        @hints  = hints
         @type   = symbol
         @name   = name_from_field_declaration(args)
         @params = params_from_field_declaration(args, &block)
@@ -365,7 +397,8 @@ module BinData
 
         if bindata_classes.include?(@type)
           parser = DSLParser.new(bindata_classes[@type], @type)
-          parser.endian(@endian)
+          parser.endian(@hints[:endian])
+          parser.search_prefix(*@hints[:search_prefix])
           parser.instance_eval(&block)
 
           parser.dsl_params

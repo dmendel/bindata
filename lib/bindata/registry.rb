@@ -5,8 +5,16 @@ module BinData
   # This registry contains a register of name -> class mappings.
   #
   # Numerics (integers and floating point numbers) have an endian property as
-  # part of their name (e.g. int32be, float_le).  The lookup can either be
-  # on the full name, or on the shortened name plus endian (e.g. "int32", :big)
+  # part of their name (e.g. int32be, float_le).
+  #
+  # Classes can be looked up based on their full name or an abbreviated +name+
+  # with +hints+.
+  #
+  # There are two hints supported, :endian and :search_prefix.
+  #
+  #   #lookup("int32", { endian: :big }) will return Int32Be.
+  #
+  #   #lookup("my_type", { search_prefix: :ns }) will return NsMyType.
   #
   # Names are stored in under_score_style, not camelCase.
   class Registry
@@ -28,19 +36,9 @@ module BinData
       @registry.delete(underscore_name(name))
     end
 
-    def lookup(name, endian = nil)
-      key = normalize_name(name, endian)
+    def lookup(name, hints = {})
+      key = normalize_name(name, hints)
       @registry[key] || raise(UnRegisteredTypeError, name.to_s)
-    end
-
-    def normalize_name(name, endian = nil)
-      name = underscore_name(name)
-      return name if is_registered?(name)
-
-      name = name_with_endian(name, endian)
-      return name if is_registered?(name)
-
-      name
     end
 
     # Convert CamelCase +name+ to underscore style.
@@ -54,6 +52,32 @@ module BinData
 
     #---------------
     private
+
+    def normalize_name(name, hints)
+      name = underscore_name(name)
+
+      if not is_registered?(name)
+        search_prefix = [""].concat(Array(hints[:search_prefix]))
+        search_prefix.each do |prefix|
+          n = name_with_endian(name_with_prefix(name, prefix), hints[:endian])
+          if is_registered?(n)
+            name = n
+            break
+          end
+        end
+      end
+
+      name
+    end
+
+    def name_with_prefix(name, prefix)
+      prefix = prefix.to_s.chomp("_")
+      if prefix == ""
+        name
+      else
+        "#{prefix}_#{name}"
+      end
+    end
 
     def name_with_endian(name, endian)
       return name if endian.nil?

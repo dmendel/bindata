@@ -6,6 +6,7 @@
   Genereux.
 * Prevent running under Ruby 2.1.0p0 due to ruby bug 44525.
 * Added #to_hex convenience method.  Thanks to Gregory Romé.
+* Added namespacing via search_prefix. Requested by sumofparts.
 
 == Version 2.1.0 (2014-04-16)
 

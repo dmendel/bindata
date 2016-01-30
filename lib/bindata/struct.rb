@@ -42,6 +42,9 @@ module BinData
   # <tt>:endian</tt>::   Either :little or :big.  This specifies the default
   #                      endian of any numerics in this struct, or in any
   #                      nested data objects.
+  # <tt>:search_prefix</tt>::  Allows abbreviated type names.  If a type is
+  #                            unrecognised, then each prefix is applied until
+  #                            a match is found.
   #
   # == Field Parameters
   #
@@ -56,7 +59,7 @@ module BinData
     arg_processor :struct
 
     mandatory_parameter :fields
-    optional_parameters :endian, :hide
+    optional_parameters :endian, :search_prefix, :hide
 
     # These reserved words may not be used as field names
     RESERVED = Hash[*
@@ -333,6 +336,7 @@ module BinData
   class StructArgProcessor < BaseArgProcessor
     def sanitize_parameters!(obj_class, params)
       sanitize_endian(params)
+      sanitize_search_prefix(params)
       sanitize_fields(obj_class, params)
       sanitize_hide(params)
     end
@@ -344,6 +348,18 @@ module BinData
       if params.needs_sanitizing?(:endian)
         endian = params.create_sanitized_endian(params[:endian])
         params[:endian] = endian
+      end
+    end
+
+    def sanitize_search_prefix(params)
+      if params.needs_sanitizing?(:search_prefix)
+        search_prefix = []
+        Array(params[:search_prefix]).each do |prefix|
+          prefix = prefix.to_s.chomp("_")
+          search_prefix << prefix if prefix != ""
+        end
+
+        params[:search_prefix] = search_prefix
       end
     end
 

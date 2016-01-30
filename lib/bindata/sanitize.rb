@@ -6,21 +6,24 @@ module BinData
   class SanitizedParameter; end
 
   class SanitizedPrototype < SanitizedParameter
-    def initialize(obj_type, obj_params, endian)
-      endian = endian.endian if endian.respond_to? :endian
+    def initialize(obj_type, obj_params, hints)
+      raw_hints = hints.dup
+      if raw_hints[:endian].respond_to?(:endian)
+        raw_hints[:endian] = raw_hints[:endian].endian
+      end
       obj_params ||= {}
 
       if BinData::Base === obj_type
         obj_class = obj_type
       else
-        obj_class = RegisteredClasses.lookup(obj_type, endian)
+        obj_class = RegisteredClasses.lookup(obj_type, raw_hints)
       end
 
       if BinData::Base === obj_class
         @factory = obj_class
       else
         @obj_class  = obj_class
-        @obj_params = SanitizedParameters.new(obj_params, @obj_class, endian)
+        @obj_params = SanitizedParameters.new(obj_params, @obj_class, hints)
       end
     end
 
@@ -41,9 +44,9 @@ module BinData
   #----------------------------------------------------------------------------
 
   class SanitizedField < SanitizedParameter
-    def initialize(name, field_type, field_params, endian)
+    def initialize(name, field_type, field_params, hints)
       @name      = name
-      @prototype = SanitizedPrototype.new(field_type, field_params, endian)
+      @prototype = SanitizedPrototype.new(field_type, field_params, hints)
     end
 
     attr_reader :prototype
@@ -69,16 +72,16 @@ module BinData
   class SanitizedFields < SanitizedParameter
     include Enumerable
 
-    def initialize(endian)
+    def initialize(hints)
       @fields = []
-      @endian = endian
+      @hints  = hints
     end
     attr_reader :fields
 
     def add_field(type, name, params)
       name = nil if name == ""
 
-      @fields << SanitizedField.new(name, type, params, @endian)
+      @fields << SanitizedField.new(name, type, params, @hints)
     end
 
     def [](idx)
@@ -124,14 +127,14 @@ module BinData
   #----------------------------------------------------------------------------
 
   class SanitizedChoices < SanitizedParameter
-    def initialize(choices, endian)
+    def initialize(choices, hints)
       @choices = {}
       choices.each_pair do |key, val|
         if SanitizedParameter === val
           prototype = val
         else
           type, param = val
-          prototype = SanitizedPrototype.new(type, param, endian)
+          prototype = SanitizedPrototype.new(type, param, hints)
         end
 
         if key == :default
@@ -183,18 +186,22 @@ module BinData
         if SanitizedParameters === parameters
           parameters
         else
-          SanitizedParameters.new(parameters, the_class, nil)
+          SanitizedParameters.new(parameters, the_class, {})
         end
       end
     end
 
-    def initialize(parameters, the_class, default_endian)
+    def initialize(parameters, the_class, hints)
       parameters.each_pair { |key, value| self[key.to_sym] = value }
 
       @the_class = the_class
 
-      if default_endian
-        self[:endian] ||= default_endian
+      if hints[:endian]
+        self[:endian] ||= hints[:endian]
+      end
+
+      if hints[:search_prefix]
+        self[:search_prefix] = Array(self[:search_prefix]).concat(Array(hints[:search_prefix]))
       end
 
       sanitize!
@@ -238,8 +245,11 @@ module BinData
       end
     end
 
-    def endian
-      self[:endian]
+    def hints
+      {
+        :endian => self[:endian],
+        :search_prefix => self[:search_prefix],
+      }
     end
 
     def create_sanitized_endian(endian)
@@ -255,19 +265,19 @@ module BinData
     end
 
     def create_sanitized_params(params, the_class)
-      SanitizedParameters.new(params, the_class, self.endian)
+      SanitizedParameters.new(params, the_class, hints)
     end
 
     def create_sanitized_choices(choices)
-      SanitizedChoices.new(choices, self.endian)
+      SanitizedChoices.new(choices, hints)
     end
 
     def create_sanitized_fields
-      SanitizedFields.new(self.endian)
+      SanitizedFields.new(hints)
     end
 
     def create_sanitized_object_prototype(obj_type, obj_params)
-      SanitizedPrototype.new(obj_type, obj_params, self.endian)
+      SanitizedPrototype.new(obj_type, obj_params, hints)
     end
 
     #---------------

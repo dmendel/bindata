@@ -338,6 +338,56 @@ describe BinData::Struct, "with nested endian" do
   end
 end
 
+describe BinData::Struct, "with a search_prefix" do
+  class AShort < BinData::Uint8; end
+  class BShort < BinData::Uint8; end
+
+  it "searches symbol prefixes" do
+    obj = BinData::Struct.new(:search_prefix => :a,
+                              :fields => [ [:short, :f] ])
+    obj.f.class.name.must_equal "AShort"
+  end
+
+  it "searches string prefixes" do
+    obj = BinData::Struct.new(:search_prefix => "a",
+                              :fields => [ [:short, :f] ])
+    obj.f.class.name.must_equal "AShort"
+  end
+
+  it "searches string prefixes with optional underscore" do
+    obj = BinData::Struct.new(:search_prefix => "a_",
+                              :fields => [ [:short, :f] ])
+    obj.f.class.name.must_equal "AShort"
+  end
+
+  it "searches multiple prefixes" do
+    obj = BinData::Struct.new(:search_prefix => [:x, :a],
+                              :fields => [ [:short, :f] ])
+    obj.f.class.name.must_equal "AShort"
+  end
+
+  it "uses parent search_prefix" do
+    nested_params = { :fields => [[:short, :f]] }
+    obj = BinData::Struct.new(:search_prefix => :a,
+                              :fields => [[:struct, :s, nested_params]])
+    obj.s.f.class.name.must_equal "AShort"
+  end
+
+  it "searches parent search_prefix" do
+    nested_params = { :search_prefix => :x, :fields => [[:short, :f]] }
+    obj = BinData::Struct.new(:search_prefix => :a,
+                              :fields => [[:struct, :s, nested_params]])
+    obj.s.f.class.name.must_equal "AShort"
+  end
+
+  it "prioritises nested search_prefix" do
+    nested_params = { :search_prefix => :a, :fields => [[:short, :f]] }
+    obj = BinData::Struct.new(:search_prefix => :b,
+                              :fields => [[:struct, :s, nested_params]])
+    obj.s.f.class.name.must_equal "AShort"
+  end
+end
+
 describe BinData::Struct, "with byte_align" do
   let(:obj) {
     params = { :fields => [[:int8, :a],

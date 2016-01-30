@@ -378,6 +378,59 @@ describe BinData::Record, "with an endian defined" do
   end
 end
 
+describe BinData::Record, "with search_prefix" do
+  class ASprefix < BinData::Int8; end
+  class BSprefix < BinData::Int8; end
+
+  class RecordWithSearchPrefix < BinData::Record
+    search_prefix :a
+    sprefix :f
+  end
+
+  class RecordWithParentSearchPrefix < BinData::Record
+    search_prefix :a
+    struct :s do
+      sprefix :f
+    end
+  end
+
+  class RecordWithNestedSearchPrefix < BinData::Record
+    search_prefix :a
+    struct :s do
+      search_prefix :x
+      sprefix :f
+    end
+  end
+
+  class RecordWithPrioritisedNestedSearchPrefix < BinData::Record
+    search_prefix :b
+    struct :s do
+      search_prefix :a
+      sprefix :f
+    end
+  end
+
+  it "uses search_prefix" do
+    obj = RecordWithSearchPrefix.new
+    obj.f.class.name.must_equal "ASprefix"
+  end
+
+  it "uses parent search_prefix" do
+    obj = RecordWithParentSearchPrefix.new
+    obj.s.f.class.name.must_equal "ASprefix"
+  end
+
+  it "uses nested search_prefix" do
+    obj = RecordWithNestedSearchPrefix.new
+    obj.s.f.class.name.must_equal "ASprefix"
+  end
+
+  it "uses prioritised nested search_prefix" do
+    obj = RecordWithPrioritisedNestedSearchPrefix.new
+    obj.s.f.class.name.must_equal "ASprefix"
+  end
+end
+
 describe BinData::Record, "with endian :big_and_little" do
   class RecordWithBnLEndian < BinData::Record
     endian :big_and_little
@@ -408,6 +461,27 @@ describe BinData::Record, "with endian :big_and_little" do
 
   it "accepts :endian as argument" do
     obj = RecordWithBnLEndian.new(:endian => :little)
+    obj.to_binary_s.must_equal_binary "\x01\x00"
+  end
+end
+
+describe BinData::Record, "with endian :big_and_little and search_prefix" do
+  class NsBNLIntBe < BinData::Int16be; end
+  class NsBNLIntLe < BinData::Int16le; end
+
+  class RecordWithBnLEndianAndSearchPrefix < BinData::Record
+    endian :big_and_little
+    search_prefix :ns
+     bnl_int :a, :value => 1
+  end
+
+  it "creates big endian version" do
+    obj = RecordWithBnLEndianAndSearchPrefixBe.new
+    obj.to_binary_s.must_equal_binary "\x00\x01"
+  end
+
+  it "creates little endian version" do
+    obj = RecordWithBnLEndianAndSearchPrefixLe.new
     obj.to_binary_s.must_equal_binary "\x01\x00"
   end
 end
