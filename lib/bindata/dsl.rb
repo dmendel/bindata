@@ -67,7 +67,6 @@ module BinData
         @the_class      = the_class
         @parser_type    = parser_type
         @validator      = DSLFieldValidator.new(the_class, self)
-        @endian_handler = DSLBigAndLittleEndianHandler.new(the_class)
         @endian         = nil
       end
 
@@ -77,8 +76,7 @@ module BinData
         if endian
           set_endian(endian)
         elsif @endian.nil?
-          pendian = parent_attribute(:endian, nil)
-          set_endian(pendian) if pendian
+          set_endian(parent_attribute(:endian))
         end
         @endian
       end
@@ -98,7 +96,7 @@ module BinData
 
       def fields
         unless defined? @fields
-          fields = @endian_handler.ancestor_fields || parent_attribute(:fields)
+          fields = parent_fields
           @fields = SanitizedFields.new(endian)
           @fields.copy_fields(fields) if fields
         end
@@ -111,11 +109,8 @@ module BinData
       end
 
       def method_missing(*args, &block)
-        if endian == :big_and_little
-          @endian_handler.forward_field_definition(*args, &block)
-        else
-          parse_and_append_field(*args, &block)
-        end
+        ensure_endian
+        parse_and_append_field(*args, &block)
       end
 
       #-------------
@@ -135,37 +130,37 @@ module BinData
         parser_abilities[@parser_type].at(1).include?(opt)
       end
 
-      def set_endian(endian)
-        if has_fields?
-          dsl_raise SyntaxError, "endian must not be called after defining fields"
-        end
-        if not valid_endian?(endian)
-          dsl_raise ArgumentError, "unknown value for endian '#{endian}'"
-        end
-
-        if endian == :big_and_little
-          @endian_handler.prepare_subclasses
-        end
-
-        @endian = endian
+      def ensure_endian
+        endian(nil)
       end
 
-      def has_fields?
-        @fields && @fields.length > 0
+      def set_endian(endian)
+        if endian
+          if has_fields?
+            dsl_raise SyntaxError, "endian must be called before defining fields"
+          end
+          if not valid_endian?(endian)
+            dsl_raise ArgumentError, "unknown value for endian '#{endian}'"
+          end
+
+          if endian == :big_and_little
+            DSLBigAndLittleEndianHandler.handle(@the_class)
+          end
+
+          @endian = endian
+        end
       end
 
       def valid_endian?(endian)
         [:big, :little, :big_and_little].include?(endian)
       end
 
-      def parent_attribute(attr, default = nil)
-        parent = @the_class.superclass
-        parser = parent.respond_to?(:dsl_parser) ? parent.dsl_parser : nil
-        if parser and parser.respond_to?(attr)
-          parser.send(attr)
-        else
-          default
-        end
+      def parent_fields
+        parent_attribute(:fields)
+      end
+
+      def has_fields?
+        @fields && @fields.length > 0
       end
 
       def parse_and_append_field(*args, &block)
@@ -182,6 +177,16 @@ module BinData
         fields.add_field(type, name, params)
       rescue BinData::UnRegisteredTypeError => err
         raise TypeError, "unknown type '#{err.message}'"
+      end
+
+      def parent_attribute(attr, default = nil)
+        parent = @the_class.superclass
+        parser = parent.respond_to?(:dsl_parser) ? parent.dsl_parser : nil
+        if parser and parser.respond_to?(attr)
+          parser.send(attr)
+        else
+          default
+        end
       end
 
       def dsl_raise(exception, message)
@@ -231,79 +236,84 @@ module BinData
     # This option creates two subclasses, each handling
     # :big or :little endian.
     class DSLBigAndLittleEndianHandler
-      def initialize(the_class)
-        @the_class = the_class
-      end
-
-      def prepare_subclasses
-        create_subclasses_with_endian
-        make_class_abstract
-        override_new_in_class
-      end
-
-      def forward_field_definition(*args, &block)
-        class_with_endian(@the_class,    :big).send(*args, &block)
-        class_with_endian(@the_class, :little).send(*args, &block)
-      end
-
-      def ancestor_fields
-        if subclass_of_big_and_little_endian?
-          pparent = @the_class.superclass.superclass
-          ancestor_with_endian = class_with_endian(pparent, @the_class.endian)
-          obj_attribute(ancestor_with_endian, :fields)
-        else
-          nil
+      class << self
+        def handle(bnl_class)
+          make_class_abstract(bnl_class)
+          create_subclasses_with_endian(bnl_class)
+          override_new_in_class(bnl_class)
+          delegate_field_creation(bnl_class)
+          fixup_subclass_hierarchy(bnl_class)
         end
-      end
 
-      #-------------
-      private
+        def make_class_abstract(bnl_class)
+          bnl_class.send(:unregister_self)
+        end
 
-      def create_subclasses_with_endian
-        instance_eval "class ::#{@the_class}Be < ::#{@the_class}; endian :big; end"
-        instance_eval "class ::#{@the_class}Le < ::#{@the_class}; endian :little; end"
-      end
+        def create_subclasses_with_endian(bnl_class)
+          instance_eval "class ::#{bnl_class}Be < ::#{bnl_class}; endian :big; end"
+          instance_eval "class ::#{bnl_class}Le < ::#{bnl_class}; endian :little; end"
+        end
 
-      def make_class_abstract
-        @the_class.send(:unregister_self)
-      end
+        def override_new_in_class(bnl_class)
+          endian_classes = {
+            :big    => class_with_endian(bnl_class, :big),
+            :little => class_with_endian(bnl_class, :little),
+          }
+          bnl_class.define_singleton_method(:new) do |*args|
+            if self == bnl_class
+              value, options, parent = arg_processor.separate_args(self, args)
+              delegate = endian_classes[options[:endian]]
+              return delegate.new(*args) if delegate
+            end
 
-      def override_new_in_class
-        saved_class = @the_class
-        endian_classes = {
-          :big => class_with_endian(saved_class, :big),
-          :little => class_with_endian(saved_class, :little),
-        }
-        @the_class.define_singleton_method(:new) do |*args|
-          if self == saved_class
-            value, options, parent = arg_processor.separate_args(self, args)
-            delegate = endian_classes[options[:endian]]
-            return delegate.new(*args) if delegate
+            super(*args)
           end
-
-          super(*args)
         end
-      end
 
-      def subclass_of_big_and_little_endian?
-        parent  = @the_class.superclass
-        pparent = parent.superclass
+        def delegate_field_creation(bnl_class)
+          endian_classes = {
+            :big    => class_with_endian(bnl_class, :big),
+            :little => class_with_endian(bnl_class, :little),
+          }
 
-        obj_attribute(parent, :endian) == :big_and_little and
-        obj_attribute(pparent, :endian) == :big_and_little and
-        [:big, :little].include?(@the_class.endian)
-      end
+          parser = bnl_class.dsl_parser
+          parser.define_singleton_method(:parse_and_append_field) do |*args, &block|
+            endian_classes[:big].send(*args, &block)
+            endian_classes[:little].send(*args, &block)
+          end
+        end
 
-      def class_with_endian(class_name, endian)
-        RegisteredClasses.lookup(class_name, endian)
-      end
+        def fixup_subclass_hierarchy(bnl_class)
+          parent = bnl_class.superclass
+          if obj_attribute(parent, :endian) == :big_and_little
+            be_subclass = class_with_endian(bnl_class, :big)
+            be_parent   = class_with_endian(parent, :big)
+            be_fields   = obj_attribute(be_parent, :fields)
 
-      def obj_attribute(obj, attr, default = nil)
-        parser = obj.respond_to?(:dsl_parser) ? obj.dsl_parser : nil
-        if parser and parser.respond_to?(attr)
-          parser.send(attr)
-        else
-          default
+            le_subclass = class_with_endian(bnl_class, :little)
+            le_parent   = class_with_endian(parent, :little)
+            le_fields   = obj_attribute(le_parent, :fields)
+
+            be_subclass.dsl_parser.define_singleton_method(:parent_fields) do
+              be_fields
+            end
+            le_subclass.dsl_parser.define_singleton_method(:parent_fields) do
+              le_fields
+            end
+          end
+        end
+
+        def class_with_endian(class_name, endian)
+          RegisteredClasses.lookup(class_name, endian)
+        end
+
+        def obj_attribute(obj, attr, default = nil)
+          parser = obj.respond_to?(:dsl_parser) ? obj.dsl_parser : nil
+          if parser and parser.respond_to?(attr)
+            parser.send(attr)
+          else
+            default
+          end
         end
       end
     end
