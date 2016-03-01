@@ -139,7 +139,6 @@ module AllIntegers
 
   def create_mapping_of_class_to_nbits(endian, signed)
     base = signed ? "Int" : "Uint"
-    signed_sym = signed ? :signed : :unsigned
     endian_str = (endian == :little) ? "le" : "be"
 
     result = {}

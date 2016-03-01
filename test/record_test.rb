@@ -532,7 +532,7 @@ describe BinData::Record, "defined recursively" do
   end
 
   it "can be created" do
-    obj = RecursiveRecord.new
+    RecursiveRecord.new
   end
 
   it "reads" do

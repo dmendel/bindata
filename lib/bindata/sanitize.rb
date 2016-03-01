@@ -28,7 +28,7 @@ module BinData
     end
 
     def has_parameter?(param)
-      if @factory
+      if defined? @factory
         @factory.has_parameter?(param)
       else
         @obj_params.has_parameter?(param)

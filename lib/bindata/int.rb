@@ -104,7 +104,7 @@ module BinData
                 end
         parts[0].sub!(/ << 0\b/, "")  # Remove " << 0" for optimisation
 
-        assemble_str = parts.join(" + ")
+        parts.join(" + ")
       end
 
       def create_to_binary_s_code(nbits, endian, signed)

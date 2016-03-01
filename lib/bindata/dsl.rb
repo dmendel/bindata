@@ -185,7 +185,7 @@ module BinData
       end
 
       def has_fields?
-        @fields && @fields.length > 0
+        defined? @fields and @fields.length > 0
       end
 
       def parse_and_append_field(*args, &block)
@@ -289,7 +289,7 @@ module BinData
           }
           bnl_class.define_singleton_method(:new) do |*args|
             if self == bnl_class
-              value, options, parent = arg_processor.separate_args(self, args)
+              _, options, _ = arg_processor.separate_args(self, args)
               delegate = endian_classes[options[:endian]]
               return delegate.new(*args) if delegate
             end
@@ -362,7 +362,7 @@ module BinData
       attr_reader :type, :name, :params
 
       def name_from_field_declaration(args)
-        name, params = args
+        name, _ = args
         if name == "" or name.is_a?(Hash)
           nil
         else

@@ -69,6 +69,7 @@ module BinData
     mandatory_parameter :struct_params
 
     def initialize_instance
+      super
       @struct = BinData::Struct.new(get_parameter(:struct_params), self)
     end
 

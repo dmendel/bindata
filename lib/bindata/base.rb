@@ -26,6 +26,8 @@ module BinData
 
       # The arg processor for this class.
       def arg_processor(name = nil)
+        @arg_processor ||= nil
+
         if name
           @arg_processor = "#{name}_arg_processor".gsub(/(?:^|_)(.)/) { $1.upcase }.to_sym
         elsif @arg_processor.is_a? Symbol
@@ -49,6 +51,7 @@ module BinData
 
       # Registers all subclasses of this class for use
       def register_subclasses #:nodoc:
+        singleton_class.send(:undef_method, :inherited)
         define_singleton_method(:inherited) do |subclass|
           RegisteredClasses.register(subclass.name, subclass)
           register_subclasses

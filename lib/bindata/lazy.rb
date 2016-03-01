@@ -48,7 +48,7 @@ module BinData
     # Returns the index of this data object inside it's nearest container
     # array.
     def index
-      return @overrides[:index] if @overrides and @overrides.has_key?(:index)
+      return @overrides[:index] if defined? @overrides and @overrides.has_key?(:index)
 
       child = @obj
       parent = @obj.parent

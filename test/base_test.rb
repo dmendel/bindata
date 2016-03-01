@@ -83,8 +83,8 @@ describe BinData::Base do
   class BaseStub < BinData::Base
     # Override to avoid NotImplemented errors
     def clear?; end
-    def assign(x); @data = x; end
-    def snapshot; @data; end
+    def assign(x); end
+    def snapshot; end
     def do_read(io) end
     def do_write(io) end
     def do_num_bytes; end
