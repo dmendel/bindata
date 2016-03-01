@@ -55,6 +55,10 @@ module BinData
       end
     end
 
+    def bit_aligned?
+      true
+    end
+
     def read_and_return_value(io)
       super(BitAlignedIO.new(io))
     end

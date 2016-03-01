@@ -126,7 +126,7 @@ module BinData
     def offset_of(child) #:nodoc:
       instantiate_all_objs
       sum = sum_num_bytes_below_index(find_index_of(child))
-      child.do_num_bytes.is_a?(Integer) ? sum.ceil : sum.floor
+      child.bit_aligned? ? sum.floor : sum.ceil
     end
 
     def do_read(io) #:nodoc:

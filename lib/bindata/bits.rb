@@ -40,9 +40,12 @@ module BinData
             #{create_do_num_bytes_code(nbits)}
           end
 
+          def bit_aligned?
+            true
+          end
+
           #---------------
           private
-
 
           def read_and_return_value(io)
             #{create_nbits_code(nbits)}

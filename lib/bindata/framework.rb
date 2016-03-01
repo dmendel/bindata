@@ -47,6 +47,11 @@ module BinData
       0
     end
 
+    # Is this object aligned on non-byte boundaries?
+    def bit_aligned?
+      false
+    end
+
     # Reads the data for this data object from +io+.
     def do_read(io) #:nodoc:
       raise NotImplementedError

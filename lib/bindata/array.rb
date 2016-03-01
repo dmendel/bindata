@@ -217,7 +217,7 @@ module BinData
       index = find_index_of(child)
       sum = sum_num_bytes_below_index(index)
 
-      child.do_num_bytes.is_a?(Integer) ? sum.ceil : sum.floor
+      child.bit_aligned? ? sum.floor : sum.ceil
     end
 
     def do_write(io) #:nodoc:
