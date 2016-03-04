@@ -1,4 +1,13 @@
 module BinData
+  # WARNING: THIS IS UNSUPPORTED!!
+  #
+  # This was a (failed) experimental feature that allowed seeking within the
+  # input stream.  It remains here for backwards compatability for the few
+  # people that used it.
+  #
+  # The official way to skip around the stream is to use BinData::Skip with
+  # the `:to_abs_offset` parameter.
+  #
   # == Parameters
   #
   # Parameters may be provided at initialisation to control the behaviour of
