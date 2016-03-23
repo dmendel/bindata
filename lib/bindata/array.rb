@@ -281,8 +281,9 @@ module BinData
         params[:initial_length] = 0
       end
 
+      params.warn_replacement_parameter(:length, :initial_length)
       params.warn_replacement_parameter(:read_length, :initial_length)
-      params.must_be_integer(:initial_length, :read_length)
+      params.must_be_integer(:initial_length)
 
       params.merge!(obj_class.dsl_params)
 

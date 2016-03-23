@@ -69,6 +69,7 @@ module BinData
       unless (params.has_parameter?(:length) or params.has_parameter?(:to_abs_offset))
         raise ArgumentError, "#{obj_class} requires either :length or :to_abs_offset"
       end
+      params.must_be_integer(:to_abs_offset, :length)
     end
   end
 
