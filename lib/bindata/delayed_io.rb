@@ -156,8 +156,8 @@ module BinData
   class Base
     class << self
       def auto_call_delayed_io
-        self.include AutoCallDelayedIO
-        DelayedIO.prepend RecordDelayedIO
+        include AutoCallDelayedIO
+        DelayedIO.send(:prepend, RecordDelayedIO)
       end
     end
 
