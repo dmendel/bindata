@@ -218,4 +218,14 @@ describe "Bits of size 1" do
       obj.must_equal 0
     end
   end
+
+  it "must not be signed" do
+    lambda {
+      BinData::Sbit1
+    }.must_raise RuntimeError
+
+    lambda {
+      BinData::Sbit1le
+    }.must_raise RuntimeError
+  end
 end
