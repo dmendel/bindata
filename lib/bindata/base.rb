@@ -2,7 +2,6 @@ require 'bindata/framework'
 require 'bindata/io'
 require 'bindata/lazy'
 require 'bindata/name'
-require 'bindata/offset'
 require 'bindata/params'
 require 'bindata/registry'
 require 'bindata/sanitize'
@@ -12,7 +11,6 @@ module BinData
   class Base
     extend AcceptedParametersPlugin
     include Framework
-    include CheckOrAdjustOffsetPlugin
     include RegisterNamePlugin
 
     class << self

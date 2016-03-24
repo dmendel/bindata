@@ -86,4 +86,9 @@ module BinData
       end
     end
   end
+
+  # Add these offset options to Base
+  class Base
+    include CheckOrAdjustOffsetPlugin
+  end
 end
