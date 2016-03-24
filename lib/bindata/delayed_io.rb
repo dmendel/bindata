@@ -156,38 +156,38 @@ module BinData
   class Base
     class << self
       def auto_call_delayed_io
-        self.prepend AutoCallDelayedIO
+        self.include AutoCallDelayedIO
         DelayedIO.prepend RecordDelayedIO
       end
+    end
 
-      module RecordDelayedIO
-        def initialize_instance
-          if @parent and ! defined? @delayed_io_recorded
-            @delayed_io_recorded = true
-            list = top_level_get(:delayed_ios)
-            list << self if list
-          end
-          super
+    module RecordDelayedIO
+      def initialize_instance
+        if @parent and ! defined? @delayed_io_recorded
+          @delayed_io_recorded = true
+          list = top_level_get(:delayed_ios)
+          list << self if list
         end
+        super
+      end
+    end
+
+    module AutoCallDelayedIO
+      def initialize_shared_instance
+        top_level_set(:delayed_ios, [])
+        super
       end
 
-      module AutoCallDelayedIO
-        def initialize_shared_instance
-          top_level_set(:delayed_ios, [])
-          super
-        end
+      def read(io)
+        super(io) { top_level_get(:delayed_ios).each { |obj| obj.read_now! } }
+      end
 
-        def read(io)
-          super(io) { top_level_get(:delayed_ios).each { |obj| obj.read_now! } }
-        end
+      def write(io, *args)
+        super(io) { top_level_get(:delayed_ios).each { |obj| obj.write_now! } }
+      end
 
-        def write(io, *args)
-          super(io) { top_level_get(:delayed_ios).each { |obj| obj.write_now! } }
-        end
-
-        def num_bytes
-          to_binary_s.size
-        end
+      def num_bytes
+        to_binary_s.size
       end
     end
   end
