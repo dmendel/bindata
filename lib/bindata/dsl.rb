@@ -135,11 +135,12 @@ module BinData
 
       def parser_abilities
         @abilities ||= {
-          :struct    => [:to_struct_params, [:multiple_fields, :optional_fieldnames, :hidden_fields]],
-          :array     => [:to_array_params,  [:multiple_fields, :optional_fieldnames]],
-          :buffer    => [:to_array_params,  [:multiple_fields, :optional_fieldnames, :hidden_fields]],
-          :choice    => [:to_choice_params, [:multiple_fields, :all_or_none_fieldnames, :fieldnames_are_values]],
-          :primitive => [:to_struct_params, [:multiple_fields, :optional_fieldnames]]
+          :struct     => [:to_struct_params, [:multiple_fields, :optional_fieldnames, :hidden_fields]],
+          :array      => [:to_array_params,  [:multiple_fields, :optional_fieldnames]],
+          :buffer     => [:to_array_params,  [:multiple_fields, :optional_fieldnames, :hidden_fields]],
+          :choice     => [:to_choice_params, [:multiple_fields, :all_or_none_fieldnames, :fieldnames_are_values]],
+          :delayed_io => [:to_array_params,  [:multiple_fields, :optional_fieldnames, :hidden_fields]],
+          :primitive  => [:to_struct_params, [:multiple_fields, :optional_fieldnames]]
         }
       end
 
@@ -388,10 +389,11 @@ module BinData
 
       def params_from_block(&block)
         bindata_classes = {
-          :array  => BinData::Array,
-          :buffer => BinData::Buffer,
-          :choice => BinData::Choice,
-          :struct => BinData::Struct
+          :array      => BinData::Array,
+          :buffer     => BinData::Buffer,
+          :choice     => BinData::Choice,
+          :delayed_io => BinData::DelayedIO,
+          :struct     => BinData::Struct
         }
 
         if bindata_classes.include?(@type)

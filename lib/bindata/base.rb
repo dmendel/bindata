@@ -16,9 +16,9 @@ module BinData
     class << self
       # Instantiates this class and reads from +io+, returning the newly
       # created data object.  +args+ will be used when instantiating.
-      def read(io, *args)
+      def read(io, *args, &block)
         obj = self.new(*args)
-        obj.read(io)
+        obj.read(io, &block)
         obj
       end
 
@@ -139,34 +139,27 @@ module BinData
     end
 
     # Reads data into this data object.
-    def read(io)
+    def read(io, &block)
       io = BinData::IO::Read.new(io) unless BinData::IO::Read === io
 
-      @in_read = true
-      clear
-      do_read(io)
-      @in_read = false
+      start_read do
+        clear
+        do_read(io)
+      end
+      block.call(self) if block_given?
 
       self
     end
 
-    #:nodoc:
-    attr_reader :in_read
-    protected   :in_read
-
-    # Returns if this object is currently being read.  This is used
-    # internally by BasePrimitive.
-    def reading? #:nodoc:
-      furthest_ancestor.in_read
-    end
-    protected :reading?
-
     # Writes the value for this data object to +io+.
-    def write(io)
+    def write(io, &block)
       io = BinData::IO::Write.new(io) unless BinData::IO::Write === io
 
       do_write(io)
       io.flush
+
+      block.call(self) if block_given?
+
       self
     end
 
@@ -176,16 +169,16 @@ module BinData
     end
 
     # Returns the string representation of this data object.
-    def to_binary_s
+    def to_binary_s(&block)
       io = BinData::IO.create_string_io
-      write(io)
+      write(io, &block)
       io.rewind
       io.read
     end
 
     # Returns the hexadecimal string representation of this data object.
-    def to_hex
-      to_binary_s.unpack('H*')[0]
+    def to_hex(&block)
+      to_binary_s(&block).unpack('H*')[0]
     end
 
     # Return a human readable representation of this data object.
@@ -255,14 +248,35 @@ module BinData
       self.class.arg_processor.extract_args(self.class, args)
     end
 
-    def furthest_ancestor
+    def start_read(&block)
+      top_level_set(:in_read, true)
+      block.call
+    ensure
+      top_level_set(:in_read, false)
+    end
+
+    # Is this object tree currently being read?  Used by BasePrimitive.
+    def reading?
+      top_level_get(:in_read)
+    end
+
+    def top_level_set(sym, value)
+      top_level.instance_variable_set("@tl_#{sym}", value)
+    end
+
+    def top_level_get(sym)
+      top_level.instance_variable_get("@tl_#{sym}")
+    end
+
+    def top_level
       if parent.nil?
-        self
+        tl = self
       else
-        an = parent
-        an = an.parent while an.parent
-        an
+        tl = parent
+        tl = tl.parent while tl.parent
       end
+
+      tl
     end
 
     def binary_string(str)
