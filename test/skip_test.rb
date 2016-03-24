@@ -2,6 +2,15 @@
 
 require File.expand_path(File.join(File.dirname(__FILE__), "test_helper"))
 
+describe BinData::Skip, "when instantiating" do
+  describe "with no mandatory parameters supplied" do
+    it "raises an error" do
+      args = {}
+      lambda { BinData::Skip.new(args) }.must_raise ArgumentError
+    end
+  end
+end
+
 describe BinData::Skip, "with :length" do
   let(:obj) { BinData::Skip.new(:length => 5) }
   let(:io) { StringIO.new("abcdefghij") }
