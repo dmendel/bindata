@@ -81,6 +81,10 @@ describe BinData::Struct, "with hidden fields" do
     obj.field_names.must_equal [:a, :d]
   end
 
+  it "shows all fields when requested" do
+    obj.field_names(true).must_equal [:a, :b, :c, :d]
+  end
+
   it "accesses hidden fields directly" do
     obj.b.must_equal 5
     obj.c = 15
@@ -136,6 +140,10 @@ describe BinData::Struct, "with multiple fields" do
     obj[:a].must_equal 1
   end
 
+  it "handles not existing elements" do
+    obj[:does_not_exist].must_be_nil
+  end
+
   it "writes elements dynamically" do
     obj[:a] = 2
     obj.a.must_equal 2
@@ -154,6 +162,7 @@ describe BinData::Struct, "with multiple fields" do
 
   it "returns a snapshot" do
     snap = obj.snapshot
+    snap.respond_to?(:a).must_equal true
     snap.a.must_equal 1
     snap.b.must_equal 2
     snap.must_equal({ :a => 1, :b => 2 })
