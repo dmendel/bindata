@@ -45,6 +45,7 @@ module BinData
         @buffer_end_pos = nil
 
         extend seekable? ? SeekableStream : UnSeekableStream
+        stream_init
       end
 
       # Sets a buffer of +n+ bytes on the io stream.  Any reading or seeking
@@ -52,10 +53,10 @@ module BinData
       def with_buffer(n, &block)
         prev = @buffer_end_pos
         if prev
-          avail = prev - offset
+          avail = prev[1] - offset
           n = avail if n > avail
         end
-        @buffer_end_pos = offset + n
+        @buffer_end_pos = [offset, offset + n]
         begin
           block.call
           read
@@ -132,8 +133,13 @@ module BinData
 
       def buffer_limited_n(n)
         if @buffer_end_pos
-          max = @buffer_end_pos - offset
-          n = max if n.nil? or n > max
+          if n.nil? or n > 0
+            max = @buffer_end_pos[1] - offset
+            n = max if n.nil? or n > max
+          else
+            min = @buffer_end_pos[0] - offset
+            n = min if n < min
+          end
         end
 
         n
@@ -190,15 +196,15 @@ module BinData
         # Returns the current offset of the io stream.  Offset will be rounded
         # up when reading bitfields.
         def offset
-          raw_io.pos - @initial_pos
+          @raw_io.pos - @initial_pos
         end
 
         # The number of bytes remaining in the input stream.
         def num_bytes_remaining
-          mark = raw_io.pos
-          raw_io.seek(0, ::IO::SEEK_END)
-          bytes_remaining = raw_io.pos - mark
-          raw_io.seek(mark, ::IO::SEEK_SET)
+          mark = @raw_io.pos
+          @raw_io.seek(0, ::IO::SEEK_END)
+          bytes_remaining = @raw_io.pos - mark
+          @raw_io.seek(mark, ::IO::SEEK_SET)
 
           bytes_remaining
         end
@@ -206,17 +212,16 @@ module BinData
         #-----------
         private
 
+        def stream_init
+          @initial_pos = @raw_io.pos
+        end
+
         def read_raw(n)
-          raw_io.read(n)
+          @raw_io.read(n)
         end
 
         def seek_raw(n)
-          raw_io.seek(n, ::IO::SEEK_CUR)
-        end
-
-        def raw_io
-          @initial_pos ||= @raw_io.pos
-          @raw_io
+          @raw_io.seek(n, ::IO::SEEK_CUR)
         end
       end
 
@@ -225,7 +230,7 @@ module BinData
         # Returns the current offset of the io stream.  Offset will be rounded
         # up when reading bitfields.
         def offset
-          @read_count ||= 0
+          @read_count
         end
 
         # The number of bytes remaining in the input stream.
@@ -236,9 +241,11 @@ module BinData
         #-----------
         private
 
-        def read_raw(n)
-          @read_count ||= 0
+        def stream_init
+          @read_count = 0
+        end
 
+        def read_raw(n)
           data = @raw_io.read(n)
           @read_count += data.size if data
           data
@@ -281,9 +288,10 @@ module BinData
         @wval    = 0
         @wendian = nil
 
-        @write_count = 0
+        @buffer_end_pos = nil
 
-        @bytes_remaining = nil
+        extend seekable? ? SeekableStream : UnSeekableStream
+        stream_init
       end
 
       # Sets a buffer of +n+ bytes on the io stream.  Any writes inside the
@@ -291,31 +299,30 @@ module BinData
       # are written inside the block, the remainder will be padded with '\0'
       # bytes.
       def with_buffer(n, &block)
-        prev = @bytes_remaining
+        prev = @buffer_end_pos
         if prev
-          n = prev if n > prev
-          prev -= n
+          avail = prev[1] - offset
+          n = avail if n > avail
         end
-
-        @bytes_remaining = n
+        @buffer_end_pos = [offset, offset + n]
         begin
           block.call
-          write_raw("\0" * @bytes_remaining)
+          write("\0" * (@buffer_end_pos[1] - offset))
         ensure
-          @bytes_remaining = prev
+          @buffer_end_pos = prev
         end
       end
 
-      # Returns the current offset of the io stream.  Offset will be rounded
-      # up when writing bitfields.
-      def offset
-        @write_count + (@wnbits > 0 ? 1 : 0)
+      # Seek +n+ bytes from the current position in the io stream.
+      def seekbytes(n)
+        flushbits
+        seek(n)
       end
 
       # Writes the given string of bytes to the io stream.
       def writebytes(str)
         flushbits
-        write_raw(str)
+        write(str)
       end
 
       # Writes +nbits+ bits from +val+ to the stream. +endian+ specifies whether
@@ -349,6 +356,12 @@ module BinData
       #---------------
       private
 
+      def seekable?
+        @raw_io.pos
+      rescue NoMethodError, Errno::ESPIPE, Errno::EPIPE
+        nil
+      end
+
       def write_big_endian_bits(val, nbits)
         while nbits > 0
           bits_req = 8 - @wnbits
@@ -358,7 +371,7 @@ module BinData
             val &= mask(nbits)
 
             @wval   = (@wval << bits_req) | msb_bits
-            write_raw(@wval.chr)
+            write(@wval.chr)
 
             @wval   = 0
             @wnbits = 0
@@ -379,7 +392,7 @@ module BinData
             val >>= bits_req
 
             @wval   = @wval | (lsb_bits << @wnbits)
-            write_raw(@wval.chr)
+            write(@wval.chr)
 
             @wval   = 0
             @wnbits = 0
@@ -391,20 +404,86 @@ module BinData
         end
       end
 
-      def write_raw(data)
-        if @bytes_remaining
-          if data.size > @bytes_remaining
-            data = data[0, @bytes_remaining]
+      def seek(n)
+        seek_raw(buffer_limited_n(n))
+      end
+
+      def write(data)
+        if @buffer_end_pos
+          remaining = @buffer_end_pos[1] - offset
+          if data.size > remaining
+            data = data[0, remaining]
           end
-          @bytes_remaining -= data.size
         end
 
-        @write_count += data.size
-        @raw_io.write(data)
+        write_raw(data)
+      end
+
+      def buffer_limited_n(n)
+        if @buffer_end_pos
+          if n.nil? or n > 0
+            max = @buffer_end_pos[1] - offset
+            n = max if n.nil? or n > max
+          else
+            min = @buffer_end_pos[0] - offset
+            n = min if n < min
+          end
+        end
+
+        n
       end
 
       def mask(nbits)
         (1 << nbits) - 1
+      end
+
+      # Use #seek and #pos on seekable streams
+      module SeekableStream
+        # Returns the current offset of the io stream.  Offset will be rounded
+        # up when reading bitfields.
+        def offset
+          (@raw_io.pos - @initial_pos) + (@wnbits > 0 ? 1 : 0)
+        end
+
+        #-----------
+        private
+
+        def stream_init
+          @initial_pos = @raw_io.pos
+        end
+
+        def write_raw(data)
+          @raw_io.write(data)
+        end
+
+        def seek_raw(n)
+          @raw_io.seek(n, ::IO::SEEK_CUR)
+        end
+      end
+
+      # Manually keep track of offset for unseekable streams.
+      module UnSeekableStream
+        # Returns the current offset of the io stream.  Offset will be rounded
+        # up when writing bitfields.
+        def offset
+          @offset + (@wnbits > 0 ? 1 : 0)
+        end
+
+        #-----------
+        private
+
+        def stream_init
+          @offset = 0
+        end
+
+        def write_raw(n)
+          @offset += data.size
+          @raw_io.write(data)
+        end
+
+        def seek_raw(n)
+          raise IOError, "stream is unseekable"
+        end
       end
     end
   end

@@ -134,6 +134,14 @@ describe BinData::IO::Read, "#with_buffer" do
     end
     io.offset.must_equal(10)
   end
+
+  it "restricts large -ve seeks" do
+    io.readbytes(2)
+    io.with_buffer(10) do
+      io.seekbytes(-1)
+      io.offset.must_equal(2)
+    end
+  end
 end
 
 describe BinData::IO::Write, "when writing" do
@@ -204,6 +212,21 @@ describe BinData::IO::Write, "#with_buffer" do
     end
 
     stream.value.must_equal "abc\0\0de\0\0\0"
+  end
+
+  it "restricts large seeks" do
+    io.with_buffer(10) do
+      io.seekbytes(15)
+    end
+    io.offset.must_equal(10)
+  end
+
+  it "restricts large -ve seeks" do
+    io.writebytes("12")
+    io.with_buffer(10) do
+      io.seekbytes(-1)
+      io.offset.must_equal(2)
+    end
   end
 end
 
