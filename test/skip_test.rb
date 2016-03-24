@@ -47,7 +47,7 @@ describe BinData::Skip, "with :to_abs_offset" do
     io.pos.must_equal 5
   end
 
-  it "does not read skipping backwards by default" do
+  it "does not read skipping backwards" do
     fields = [ [:string, :a, { :read_length => 10 }], skip_obj ]
     obj = BinData::Struct.new(:fields => fields)
 
