@@ -337,13 +337,8 @@ module BinData
           RegisteredClasses.lookup(class_name, hints)
         end
 
-        def obj_attribute(obj, attr, default = nil)
-          parser = obj.respond_to?(:dsl_parser) ? obj.dsl_parser : nil
-          if parser and parser.respond_to?(attr)
-            parser.send(attr)
-          else
-            default
-          end
+        def obj_attribute(obj, attr)
+          obj.dsl_parser.send(attr)
         end
       end
     end
