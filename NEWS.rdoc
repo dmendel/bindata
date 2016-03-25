@@ -1,3 +1,17 @@
+= 2.3.0
+
+This release adds I/O features.
+
+Seeking forward to an arbitrary offset is achieved with Skip's :to_abs_offset
+parameter.
+
+Multi pass I/O has been added.  BinData performs I/O in a single pass.  See
+DelayedIO to perform multi pass (backwards seeking) I/O.
+
+The experimental :adjust_offset feature has been removed.  If you have existing
+code that uses this feature, you need to explicitly require 'bindata/offset' to
+retain this functionality.
+
 = 2.1.0
 
 Several new features in this release.

@@ -1,5 +1,12 @@
 = BinData Changelog
 
+== Version 2.3.0 (2016-xx-xx)
+
+* Add :to_abs_offset to Skip.
+* Added backwards seeking via multi pass I/O.  See DelayedIO.
+* Removed #offset, which was deprecated in 2.1.0.
+* Removed :adjust_offset.  See NEWS.rdoc for details.
+
 == Version 2.2.0 (2016-01-30)
 
 * Warn if String has :value but no :read_length.  Requested by Michael
