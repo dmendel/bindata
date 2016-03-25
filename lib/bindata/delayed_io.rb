@@ -61,7 +61,10 @@ module BinData
     mandatory_parameters :read_abs_offset, :type
 
     def initialize_instance
-      @type = get_parameter(:type).instantiate(nil, self)
+      @type       = get_parameter(:type).instantiate(nil, self)
+      @abs_offset = nil
+      @read_io    = nil
+      @write_io   = nil
     end
 
     def clear?
