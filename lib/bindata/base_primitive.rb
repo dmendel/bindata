@@ -176,9 +176,7 @@ module BinData
         current_value = snapshot
         expected = eval_parameter(:assert, :value => current_value)
 
-        msg = if not expected and current_value.nil?
-          "assertion failed"
-        elsif not expected
+        msg = if not expected
           "value '#{current_value}' not as expected"
         elsif expected != true and current_value != expected
           "value is '#{current_value}' but expected '#{expected}'"
@@ -212,10 +210,7 @@ module BinData
 
       def assert_value(current_value)
         expected = eval_parameter(:asserted_value, :value => current_value)
-        if not expected
-          raise ValidityError,
-                "value '#{current_value}' not as expected for #{debug_name}"
-        elsif current_value != expected and expected != true
+        if current_value != expected
           raise ValidityError,
                 "value is '#{current_value}' but " +
                 "expected '#{expected}' for #{debug_name}"
