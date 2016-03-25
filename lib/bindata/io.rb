@@ -8,6 +8,10 @@ module BinData
     # Common operations for both Read and Write.
     module Common
       def initialize(io)
+        if self.class === io
+          raise ArgumentError, "io must not be a #{self.class}"
+        end
+
         # wrap strings in a StringIO
         if io.respond_to?(:to_str)
           io = BinData::IO.create_string_io(io.to_str)
@@ -167,8 +171,6 @@ module BinData
       include Common
 
       def initialize(io)
-        raise ArgumentError, "io must not be a BinData::IO::Read" if BinData::IO::Read === io
-
         super(io)
 
         # bits when reading
@@ -305,10 +307,6 @@ module BinData
     class Write
       include Common
       def initialize(io)
-        if BinData::IO::Write === io
-          raise ArgumentError, "io must not be a BinData::IO::Write"
-        end
-
         super(io)
 
         @wnbits  = 0
