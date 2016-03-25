@@ -54,6 +54,7 @@ describe BinData::Buffer, "subclassed with a single type" do
 
   it "has total num_bytes" do
     obj = IntBuffer.new
+    assert obj.clear?
     obj.num_bytes.must_equal 5
   end
 end
