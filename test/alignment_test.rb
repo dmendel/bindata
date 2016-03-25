@@ -50,6 +50,10 @@ describe BinData::BitAligned do
     obj.num_bytes.must_equal 3
   end
 
+  it "has expected abs_offset" do
+    obj.str.abs_offset.must_equal 0
+  end
+
   it "reads as expected" do
     obj.read("\x56\x36\x42")
     obj.snapshot.must_equal({:preamble => 5, :str => "cd", :afterward => 2})

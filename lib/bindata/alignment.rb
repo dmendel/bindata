@@ -50,9 +50,6 @@ module BinData
           bytes << @io.readbits(8, :big).chr
         end
       end
-      def method_missing(sym, *args, &block)
-        @io.send(sym, *args, &block)
-      end
     end
 
     def bit_aligned?
