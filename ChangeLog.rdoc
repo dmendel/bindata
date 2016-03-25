@@ -1,6 +1,6 @@
 = BinData Changelog
 
-== Version 2.3.0 (2016-xx-xx)
+== Version 2.3.0 (2016-03-25)
 
 * Add :to_abs_offset to Skip.
 * Added backwards seeking via multi pass I/O.  See DelayedIO.
