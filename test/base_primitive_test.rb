@@ -194,6 +194,12 @@ describe BinData::BasePrimitive, "asserting value" do
   let(:io) { ExampleSingle.io_with_value(12) }
 
   describe ":assert is non boolean" do
+    it "asserts sensible value" do
+      data = ExampleSingle.new(:assert => 0)
+      data.assert!
+      data.value.must_equal 0
+    end
+
     it "succeeds when assert is correct" do
       data = ExampleSingle.new(:assert => 12)
       data.read(io)

@@ -162,7 +162,7 @@ describe BinData::Struct, "with multiple fields" do
 
   it "returns a snapshot" do
     snap = obj.snapshot
-    snap.respond_to?(:a).must_equal true
+    assert snap.respond_to?(:a)
     snap.a.must_equal 1
     snap.b.must_equal 2
     snap.must_equal({ :a => 1, :b => 2 })
