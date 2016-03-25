@@ -121,7 +121,7 @@ module BinData
           data
         end
 
-        def write_raw(n)
+        def write_raw(data)
           @offset += data.size
           @raw_io.write(data)
         end
