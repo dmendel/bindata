@@ -144,6 +144,47 @@ describe BinData::IO::Read, "#with_buffer" do
   end
 end
 
+describe BinData::IO::Write, "writing to non seekable stream" do
+  before do
+    @rd, @wr = IO::pipe
+    @io = BinData::IO::Write.new(@wr)
+  end
+
+  after do
+    @rd.close
+    @wr.close
+  end
+
+  it "writes data" do
+    @io.writebytes("1234567890")
+    @rd.read(10).must_equal "1234567890"
+  end
+
+  it "has correct offset" do
+    @io.writebytes("1234567890")
+    @io.offset.must_equal 10
+  end
+
+  it "does not seek backwards" do
+    @io.writebytes("1234567890")
+    lambda {
+      @io.seekbytes(-5)
+    }.must_raise IOError
+  end
+
+  it "does not seek forwards" do
+    lambda {
+      @io.seekbytes(5)
+    }.must_raise IOError
+  end
+
+  it "#num_bytes_remaining raises IOError" do
+    lambda {
+      @io.num_bytes_remaining
+    }.must_raise IOError
+  end
+end
+
 describe BinData::IO::Write, "when writing" do
   let(:stream) { StringIO.new }
   let(:io) { BinData::IO::Write.new(stream) }

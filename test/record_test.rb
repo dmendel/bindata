@@ -91,6 +91,24 @@ describe BinData::Record, "when defining with errors" do
       end
     }.must_raise_on_line ArgumentError, 2, "unknown value for endian 'a bad value' in BadEndianRecord"
   end
+
+  it "fails when endian is after a field" do
+    lambda {
+      class BadEndianPosRecord < BinData::Record
+        string :a
+        endian :little
+      end
+    }.must_raise_on_line SyntaxError, 3, "endian must be called before defining fields in BadEndianPosRecord"
+  end
+
+  it "fails when search_prefix is after a field" do
+    lambda {
+      class BadSearchPrefixPosRecord < BinData::Record
+        string :a
+        search_prefix :pre
+      end
+    }.must_raise_on_line SyntaxError, 3, "search_prefix must be called before defining fields in BadSearchPrefixPosRecord"
+  end
 end
 
 describe BinData::Record, "with anonymous fields" do

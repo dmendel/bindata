@@ -44,7 +44,7 @@ describe BinData::DelayedIO, "subclassed with a single type" do
 
   it "does not read" do
     obj = IntDelayedIO.read "\001\002\003\004\005\006\007"
-    obj.must_equal 0
+    obj.clear?.must_equal true
   end
 
   it "does not do_num_bytes" do
