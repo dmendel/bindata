@@ -47,4 +47,15 @@ module Kernel
 
     (err_line - ref_line).must_equal line
   end
+
+  def must_warn(msg, &block)
+    result = ""
+    callable = proc { |str|
+      result = str
+    }
+    self.stub(:warn, callable) do
+      block.call
+    end
+    result.must_equal msg
+  end
 end

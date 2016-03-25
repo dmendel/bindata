@@ -17,9 +17,28 @@ describe BinData::Array, "when instantiating" do
     end
   end
 
+  it "warns about :length" do
+    Kernel.must_warn ":length is not used with BinData::Array.  You probably want to change this to :initial_length" do
+    obj = BinData::Array.new(:type => :uint8, :length => 3)
+      obj.read "123"
+    end
+  end
+
+  it "warns about :read_length" do
+    Kernel.must_warn ":read_length is not used with BinData::Array.  You probably want to change this to :initial_length" do
+    obj = BinData::Array.new(:type => :uint8, :read_length => 3)
+      obj.read "123"
+    end
+  end
+
   it "fails if a given type is unknown" do
     args = {:type => :does_not_exist, :initial_length => 3}
     lambda { BinData::Array.new(args) }.must_raise BinData::UnRegisteredTypeError
+  end
+
+  it "fails if :initial_length is not an integer" do
+    args = {:type => :uint8, :initial_length => "3"}
+    lambda { BinData::Array.new(args) }.must_raise ArgumentError
   end
 
   it "does not allow both :initial_length and :read_until" do

@@ -295,19 +295,6 @@ describe BinData::String, "with Ruby 1.9 encodings" do
   end
 end
 
-class Object
-  def must_warn(msg, &block)
-    result = ""
-    callable = proc { |str|
-      result = str
-    }
-    self.stub(:warn, callable) do
-      block.call
-    end
-    result.must_equal msg
-  end
-end
-
 describe BinData::String, "warnings" do
   it "warns if has :asserted_value but no :length" do
     obj = BinData::String.new(:asserted_value => "ABC")

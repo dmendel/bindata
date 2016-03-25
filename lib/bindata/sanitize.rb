@@ -217,19 +217,19 @@ module BinData
 
     def warn_replacement_parameter(bad_key, suggested_key)
       if has_parameter?(bad_key)
-        warn ":#{bad_key} is not used with #{@the_class}.  " +
+        Kernel.warn ":#{bad_key} is not used with #{@the_class}.  " +
         "You probably want to change this to :#{suggested_key}"
       end
     end
 
-    def warn_renamed_parameter(old_key, new_key)
-      val = delete(old_key)
-      if val
-        self[new_key] = val
-        warn ":#{old_key} has been renamed to :#{new_key} in #{@the_class}.  " +
-        "Using :#{old_key} is now deprecated and will be removed in the future"
-      end
-    end
+#    def warn_renamed_parameter(old_key, new_key)
+#      val = delete(old_key)
+#      if val
+#        self[new_key] = val
+#        Kernel.warn ":#{old_key} has been renamed to :#{new_key} in #{@the_class}.  " +
+#        "Using :#{old_key} is now deprecated and will be removed in the future"
+#      end
+#    end
 
     def must_be_integer(*keys)
       keys.each do |key|
