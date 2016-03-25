@@ -200,7 +200,7 @@ module BinData
         self[:endian] ||= hints[:endian]
       end
 
-      if hints[:search_prefix]
+      if hints[:search_prefix] and not hints[:search_prefix].empty?
         self[:search_prefix] = Array(self[:search_prefix]).concat(Array(hints[:search_prefix]))
       end
 

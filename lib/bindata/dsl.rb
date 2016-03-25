@@ -154,9 +154,7 @@ module BinData
       end
 
       def hints
-        hs = { :endian => endian }
-        hs[:search_prefix] = search_prefix unless search_prefix.empty?
-        hs
+        { :endian => endian, :search_prefix => search_prefix }
       end
 
       def set_endian(endian)
