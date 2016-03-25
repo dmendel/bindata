@@ -237,7 +237,7 @@ module BinData
     # A version of +respond_to?+ used by the lazy evaluator.  It doesn't
     # reinvoke the evaluator so as to avoid infinite evaluation loops.
     def safe_respond_to?(symbol, include_private = false) #:nodoc:
-      respond_to?(symbol, include_private)
+      base_respond_to?(symbol, include_private)
     end
     alias_method :base_respond_to?, :respond_to? #:nodoc:
 

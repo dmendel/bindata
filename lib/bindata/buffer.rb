@@ -78,10 +78,6 @@ module BinData
       @type.respond_to?(symbol, include_private) || super
     end
 
-    def safe_respond_to?(symbol, include_private = false) #:nodoc:
-      base_respond_to?(symbol, include_private)
-    end
-
     def method_missing(symbol, *args, &block) #:nodoc:
       @type.__send__(symbol, *args, &block)
     end

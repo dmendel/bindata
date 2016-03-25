@@ -85,10 +85,6 @@ module BinData
       selection
     end
 
-    def safe_respond_to?(symbol, include_private = false) #:nodoc:
-      base_respond_to?(symbol, include_private)
-    end
-
     def respond_to?(symbol, include_private = false) #:nodoc:
       current_choice.respond_to?(symbol, include_private) || super
     end
