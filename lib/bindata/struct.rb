@@ -68,7 +68,11 @@ module BinData
                      end ensure false for if in module next nil not or redo
                      rescue retry return self super then true undef unless until
                      when while yield} +
-                  %w{array element index value} ).collect { |name| name.to_sym }.
+                  %w{array element index value} +
+                  %w{type initial_length read_until} +
+                  %w{fields endian search_prefix hide only_if byte_align} +
+                  %w{choices selection copy_on_change} +
+                  %w{read_abs_offset struct_params}).collect { |name| name.to_sym }.
                   uniq.collect { |key| [key, true] }.flatten
                ]
 
