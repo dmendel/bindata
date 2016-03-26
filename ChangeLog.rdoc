@@ -1,5 +1,9 @@
 = BinData Changelog
 
+== Version 2.3.1 (2016-xx-xx)
+
+* Improve list of reserved words.  Thanks to Claudius Coenen.
+
 == Version 2.3.0 (2016-03-25)
 
 * Add :to_abs_offset to Skip.
