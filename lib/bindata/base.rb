@@ -265,8 +265,9 @@ module BinData
     end
 
     def top_level_get(sym)
-      top_level.instance_variable_defined?("@tl_#{sym}") and
-        top_level.instance_variable_get("@tl_#{sym}")
+      tl = top_level
+      tl.instance_variable_defined?("@tl_#{sym}") and
+        tl.instance_variable_get("@tl_#{sym}")
     end
 
     def top_level
