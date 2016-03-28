@@ -246,10 +246,7 @@ module BinData
     end
 
     def hints
-      {
-        :endian => self[:endian],
-        :search_prefix => self[:search_prefix],
-      }
+      { :endian => self[:endian], :search_prefix => self[:search_prefix] }
     end
 
     def create_sanitized_endian(endian)
