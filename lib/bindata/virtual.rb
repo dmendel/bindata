@@ -30,12 +30,14 @@ module BinData
   #
   class Virtual < BinData::BasePrimitive
 
-    def value_to_binary_string(val)
-      ""
+    def do_read(io)
     end
 
-    def read_and_return_value(io)
-      nil
+    def do_write(io)
+    end
+
+    def do_num_bytes
+      0.0
     end
 
     def sensible_default
