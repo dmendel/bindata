@@ -69,10 +69,18 @@ module BinData
       module SeekableStream
         # The number of bytes remaining in the input stream.
         def num_bytes_remaining
-          mark = @raw_io.pos
+          start_mark = @raw_io.pos
           @raw_io.seek(0, ::IO::SEEK_END)
-          bytes_remaining = @raw_io.pos - mark
-          @raw_io.seek(mark, ::IO::SEEK_SET)
+          end_mark = @raw_io.pos
+
+          if @buffer_end_points
+            if @buffer_end_points[1] < end_mark
+              end_mark = @buffer_end_points[1]
+            end
+          end
+
+          bytes_remaining = end_mark - start_mark
+          @raw_io.seek(start_mark, ::IO::SEEK_SET)
 
           bytes_remaining
         end

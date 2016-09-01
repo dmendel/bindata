@@ -142,6 +142,27 @@ describe BinData::IO::Read, "#with_buffer" do
       io.offset.must_equal(2)
     end
   end
+
+  it "greater than stream size consumes all bytes" do
+    io.with_buffer(30) do
+      io.readbytes(4).must_equal "abcd"
+    end
+    io.offset.must_equal(20)
+  end
+
+  it "restricts #num_bytes_remaining" do
+    io.with_buffer(10) do
+      io.readbytes(2)
+      io.num_bytes_remaining.must_equal 8
+    end
+  end
+
+  it "greater than stream size doesn't restrict #num_bytes_remaining" do
+    io.with_buffer(30) do
+      io.readbytes(2)
+      io.num_bytes_remaining.must_equal 18
+    end
+  end
 end
 
 describe BinData::IO::Write, "writing to non seekable stream" do

@@ -1,5 +1,9 @@
 = BinData Changelog
 
+== Version 2.3.x (2016-xx-xx)
+
+* IO#num_bytes_remaining now works inside Buffers.
+
 == Version 2.3.1 (2016-06-17)
 
 * Improve list of reserved words.  Thanks to Claudius Coenen.
