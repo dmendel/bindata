@@ -18,7 +18,7 @@ module BinData
         end
 
         @raw_io = io
-        @buffer_end_pos = nil
+        @buffer_end_points = nil
 
         extend seekable? ? SeekableStream : UnSeekableStream
         stream_init
@@ -38,12 +38,12 @@ module BinData
       end
 
       def buffer_limited_n(n)
-        if @buffer_end_pos
+        if @buffer_end_points
           if n.nil? or n > 0
-            max = @buffer_end_pos[1] - offset
+            max = @buffer_end_points[1] - offset
             n = max if n.nil? or n > max
           else
-            min = @buffer_end_pos[0] - offset
+            min = @buffer_end_points[0] - offset
             n = min if n < min
           end
         end
@@ -52,16 +52,16 @@ module BinData
       end
 
       def with_buffer_common(n, &block)
-        prev = @buffer_end_pos
+        prev = @buffer_end_points
         if prev
           avail = prev[1] - offset
           n = avail if n > avail
         end
-        @buffer_end_pos = [offset, offset + n]
+        @buffer_end_points = [offset, offset + n]
         begin
-          block.call(*@buffer_end_pos)
+          block.call(*@buffer_end_points)
         ensure
-          @buffer_end_pos = prev
+          @buffer_end_points = prev
         end
       end
 
