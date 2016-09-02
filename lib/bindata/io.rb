@@ -85,6 +85,17 @@ module BinData
           bytes_remaining
         end
 
+        # All io calls in +block+ are rolled back after this
+        # method completes.
+        def with_readahead(&block)
+          mark = @raw_io.pos
+          begin
+            block.call
+          ensure
+            @raw_io.seek(mark, ::IO::SEEK_SET)
+          end
+        end
+
         #-----------
         private
 
@@ -120,6 +131,26 @@ module BinData
           raise IOError, "stream is unseekable"
         end
 
+        # All io calls in +block+ are rolled back after this
+        # method completes.
+        def with_readahead(&block)
+          mark = @offset
+          @read_data = ""
+          @in_readahead = true
+
+          class << self
+            alias_method :read_raw_without_readahead, :read_raw
+            alias_method :read_raw, :read_raw_with_readahead
+          end
+
+          begin
+            block.call
+          ensure
+            @offset = mark
+            @in_readahead = false
+          end
+        end
+
         #-----------
         private
 
@@ -130,6 +161,33 @@ module BinData
         def read_raw(n)
           data = @raw_io.read(n)
           @offset += data.size if data
+          data
+        end
+
+        def read_raw_with_readahead(n)
+          data = ""
+
+          if @read_data.length > 0 and not @in_readahead
+            bytes_to_consume = [n, @read_data.length].min
+            data << @read_data.slice!(0, bytes_to_consume)
+            n -= bytes_to_consume
+
+            if @read_data.length == 0
+              class << self
+                alias_method :read_raw, :read_raw_without_readahead
+              end
+            end
+          end
+
+          raw_data = @raw_io.read(n)
+          data << raw_data if raw_data
+
+          if @in_readahead
+            @read_data << data
+          end
+
+          @offset += data.size
+
           data
         end
 

@@ -16,6 +16,16 @@ module BinData
   #   obj = A.read("abcdefghij")
   #   obj.a #=> "fghij"
   #
+  #
+  #   class B < BinData::Record
+  #     skip :until_valid => [:string, {:read_length => 2, :assert => "ef"} ]
+  #     string :b, :read_length => 5
+  #   end
+  #
+  #   obj = B.read("abcdefghij")
+  #   obj.b #=> "efghi"
+  #
+  #
   # == Parameters
   #
   # Skip objects accept all the params that BinData::BasePrimitive
@@ -23,17 +33,25 @@ module BinData
   #
   # <tt>:length</tt>::        The number of bytes to skip.
   # <tt>:to_abs_offset</tt>:: Skips to the given absolute offset.
+  # <tt>:until_valid</tt>::   Skips untils a given byte pattern is matched.
+  #                           This parameter contains a type that will raise
+  #                           a BinData::ValidityError unless an acceptable byte
+  #                           sequence is found.  The type is represented by a
+  #                           Symbol, or if the type is to have params #
+  #                           passed to it, then it should be provided as #
+  #                           <tt>[type_symbol, hash_params]</tt>.
   #
   class Skip < BinData::BasePrimitive
 
     arg_processor :skip
 
-    optional_parameters :length, :to_abs_offset
-    mutually_exclusive_parameters :length, :to_abs_offset
+    optional_parameters :length, :to_abs_offset, :until_valid
+    mutually_exclusive_parameters :length, :to_abs_offset, :until_valid
 
     def initialize_shared_instance
       extend SkipLengthPlugin      if has_parameter?(:length)
       extend SkipToAbsOffsetPlugin if has_parameter?(:to_abs_offset)
+      extend SkipUntilValidPlugin if has_parameter?(:until_valid)
       super
     end
 
@@ -66,10 +84,17 @@ module BinData
 
   class SkipArgProcessor < BaseArgProcessor
     def sanitize_parameters!(obj_class, params)
-      unless (params.has_parameter?(:length) or params.has_parameter?(:to_abs_offset))
-        raise ArgumentError, "#{obj_class} requires either :length or :to_abs_offset"
+      unless params.has_parameter?(:length) or
+             params.has_parameter?(:to_abs_offset) or
+             params.has_parameter?(:until_valid)
+        raise ArgumentError, "#{obj_class} requires either :length, :to_abs_offset or :until_valid"
       end
       params.must_be_integer(:to_abs_offset, :length)
+
+      if params.needs_sanitizing?(:until_valid)
+        el_type, el_params = params[:until_valid]
+        params[:until_valid] = params.create_sanitized_object_prototype(el_type, el_params)
+      end
     end
   end
 
@@ -84,6 +109,31 @@ module BinData
   module SkipToAbsOffsetPlugin
     def skip_length
       eval_parameter(:to_abs_offset) - abs_offset
+    end
+  end
+
+  # Logic for the :until_valid parameter
+  module SkipUntilValidPlugin
+    def skip_length
+      # no skipping when writing
+      0
+    end
+
+    def read_and_return_value(io)
+      prototype = get_parameter(:until_valid)
+      validator = prototype.instantiate(nil, self)
+
+      valid = false
+      until valid
+        begin
+          io.with_readahead do
+            validator.read(io)
+            valid = true
+          end
+        rescue ValidityError
+          io.readbytes(1)
+        end
+      end
     end
   end
 end

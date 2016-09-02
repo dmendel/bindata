@@ -85,3 +85,53 @@ describe BinData::Skip, "with :to_abs_offset" do
     }.must_raise BinData::ValidityError
   end
 end
+
+describe BinData::Skip, "with :until_valid" do
+  let(:io) { StringIO.new("abcdefghij") }
+
+  it "skips to valid match" do
+    skip_obj = [:string, { :read_length => 1, :assert => "f" }]
+    fields = [ [:skip, :s, { :until_valid => skip_obj }] ]
+    obj = BinData::Struct.new(:fields => fields)
+    obj.read(io)
+    io.pos.must_equal 5
+  end
+
+  it "doesn't skip when validator doesn't assert" do
+    skip_obj = [:string, { :read_length => 1 }]
+    fields = [ [:skip, :s, { :until_valid => skip_obj }] ]
+    obj = BinData::Struct.new(:fields => fields)
+    obj.read(io)
+    io.pos.must_equal 0
+  end
+
+  it "raises EOFError when no match" do
+    skip_obj = [:string, { :read_length => 1, :assert => "X" }]
+    fields = [ [:skip, :s, { :until_valid => skip_obj }] ]
+    obj = BinData::Struct.new(:fields => fields)
+    lambda {
+      obj.read(io)
+    }.must_raise EOFError
+  end
+
+  it "raises IOError when validator reads beyond stream" do
+    skip_obj = [:string, { :read_length => 30 }]
+    fields = [ [:skip, :s, { :until_valid => skip_obj }] ]
+    obj = BinData::Struct.new(:fields => fields)
+    lambda {
+      obj.read(io)
+    }.must_raise IOError
+  end
+
+  class DSLSkip < BinData::Record
+    skip :s do
+      string :read_length => 1, :assert => "f"
+    end
+    string :a, :read_length => 1
+  end
+
+  it "uses block form" do
+    obj = DSLSkip.read(io)
+    obj.a.must_equal "f"
+  end
+end

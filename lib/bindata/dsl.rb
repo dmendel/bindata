@@ -122,7 +122,8 @@ module BinData
       end
 
       def dsl_params
-        send(parser_abilities[@parser_type].at(0))
+        abilities = parser_abilities[@parser_type]
+        send(abilities.at(0), abilities.at(1))
       end
 
       def method_missing(*args, &block)
@@ -135,17 +136,18 @@ module BinData
 
       def parser_abilities
         @abilities ||= {
-          :struct     => [:to_struct_params, [:multiple_fields, :optional_fieldnames, :hidden_fields]],
-          :array      => [:to_array_params,  [:multiple_fields, :optional_fieldnames]],
-          :buffer     => [:to_array_params,  [:multiple_fields, :optional_fieldnames, :hidden_fields]],
-          :choice     => [:to_choice_params, [:multiple_fields, :all_or_none_fieldnames, :fieldnames_are_values]],
-          :delayed_io => [:to_array_params,  [:multiple_fields, :optional_fieldnames, :hidden_fields]],
-          :primitive  => [:to_struct_params, [:multiple_fields, :optional_fieldnames]]
+          :struct     => [:to_struct_params, :struct,      [:multiple_fields, :optional_fieldnames, :hidden_fields]],
+          :array      => [:to_object_params, :type,        [:multiple_fields, :optional_fieldnames]],
+          :buffer     => [:to_object_params, :type,        [:multiple_fields, :optional_fieldnames, :hidden_fields]],
+          :choice     => [:to_choice_params, :choices,     [:multiple_fields, :all_or_none_fieldnames, :fieldnames_are_values]],
+          :delayed_io => [:to_object_params, :type,        [:multiple_fields, :optional_fieldnames, :hidden_fields]],
+          :primitive  => [:to_struct_params, :struct,      [:multiple_fields, :optional_fieldnames]],
+          :skip       => [:to_object_params, :until_valid, [:multiple_fields, :optional_fieldnames]],
         }
       end
 
       def option?(opt)
-        parser_abilities[@parser_type].at(1).include?(opt)
+        parser_abilities[@parser_type].at(2).include?(opt)
       end
 
       def ensure_hints
@@ -219,30 +221,30 @@ module BinData
         raise exception, message + " in #{@the_class}", backtrace
       end
 
-      def to_array_params
+      def to_object_params(key)
         case fields.length
         when 0
           {}
         when 1
-          {:type => fields[0].prototype}
+          {key => fields[0].prototype}
         else
-          {:type => [:struct, to_struct_params]}
+          {key=> [:struct, to_struct_params]}
         end
       end
 
-      def to_choice_params
+      def to_choice_params(key)
         if fields.length == 0
           {}
         elsif fields.all_field_names_blank?
-          {:choices => fields.collect { |f| f.prototype }}
+          {key => fields.collect { |f| f.prototype }}
         else
           choices = {}
           fields.each { |f| choices[f.name] = f.prototype }
-          {:choices => choices}
+          {key => choices}
         end
       end
 
-      def to_struct_params
+      def to_struct_params(*unused)
         result = {:fields => fields}
         if not endian.nil?
           result[:endian] = endian
@@ -386,7 +388,8 @@ module BinData
           :buffer     => BinData::Buffer,
           :choice     => BinData::Choice,
           :delayed_io => BinData::DelayedIO,
-          :struct     => BinData::Struct
+          :skip       => BinData::Skip,
+          :struct     => BinData::Struct,
         }
 
         if bindata_classes.include?(@type)

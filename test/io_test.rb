@@ -165,6 +165,64 @@ describe BinData::IO::Read, "#with_buffer" do
   end
 end
 
+module IOReadWithReadahead
+  def test_rolls_back_short_reads
+    io.readbytes(2).must_equal "ab"
+    io.with_readahead do
+      io.readbytes(4).must_equal "cdef"
+    end
+    io.offset.must_equal 2
+  end
+
+  def test_rolls_back_read_all_bytes
+    io.readbytes(3).must_equal "abc"
+    io.with_readahead do
+      io.read_all_bytes.must_equal "defghijklmnopqrst"
+    end
+    io.offset.must_equal 3
+  end
+
+  def test_inside_buffer_rolls_back_reads
+    io.with_buffer(10) do
+      io.with_readahead do
+        io.readbytes(4).must_equal "abcd"
+      end
+      io.offset.must_equal 0
+    end
+    io.offset.must_equal 10
+  end
+
+  def test_outside_buffer_rolls_back_reads
+    io.with_readahead do
+      io.with_buffer(10) do
+        io.readbytes(4).must_equal "abcd"
+      end
+      io.offset.must_equal 10
+    end
+    io.offset.must_equal 0
+  end
+end
+
+describe BinData::IO::Read, "#with_readahead" do
+  let(:stream) { StringIO.new "abcdefghijklmnopqrst" }
+  let(:io) { BinData::IO::Read.new(stream) }
+
+  include IOReadWithReadahead
+end
+
+describe BinData::IO::Read, "unseekable stream #with_readahead" do
+  let(:stream) {
+    io = StringIO.new "abcdefghijklmnopqrst"
+    def io.pos
+      raise Errno::EPIPE
+    end
+    io
+  }
+  let(:io) { BinData::IO::Read.new(stream) }
+
+  include IOReadWithReadahead
+end
+
 describe BinData::IO::Write, "writing to non seekable stream" do
   before do
     @rd, @wr = IO::pipe
