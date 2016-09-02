@@ -1,6 +1,6 @@
 = BinData Changelog
 
-== Version 2.3.x (2016-xx-xx)
+== Version 2.3.2 (2016-09-02)
 
 * IO#num_bytes_remaining now works inside Buffers.
 * Added ability to skip to arbitrary byte patterns.  Requested by Stefan Kolb.
