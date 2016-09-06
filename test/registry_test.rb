@@ -132,6 +132,13 @@ describe BinData::Registry, "with endian specific types" do
       r.lookup('a', {:endian => :big})
     }.must_raise BinData::UnRegisteredTypeError
   end
+
+  it "lookup prefers exact type" do
+    r.register('c', C)
+    r.register('c_le', D)
+
+    r.lookup('c', {:endian => :little}).must_equal C
+  end
 end
 
 describe BinData::Registry, "with search_prefix" do
@@ -144,6 +151,10 @@ describe BinData::Registry, "with search_prefix" do
 
   it "lookup single search_prefix" do
     r.lookup('f', {:search_prefix => :a}).must_equal A
+  end
+
+  it "lookup single search_prefix with endian" do
+    r.lookup('f', {:search_prefix => :a, :endian => :little}).must_equal A
   end
 
   it "lookup multiple search_prefix" do

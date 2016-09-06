@@ -59,9 +59,15 @@ module BinData
       if not is_registered?(name)
         search_prefix = [""].concat(Array(hints[:search_prefix]))
         search_prefix.each do |prefix|
-          n = name_with_endian(name_with_prefix(name, prefix), hints[:endian])
-          if is_registered?(n)
-            name = n
+          nwp = name_with_prefix(name, prefix)
+          if is_registered?(nwp)
+            name = nwp
+            break
+          end
+
+          nwe = name_with_endian(nwp, hints[:endian])
+          if is_registered?(nwe)
+            name = nwe
             break
           end
         end

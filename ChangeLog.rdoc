@@ -1,5 +1,9 @@
 = BinData Changelog
 
+== Version 2.3.3 (2016-09-06)
+
+* Fix bug #80.  Thanks to Michael Petter.
+
 == Version 2.3.2 (2016-09-02)
 
 * IO#num_bytes_remaining now works inside Buffers.
