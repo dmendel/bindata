@@ -26,6 +26,7 @@ module BinData
   #   obj = MyBuffer.read("\001\000\002\000\000\000\000\000")
   #   obj.num1 #=> 1
   #   obj.num1 #=> 2
+  #   obj.raw_num_bytes #=> 4
   #   obj.num_bytes #=> 8
   #
   #
@@ -60,6 +61,11 @@ module BinData
 
     def initialize_instance
       @type = get_parameter(:type).instantiate(nil, self)
+    end
+
+    # The number of bytes used, ignoring the padding imposed by the buffer.
+    def raw_num_bytes
+      @type.num_bytes
     end
 
     def clear?

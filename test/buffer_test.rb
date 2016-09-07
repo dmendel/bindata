@@ -57,6 +57,12 @@ describe BinData::Buffer, "subclassed with a single type" do
     assert obj.clear?
     obj.num_bytes.must_equal 5
   end
+
+  it "has raw_num_bytes" do
+    obj = IntBuffer.new
+    assert obj.clear?
+    obj.raw_num_bytes.must_equal 2
+  end
 end
 
 describe BinData::Buffer, "subclassed with multiple types" do
@@ -77,6 +83,11 @@ describe BinData::Buffer, "subclassed with multiple types" do
   it "has total num_bytes" do
     obj = TupleBuffer.new
     obj.num_bytes.must_equal 5
+  end
+
+  it "has raw_num_bytes" do
+    obj = TupleBuffer.new
+    obj.raw_num_bytes.must_equal 4
   end
 
   it "reads data" do
