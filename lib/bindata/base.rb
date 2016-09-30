@@ -29,7 +29,7 @@ module BinData
         if name
           @arg_processor = "#{name}_arg_processor".gsub(/(?:^|_)(.)/) { $1.upcase }.to_sym
         elsif @arg_processor.is_a? Symbol
-          @arg_processor = BinData::const_get(@arg_processor).new
+          @arg_processor = BinData.const_get(@arg_processor).new
         elsif @arg_processor.nil?
           @arg_processor = superclass.arg_processor
         else
@@ -39,7 +39,7 @@ module BinData
 
       # The name of this class as used by Records, Arrays etc.
       def bindata_name
-        RegisteredClasses.underscore_name(self.name)
+        RegisteredClasses.underscore_name(name)
       end
 
       # Call this method if this class is abstract and not to be used.
@@ -109,7 +109,7 @@ module BinData
     # Returns nil if +key+ does not refer to any parameter.
     def eval_parameter(key, overrides = nil)
       value = get_parameter(key)
-      if value.is_a?(Symbol) or value.respond_to?(:arity)
+      if value.is_a?(Symbol) || value.respond_to?(:arity)
         lazy_evaluator.lazy_eval(value, overrides)
       else
         value
@@ -239,7 +239,8 @@ module BinData
     def safe_respond_to?(symbol, include_private = false) #:nodoc:
       base_respond_to?(symbol, include_private)
     end
-    alias_method :base_respond_to?, :respond_to? #:nodoc:
+
+    alias base_respond_to? respond_to?
 
     #---------------
     private
@@ -248,9 +249,9 @@ module BinData
       self.class.arg_processor.extract_args(self.class, args)
     end
 
-    def start_read(&block)
+    def start_read
       top_level_set(:in_read, true)
-      block.call
+      yield
     ensure
       top_level_set(:in_read, false)
     end
@@ -266,7 +267,7 @@ module BinData
 
     def top_level_get(sym)
       tl = top_level
-      tl.instance_variable_defined?("@tl_#{sym}") and
+      tl.instance_variable_defined?("@tl_#{sym}") &&
         tl.instance_variable_get("@tl_#{sym}")
     end
 
@@ -305,15 +306,15 @@ module BinData
 
     # Separates the arguments passed to BinData::Base.new into
     # [value, parameters, parent].  Called by #extract_args.
-    def separate_args(obj_class, obj_args)
+    def separate_args(_obj_class, obj_args)
       args = obj_args.dup
       value = parameters = parent = nil
 
-      if args.length > 1 and args.last.is_a? BinData::Base
+      if args.length > 1 && args.last.is_a?(BinData::Base)
         parent = args.pop
       end
 
-      if args.length > 0 and args.last.is_a? Hash
+      if args.length > 0 && args.last.is_a?(Hash)
         parameters = args.pop
       end
 
@@ -323,13 +324,13 @@ module BinData
 
       parameters ||= @@empty_hash
 
-      return [value, parameters, parent]
+      [value, parameters, parent]
     end
 
     # Performs sanity checks on the given parameters.
     # This method converts the parameters to the form expected
     # by the data object.
-    def sanitize_parameters!(obj_class, obj_params) 
+    def sanitize_parameters!(obj_class, obj_params)
     end
   end
 end

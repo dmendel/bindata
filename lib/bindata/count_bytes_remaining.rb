@@ -16,7 +16,6 @@ module BinData
   #   obj.all_data #=> "abcdefghij"
   #
   class CountBytesRemaining < BinData::BasePrimitive
-
     #---------------
     private
 

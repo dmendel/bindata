@@ -48,7 +48,7 @@ module BinData
     # Returns the index of this data object inside it's nearest container
     # array.
     def index
-      return @overrides[:index] if defined? @overrides and @overrides.has_key?(:index)
+      return @overrides[:index] if defined?(@overrides) && @overrides.key?(:index)
 
       child = @obj
       parent = @obj.parent
@@ -63,7 +63,7 @@ module BinData
     end
 
     def method_missing(symbol, *args)
-      return @overrides[symbol] if defined? @overrides and @overrides.has_key?(symbol)
+      return @overrides[symbol] if defined?(@overrides) && @overrides.key?(symbol)
 
       if @obj.parent
         eval_symbol_in_parent_context(symbol, args)

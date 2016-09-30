@@ -4,15 +4,14 @@ require 'bindata'
 # The underlying binary representation is a sequence of four octets.
 # The human accessible representation is a dotted quad.
 class IPAddr < BinData::Primitive
-  array :octets, :type => :uint8, :initial_length => 4
+  array :octets, type: :uint8, initial_length: 4
 
   def set(val)
-    ints = val.split(/\./).collect { |int| int.to_i }
-    self.octets = ints
+    self.octets = val.split(/\./).map(&:to_i)
   end
 
   def get
-    self.octets.collect { |octet| "%d" % octet }.join(".")
+    self.octets.map(&:to_s).join(".")
   end
 end
 

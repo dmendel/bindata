@@ -23,9 +23,9 @@ module BinData
       accepted_parameters.mutually_exclusive(*args)
     end
 
-    alias_method :mandatory_parameter, :mandatory_parameters
-    alias_method :optional_parameter, :optional_parameters
-    alias_method :default_parameter, :default_parameters
+    alias mandatory_parameter mandatory_parameters
+    alias optional_parameter  optional_parameters
+    alias default_parameter   default_parameters
 
     def accepted_parameters #:nodoc:
       unless defined? @accepted_parameters
@@ -55,7 +55,7 @@ module BinData
       end
 
       def mandatory(*args)
-        if not args.empty?
+        unless args.empty?
           @mandatory.concat(to_syms(args))
           @mandatory.uniq!
         end
@@ -63,7 +63,7 @@ module BinData
       end
 
       def optional(*args)
-        if not args.empty?
+        unless args.empty?
           @optional.concat(to_syms(args))
           @optional.uniq!
         end
@@ -82,7 +82,7 @@ module BinData
 
       def mutually_exclusive(*args)
         arg1 = args.shift
-        while not args.empty?
+        until args.empty?
           args.each do |arg2|
             @mutually_exclusive.push([arg1.to_sym, arg2.to_sym])
             @mutually_exclusive.uniq!
@@ -100,7 +100,7 @@ module BinData
       private
 
       def to_syms(args)
-        syms = args.collect { |el| el.to_sym }
+        syms = args.collect(&:to_sym)
         ensure_valid_names(syms)
         syms
       end
@@ -109,7 +109,7 @@ module BinData
         invalid_names = self.class.invalid_parameter_names
         names.each do |name|
           if invalid_names.include?(name)
-            raise NameError.new("Rename parameter '#{name}' " +
+            raise NameError.new("Rename parameter '#{name}' " \
                                 "as it shadows an existing method.", name)
           end
         end
@@ -127,4 +127,3 @@ module BinData
     end
   end
 end
-

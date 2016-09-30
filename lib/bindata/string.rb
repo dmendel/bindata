@@ -58,7 +58,7 @@ module BinData
 
     def initialize_shared_instance
       if (has_parameter?(:value) || has_parameter?(:asserted_value)) &&
-          ! has_parameter?(:read_length)
+          !has_parameter?(:read_length)
         extend WarnNoReadLengthPlugin
       end
       super

@@ -39,9 +39,9 @@ module BinData
 
       def buffer_limited_n(n)
         if @buffer_end_points
-          if n.nil? or n > 0
+          if n.nil? || n > 0
             max = @buffer_end_points[1] - offset
-            n = max if n.nil? or n > max
+            n = max if n.nil? || n > max
           else
             min = @buffer_end_points[0] - offset
             n = min if n < min
@@ -51,7 +51,7 @@ module BinData
         n
       end
 
-      def with_buffer_common(n, &block)
+      def with_buffer_common(n)
         prev = @buffer_end_points
         if prev
           avail = prev[1] - offset
@@ -59,7 +59,7 @@ module BinData
         end
         @buffer_end_points = [offset, offset + n]
         begin
-          block.call(*@buffer_end_points)
+          yield(*@buffer_end_points)
         ensure
           @buffer_end_points = prev
         end
@@ -87,10 +87,10 @@ module BinData
 
         # All io calls in +block+ are rolled back after this
         # method completes.
-        def with_readahead(&block)
+        def with_readahead
           mark = @raw_io.pos
           begin
-            block.call
+            yield
           ensure
             @raw_io.seek(mark, ::IO::SEEK_SET)
           end
@@ -133,7 +133,7 @@ module BinData
 
         # All io calls in +block+ are rolled back after this
         # method completes.
-        def with_readahead(&block)
+        def with_readahead
           mark = @offset
           @read_data = ""
           @in_readahead = true
@@ -144,7 +144,7 @@ module BinData
           end
 
           begin
-            block.call
+            yield
           ensure
             @offset = mark
             @in_readahead = false
@@ -167,12 +167,12 @@ module BinData
         def read_raw_with_readahead(n)
           data = ""
 
-          if @read_data.length > 0 and not @in_readahead
+          unless @read_data.empty? || @in_readahead
             bytes_to_consume = [n, @read_data.length].min
             data << @read_data.slice!(0, bytes_to_consume)
             n -= bytes_to_consume
 
-            if @read_data.length == 0
+            if @read_data.empty?
               class << self
                 alias_method :read_raw, :read_raw_without_readahead
               end
@@ -247,9 +247,9 @@ module BinData
 
       # Sets a buffer of +n+ bytes on the io stream.  Any reading or seeking
       # calls inside the +block+ will be contained within this buffer.
-      def with_buffer(n, &block)
+      def with_buffer(n)
         with_buffer_common(n) do
-          block.call
+          yield
           read
         end
       end
@@ -384,9 +384,9 @@ module BinData
       # +block+ will be contained within this buffer.  If less than +n+ bytes
       # are written inside the block, the remainder will be padded with '\0'
       # bytes.
-      def with_buffer(n, &block)
-        with_buffer_common(n) do |buf_start, buf_end|
-          block.call
+      def with_buffer(n)
+        with_buffer_common(n) do |_buf_start, buf_end|
+          yield
           write("\0" * (buf_end - offset))
         end
       end
@@ -435,7 +435,7 @@ module BinData
           writebits(0, 8 - @wnbits, @wendian)
         end
       end
-      alias_method :flush, :flushbits
+      alias flush flushbits
 
       #---------------
       private

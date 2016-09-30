@@ -96,10 +96,10 @@ module BinData
       def create_read_assemble_code(nbits, endian, signed)
         nwords = nbits / bits_per_word(nbits)
 
-        idx = (0 ... nwords).to_a
-        idx.reverse! if (endian == :big)
+        idx = (0...nwords).to_a
+        idx.reverse! if endian == :big
 
-        parts = (0 ... nwords).collect do |i|
+        parts = (0...nwords).collect do |i|
                   "(ints.at(#{idx[i]}) << #{bits_per_word(nbits) * i})"
                 end
         parts[0].sub!(/ << 0\b/, "")  # Remove " << 0" for optimisation
@@ -126,7 +126,7 @@ module BinData
         nwords = nbits / bits_per_word(nbits)
         mask   = (1 << bits_per_word(nbits)) - 1
 
-        vals = (0 ... nwords).collect { |i| "val >> #{bits_per_word(nbits) * i}" }
+        vals = (0...nwords).collect { |i| "val >> #{bits_per_word(nbits) * i}" }
         vals[0].sub!(/ >> 0\b/, "")  # Remove " >> 0" for optimisation
         vals.reverse! if (endian == :big)
 
@@ -157,7 +157,7 @@ module BinData
         d = directives[bits_per_word(nbits)]
         d << ((endian == :big) ? ">" : "<") unless d == "C"
 
-        if signed == :signed and directives.has_key?(nbits)
+        if signed == :signed && directives.key?(nbits)
           (d * nwords).downcase
         else
           d * nwords
@@ -165,7 +165,7 @@ module BinData
       end
 
       def need_signed_conversion_code?(nbits, signed)
-        signed == :signed and not [64, 32, 16].include?(nbits)
+        signed == :signed && ![64, 32, 16].include?(nbits)
       end
     end
   end

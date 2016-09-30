@@ -76,7 +76,7 @@ module BinData
     end
 
     def clear?
-      @element_list.nil? or elements.all? { |el| el.clear? }
+      @element_list.nil? || elements.all?(&:clear?)
     end
 
     def assign(array)
@@ -86,13 +86,13 @@ module BinData
     end
 
     def snapshot
-      elements.collect { |el| el.snapshot }
+      elements.collect(&:snapshot)
     end
 
     def find_index(obj)
       elements.index(obj)
     end
-    alias_method :index, :find_index
+    alias index find_index
 
     # Returns the first index of +obj+ in self.
     #
@@ -105,7 +105,7 @@ module BinData
       insert(-1, *args)
       self
     end
-    alias_method :<<, :push
+    alias << push
 
     def unshift(*args)
       insert(0, *args)
@@ -125,18 +125,18 @@ module BinData
 
     # Returns the element at +index+.
     def [](arg1, arg2 = nil)
-      if arg1.respond_to?(:to_int) and arg2.nil?
+      if arg1.respond_to?(:to_int) && arg2.nil?
         slice_index(arg1.to_int)
-      elsif arg1.respond_to?(:to_int) and arg2.respond_to?(:to_int)
+      elsif arg1.respond_to?(:to_int) && arg2.respond_to?(:to_int)
         slice_start_length(arg1.to_int, arg2.to_int)
-      elsif arg1.is_a?(Range) and arg2.nil?
+      elsif arg1.is_a?(Range) && arg2.nil?
         slice_range(arg1)
       else
         raise TypeError, "can't convert #{arg1} into Integer" unless arg1.respond_to?(:to_int)
         raise TypeError, "can't convert #{arg2} into Integer" unless arg2.respond_to?(:to_int)
       end
     end
-    alias_method :slice, :[]
+    alias slice []
 
     def slice_index(index)
       extend_array(index)
@@ -168,7 +168,7 @@ module BinData
     # If the array is empty, the first form returns nil, and the second
     # form returns an empty array.
     def first(n = nil)
-      if n.nil? and empty?
+      if n.nil? && empty?
         # explicitly return nil as arrays grow automatically
         nil
       elsif n.nil?
@@ -193,7 +193,7 @@ module BinData
     def length
       elements.length
     end
-    alias_method :size, :length
+    alias size length
 
     def empty?
       length.zero?
@@ -275,7 +275,7 @@ module BinData
 
   class ArrayArgProcessor < BaseArgProcessor
     def sanitize_parameters!(obj_class, params) #:nodoc:
-      unless params.has_parameter?(:initial_length) or
+      unless params.has_parameter?(:initial_length) ||
                params.has_parameter?(:read_until)
         # ensure one of :initial_length and :read_until exists
         params[:initial_length] = 0
@@ -305,7 +305,6 @@ module BinData
         break if eval_parameter(:read_until, variables)
       end
     end
-
   end
 
   # Logic for the read_until: :eof parameter

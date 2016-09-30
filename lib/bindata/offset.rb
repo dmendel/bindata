@@ -50,9 +50,9 @@ module BinData
         actual_offset = io.offset
         expected = eval_parameter(:check_offset, offset: actual_offset)
 
-        if not expected
+        if !expected
           raise ValidityError, "offset not as expected for #{debug_name}"
-        elsif actual_offset != expected and expected != true
+        elsif actual_offset != expected && expected != true
           raise ValidityError,
                 "offset is '#{actual_offset}' but " +
                 "expected '#{expected}' for #{debug_name}"

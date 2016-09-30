@@ -6,6 +6,18 @@ module BinData
 
   module FloatingPoint #:nodoc: all
     class << self
+      PRECISION = {
+        single: 4,
+        double: 8,
+      }
+
+      PACK_CODE = {
+        [:single, :little] => 'e',
+        [:single, :big]    => 'g',
+        [:double, :little] => 'E',
+        [:double, :big]    => 'G',
+      }
+
       def define_methods(float_class, precision, endian)
         float_class.module_eval <<-END
           def do_num_bytes
@@ -30,27 +42,18 @@ module BinData
       end
 
       def create_num_bytes_code(precision)
-        (precision == :single) ? 4 : 8
+        PRECISION[precision]
       end
 
       def create_read_code(precision, endian)
-        if precision == :single
-          unpack = (endian == :little) ? 'e' : 'g'
-          nbytes = 4
-        else # double_precision
-          unpack = (endian == :little) ? 'E' : 'G'
-          nbytes = 8
-        end
+        nbytes = PRECISION[precision]
+        unpack = PACK_CODE[[precision, endian]]
 
         "io.readbytes(#{nbytes}).unpack('#{unpack}').at(0)"
       end
 
       def create_to_binary_s_code(precision, endian)
-        if precision == :single
-          pack = (endian == :little) ? 'e' : 'g'
-        else # double_precision
-          pack = (endian == :little) ? 'E' : 'G'
-        end
+        pack = PACK_CODE[[precision, endian]]
 
         "[val].pack('#{pack}')"
       end

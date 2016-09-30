@@ -46,7 +46,7 @@ module BinData
         @io = io
       end
       def readbytes(n)
-        n.times.inject("") do |bytes, i|
+        n.times.inject("") do |bytes, _|
           bytes << @io.readbits(8, :big).chr
         end
       end

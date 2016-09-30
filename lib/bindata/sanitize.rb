@@ -101,15 +101,15 @@ module BinData
     end
 
     def field_names
-      @fields.collect { |field| field.name_as_sym }
+      @fields.collect(&:name_as_sym)
     end
 
-    def has_field_name?(name)
+    def field_name?(name)
       @fields.detect { |f| f.name_as_sym == name.to_sym }
     end
 
     def all_field_names_blank?
-      @fields.all? { |f| f.name == nil }
+      @fields.all? { |f| f.name.nil? }
     end
 
     def no_field_names_blank?
@@ -200,25 +200,25 @@ module BinData
         self[:endian] ||= hints[:endian]
       end
 
-      if hints[:search_prefix] and not hints[:search_prefix].empty?
+      if hints[:search_prefix] && !hints[:search_prefix].empty?
         self[:search_prefix] = Array(self[:search_prefix]).concat(Array(hints[:search_prefix]))
       end
 
       sanitize!
     end
 
-    alias_method :has_parameter?, :has_key?
+    alias_method :has_parameter?, :key?
 
     def needs_sanitizing?(key)
       parameter = self[key]
 
-      parameter and not parameter.is_a?(SanitizedParameter)
+      parameter && !parameter.is_a?(SanitizedParameter)
     end
 
     def warn_replacement_parameter(bad_key, suggested_key)
       if has_parameter?(bad_key)
-        Kernel.warn ":#{bad_key} is not used with #{@the_class}.  " +
-        "You probably want to change this to :#{suggested_key}"
+        Kernel.warn ":#{bad_key} is not used with #{@the_class}.  " \
+                    "You probably want to change this to :#{suggested_key}"
       end
     end
 
@@ -226,7 +226,7 @@ module BinData
 #      val = delete(old_key)
 #      if val
 #        self[new_key] = val
-#        Kernel.warn ":#{old_key} has been renamed to :#{new_key} in #{@the_class}.  " +
+#        Kernel.warn ":#{old_key} has been renamed to :#{new_key} in #{@the_class}.  " \
 #        "Using :#{old_key} is now deprecated and will be removed in the future"
 #      end
 #    end
@@ -235,10 +235,10 @@ module BinData
       keys.each do |key|
         if has_parameter?(key)
           parameter = self[key]
-          unless Symbol === parameter or
-                 parameter.respond_to? :arity or
-                 parameter.respond_to? :to_int
-            raise ArgumentError, "parameter '#{key}' in #{@the_class} must " +
+          unless Symbol === parameter ||
+                 parameter.respond_to?(:arity) ||
+                 parameter.respond_to?(:to_int)
+            raise ArgumentError, "parameter '#{key}' in #{@the_class} must " \
                                  "evaluate to an integer, got #{parameter.class}"
           end
         end
@@ -318,13 +318,12 @@ module BinData
       return if length < 2
 
       @the_class.mutually_exclusive_parameters.each do |key1, key2|
-        if has_parameter?(key1) and has_parameter?(key2)
-          raise ArgumentError, "params '#{key1}' and '#{key2}' " +
+        if has_parameter?(key1) && has_parameter?(key2)
+          raise ArgumentError, "params '#{key1}' and '#{key2}' " \
                                "are mutually exclusive in #{@the_class}"
         end
       end
     end
   end
   #----------------------------------------------------------------------------
-
 end

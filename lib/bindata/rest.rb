@@ -16,7 +16,6 @@ module BinData
   #   obj.rest #=" "fghij"
   #
   class Rest < BinData::BasePrimitive
-
     #---------------
     private
 

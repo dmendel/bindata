@@ -22,33 +22,33 @@ class Gzip < BinData::Record
 
   endian :little
 
-  uint16  :ident,      :asserted_value => 0x8b1f
-  uint8   :compression_method, :initial_value => DEFLATE
+  uint16  :ident,      asserted_value: 0x8b1f
+  uint8   :compression_method, initial_value: DEFLATE
 
-  bit3    :freserved,  :asserted_value => 0
-  bit1    :fcomment,   :value => lambda { comment.length > 0 ? 1 : 0 }
-  bit1    :ffile_name, :value => lambda { file_name.length > 0 ? 1 : 0 }
-  bit1    :fextra,     :value => lambda { extra.len > 0 ? 1 : 0 }
-  bit1    :fcrc16,     :value => 0  # see note at end of file
+  bit3    :freserved,  asserted_value: 0
+  bit1    :fcomment,   value: -> { comment.length > 0 ? 1 : 0 }
+  bit1    :ffile_name, value: -> { file_name.length > 0 ? 1 : 0 }
+  bit1    :fextra,     value: -> { extra.len > 0 ? 1 : 0 }
+  bit1    :fcrc16,     value: 0  # see note at end of file
   bit1    :ftext
 
   mtime   :mtime
   uint8   :extra_flags
-  uint8   :os,         :initial_value => 255   # unknown OS
+  uint8   :os,         initial_value: 255   # unknown OS
 
   # The following fields are optional depending on the bits in flags
 
-  struct  :extra,      :onlyif => lambda { fextra.nonzero? } do
-    uint16 :len,  :length => lambda { data.length }
-    string :data, :read_length => :len
+  struct  :extra,      onlyif: -> { fextra.nonzero? } do
+    uint16 :len,  length: -> { data.length }
+    string :data, read_length: :len
   end
-  stringz :file_name,  :onlyif => lambda { ffile_name.nonzero? }
-  stringz :comment,    :onlyif => lambda { fcomment.nonzero? }
-  uint16  :crc16,      :onlyif => lambda { fcrc16.nonzero? }
+  stringz :file_name,  onlyif: -> { ffile_name.nonzero? }
+  stringz :comment,    onlyif: -> { fcomment.nonzero? }
+  uint16  :crc16,      onlyif: -> { fcrc16.nonzero? }
 
   # The length of compressed data must be calculated from the current file offset
   count_bytes_remaining :bytes_remaining
-  string :compressed_data, :read_length => lambda { bytes_remaining - footer.num_bytes }
+  string :compressed_data, read_length: -> { bytes_remaining - footer.num_bytes }
 
   struct :footer do
     uint32 :crc32
@@ -97,14 +97,14 @@ if __FILE__ == $0
   # Output using the same format as gzip -l -v
   puts "method  crc     date  time           compressed        " +
        "uncompressed  ratio uncompressed_name"
-  puts "%5s %08x %6s %5s %19s %19s %5.1f%% %s"  % [comp_meth,
-                                                   g.footer.crc32,
-                                                   g.mtime.strftime('%b %d'),
-                                                   g.mtime.strftime('%H:%M'),
-                                                   g.num_bytes,
-                                                   g.footer.uncompressed_size,
-                                                   ratio,
-                                                   g.file_name]
+  puts "%5s %08x %6s %5s %19s %19s %5.1f%% %s" % [comp_meth,
+                                                  g.footer.crc32,
+                                                  g.mtime.strftime('%b %d'),
+                                                  g.mtime.strftime('%H:%M'),
+                                                  g.num_bytes,
+                                                  g.footer.uncompressed_size,
+                                                  ratio,
+                                                  g.file_name]
   puts "Comment: #{g.comment}" if g.comment?
   puts
 

@@ -20,15 +20,15 @@ require 'bindata'
 # A first attempt at a declaration would be:
 #
 #     class Atom < BinData::Record
-#       string  :tag, :length => 1, :assert => 'a'
+#       string  :tag, length: 1, assert: 'a'
 #       int32be :val
 #     end
 #
 #     class List < BinData::Record
-#       string  :tag,  :length => 1, :assert => 'l'
-#       int32be :num,  :value => lambda { vals.length }
-#       array   :vals, :initial_length => :num do
-#         choice :selection => ??? do
+#       string  :tag,  length: 1, assert: 'l'
+#       int32be :num,  value: -> { vals.length }
+#       array   :vals, initial_length: :num do
+#         choice selection: ??? do
 #           atom
 #           list
 #         end
@@ -50,18 +50,18 @@ require 'bindata'
 # The declaration then becomes:
 #
 #     class Term < BinData::Record; end  # forward declaration
-#     
+#
 #     class Atom < BinData::Int32be
 #     end
-#     
+#
 #     class List < BinData::Record
-#       int32be :num,  :value => lambda { vals.length }
-#       array   :vals, :type => :term, :initial_length => :num
+#       int32be :num,  value: -> { vals.length }
+#       array   :vals, type: :term, initial_length: :num
 #     end
-#     
+#
 #     class Term < BinData::Record
-#       string :tag, :length => 1
-#       choice :term, :selection => :tag do
+#       string :tag, length: 1
+#       choice :term, selection: :tag do
 #         atom 'a'
 #         list 'l'
 #       end
@@ -81,21 +81,21 @@ class Atom < BinData::Int32be
 end
 
 class List < BinData::Record
-  int32be :num,  :value => lambda { vals.length }
-  array   :vals, :initial_length => :num, :type => :term
+  int32be :num,  value: -> { vals.length }
+  array   :vals, initial_length: :num, type: :term
 
   def decode
-    vals.collect { |v| v.decode }
+    vals.collect(&:decode)
   end
 
   def self.encode(val)
-    List.new(:vals => val.collect { |v| Term.encode(v) })
+    List.new(vals: val.collect { |v| Term.encode(v) })
   end
 end
 
 class Term < BinData::Record
-  string :tag, :length => 1
-  choice :term, :selection => :tag do
+  string :tag, length: 1
+  choice :term, selection: :tag do
     atom 'a'
     list 'l'
   end
@@ -106,9 +106,9 @@ class Term < BinData::Record
 
   def self.encode(val)
     if Fixnum === val
-      Term.new(:tag => 'a', :term => Atom.encode(val))
+      Term.new(tag: 'a', term: Atom.encode(val))
     else
-      Term.new(:tag => 'l', :term => List.encode(val))
+      Term.new(tag: 'l', term: List.encode(val))
     end
   end
 end

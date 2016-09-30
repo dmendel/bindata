@@ -61,8 +61,8 @@ module Nbt
 
   # NBT.txt line 49
   class TagByteArray < BinData::Record
-    int32be :len, :value => lambda { data.length }
-    string  :data, :read_length => :len
+    int32be :len,  value: -> { data.length }
+    string  :data, read_length: :len
 
     def to_formatted_s(indent = 0)
       "[#{len} bytes]"
@@ -71,8 +71,8 @@ module Nbt
 
   # NBT.txt line 53
   class TagString < BinData::Primitive
-    int16be :len, :value => lambda { data.length }
-    string  :data, :read_length => :len
+    int16be :len,  value: -> { data.length }
+    string  :data, read_length: :len
 
     def get
       self.data
@@ -87,7 +87,7 @@ module Nbt
 
   ## Payload is the most important class to understand.
   ## This abstraction allows recursive formats.
-  ## eg. lists can contain lists can contain lists. 
+  ## eg. lists can contain lists can contain lists.
 
   # Forward references used by Payload
   class TagCompound < BinData::Record; end
@@ -111,8 +111,8 @@ module Nbt
   # NBT.txt line 6, 27
   class NamedTag < BinData::Record
     int8 :tag_id
-    tag_string :name,    :onlyif => :not_end_tag?
-    payload    :payload, :onlyif => :not_end_tag?, :selection => :tag_id
+    tag_string :name,    onlyif: :not_end_tag?
+    payload    :payload, onlyif: :not_end_tag?, selection: :tag_id
 
     def not_end_tag?
       tag_id != 0
@@ -127,10 +127,10 @@ module Nbt
 
   # NBT.txt line 57
   class TagList < BinData::Record
-    int8 :tag_id
-    int32be :len, :value => lambda { data.length }
-    array :data, :initial_length => :len do
-      payload :selection => :tag_id
+    int8    :tag_id
+    int32be :len,  value: -> { data.length }
+    array   :data, initial_length: :len do
+      payload selection: :tag_id
     end
 
     def to_formatted_s(indent = 0)
@@ -138,7 +138,7 @@ module Nbt
       tag_type = "TAG_#{TAG_NAMES[tag_id]}"
 
       "#{len} entries of type #{tag_type}\n" +
-      pre + "{\n" + 
+      pre + "{\n" +
         data.collect { |el| "  #{pre}#{tag_type}: #{el.to_formatted_s(indent + 1)}\n" }.join("") +
       pre + "}"
     end
@@ -146,14 +146,14 @@ module Nbt
 
   # NBT.txt line 63
   class TagCompound < BinData::Record
-    array :data, :read_until => lambda { element.tag_id == 0 } do
+    array :data, read_until: -> { element.tag_id == 0 } do
       named_tag
     end
 
     def to_formatted_s(indent = 0)
       pre = "  " * indent
       "#{data.length - 1} entries\n" +
-      pre + "{\n" + 
+      pre + "{\n" +
         data[0..-2].collect { |el| el.to_formatted_s(indent + 1) }.join("") +
       pre + "}"
     end

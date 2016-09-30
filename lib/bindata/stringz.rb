@@ -52,7 +52,7 @@ module BinData
       ch = nil
 
       # read until zero byte or we have read in the max number of bytes
-      while ch != "\0" and i != max_length
+      while ch != "\0" && i != max_length
         ch = io.readbytes(1)
         str << ch
         i += 1
@@ -81,14 +81,14 @@ module BinData
       if max_length
         max_length = 1 if max_length < 1
         str.slice!(max_length)
-        if str.length == max_length and str[-1, 1] != "\0"
+        if str.length == max_length && str[-1, 1] != "\0"
           str[-1, 1] = "\0"
         end
       end
     end
 
     def append_zero_byte_if_needed!(str)
-      if str.length == 0 or str[-1, 1] != "\0"
+      if str.length == 0 || str[-1, 1] != "\0"
         str << "\0"
       end
     end

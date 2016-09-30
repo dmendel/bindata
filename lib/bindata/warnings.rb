@@ -1,6 +1,5 @@
 module BinData
   class Base
-
     # Don't override initialize.  If you are defining a new kind of datatype
     # (list, array, choice etc) then put your initialization code in
     # #initialize_instance.  BinData objects might be initialized as prototypes
@@ -21,12 +20,17 @@ module BinData
       end
       initialize_without_warning(*args)
     end
-    alias_method :initialize, :initialize_with_warning
+    alias initialize initialize_with_warning
 
     def initialize_instance(*args)
       unless args.empty?
         fail "#{caller[0]} remove the call to super in #initialize_instance"
       end
     end
+  end
+
+  class Struct
+    # has_key? is deprecated
+    alias has_key? key?
   end
 end

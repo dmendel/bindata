@@ -119,7 +119,7 @@ module BinData
     # DelayedIO objects aren't read when #read is called.
     # The reading is delayed until this method is called.
     def read_now!
-      raise IOError.new "read from where?" unless @read_io
+      raise IOError, "read from where?" unless @read_io
 
       @read_io.seekbytes(abs_offset - @read_io.offset)
       start_read do
@@ -130,7 +130,7 @@ module BinData
     # DelayedIO objects aren't written when #write is called.
     # The writing is delayed until this method is called.
     def write_now!
-      raise IOError.new "write to where?" unless @write_io
+      raise IOError, "write to where?" unless @write_io
       @write_io.seekbytes(abs_offset - @write_io.offset)
       @type.do_write(@write_io)
     end
@@ -161,7 +161,7 @@ module BinData
 
         DelayedIO.send(:alias_method, :initialize_instance_without_record_io, :initialize_instance)
         DelayedIO.send(:define_method, :initialize_instance) do
-          if @parent and ! defined? @delayed_io_recorded
+          if @parent && !defined? @delayed_io_recorded
             @delayed_io_recorded = true
             list = top_level_get(:delayed_ios)
             list << self if list
@@ -179,11 +179,11 @@ module BinData
       end
 
       def read(io)
-        super(io) { top_level_get(:delayed_ios).each { |obj| obj.read_now! } }
+        super(io) { top_level_get(:delayed_ios).each(&:read_now!) }
       end
 
-      def write(io, *args)
-        super(io) { top_level_get(:delayed_ios).each { |obj| obj.write_now! } }
+      def write(io, *_)
+        super(io) { top_level_get(:delayed_ios).each(&:write_now!) }
       end
 
       def num_bytes

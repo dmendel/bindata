@@ -11,11 +11,10 @@ require 'bindata'
 
 # Present MAC addresses in a human readable way
 class MacAddr < BinData::Primitive
-  array :octets, :type => :uint8, :initial_length => 6
+  array :octets, type: :uint8, initial_length: 6
 
   def set(val)
-    ints = val.split(/\./).collect { |int| int.to_i }
-    self.octets = ints
+    self.octets = val.split(/\./).collect(&:to_i)
   end
 
   def get
@@ -25,11 +24,10 @@ end
 
 # Present IP addresses in a human readable way
 class IPAddr < BinData::Primitive
-  array :octets, :type => :uint8, :initial_length => 4
+  array :octets, type: :uint8, initial_length: 4
 
   def set(val)
-    ints = val.split(/\./).collect { |int| int.to_i }
-    self.octets = ints
+    self.octets = val.split(/\./).collect(&:to_i)
   end
 
   def get
@@ -57,7 +55,7 @@ class TCP_PDU < BinData::Record
   uint16 :window
   uint16 :checksum
   uint16 :urg_ptr
-  string :options, :read_length => :options_length_in_bytes
+  string :options, read_length: :options_length_in_bytes
   rest   :payload
 
   def options_length_in_bytes
@@ -80,7 +78,7 @@ end
 class IP_PDU < BinData::Record
   endian :big
 
-  bit4   :version, :asserted_value => 4
+  bit4   :version, asserted_value: 4
   bit4   :header_length
   uint8  :tos
   uint16 :total_length
@@ -92,9 +90,9 @@ class IP_PDU < BinData::Record
   uint16 :checksum
   ip_addr :src_addr
   ip_addr :dest_addr
-  string :options, :read_length => :options_length_in_bytes
-  buffer :payload, :length => :payload_length_in_bytes do
-    choice :payload, :selection => :protocol do
+  string :options, read_length: :options_length_in_bytes
+  buffer :payload, length: :payload_length_in_bytes do
+    choice :payload, selection: :protocol do
       tcp_pdu  6
       udp_pdu 17
       rest    :default
@@ -122,7 +120,7 @@ class Ether < BinData::Record
   mac_addr :dst
   mac_addr :src
   uint16   :ether_type
-  choice   :payload, :selection => :ether_type do
+  choice   :payload, selection: :ether_type do
     ip_pdu IPV4
     rest   :default
   end
@@ -155,12 +153,12 @@ class Pcap
       uint32 :linktype
     end
 
-    array :records, :read_until => :eof do
+    array :records, read_until: :eof do
       uint32 :ts_sec
       uint32 :ts_usec
       uint32 :incl_len
       uint32 :orig_len
-      string :data, :length => :incl_len
+      string :data, length: :incl_len
     end
   end
 end

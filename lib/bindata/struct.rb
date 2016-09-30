@@ -72,7 +72,7 @@ module BinData
                   %w{type initial_length read_until} +
                   %w{fields endian search_prefix hide only_if byte_align} +
                   %w{choices selection copy_on_change} +
-                  %w{read_abs_offset struct_params}).collect { |name| name.to_sym }.
+                  %w{read_abs_offset struct_params}).collect(&:to_sym).
                   uniq.collect { |key| [key, true] }.flatten
                ]
 
@@ -85,7 +85,7 @@ module BinData
     end
 
     def initialize_instance
-      @field_objs  = []
+      @field_objs = []
     end
 
     def clear #:nodoc:
@@ -93,7 +93,7 @@ module BinData
     end
 
     def clear? #:nodoc:
-      @field_objs.all? { |f| f.nil? or f.clear? }
+      @field_objs.all? { |f| f.nil? || f.clear? }
     end
 
     def assign(val)
@@ -159,7 +159,7 @@ module BinData
       end
     end
 
-    def has_key?(key)
+    def key?(key)
       @field_names.index(base_field_name(key))
     end
 
@@ -228,7 +228,7 @@ module BinData
 
       @field_names.compact.each do |name|
         obj = find_obj_for_name(name)
-        if obj and src.has_key?(name)
+        if obj && src.key?(name)
           obj.assign(src[name])
         end
       end
@@ -263,7 +263,7 @@ module BinData
     end
 
     def include_obj?(obj)
-      not obj.has_parameter?(:onlyif) or obj.eval_parameter(:onlyif)
+      !obj.has_parameter?(:onlyif) || obj.eval_parameter(:onlyif)
     end
 
     # A hash that can be accessed via attributes.
@@ -273,7 +273,7 @@ module BinData
       end
 
       def respond_to?(symbol, include_private = false)
-        has_key?(symbol) || super
+        key?(symbol) || super
       end
 
       def method_missing(symbol, *args)
@@ -382,7 +382,7 @@ module BinData
     end
 
     def sanitize_hide(params)
-      if params.needs_sanitizing?(:hide) and params.has_parameter?(:fields)
+      if params.needs_sanitizing?(:hide) && params.has_parameter?(:fields)
         field_names  = sanitized_field_names(params[:fields])
         hfield_names = hidden_field_names(params[:hide])
 
@@ -395,7 +395,7 @@ module BinData
     end
 
     def hidden_field_names(hidden)
-      (hidden || []).collect { |h| h.to_sym }
+      (hidden || []).collect(&:to_sym)
     end
 
     def ensure_field_names_are_valid(obj_class, field_names)
@@ -403,15 +403,15 @@ module BinData
 
       field_names.each do |name|
         if obj_class.method_defined?(name)
-          raise NameError.new("Rename field '#{name}' in #{obj_class}, " +
+          raise NameError.new("Rename field '#{name}' in #{obj_class}, " \
                               "as it shadows an existing method.", name)
         end
         if reserved_names.include?(name)
-          raise NameError.new("Rename field '#{name}' in #{obj_class}, " +
+          raise NameError.new("Rename field '#{name}' in #{obj_class}, " \
                               "as it is a reserved name.", name)
         end
         if field_names.count(name) != 1
-          raise NameError.new("field '#{name}' in #{obj_class}, " +
+          raise NameError.new("field '#{name}' in #{obj_class}, " \
                               "is defined multiple times.", name)
         end
       end

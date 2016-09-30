@@ -13,7 +13,7 @@ module BinData
 
     def trace_obj(obj_name, val)
       if val.length > 30
-        val = val.slice(0 .. 30) + "..."
+        val = val.slice(0..30) + "..."
       end
 
       trace "#{obj_name} => #{val}"
@@ -23,20 +23,21 @@ module BinData
   # Turn on trace information when reading a BinData object.
   # If +block+ is given then the tracing only occurs for that block.
   # This is useful for debugging a BinData declaration.
-  def trace_reading(io = STDERR, &block)
+  def trace_reading(io = STDERR)
     @tracer = Tracer.new(io)
-    [BasePrimitive, Choice].each { |traced| traced.turn_on_tracing }
+    [BasePrimitive, Choice].each(&:turn_on_tracing)
+
     if block_given?
       begin
-        block.call
+        yield
       ensure
-        [BasePrimitive, Choice].each { |traced| traced.turn_off_tracing }
+        [BasePrimitive, Choice].each(&:turn_off_tracing)
         @tracer = nil
       end
     end
   end
 
-  def trace_message(&block) #:nodoc:
+  def trace_message #:nodoc:
     yield @tracer if @tracer
   end
 
@@ -60,7 +61,7 @@ module BinData
     end
 
     def trace_value
-      BinData::trace_message do |tracer|
+      BinData.trace_message do |tracer|
         value_string = _value.inspect
         tracer.trace_obj(debug_name, value_string)
       end
@@ -85,7 +86,7 @@ module BinData
     end
 
     def trace_selection
-      BinData::trace_message do |tracer|
+      BinData.trace_message do |tracer|
         selection_string = eval_parameter(:selection).inspect
         tracer.trace_obj("#{debug_name}-selection-", selection_string)
       end

@@ -86,13 +86,13 @@ module BinData
 
       def create_clamp_code(nbits, signed)
         if nbits == :nbits
-          create_dynamic_clamp_code(nbits, signed)
+          create_dynamic_clamp_code(signed)
         else
           create_fixed_clamp_code(nbits, signed)
         end
       end
 
-      def create_dynamic_clamp_code(nbits, signed)
+      def create_dynamic_clamp_code(signed)
         if signed == :signed
           max = "max = (1 << (nbits - 1)) - 1"
           min = "min = -(max + 1)"
@@ -105,8 +105,8 @@ module BinData
       end
 
       def create_fixed_clamp_code(nbits, signed)
-        if nbits == 1 and signed == :signed
-          raise "signed bitfield must have more than one bit" 
+        if nbits == 1 && signed == :signed
+          raise "signed bitfield must have more than one bit"
         end
 
         if signed == :signed

@@ -139,7 +139,7 @@ module BinData
     # method.  This indirection is so that #snapshot can be overridden in
     # subclasses to modify the presentation value.
     def _value
-      @value != nil ? @value : sensible_default()
+      @value != nil ? @value : sensible_default
     end
 
     # Logic for the :value parameter
@@ -176,13 +176,13 @@ module BinData
         current_value = snapshot
         expected = eval_parameter(:assert, value: current_value)
 
-        msg = if not expected
-          "value '#{current_value}' not as expected"
-        elsif expected != true and current_value != expected
-          "value is '#{current_value}' but expected '#{expected}'"
-        else
-          nil
-        end
+        msg = if !expected
+                "value '#{current_value}' not as expected"
+              elsif expected != true && current_value != expected
+                "value is '#{current_value}' but expected '#{expected}'"
+              else
+                nil
+              end
 
         raise ValidityError, "#{msg} for #{debug_name}" if msg
       end
@@ -212,7 +212,7 @@ module BinData
         expected = eval_parameter(:asserted_value, value: current_value)
         if current_value != expected
           raise ValidityError,
-                "value is '#{current_value}' but " +
+                "value is '#{current_value}' but " \
                 "expected '#{expected}' for #{debug_name}"
         end
       end

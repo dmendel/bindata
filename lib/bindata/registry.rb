@@ -44,8 +44,8 @@ module BinData
     # Convert CamelCase +name+ to underscore style.
     def underscore_name(name)
       name.to_s.sub(/.*::/, "").
-                gsub(/([A-Z]+)([A-Z][a-z])/,'\1_\2').
-                gsub(/([a-z\d])([A-Z])/,'\1_\2').
+                gsub(/([A-Z]+)([A-Z][a-z])/, '\1_\2').
+                gsub(/([a-z\d])([A-Z])/, '\1_\2').
                 tr("-", "_").
                 downcase
     end
@@ -56,17 +56,17 @@ module BinData
     def normalize_name(name, hints)
       name = underscore_name(name)
 
-      if not is_registered?(name)
+      if !registered?(name)
         search_prefix = [""].concat(Array(hints[:search_prefix]))
         search_prefix.each do |prefix|
           nwp = name_with_prefix(name, prefix)
-          if is_registered?(nwp)
+          if registered?(nwp)
             name = nwp
             break
           end
 
           nwe = name_with_endian(nwp, hints[:endian])
-          if is_registered?(nwe)
+          if registered?(nwe)
             name = nwe
             break
           end
@@ -96,17 +96,17 @@ module BinData
       end
     end
 
-    def is_registered?(name)
-      register_dynamic_class(name) unless @registry.has_key?(name)
+    def registered?(name)
+      register_dynamic_class(name) unless @registry.key?(name)
 
-      @registry.has_key?(name)
+      @registry.key?(name)
     end
 
     def register_dynamic_class(name)
-      if /^u?int\d+(le|be)$/ =~ name or /^s?bit\d+(le)?$/ =~ name
+      if /^u?int\d+(le|be)$/ =~ name || /^s?bit\d+(le)?$/ =~ name
         class_name = name.gsub(/(?:^|_)(.)/) { $1.upcase }
         begin
-          BinData::const_get(class_name)
+          BinData.const_get(class_name)
         rescue NameError
         end
       end
@@ -114,8 +114,8 @@ module BinData
 
     def warn_if_name_is_already_registered(name, class_to_register)
       prev_class = @registry[name]
-      if $VERBOSE and prev_class and prev_class != class_to_register
-        warn "warning: replacing registered class #{prev_class} " +
+      if $VERBOSE && prev_class && prev_class != class_to_register
+        warn "warning: replacing registered class #{prev_class} " \
              "with #{class_to_register}"
       end
     end

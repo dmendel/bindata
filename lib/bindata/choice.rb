@@ -94,7 +94,7 @@ module BinData
     end
 
     %w(clear? assign snapshot do_read do_write do_num_bytes).each do |m|
-      self.module_eval <<-END
+      module_eval <<-END
         def #{m}(*args)
           current_choice.#{m}(*args)
         end
@@ -149,10 +149,10 @@ module BinData
     end
 
     def ensure_valid_keys(choices)
-      if choices.has_key?(nil)
+      if choices.key?(nil)
         raise ArgumentError, ":choices hash may not have nil key"
       end
-      if choices.keys.detect { |key| key.is_a?(Symbol) and key != :default }
+      if choices.keys.detect { |key| key.is_a?(Symbol) && key != :default }
         raise ArgumentError, ":choices hash may not have symbols for keys"
       end
     end
@@ -174,10 +174,8 @@ module BinData
     end
 
     def get_previous_choice(selection)
-      if selection != @last_selection and @last_selection != nil
+      if @last_selection && selection != @last_selection
         @choices[@last_selection]
-      else
-        nil
       end
     end
 

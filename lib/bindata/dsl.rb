@@ -18,7 +18,7 @@ module BinData
     end
 
     def parameters_is_value?(obj_class, value, parameters)
-      if value.nil? and parameters.length > 0
+      if value.nil? && !parameters.empty?
         field_names_in_parameters?(obj_class, parameters)
       else
         false
@@ -29,7 +29,7 @@ module BinData
       field_names = obj_class.fields.field_names
       param_keys = parameters.keys
 
-      (field_names & param_keys).length > 0
+      !(field_names & param_keys).empty?
     end
   end
 
@@ -86,9 +86,9 @@ module BinData
           @search_prefix = parent_attribute(:search_prefix, []).dup
         end
 
-        prefix = args.collect { |name| name.to_sym }.compact
-        if prefix.size > 0
-          if has_fields?
+        prefix = args.collect(&:to_sym).compact
+        unless prefix.empty?
+          if fields?
             dsl_raise SyntaxError, "search_prefix must be called before defining fields"
           end
 
@@ -100,7 +100,7 @@ module BinData
 
       def hide(*args)
         if option?(:hidden_fields)
-          hidden = args.collect { |name| name.to_sym }
+          hidden = args.collect(&:to_sym)
 
           unless defined? @hide
             @hide = parent_attribute(:hide, []).dup
@@ -161,10 +161,10 @@ module BinData
 
       def set_endian(endian)
         if endian
-          if has_fields?
+          if fields?
             dsl_raise SyntaxError, "endian must be called before defining fields"
           end
-          if not valid_endian?(endian)
+          if !valid_endian?(endian)
             dsl_raise ArgumentError, "unknown value for endian '#{endian}'"
           end
 
@@ -184,8 +184,8 @@ module BinData
         parent_attribute(:fields)
       end
 
-      def has_fields?
-        defined? @fields and @fields.length > 0
+      def fields?
+        defined?(@fields) && !@fields.empty?
       end
 
       def parse_and_append_field(*args, &block)
@@ -207,18 +207,18 @@ module BinData
       def parent_attribute(attr, default = nil)
         parent = @the_class.superclass
         parser = parent.respond_to?(:dsl_parser) ? parent.dsl_parser : nil
-        if parser and parser.respond_to?(attr)
+        if parser && parser.respond_to?(attr)
           parser.send(attr)
         else
           default
         end
       end
 
-      def dsl_raise(exception, message)
+      def dsl_raise(exception, msg)
         backtrace = caller
         backtrace.shift while %r{bindata/dsl.rb} =~ backtrace.first
 
-        raise exception, message + " in #{@the_class}", backtrace
+        raise exception, "#{msg} in #{@the_class}", backtrace
       end
 
       def to_object_params(key)
@@ -233,10 +233,10 @@ module BinData
       end
 
       def to_choice_params(key)
-        if fields.length == 0
+        if fields.empty?
           {}
         elsif fields.all_field_names_blank?
-          {key => fields.collect { |f| f.prototype }}
+          {key => fields.collect(&:prototype)}
         else
           choices = {}
           fields.each { |f| choices[f.name] = f.prototype }
@@ -246,13 +246,13 @@ module BinData
 
       def to_struct_params(*unused)
         result = {fields: fields}
-        if not endian.nil?
+        if !endian.nil?
           result[:endian] = endian
         end
-        if not search_prefix.empty?
+        if !search_prefix.empty?
           result[:search_prefix] = search_prefix
         end
-        if option?(:hidden_fields) and not hide.empty?
+        if option?(:hidden_fields) && !hide.empty?
           result[:hide] = hide
         end
 
@@ -358,7 +358,7 @@ module BinData
 
       def name_from_field_declaration(args)
         name, _ = args
-        if name == "" or name.is_a?(Hash)
+        if name == "" || name.is_a?(Hash)
           nil
         else
           name
@@ -429,7 +429,7 @@ module BinData
       end
 
       def ensure_valid_name(name)
-        if name and not option?(:fieldnames_are_values)
+        if name && !option?(:fieldnames_are_values)
           if malformed_name?(name)
             raise NameError.new("", name), "field '#{name}' is an illegal fieldname"
           end
@@ -449,19 +449,19 @@ module BinData
       end
 
       def must_not_have_a_name_failed?(name)
-        option?(:no_fieldnames) and name != nil
+        option?(:no_fieldnames) && !name.nil?
       end
 
       def must_have_a_name_failed?(name)
-        option?(:mandatory_fieldnames) and name.nil?
+        option?(:mandatory_fieldnames) && name.nil?
       end
 
       def all_or_none_names_failed?(name)
-        if option?(:all_or_none_fieldnames) and not fields.empty?
+        if option?(:all_or_none_fieldnames) && !fields.empty?
           all_names_blank = fields.all_field_names_blank?
           no_names_blank = fields.no_field_names_blank?
 
-          (name != nil and all_names_blank) or (name == nil and no_names_blank)
+          (!name.nil? && all_names_blank) || (name.nil? && no_names_blank)
         else
           false
         end
@@ -472,7 +472,7 @@ module BinData
       end
 
       def duplicate_name?(name)
-        fields.has_field_name?(name)
+        fields.field_name?(name)
       end
 
       def name_shadows_method?(name)

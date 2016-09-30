@@ -42,7 +42,6 @@ module BinData
   #                           <tt>[type_symbol, hash_params]</tt>.
   #
   class Skip < BinData::BasePrimitive
-
     arg_processor :skip
 
     optional_parameters :length, :to_abs_offset, :until_valid
@@ -51,7 +50,7 @@ module BinData
     def initialize_shared_instance
       extend SkipLengthPlugin      if has_parameter?(:length)
       extend SkipToAbsOffsetPlugin if has_parameter?(:to_abs_offset)
-      extend SkipUntilValidPlugin if has_parameter?(:until_valid)
+      extend SkipUntilValidPlugin  if has_parameter?(:until_valid)
       super
     end
 
@@ -84,8 +83,8 @@ module BinData
 
   class SkipArgProcessor < BaseArgProcessor
     def sanitize_parameters!(obj_class, params)
-      unless params.has_parameter?(:length) or
-             params.has_parameter?(:to_abs_offset) or
+      unless params.has_parameter?(:length) ||
+             params.has_parameter?(:to_abs_offset) ||
              params.has_parameter?(:until_valid)
         raise ArgumentError, "#{obj_class} requires either :length, :to_abs_offset or :until_valid"
       end
