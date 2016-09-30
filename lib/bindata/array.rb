@@ -8,22 +8,22 @@ module BinData
   #
   #   data = "\x03\x04\x05\x06\x07\x08\x09"
   #
-  #   obj = BinData::Array.new(:type => :int8, :initial_length => 6)
+  #   obj = BinData::Array.new(type: :int8, initial_length: 6)
   #   obj.read(data) #=> [3, 4, 5, 6, 7, 8]
   #
-  #   obj = BinData::Array.new(:type => :int8,
-  #                            :read_until => lambda { index == 1 })
+  #   obj = BinData::Array.new(type: :int8,
+  #                            read_until: -> { index == 1 })
   #   obj.read(data) #=> [3, 4]
   #
-  #   obj = BinData::Array.new(:type => :int8,
-  #                            :read_until => lambda { element >= 6 })
+  #   obj = BinData::Array.new(type: :int8,
+  #                            read_until: -> { element >= 6 })
   #   obj.read(data) #=> [3, 4, 5, 6]
   #
-  #   obj = BinData::Array.new(:type => :int8,
-  #           :read_until => lambda { array[index] + array[index - 1] == 13 })
+  #   obj = BinData::Array.new(type: :int8,
+  #           read_until: -> { array[index] + array[index - 1] == 13 })
   #   obj.read(data) #=> [3, 4, 5, 6, 7]
   #
-  #   obj = BinData::Array.new(:type => :int8, :read_until => :eof)
+  #   obj = BinData::Array.new(type: :int8, read_until: :eof)
   #   obj.read(data) #=> [3, 4, 5, 6, 7, 8, 9]
   #
   # == Parameters
@@ -300,15 +300,15 @@ module BinData
       loop do
         element = append_new_element
         element.do_read(io)
-        variables = { :index => self.length - 1, :element => self.last,
-                      :array => self }
+        variables = { index: self.length - 1, element: self.last,
+                      array: self }
         break if eval_parameter(:read_until, variables)
       end
     end
 
   end
 
-  # Logic for the :read_until => :eof parameter
+  # Logic for the read_until: :eof parameter
   module ReadUntilEOFPlugin
     def do_read(io)
       loop do

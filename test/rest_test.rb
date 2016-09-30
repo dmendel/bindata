@@ -21,7 +21,7 @@ describe BinData::Rest do
   end
 
   it "accepts BinData::BasePrimitive parameters" do
-    rest = BinData::Rest.new(:assert => "abc")
+    rest = BinData::Rest.new(assert: "abc")
     lambda {
       rest.read("xyz")
     }.must_raise BinData::ValidityError

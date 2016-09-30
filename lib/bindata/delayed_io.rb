@@ -13,7 +13,7 @@ module BinData
   #
   #   require 'bindata'
   #
-  #   obj = BinData::DelayedIO.new(:read_abs_offset => 3, :type => :uint16be)
+  #   obj = BinData::DelayedIO.new(read_abs_offset: 3, type: :uint16be)
   #   obj.read("\x00\x00\x00\x11\x12")
   #   obj #=> 0
   #
@@ -32,12 +32,12 @@ module BinData
   #   class ReversePascalString < BinData::Record
   #     auto_call_delayed_io
   #
-  #     delayed_io :str, :read_abs_offset => 0 do
-  #       string :read_length => :len
+  #     delayed_io :str, read_abs_offset: 0 do
+  #       string read_length: :len
   #     end
   #     count_bytes_remaining :total_size
-  #     skip :to_abs_offset => lambda { total_size - 1 }
-  #     uint8  :len, :value => lambda { str.length }
+  #     skip to_abs_offset: -> { total_size - 1 }
+  #     uint8  :len, value: -> { str.length }
   #   end
   #
   #   s = ReversePascalString.read("hello\x05")

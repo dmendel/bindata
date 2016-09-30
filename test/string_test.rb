@@ -4,24 +4,24 @@ require File.expand_path(File.join(File.dirname(__FILE__), "test_helper"))
 
 describe BinData::String, "with mutually exclusive parameters" do
   it ":value and :initial_value" do
-    params = {:value => "", :initial_value => ""}
+    params = {value: "", initial_value: ""}
     lambda { BinData::String.new(params) }.must_raise ArgumentError
   end
 
   it ":length and :read_length" do
-    params = {:length => 5, :read_length => 5}
+    params = {length: 5, read_length: 5}
     lambda { BinData::String.new(params) }.must_raise ArgumentError
   end
 
   it ":value and :length" do
-    params = {:value => "", :length => 5}
+    params = {value: "", length: 5}
     lambda { BinData::String.new(params) }.must_raise ArgumentError
   end
 end
 
 describe BinData::String, "when assigning" do
-  let(:small) { BinData::String.new(:length => 3, :pad_byte => "A") }
-  let(:large) { BinData::String.new(:length => 5, :pad_byte => "B") }
+  let(:small) { BinData::String.new(length: 3, pad_byte: "A") }
+  let(:large) { BinData::String.new(length: 5, pad_byte: "B") }
 
   it "copies data from small to large" do
     large.assign(small)
@@ -47,7 +47,7 @@ describe BinData::String do
 end
 
 describe BinData::String, "with :read_length" do
-  let(:obj) { BinData::String.new(:read_length => 5) }
+  let(:obj) { BinData::String.new(read_length: 5) }
 
   specify { obj.num_bytes.must_equal 0 }
   specify { obj.value.must_equal "" }
@@ -68,7 +68,7 @@ describe BinData::String, "with :read_length" do
 end
 
 describe BinData::String, "with :length" do
-  let(:obj) { BinData::String.new(:length => 5) }
+  let(:obj) { BinData::String.new(length: 5) }
 
   specify { obj.num_bytes.must_equal 5 }
   specify { obj.value.must_equal "\0\0\0\0\0" }
@@ -100,7 +100,7 @@ describe BinData::String, "with :length" do
 end
 
 describe BinData::String, "with :read_length and :initial_value" do
-  let(:obj) { BinData::String.new(:read_length => 5, :initial_value => "abcdefghij") }
+  let(:obj) { BinData::String.new(read_length: 5, initial_value: "abcdefghij") }
 
   specify { obj.num_bytes.must_equal 10 }
   specify { obj.value.must_equal "abcdefghij" }
@@ -119,7 +119,7 @@ describe BinData::String, "with :read_length and :initial_value" do
 end
 
 describe BinData::String, "with :read_length and :value" do
-  let(:obj) { BinData::String.new(:read_length => 5, :value => "abcdefghij") }
+  let(:obj) { BinData::String.new(read_length: 5, value: "abcdefghij") }
 
   specify { obj.num_bytes.must_equal 10 }
   specify { obj.value.must_equal "abcdefghij" }
@@ -149,7 +149,7 @@ describe BinData::String, "with :read_length and :value" do
 end
 
 describe BinData::String, "with :length and :initial_value" do
-  let(:obj) { BinData::String.new(:length => 5, :initial_value => "abcdefghij") }
+  let(:obj) { BinData::String.new(length: 5, initial_value: "abcdefghij") }
 
   specify { obj.num_bytes.must_equal 5 }
   specify { obj.value.must_equal "abcde" }
@@ -165,27 +165,27 @@ end
 
 describe BinData::String, "with :pad_byte" do
   it "accepts a numeric value for :pad_byte" do
-    str = BinData::String.new(:length => 5, :pad_byte => 6)
+    str = BinData::String.new(length: 5, pad_byte: 6)
     str.assign("abc")
     str.must_equal "abc\x06\x06"
   end
 
   it "accepts a character for :pad_byte" do
-    str = BinData::String.new(:length => 5, :pad_byte => "R")
+    str = BinData::String.new(length: 5, pad_byte: "R")
     str.assign("abc")
     str.must_equal "abcRR"
   end
 
   it "does not accept a string for :pad_byte" do
-    params = {:length => 5, :pad_byte => "RR"}
+    params = {length: 5, pad_byte: "RR"}
     lambda { BinData::String.new(params) }.must_raise ArgumentError
   end
 end
 
 describe BinData::String, "with :trim_padding" do
   it "set false is the default" do
-    str1 = BinData::String.new(:length => 5)
-    str2 = BinData::String.new(:length => 5, :trim_padding => false)
+    str1 = BinData::String.new(length: 5)
+    str2 = BinData::String.new(length: 5, trim_padding: false)
     str1.assign("abc")
     str2.assign("abc")
     str1.must_equal "abc\0\0"
@@ -193,7 +193,7 @@ describe BinData::String, "with :trim_padding" do
   end
 
   describe "trim padding set" do
-    let(:obj) { BinData::String.new(:pad_byte => 'R', :trim_padding => true) }
+    let(:obj) { BinData::String.new(pad_byte: 'R', trim_padding: true) }
 
     it "trims the value" do
       obj.assign("abcRR")
@@ -219,8 +219,8 @@ end
 
 describe BinData::String, "with :pad_front" do
   it "set false is the default" do
-    str1 = BinData::String.new(:length => 5)
-    str2 = BinData::String.new(:length => 5, :pad_front => false)
+    str1 = BinData::String.new(length: 5)
+    str2 = BinData::String.new(length: 5, pad_front: false)
     str1.assign("abc")
     str2.assign("abc")
     str1.must_equal "abc\0\0"
@@ -228,19 +228,19 @@ describe BinData::String, "with :pad_front" do
   end
 
   it "pads to the front" do
-    str = BinData::String.new(:length => 5, :pad_byte => 'R', :pad_front => true)
+    str = BinData::String.new(length: 5, pad_byte: 'R', pad_front: true)
     str.assign("abc")
     str.must_equal "RRabc"
   end
 
   it "can alternatively be accesses by :pad_left" do
-    str = BinData::String.new(:length => 5, :pad_byte => 'R', :pad_left => true)
+    str = BinData::String.new(length: 5, pad_byte: 'R', pad_left: true)
     str.assign("abc")
     str.must_equal "RRabc"
   end
 
   describe "and :trim_padding" do
-    let(:obj) { BinData::String.new(:length => 5, :pad_byte => 'R', :pad_front => true, :trim_padding => true) }
+    let(:obj) { BinData::String.new(length: 5, pad_byte: 'R', pad_front: true, trim_padding: true) }
 
     it "assigns" do
       obj.assign("abc")
@@ -276,7 +276,7 @@ describe BinData::String, "with Ruby 1.9 encodings" do
   end
 
   it "stores read values as binary" do
-    obj = UTF8String.new(:read_length => binary_str.bytesize)
+    obj = UTF8String.new(read_length: binary_str.bytesize)
     obj.read(binary_str)
 
     obj.to_binary_s.must_equal_binary binary_str
@@ -297,14 +297,14 @@ end
 
 describe BinData::String, "warnings" do
   it "warns if has :asserted_value but no :length" do
-    obj = BinData::String.new(:asserted_value => "ABC")
+    obj = BinData::String.new(asserted_value: "ABC")
     obj.must_warn "obj does not have a :read_length parameter - returning empty string" do
       lambda { obj.read("abcde") }.must_raise BinData::ValidityError
     end
   end
 
   it "warns if has :value but no :read_length" do
-    obj = BinData::String.new(:value => "ABC")
+    obj = BinData::String.new(value: "ABC")
     obj.must_warn "obj does not have a :read_length parameter - returning empty string" do
       obj.read("abcde")
     end

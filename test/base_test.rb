@@ -61,12 +61,12 @@ describe BinData::Base, "ArgExtractor" do
   it "parses parameters" do
     par = BinData::Base.new
     data = [
-      [[3                ],  3,   [],   nil],
-      [[3,            par],  3,   [],   par],
-      [[   {:a => 1}     ],  nil, [:a], nil],
-      [[   {:a => 1}, par],  nil, [:a], par],
-      [[3, {:a => 1}     ],  3,   [:a], nil],
-      [[3, {:a => 1}, par],  3,   [:a], par],
+      [[3             ],  3,   [],   nil],
+      [[3,         par],  3,   [],   par],
+      [[   {a: 1}     ],  nil, [:a], nil],
+      [[   {a: 1}, par],  nil, [:a], par],
+      [[3, {a: 1}     ],  3,   [:a], nil],
+      [[3, {a: 1}, par],  3,   [:a], par],
     ]
 
     data.each do |el|

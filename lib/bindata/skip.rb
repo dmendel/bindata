@@ -9,8 +9,8 @@ module BinData
   #   require 'bindata'
   #
   #   class A < BinData::Record
-  #     skip :length => 5
-  #     string :a, :read_length => 5
+  #     skip length: 5
+  #     string :a, read_length: 5
   #   end
   #
   #   obj = A.read("abcdefghij")
@@ -18,8 +18,8 @@ module BinData
   #
   #
   #   class B < BinData::Record
-  #     skip :until_valid => [:string, {:read_length => 2, :assert => "ef"} ]
-  #     string :b, :read_length => 5
+  #     skip until_valid: [:string, {read_length: 2, assert: "ef"} ]
+  #     string :b, read_length: 5
   #   end
   #
   #   obj = B.read("abcdefghij")

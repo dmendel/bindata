@@ -33,7 +33,7 @@ describe BinData::CountBytesRemaining do
   end
 
   it "accepts BinData::BasePrimitive parameters" do
-    count = BinData::CountBytesRemaining.new(:assert => 2)
+    count = BinData::CountBytesRemaining.new(assert: 2)
     lambda {
       count.read("xyz")
     }.must_raise BinData::ValidityError

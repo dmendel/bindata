@@ -13,13 +13,13 @@ describe BinData::Base, "parameters" do
   end
 
   it "fails when parameter has nil value" do
-    lambda { BinData::Base.new(:a => nil) }.must_raise ArgumentError
+    lambda { BinData::Base.new(a: nil) }.must_raise ArgumentError
   end
 end
 
 describe BinData::Base, "#has_parameter?" do
   it "true for existing parameters" do
-    obj = BinData::Base.new(:a => 3)
+    obj = BinData::Base.new(a: 3)
     assert obj.has_parameter?(:a)
   end
 
@@ -31,7 +31,7 @@ end
 
 describe BinData::Base, "#get_parameter" do
   it "retrieves parameter values" do
-    obj = BinData::Base.new(:a => 3)
+    obj = BinData::Base.new(a: 3)
     obj.get_parameter(:a).must_equal 3
   end
 
@@ -46,14 +46,14 @@ describe BinData::Base, "#get_parameter" do
   end
 
   it "wont eval parameters" do
-    obj = BinData::Base.new(:a => lambda { 3 })
+    obj = BinData::Base.new(a: -> { 3 })
     assert_kind_of Proc, obj.get_parameter(:a)
   end
 end
 
 describe BinData::Base, "#eval_parameter" do
   it "evals the parameter" do
-    obj = BinData::Base.new(:a => lambda { 3 })
+    obj = BinData::Base.new(a: -> { 3 })
     obj.eval_parameter(:a).must_equal 3
   end
 
@@ -70,7 +70,7 @@ describe BinData::Base, ".mandatory_parameters" do
   end
 
   it "fails when not all mandatory parameters are present" do
-    params = {:p1 => "a", :xx => "b" }
+    params = {p1: "a", xx: "b" }
     lambda { MandatoryBase.new(params) }.must_raise ArgumentError
   end
 
@@ -81,7 +81,7 @@ end
 
 describe BinData::Base, ".default_parameters" do
   class DefaultBase < BinData::Base
-    default_parameter :p1 => "a"
+    default_parameter p1: "a"
   end
 
   it "uses default parameters when not specified" do
@@ -90,7 +90,7 @@ describe BinData::Base, ".default_parameters" do
   end
 
   it "can override default parameters" do
-    obj = DefaultBase.new(:p1 => "b")
+    obj = DefaultBase.new(p1: "b")
     obj.eval_parameter(:p1).must_equal "b"
   end
 end
@@ -102,9 +102,9 @@ describe BinData::Base, ".mutually_exclusive_parameters" do
   end
 
   it "fails when any two of those parameters are present" do
-    lambda { MutexParamBase.new(:p1 => "a", :p2 => "b") }.must_raise ArgumentError
-    lambda { MutexParamBase.new(:p1 => "a", :p3 => "c") }.must_raise ArgumentError
-    lambda { MutexParamBase.new(:p2 => "b", :p3 => "c") }.must_raise ArgumentError
+    lambda { MutexParamBase.new(p1: "a", p2: "b") }.must_raise ArgumentError
+    lambda { MutexParamBase.new(p1: "a", p3: "c") }.must_raise ArgumentError
+    lambda { MutexParamBase.new(p2: "b", p3: "c") }.must_raise ArgumentError
   end
 end
 

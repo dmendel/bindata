@@ -12,49 +12,49 @@ describe BinData::Array, "when instantiating" do
 
   describe "with some but not all mandatory parameters supplied" do
     it "raises an error" do
-      args = {:initial_length => 3}
+      args = {initial_length: 3}
       lambda { BinData::Array.new(args) }.must_raise ArgumentError
     end
   end
 
   it "warns about :length" do
     Kernel.must_warn ":length is not used with BinData::Array.  You probably want to change this to :initial_length" do
-    obj = BinData::Array.new(:type => :uint8, :length => 3)
+    obj = BinData::Array.new(type: :uint8, length: 3)
       obj.read "123"
     end
   end
 
   it "warns about :read_length" do
     Kernel.must_warn ":read_length is not used with BinData::Array.  You probably want to change this to :initial_length" do
-    obj = BinData::Array.new(:type => :uint8, :read_length => 3)
+    obj = BinData::Array.new(type: :uint8, read_length: 3)
       obj.read "123"
     end
   end
 
   it "fails if a given type is unknown" do
-    args = {:type => :does_not_exist, :initial_length => 3}
+    args = {type: :does_not_exist, initial_length: 3}
     lambda { BinData::Array.new(args) }.must_raise BinData::UnRegisteredTypeError
   end
 
   it "fails if :initial_length is not an integer" do
-    args = {:type => :uint8, :initial_length => "3"}
+    args = {type: :uint8, initial_length: "3"}
     lambda { BinData::Array.new(args) }.must_raise ArgumentError
   end
 
   it "does not allow both :initial_length and :read_until" do
-    args = {:initial_length => 3, :read_until => lambda { false } }
+    args = {initial_length: 3, read_until: -> { false } }
     lambda { BinData::Array.new(args) }.must_raise ArgumentError
   end
 
   it "accepts BinData::Base as :type" do
-    obj = BinData::Int8.new(:initial_value => 5)
-    array = BinData::Array.new(:type => obj, :initial_length => 1)
+    obj = BinData::Int8.new(initial_value: 5)
+    array = BinData::Array.new(type: obj, initial_length: 1)
     array.must_equal [5]
   end
 end
 
 describe BinData::Array, "with no elements" do
-  let(:obj) { BinData::Array.new(:type => :uint32le) }
+  let(:obj) { BinData::Array.new(type: :uint32le) }
 
   it "initial state" do
     assert obj.clear?
@@ -75,8 +75,8 @@ end
 
 describe BinData::Array, "with several elements" do
   let(:obj) {
-    type = [:uint32le, {:initial_value => lambda { index + 1 }}]
-    BinData::Array.new(:type => type, :initial_length => 5)
+    type = [:uint32le, {initial_value: -> { index + 1 }}]
+    BinData::Array.new(type: type, initial_length: 5)
   }
 
   it "initial state" do
@@ -107,7 +107,7 @@ describe BinData::Array, "with several elements" do
   end
 
   it "assigns a bindata array" do
-    array = BinData::Array.new([4, 5, 6], :type => :uint32le)
+    array = BinData::Array.new([4, 5, 6], type: :uint32le)
     obj.assign(array)
     obj.must_equal [4, 5, 6]
   end
@@ -201,8 +201,8 @@ end
 
 describe BinData::Array, "when accessing elements" do
   let(:obj) {
-    type = [:uint32le, {:initial_value => lambda { index + 1 }}]
-    data = BinData::Array.new(:type => type, :initial_length => 5)
+    type = [:uint32le, {initial_value: -> { index + 1 }}]
+    data = BinData::Array.new(type: type, initial_length: 5)
     data.assign([1, 2, 3, 4, 5])
     data
   }
@@ -273,7 +273,7 @@ describe BinData::Array, "with :read_until" do
   describe "containing +element+" do
     it "reads until the sentinel is reached" do
       read_until = lambda { element == 5 }
-      obj = BinData::Array.new(:type => :int8, :read_until => read_until)
+      obj = BinData::Array.new(type: :int8, read_until: read_until)
 
       obj.read "\x01\x02\x03\x04\x05\x06\x07\x08"
       obj.must_equal [1, 2, 3, 4, 5]
@@ -283,7 +283,7 @@ describe BinData::Array, "with :read_until" do
   describe "containing +array+ and +index+" do
     it "reads until the sentinel is reached" do
       read_until = lambda { index >= 2 and array[index - 2] == 5 }
-      obj = BinData::Array.new(:type => :int8, :read_until => read_until)
+      obj = BinData::Array.new(type: :int8, read_until: read_until)
 
       obj.read "\x01\x02\x03\x04\x05\x06\x07\x08"
       obj.must_equal [1, 2, 3, 4, 5, 6, 7]
@@ -292,22 +292,22 @@ describe BinData::Array, "with :read_until" do
 
   describe ":eof" do
     it "reads records until eof" do
-      obj = BinData::Array.new(:type => :int8, :read_until => :eof)
+      obj = BinData::Array.new(type: :int8, read_until: :eof)
 
       obj.read "\x01\x02\x03"
       obj.must_equal [1, 2, 3]
     end
 
     it "reads records until eof, ignoring partial records" do
-      obj = BinData::Array.new(:type => :int16be, :read_until => :eof)
+      obj = BinData::Array.new(type: :int16be, read_until: :eof)
 
       obj.read "\x00\x01\x00\x02\x03"
       obj.must_equal [1, 2]
     end
 
     it "reports exceptions" do
-      array_type = [:string, {:read_length => lambda { unknown_variable }}]
-      obj = BinData::Array.new(:type => array_type, :read_until => :eof)
+      array_type = [:string, {read_length: -> { unknown_variable }}]
+      obj = BinData::Array.new(type: array_type, read_until: :eof)
       lambda { obj.read "\x00\x01\x00\x02\x03" }.must_raise NoMethodError
     end
   end
@@ -315,10 +315,10 @@ end
 
 describe BinData::Array, "nested within an Array" do
   let(:obj) {
-    nested_array_params = { :type => [:int8, { :initial_value => :index }],
-                            :initial_length => lambda { index + 1 } }
-    BinData::Array.new(:type => [:array, nested_array_params],
-                       :initial_length => 3)
+    nested_array_params = { type: [:int8, { initial_value: :index }],
+                            initial_length: -> { index + 1 } }
+    BinData::Array.new(type: [:array, nested_array_params],
+                       initial_length: 3)
   }
 
   it "#snapshot" do
@@ -334,24 +334,24 @@ end
 describe BinData::Array, "subclassed" do
   class IntArray < BinData::Array
     endian :big
-    default_parameter :initial_element_value => 0
+    default_parameter initial_element_value: 0
 
-    uint16 :initial_value => :initial_element_value
+    uint16 initial_value: :initial_element_value
   end
 
   it "forwards parameters" do
-    obj = IntArray.new(:initial_length => 7)
+    obj = IntArray.new(initial_length: 7)
     obj.length.must_equal 7
   end
 
   it "overrides default parameters" do
-    obj = IntArray.new(:initial_length => 3, :initial_element_value => 5)
+    obj = IntArray.new(initial_length: 3, initial_element_value: 5)
     obj.to_binary_s.must_equal_binary "\x00\x05\x00\x05\x00\x05"
   end
 end
 
 describe BinData::Array, "of bits" do
-  let(:obj) { BinData::Array.new(:type => :bit1, :initial_length => 15) }
+  let(:obj) { BinData::Array.new(type: :bit1, initial_length: 15) }
 
   it "reads" do
     str = [0b0001_0100, 0b1000_1000].pack("CC")

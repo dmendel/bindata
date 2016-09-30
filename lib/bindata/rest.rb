@@ -7,7 +7,7 @@ module BinData
   #   require 'bindata'
   #
   #   class A < BinData::Record
-  #     string :a, :read_length => 5
+  #     string :a, read_length: 5
   #     rest   :rest
   #   end
   #

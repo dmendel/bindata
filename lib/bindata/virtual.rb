@@ -8,9 +8,9 @@ module BinData
   #   require 'bindata'
   #
   #   class A < BinData::Record
-  #     string  :a, :read_length => 5
-  #     string  :b, :read_length => 5
-  #     virtual :c, :assert => lambda { a == b }
+  #     string  :a, read_length: 5
+  #     string  :b, read_length: 5
+  #     virtual :c, assert: -> { a == b }
   #   end
   #
   #   obj = A.read("abcdeabcde")

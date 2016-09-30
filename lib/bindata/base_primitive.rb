@@ -8,22 +8,22 @@ module BinData
   #
   #   require 'bindata'
   #
-  #   obj = BinData::Uint8.new(:initial_value => 42)
+  #   obj = BinData::Uint8.new(initial_value: 42)
   #   obj #=> 42
   #   obj.assign(5)
   #   obj #=> 5
   #   obj.clear
   #   obj #=> 42
   #
-  #   obj = BinData::Uint8.new(:value => 42)
+  #   obj = BinData::Uint8.new(value: 42)
   #   obj #=> 42
   #   obj.assign(5)
   #   obj #=> 42
   #
-  #   obj = BinData::Uint8.new(:assert => 3)
+  #   obj = BinData::Uint8.new(assert: 3)
   #   obj.read("\005") #=> BinData::ValidityError: value is '5' but expected '3'
   #
-  #   obj = BinData::Uint8.new(:assert => lambda { value < 5 })
+  #   obj = BinData::Uint8.new(assert: -> { value < 5 })
   #   obj.read("\007") #=> BinData::ValidityError: value not as expected
   #
   # == Parameters
@@ -174,7 +174,7 @@ module BinData
 
       def assert!
         current_value = snapshot
-        expected = eval_parameter(:assert, :value => current_value)
+        expected = eval_parameter(:assert, value: current_value)
 
         msg = if not expected
           "value '#{current_value}' not as expected"
@@ -209,7 +209,7 @@ module BinData
       end
 
       def assert_value(current_value)
-        expected = eval_parameter(:asserted_value, :value => current_value)
+        expected = eval_parameter(:asserted_value, value: current_value)
         if current_value != expected
           raise ValidityError,
                 "value is '#{current_value}' but " +

@@ -8,19 +8,19 @@ module BinData
   #
   #   require 'bindata'
   #
-  #   type1 = [:string, {:value => "Type1"}]
-  #   type2 = [:string, {:value => "Type2"}]
+  #   type1 = [:string, {value: "Type1"}]
+  #   type2 = [:string, {value: "Type2"}]
   #
   #   choices = {5 => type1, 17 => type2}
-  #   a = BinData::Choice.new(:choices => choices, :selection => 5)
+  #   a = BinData::Choice.new(choices: choices, selection: 5)
   #   a # => "Type1"
   #
   #   choices = [ type1, type2 ]
-  #   a = BinData::Choice.new(:choices => choices, :selection => 1)
+  #   a = BinData::Choice.new(choices: choices, selection: 1)
   #   a # => "Type2"
   #
   #   choices = [ nil, nil, nil, type1, nil, type2 ]
-  #   a = BinData::Choice.new(:choices => choices, :selection => 3)
+  #   a = BinData::Choice.new(choices: choices, selection: 3)
   #   a # => "Type1"
   #
   #
@@ -29,8 +29,8 @@ module BinData
   #   mychoice.choice = 'big'
   #
   #   choices = {'big' => :uint16be, 'little' => :uint16le}
-  #   a = BinData::Choice.new(:choices => choices, :copy_on_change => true,
-  #                           :selection => lambda { mychoice.choice })
+  #   a = BinData::Choice.new(choices: choices, copy_on_change: true,
+  #                           selection: -> { mychoice.choice })
   #   a.assign(256)
   #   a.to_binary_s #=> "\001\000"
   #

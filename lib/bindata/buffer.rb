@@ -9,12 +9,12 @@ module BinData
   #
   #   require 'bindata'
   #
-  #   obj = BinData::Buffer.new(:length => 5, :type => [:string, {:value => "abc"}])
+  #   obj = BinData::Buffer.new(length: 5, type: [:string, {value: "abc"}])
   #   obj.to_binary_s #=> "abc\000\000"
   #
   #
   #   class MyBuffer < BinData::Buffer
-  #     default_parameter :length => 8
+  #     default_parameter length: 8
   #
   #     endian :little
   #
@@ -34,10 +34,10 @@ module BinData
   #     endian :little
   #
   #     uint16 :table_size_in_bytes
-  #     buffer :strings, :length => :table_size_in_bytes do
-  #       array :read_until => :eof do
+  #     buffer :strings, length: :table_size_in_bytes do
+  #       array read_until: :eof do
   #         uint8 :len
-  #         string :str, :length => :len
+  #         string :str, length: :len
   #       end
   #     end
   #   end

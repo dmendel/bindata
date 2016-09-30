@@ -35,8 +35,8 @@ end
 
 describe BinData::LazyEvaluator, "with no parents" do
   subject {
-    methods = {:m1 => 'm1', :com => 'mC'}
-    params  = {:p1 => 'p1', :com => 'pC'}
+    methods = {m1: 'm1', com: 'mC'}
+    params  = {p1: 'p1', com: 'pC'}
     MockBinDataObject.new(methods, params)
   }
 
@@ -53,7 +53,7 @@ describe BinData::LazyEvaluator, "with no parents" do
   end
 
   it "evaluates overrides" do
-    lazy_eval(lambda { o1 }, :o1 => 'o1').must_equal 'o1'
+    lazy_eval(lambda { o1 }, o1: 'o1').must_equal 'o1'
   end
 
   it "does not resolve any unknown methods" do
@@ -73,8 +73,8 @@ end
 
 describe BinData::LazyEvaluator, "with one parent" do
   subject {
-    parent_methods = {:m1 => 'Pm1', :m2 => 'Pm2', :com1 => 'PmC', :mm => 3}
-    parent_params  = {:p1 => 'Pp1', :com1 => 'PpC'}
+    parent_methods = {m1: 'Pm1', m2: 'Pm2', com1: 'PmC', mm: 3}
+    parent_params  = {p1: 'Pp1', com1: 'PpC'}
     parent_obj = MockBinDataObject.new(parent_methods, parent_params)
 
     class << parent_obj
@@ -85,8 +85,8 @@ describe BinData::LazyEvaluator, "with one parent" do
       private :m2
     end
 
-    methods = {:m1 => 'm1', :com1 => 'mC'}
-    params  = {:p1 => 'p1', :com1 => 'pC'}
+    methods = {m1: 'm1', com1: 'mC'}
+    params  = {p1: 'p1', com1: 'pC'}
     MockBinDataObject.new(methods, params, parent_obj)
   }
 
@@ -99,11 +99,11 @@ describe BinData::LazyEvaluator, "with one parent" do
   end
 
   it "evaluates overrides before params" do
-    lazy_eval(lambda { p1 }, :p1 => 'o1').must_equal 'o1'
+    lazy_eval(lambda { p1 }, p1: 'o1').must_equal 'o1'
   end
 
   it "evaluates overrides before methods" do
-    lazy_eval(lambda { m1 }, :m1 => 'o1').must_equal 'o1'
+    lazy_eval(lambda { m1 }, m1: 'o1').must_equal 'o1'
   end
 
   it "does not resolve any unknown methods" do
@@ -141,8 +141,8 @@ end
 
 describe BinData::LazyEvaluator, "with nested parents" do
   subject {
-    pparent_methods = {:m1 => 'PPm1', :m2 => 'PPm2', :com1 => 'PPmC'}
-    pparent_params  = {:p1 => 'PPp1', :p2 => 'PPp2', :com1 => 'PPpC'}
+    pparent_methods = {m1: 'PPm1', m2: 'PPm2', com1: 'PPmC'}
+    pparent_params  = {p1: 'PPp1', p2: 'PPp2', com1: 'PPpC'}
     pparent_obj = MockBinDataObject.new(pparent_methods, pparent_params)
 
     def pparent_obj.echo(arg)
@@ -153,16 +153,16 @@ describe BinData::LazyEvaluator, "with nested parents" do
       ["PP2", arg]
     end
 
-    parent_methods = {:m1 => 'Pm1', :com1 => 'PmC', :sym1 => :m2, :sym2 => lambda { m2 }}
-    parent_params  = {:p1 => 'Pp1', :com1 => 'PpC'}
+    parent_methods = {m1: 'Pm1', com1: 'PmC', sym1: :m2, sym2: -> { m2 }}
+    parent_params  = {p1: 'Pp1', com1: 'PpC'}
     parent_obj = MockBinDataObject.new(parent_methods, parent_params, pparent_obj)
 
     def parent_obj.echo(arg)
       ["P", arg]
     end
 
-    methods = {:m1 => 'm1', :com1 => 'mC'}
-    params  = {:p1 => 'p1', :com1 => 'pC'}
+    methods = {m1: 'm1', com1: 'mC'}
+    params  = {p1: 'p1', com1: 'pC'}
     MockBinDataObject.new(methods, params, parent_obj)
   }
 
@@ -198,7 +198,7 @@ describe BinData::LazyEvaluator, "with nested parents" do
   end
 
   it "invokes methods in the parent's parent" do
-    lazy_eval(lambda { parent.echo(m1) }, { :m1 => 'o1'}).must_equal ['PP', 'o1']
+    lazy_eval(lambda { parent.echo(m1) }, { m1: 'o1'}).must_equal ['PP', 'o1']
   end
 
   it "invokes methods in the parent's parent" do

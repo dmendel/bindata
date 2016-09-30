@@ -3,7 +3,7 @@ module BinData
   # lambdas in the context of this data object.  These lambdas
   # are those that are passed to data objects as parameters, e.g.:
   #
-  #    BinData::String.new(:value => lambda { %w{a test message}.join(" ") })
+  #    BinData::String.new(value: -> { %w(a test message).join(" ") })
   #
   # As a shortcut, :foo is the equivalent of lambda { foo }.
   #

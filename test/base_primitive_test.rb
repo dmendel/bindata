@@ -102,7 +102,7 @@ describe BinData::BasePrimitive, "after initialisation" do
   let(:obj) { ExampleSingle.new }
 
   it "does not allow both :initial_value and :value" do
-    params = {:initial_value => 1, :value => 2}
+    params = {initial_value: 1, value: 2}
     lambda { ExampleSingle.new(params) }.must_raise ArgumentError
   end
 
@@ -141,7 +141,7 @@ describe BinData::BasePrimitive, "after initialisation" do
 end
 
 describe BinData::BasePrimitive, "with :initial_value" do
-  let(:obj) { ExampleSingle.new(:initial_value => 5) }
+  let(:obj) { ExampleSingle.new(initial_value: 5) }
 
   it "initial state" do
     obj.value.must_equal 5
@@ -165,7 +165,7 @@ describe BinData::BasePrimitive, "with :initial_value" do
 end
 
 describe BinData::BasePrimitive, "with :value" do
-  let(:obj) { ExampleSingle.new(:value => 5) }
+  let(:obj) { ExampleSingle.new(value: 5) }
   let(:io)  { ExampleSingle.io_with_value(56) }
 
   it "initial state" do
@@ -195,45 +195,45 @@ describe BinData::BasePrimitive, "asserting value" do
 
   describe ":assert is non boolean" do
     it "asserts sensible value" do
-      data = ExampleSingle.new(:assert => 0)
+      data = ExampleSingle.new(assert: 0)
       data.assert!
       data.value.must_equal 0
     end
 
     it "succeeds when assert is correct" do
-      data = ExampleSingle.new(:assert => 12)
+      data = ExampleSingle.new(assert: 12)
       data.read(io)
       data.value.must_equal 12
     end
 
     it "fails when assert is incorrect" do
-      data = ExampleSingle.new(:assert => lambda { 99 })
+      data = ExampleSingle.new(assert: -> { 99 })
       lambda { data.read(io) }.must_raise BinData::ValidityError
     end
   end
 
   describe ":assert is boolean" do
     it "succeeds when assert is true" do
-      data = ExampleSingle.new(:assert => lambda { value < 20 })
+      data = ExampleSingle.new(assert: -> { value < 20 })
       data.read(io)
       data.value.must_equal 12
     end
 
     it "fails when assert is false" do
-      data = ExampleSingle.new(:assert => lambda { value > 20 })
+      data = ExampleSingle.new(assert: -> { value > 20 })
       lambda { data.read(io) }.must_raise BinData::ValidityError
     end
   end
 
   describe "assigning with :assert" do
     it "succeeds when assert is correct" do
-      data = ExampleSingle.new(:assert => 12)
+      data = ExampleSingle.new(assert: 12)
       data.assign(12)
       data.value.must_equal 12
     end
 
     it "fails when assert is incorrect" do
-      data = ExampleSingle.new(:assert => 12)
+      data = ExampleSingle.new(assert: 12)
       lambda { data.assign(99) }.must_raise BinData::ValidityError
     end
   end
@@ -241,19 +241,19 @@ end
 
 describe BinData::BasePrimitive, ":asserted_value" do
   it "has :value" do
-    data = ExampleSingle.new(:asserted_value => lambda { 12 })
+    data = ExampleSingle.new(asserted_value: -> { 12 })
     data.value.must_equal 12
   end
 
   describe "assigning with :assert" do
     it "succeeds when assert is correct" do
-      data = ExampleSingle.new(:asserted_value => lambda { 12 })
+      data = ExampleSingle.new(asserted_value: -> { 12 })
       data.assign(12)
       data.value.must_equal 12
     end
 
     it "fails when assert is incorrect" do
-      data = ExampleSingle.new(:asserted_value => lambda { 12 })
+      data = ExampleSingle.new(asserted_value: -> { 12 })
       lambda { data.assign(99) }.must_raise BinData::ValidityError
     end
   end
@@ -261,13 +261,13 @@ end
 
 describe BinData::BasePrimitive do
   it "conforms to rule 1 for returning a value" do
-    data = ExampleSingle.new(:value => 5)
+    data = ExampleSingle.new(value: 5)
     data.must_equal 5
   end
 
   it "conforms to rule 2 for returning a value" do
     io = ExampleSingle.io_with_value(42)
-    data = ExampleSingle.new(:value => 5)
+    data = ExampleSingle.new(value: 5)
     data.read(io)
 
     data.stub :reading?, true do
@@ -276,13 +276,13 @@ describe BinData::BasePrimitive do
   end
 
   it "conforms to rule 3 for returning a value" do
-    data = ExampleSingle.new(:initial_value => 5)
+    data = ExampleSingle.new(initial_value: 5)
     assert data.clear?
     data.must_equal 5
   end
 
   it "conforms to rule 4 for returning a value" do
-    data = ExampleSingle.new(:initial_value => 5)
+    data = ExampleSingle.new(initial_value: 5)
     data.assign(17)
     refute data.clear?
     data.must_equal 17

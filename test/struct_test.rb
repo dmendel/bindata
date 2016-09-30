@@ -4,14 +4,14 @@ require File.expand_path(File.join(File.dirname(__FILE__), "test_helper"))
 
 describe BinData::Struct, "when initializing" do
   it "fails on non registered types" do
-    params = {:fields => [[:non_registered_type, :a]]}
+    params = {fields: [[:non_registered_type, :a]]}
     lambda {
       BinData::Struct.new(params)
     }.must_raise BinData::UnRegisteredTypeError
   end
 
   it "fails on duplicate names" do
-    params = {:fields => [[:int8, :a], [:int8, :b], [:int8, :a]]}
+    params = {fields: [[:int8, :a], [:int8, :b], [:int8, :a]]}
     lambda {
       BinData::Struct.new(params)
     }.must_raise NameError
@@ -19,21 +19,21 @@ describe BinData::Struct, "when initializing" do
 
   it "fails on reserved names" do
     # note that #invert is from Hash.instance_methods
-    params = {:fields => [[:int8, :a], [:int8, :invert]]}
+    params = {fields: [[:int8, :a], [:int8, :invert]]}
     lambda {
       BinData::Struct.new(params)
     }.must_raise NameError
   end
 
   it "fails when field name shadows an existing method" do
-    params = {:fields => [[:int8, :object_id]]}
+    params = {fields: [[:int8, :object_id]]}
     lambda {
       BinData::Struct.new(params)
     }.must_raise NameError
   end
 
   it "fails on unknown endian" do
-    params = {:endian => 'bad value', :fields => []}
+    params = {endian: 'bad value', fields: []}
     lambda {
       BinData::Struct.new(params)
     }.must_raise ArgumentError
@@ -42,10 +42,10 @@ end
 
 describe BinData::Struct, "with anonymous fields" do
   let(:obj) {
-    params = { :fields => [
-                            [:int8, :a, {:initial_value => 5}],
+    params = { fields: [
+                            [:int8, :a, {initial_value: 5}],
                             [:int8, nil],
-                            [:int8, '', {:value => :a}]
+                            [:int8, '', {value: :a}]
                           ] }
     BinData::Struct.new(params)
   }
@@ -56,7 +56,7 @@ describe BinData::Struct, "with anonymous fields" do
 
   it "does not include anonymous fields in snapshot" do
     obj.a = 5
-    obj.snapshot.must_equal({:a => 5})
+    obj.snapshot.must_equal({a: 5})
   end
 
   it "writes anonymous fields" do
@@ -68,12 +68,12 @@ end
 
 describe BinData::Struct, "with hidden fields" do
   let(:obj) {
-    params = { :hide => [:b, :c],
-               :fields => [
+    params = { hide: [:b, :c],
+               fields: [
                    [:int8, :a],
-                   [:int8, 'b', {:initial_value => 5}],
+                   [:int8, 'b', {initial_value: 5}],
                    [:int8, :c],
-                   [:int8, :d, {:value => :b}]] }
+                   [:int8, :d, {value: :b}]] }
     BinData::Struct.new(params)
   }
 
@@ -95,7 +95,7 @@ describe BinData::Struct, "with hidden fields" do
 
   it "does not include hidden fields in snapshot" do
     obj.b = 7
-    obj.snapshot.must_equal({:a => 0, :d => 7})
+    obj.snapshot.must_equal({a: 0, d: 7})
   end
 
   it "detects hidden fields with has_key?" do
@@ -104,8 +104,8 @@ describe BinData::Struct, "with hidden fields" do
 end
 
 describe BinData::Struct, "with multiple fields" do
-  let(:params) { { :fields => [ [:int8, :a], [:int8, :b] ] } }
-  let(:obj) { BinData::Struct.new({:a => 1, :b => 2}, params) }
+  let(:params) { { fields: [ [:int8, :a], [:int8, :b] ] } }
+  let(:obj) { BinData::Struct.new({a: 1, b: 2}, params) }
 
   specify { obj.field_names.must_equal [:a, :b] }
   specify { obj.to_binary_s.must_equal_binary "\x01\x02" }
@@ -165,17 +165,17 @@ describe BinData::Struct, "with multiple fields" do
     assert snap.respond_to?(:a)
     snap.a.must_equal 1
     snap.b.must_equal 2
-    snap.must_equal({ :a => 1, :b => 2 })
+    snap.must_equal({ a: 1, b: 2 })
   end
 
   it "assigns from partial hash" do
-    obj.assign(:a => 3)
+    obj.assign(a: 3)
     obj.a.must_equal 3
     obj.b.must_equal 0
   end
 
   it "assigns from hash" do
-    obj.assign(:a => 3, :b => 4)
+    obj.assign(a: 3, b: 4)
     obj.a.must_equal 3
     obj.b.must_equal 4
   end
@@ -230,16 +230,16 @@ end
 
 describe BinData::Struct, "with nested structs" do
   let(:obj) {
-    inner1 = [ [:int8, :w, {:initial_value => 3}],
-               [:int8, :x, {:value => :the_val}] ]
+    inner1 = [ [:int8, :w, {initial_value: 3}],
+               [:int8, :x, {value: :the_val}] ]
 
-    inner2 = [ [:int8, :y, {:value => lambda { parent.b.w }}],
+    inner2 = [ [:int8, :y, {value: -> { parent.b.w }}],
                [:int8, :z] ]
 
-    params = { :fields => [
-                 [:int8, :a, {:initial_value => 6}],
-                 [:struct, :b, {:fields => inner1, :the_val => :a}],
-                 [:struct, :c, {:fields => inner2}]] }
+    params = { fields: [
+                 [:int8, :a, {initial_value: 6}],
+                 [:struct, :b, {fields: inner1, the_val: :a}],
+                 [:struct, :c, {fields: inner2}]] }
     BinData::Struct.new(params)
   }
 
@@ -269,22 +269,23 @@ end
 
 describe BinData::Struct, "with an endian defined" do
   let(:obj) {
-    BinData::Struct.new(:endian => :little,
-                        :fields => [
-                                     [:uint16, :a],
-                                     [:float, :b],
-                                     [:array, :c,
-                                       {:type => :int8, :initial_length => 2}],
-                                     [:choice, :d,
-                                       {:choices => [[:uint16], [:uint32]],
-                                        :selection => 1}],
-                                     [:struct, :e,
-                                       {:fields => [[:uint16, :f],
-                                                    [:uint32be, :g]]}],
-                                     [:struct, :h,
-                                       {:fields => [
-                                         [:struct, :i,
-                                           {:fields => [[:uint16, :j]]}]]}]])
+    BinData::Struct.new(endian: :little,
+                        fields: [
+                                  [:uint16, :a],
+                                  [:float, :b],
+                                  [:array, :c,
+                                    {type: :int8, initial_length: 2}],
+                                  [:choice, :d,
+                                    {choices: [[:uint16], [:uint32]],
+                                     selection: 1}],
+                                  [:struct, :e,
+                                    {fields: [[:uint16, :f],
+                                                 [:uint32be, :g]]}],
+                                  [:struct, :h,
+                                    {fields: [
+                                      [:struct, :i,
+                                        {fields: [[:uint16, :j]]}]]}]
+                                ])
   }
 
   it "uses correct endian" do
@@ -305,8 +306,8 @@ end
 
 describe BinData::Struct, "with bit fields" do
   let(:obj) {
-    params = { :fields => [ [:bit1le, :a], [:bit2le, :b], [:uint8, :c], [:bit1le, :d] ] }
-    BinData::Struct.new({:a => 1, :b => 2, :c => 3, :d => 1}, params)
+    params = { fields: [ [:bit1le, :a], [:bit2le, :b], [:uint8, :c], [:bit1le, :d] ] }
+    BinData::Struct.new({a: 1, b: 2, c: 3, d: 1}, params)
   }
 
   specify { obj.num_bytes.must_equal 3 }
@@ -331,12 +332,12 @@ end
 
 describe BinData::Struct, "with nested endian" do
   it "uses correct endian" do
-    nested_params = { :endian => :little,
-                      :fields => [[:int16, :b], [:int16, :c]] }
-    params = { :endian => :big, 
-               :fields => [[:int16, :a],
-                           [:struct, :s, nested_params],
-                           [:int16, :d]] }
+    nested_params = { endian: :little,
+                      fields: [[:int16, :b], [:int16, :c]] }
+    params = { endian: :big, 
+               fields: [[:int16, :a],
+                        [:struct, :s, nested_params],
+                        [:int16, :d]] }
     obj = BinData::Struct.new(params)
     obj.read("\x00\x01\x02\x00\x03\x00\x00\x04")
 
@@ -352,57 +353,57 @@ describe BinData::Struct, "with a search_prefix" do
   class BShort < BinData::Uint8; end
 
   it "searches symbol prefixes" do
-    obj = BinData::Struct.new(:search_prefix => :a,
-                              :fields => [ [:short, :f] ])
+    obj = BinData::Struct.new(search_prefix: :a,
+                              fields: [ [:short, :f] ])
     obj.f.class.name.must_equal "AShort"
   end
 
   it "searches string prefixes" do
-    obj = BinData::Struct.new(:search_prefix => "a",
-                              :fields => [ [:short, :f] ])
+    obj = BinData::Struct.new(search_prefix: "a",
+                              fields: [ [:short, :f] ])
     obj.f.class.name.must_equal "AShort"
   end
 
   it "searches string prefixes with optional underscore" do
-    obj = BinData::Struct.new(:search_prefix => "a_",
-                              :fields => [ [:short, :f] ])
+    obj = BinData::Struct.new(search_prefix: "a_",
+                              fields: [ [:short, :f] ])
     obj.f.class.name.must_equal "AShort"
   end
 
   it "searches multiple prefixes" do
-    obj = BinData::Struct.new(:search_prefix => [:x, :a],
-                              :fields => [ [:short, :f] ])
+    obj = BinData::Struct.new(search_prefix: [:x, :a],
+                              fields: [ [:short, :f] ])
     obj.f.class.name.must_equal "AShort"
   end
 
   it "uses parent search_prefix" do
-    nested_params = { :fields => [[:short, :f]] }
-    obj = BinData::Struct.new(:search_prefix => :a,
-                              :fields => [[:struct, :s, nested_params]])
+    nested_params = { fields: [[:short, :f]] }
+    obj = BinData::Struct.new(search_prefix: :a,
+                              fields: [[:struct, :s, nested_params]])
     obj.s.f.class.name.must_equal "AShort"
   end
 
   it "searches parent search_prefix" do
-    nested_params = { :search_prefix => :x, :fields => [[:short, :f]] }
-    obj = BinData::Struct.new(:search_prefix => :a,
-                              :fields => [[:struct, :s, nested_params]])
+    nested_params = { search_prefix: :x, fields: [[:short, :f]] }
+    obj = BinData::Struct.new(search_prefix: :a,
+                              fields: [[:struct, :s, nested_params]])
     obj.s.f.class.name.must_equal "AShort"
   end
 
   it "prioritises nested search_prefix" do
-    nested_params = { :search_prefix => :a, :fields => [[:short, :f]] }
-    obj = BinData::Struct.new(:search_prefix => :b,
-                              :fields => [[:struct, :s, nested_params]])
+    nested_params = { search_prefix: :a, fields: [[:short, :f]] }
+    obj = BinData::Struct.new(search_prefix: :b,
+                              fields: [[:struct, :s, nested_params]])
     obj.s.f.class.name.must_equal "AShort"
   end
 end
 
 describe BinData::Struct, "with byte_align" do
   let(:obj) {
-    params = { :fields => [[:int8, :a],
-                           [:int8, :b, :byte_align => 5],
-                           [:bit2, :c],
-                           [:int8, :d, :byte_align => 3]] }
+    params = { fields: [[:int8, :a],
+                        [:int8, :b, byte_align: 5],
+                        [:bit2, :c],
+                        [:int8, :d, byte_align: 3]] }
     BinData::Struct.new(params)
   }
 
@@ -412,11 +413,11 @@ describe BinData::Struct, "with byte_align" do
 
   it "reads" do
     obj.read("\x01\x00\x00\x00\x00\x02\xc0\x00\x00\x04")
-    obj.snapshot.must_equal({ :a => 1, :b => 2, :c => 3, :d => 4 })
+    obj.snapshot.must_equal({ a: 1, b: 2, c: 3, d: 4 })
   end
 
   it "writes" do
-    obj.assign(:a => 1, :b => 2, :c => 3, :d => 4)
+    obj.assign(a: 1, b: 2, c: 3, d: 4)
     obj.to_binary_s.must_equal_binary "\x01\x00\x00\x00\x00\x02\xc0\x00\x00\x04"
   end
 
@@ -430,9 +431,9 @@ end
 
 describe BinData::Struct, "with dynamically named types" do
   it "instantiates" do
-    _ = BinData::Struct.new(:name => :my_struct, :fields => [[:int8, :a, {:initial_value => 3}]])
+    _ = BinData::Struct.new(name: :my_struct, fields: [[:int8, :a, {initial_value: 3}]])
 
-    obj = BinData::Struct.new(:fields => [[:my_struct, :v]])
+    obj = BinData::Struct.new(fields: [[:my_struct, :v]])
 
     obj.v.a.must_equal 3
   end

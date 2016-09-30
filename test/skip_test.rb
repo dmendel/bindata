@@ -12,7 +12,7 @@ describe BinData::Skip, "when instantiating" do
 end
 
 describe BinData::Skip, "with :length" do
-  let(:obj) { BinData::Skip.new(:length => 5) }
+  let(:obj) { BinData::Skip.new(length: 5) }
   let(:io) { StringIO.new("abcdefghij") }
 
   it "initial state" do
@@ -37,28 +37,28 @@ describe BinData::Skip, "with :length" do
 end
 
 describe BinData::Skip, "with :to_abs_offset" do
-  BinData::Struct.new(:fields => [ [:skip, :f, { :to_abs_offset => 5 } ] ])
+  BinData::Struct.new(fields: [ [:skip, :f, { to_abs_offset: 5 } ] ])
 
-  let(:skip_obj) { [:skip, :f, { :to_abs_offset => 5 } ] }
+  let(:skip_obj) { [:skip, :f, { to_abs_offset: 5 } ] }
   let(:io) { StringIO.new("abcdefghij") }
 
   it "reads skipping forward" do
     fields = [ skip_obj ]
-    obj = BinData::Struct.new(:fields => fields)
+    obj = BinData::Struct.new(fields: fields)
     obj.read(io)
     io.pos.must_equal 5
   end
 
   it "reads skipping in place" do
-    fields = [ [:string, :a, { :read_length => 5 }], skip_obj ]
-    obj = BinData::Struct.new(:fields => fields)
+    fields = [ [:string, :a, { read_length: 5 }], skip_obj ]
+    obj = BinData::Struct.new(fields: fields)
     obj.read(io)
     io.pos.must_equal 5
   end
 
   it "does not read skipping backwards" do
-    fields = [ [:string, :a, { :read_length => 10 }], skip_obj ]
-    obj = BinData::Struct.new(:fields => fields)
+    fields = [ [:string, :a, { read_length: 10 }], skip_obj ]
+    obj = BinData::Struct.new(fields: fields)
 
     lambda {
       obj.read(io)
@@ -67,19 +67,19 @@ describe BinData::Skip, "with :to_abs_offset" do
 
   it "writes skipping forward" do
     fields = [ skip_obj ]
-    obj = BinData::Struct.new(:fields => fields)
+    obj = BinData::Struct.new(fields: fields)
     obj.to_binary_s.must_equal "\000\000\000\000\000"
   end
 
   it "reads skipping in place" do
-    fields = [ [:string, :a, { :value => "abcde" }], skip_obj ]
-    obj = BinData::Struct.new(:fields => fields)
+    fields = [ [:string, :a, { value: "abcde" }], skip_obj ]
+    obj = BinData::Struct.new(fields: fields)
     obj.to_binary_s.must_equal "abcde"
   end
 
   it "does not write skipping backwards" do
-    fields = [ [:string, :a, { :value => "abcdefghij" }], skip_obj ]
-    obj = BinData::Struct.new(:fields => fields)
+    fields = [ [:string, :a, { value: "abcdefghij" }], skip_obj ]
+    obj = BinData::Struct.new(fields: fields)
     lambda {
       obj.to_binary_s
     }.must_raise BinData::ValidityError
@@ -90,34 +90,34 @@ describe BinData::Skip, "with :until_valid" do
   let(:io) { StringIO.new("abcdefghij") }
 
   it "skips to valid match" do
-    skip_obj = [:string, { :read_length => 1, :assert => "f" }]
-    fields = [ [:skip, :s, { :until_valid => skip_obj }] ]
-    obj = BinData::Struct.new(:fields => fields)
+    skip_obj = [:string, { read_length: 1, assert: "f" }]
+    fields = [ [:skip, :s, { until_valid: skip_obj }] ]
+    obj = BinData::Struct.new(fields: fields)
     obj.read(io)
     io.pos.must_equal 5
   end
 
   it "doesn't skip when validator doesn't assert" do
-    skip_obj = [:string, { :read_length => 1 }]
-    fields = [ [:skip, :s, { :until_valid => skip_obj }] ]
-    obj = BinData::Struct.new(:fields => fields)
+    skip_obj = [:string, { read_length: 1 }]
+    fields = [ [:skip, :s, { until_valid: skip_obj }] ]
+    obj = BinData::Struct.new(fields: fields)
     obj.read(io)
     io.pos.must_equal 0
   end
 
   it "raises EOFError when no match" do
-    skip_obj = [:string, { :read_length => 1, :assert => "X" }]
-    fields = [ [:skip, :s, { :until_valid => skip_obj }] ]
-    obj = BinData::Struct.new(:fields => fields)
+    skip_obj = [:string, { read_length: 1, assert: "X" }]
+    fields = [ [:skip, :s, { until_valid: skip_obj }] ]
+    obj = BinData::Struct.new(fields: fields)
     lambda {
       obj.read(io)
     }.must_raise EOFError
   end
 
   it "raises IOError when validator reads beyond stream" do
-    skip_obj = [:string, { :read_length => 30 }]
-    fields = [ [:skip, :s, { :until_valid => skip_obj }] ]
-    obj = BinData::Struct.new(:fields => fields)
+    skip_obj = [:string, { read_length: 30 }]
+    fields = [ [:skip, :s, { until_valid: skip_obj }] ]
+    obj = BinData::Struct.new(fields: fields)
     lambda {
       obj.read(io)
     }.must_raise IOError
@@ -125,9 +125,9 @@ describe BinData::Skip, "with :until_valid" do
 
   class DSLSkip < BinData::Record
     skip :s do
-      string :read_length => 1, :assert => "f"
+      string read_length: 1, assert: "f"
     end
-    string :a, :read_length => 1
+    string :a, read_length: 1
   end
 
   it "uses block form" do

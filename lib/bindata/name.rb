@@ -8,8 +8,8 @@ module BinData
   #                  set explicitly.  This is only useful when dynamically
   #                  generating types.
   #                  <code><pre>
-  #                    BinData::Struct.new(:name => :my_struct, :fields => ...)
-  #                    array = BinData::Array.new(:type => :my_struct)
+  #                    BinData::Struct.new(name: :my_struct, fields: ...)
+  #                    array = BinData::Array.new(type: :my_struct)
   #                  </pre></code>
   module RegisterNamePlugin
 

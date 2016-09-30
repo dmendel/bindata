@@ -14,8 +14,8 @@ module BinData
   #    require 'bindata'
   #
   #    class PascalString < BinData::Primitive
-  #      uint8  :len,  :value => lambda { data.length }
-  #      string :data, :read_length => :len
+  #      uint8  :len,  value: -> { data.length }
+  #      string :data, read_length: :len
   #
   #      def get
   #        self.data
@@ -26,7 +26,7 @@ module BinData
   #      end
   #    end
   #
-  #    ps = PascalString.new(:initial_value => "hello")
+  #    ps = PascalString.new(initial_value: "hello")
   #    ps.to_binary_s #=> "\005hello"
   #    ps.read("\003abcde")
   #    ps #=> "abc"

@@ -1,7 +1,7 @@
 module BinData
   # Extracts args for Records and Buffers.
   #
-  # Foo.new(:bar => "baz) is ambiguous as to whether :bar is a value or parameter.
+  # Foo.new(bar: "baz) is ambiguous as to whether :bar is a value or parameter.
   #
   # BaseArgExtractor always assumes :bar is parameter.  This extractor correctly
   # identifies it as value or parameter.
@@ -136,13 +136,13 @@ module BinData
 
       def parser_abilities
         @abilities ||= {
-          :struct     => [:to_struct_params, :struct,      [:multiple_fields, :optional_fieldnames, :hidden_fields]],
-          :array      => [:to_object_params, :type,        [:multiple_fields, :optional_fieldnames]],
-          :buffer     => [:to_object_params, :type,        [:multiple_fields, :optional_fieldnames, :hidden_fields]],
-          :choice     => [:to_choice_params, :choices,     [:multiple_fields, :all_or_none_fieldnames, :fieldnames_are_values]],
-          :delayed_io => [:to_object_params, :type,        [:multiple_fields, :optional_fieldnames, :hidden_fields]],
-          :primitive  => [:to_struct_params, :struct,      [:multiple_fields, :optional_fieldnames]],
-          :skip       => [:to_object_params, :until_valid, [:multiple_fields, :optional_fieldnames]],
+          struct:     [:to_struct_params, :struct,      [:multiple_fields, :optional_fieldnames, :hidden_fields]],
+          array:      [:to_object_params, :type,        [:multiple_fields, :optional_fieldnames]],
+          buffer:     [:to_object_params, :type,        [:multiple_fields, :optional_fieldnames, :hidden_fields]],
+          choice:     [:to_choice_params, :choices,     [:multiple_fields, :all_or_none_fieldnames, :fieldnames_are_values]],
+          delayed_io: [:to_object_params, :type,        [:multiple_fields, :optional_fieldnames, :hidden_fields]],
+          primitive:  [:to_struct_params, :struct,      [:multiple_fields, :optional_fieldnames]],
+          skip:       [:to_object_params, :until_valid, [:multiple_fields, :optional_fieldnames]],
         }
       end
 
@@ -156,7 +156,7 @@ module BinData
       end
 
       def hints
-        { :endian => endian, :search_prefix => search_prefix }
+        { endian: endian, search_prefix: search_prefix }
       end
 
       def set_endian(endian)
@@ -245,7 +245,7 @@ module BinData
       end
 
       def to_struct_params(*unused)
-        result = {:fields => fields}
+        result = {fields: fields}
         if not endian.nil?
           result[:endian] = endian
         end
@@ -284,8 +284,8 @@ module BinData
 
         def override_new_in_class(bnl_class)
           endian_classes = {
-            :big    => class_with_endian(bnl_class, :big),
-            :little => class_with_endian(bnl_class, :little),
+            big:    class_with_endian(bnl_class, :big),
+            little: class_with_endian(bnl_class, :little),
           }
           bnl_class.define_singleton_method(:new) do |*args|
             if self == bnl_class
@@ -300,8 +300,8 @@ module BinData
 
         def delegate_field_creation(bnl_class)
           endian_classes = {
-            :big    => class_with_endian(bnl_class, :big),
-            :little => class_with_endian(bnl_class, :little),
+            big:    class_with_endian(bnl_class, :big),
+            little: class_with_endian(bnl_class, :little),
           }
 
           parser = bnl_class.dsl_parser
@@ -333,8 +333,8 @@ module BinData
 
         def class_with_endian(class_name, endian)
           hints = {
-            :endian => endian,
-            :search_prefix => class_name.dsl_parser.search_prefix,
+            endian: endian,
+            search_prefix: class_name.dsl_parser.search_prefix,
           }
           RegisteredClasses.lookup(class_name, hints)
         end
@@ -384,12 +384,12 @@ module BinData
 
       def params_from_block(&block)
         bindata_classes = {
-          :array      => BinData::Array,
-          :buffer     => BinData::Buffer,
-          :choice     => BinData::Choice,
-          :delayed_io => BinData::DelayedIO,
-          :skip       => BinData::Skip,
-          :struct     => BinData::Struct,
+          array:      BinData::Array,
+          buffer:     BinData::Buffer,
+          choice:     BinData::Choice,
+          delayed_io: BinData::DelayedIO,
+          skip:       BinData::Skip,
+          struct:     BinData::Struct,
         }
 
         if bindata_classes.include?(@type)

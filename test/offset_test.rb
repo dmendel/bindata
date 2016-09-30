@@ -44,50 +44,50 @@ describe BinData::Base, "offsets" do
   describe "with :check_offset" do
     it "fails when offset is incorrect" do
       io.seek(2)
-      obj = TenByteOffsetBase.create(:check_offset => 10 - 4)
+      obj = TenByteOffsetBase.create(check_offset: 10 - 4)
       lambda { obj.read(io) }.must_raise BinData::ValidityError
     end
 
     it "succeeds when offset is correct" do
       io.seek(3)
-      obj = TenByteOffsetBase.create(:check_offset => 10)
+      obj = TenByteOffsetBase.create(check_offset: 10)
       obj.read(io).snapshot.must_equal data[3 + 10, 3]
     end
 
     it "fails when :check_offset fails" do
       io.seek(4)
-      obj = TenByteOffsetBase.create(:check_offset => lambda { offset == 10 + 1 } )
+      obj = TenByteOffsetBase.create(check_offset: -> { offset == 10 + 1 } )
       lambda { obj.read(io) }.must_raise BinData::ValidityError
     end
 
     it "succeeds when :check_offset succeeds" do
       io.seek(5)
-      obj = TenByteOffsetBase.create(:check_offset => lambda { offset == 10 } )
+      obj = TenByteOffsetBase.create(check_offset: -> { offset == 10 } )
       obj.read(io).snapshot.must_equal data[5 + 10, 3]
     end
   end
 
   describe "with :adjust_offset" do
     it "is mutually exclusive with :check_offset" do
-      params = { :check_offset => 8, :adjust_offset => 8 }
+      params = { check_offset: 8, adjust_offset: 8 }
       lambda { TenByteOffsetBase.create(params) }.must_raise ArgumentError
     end
 
     it "adjust offset when incorrect" do
       io.seek(2)
-      obj = TenByteOffsetBase.create(:adjust_offset => 13)
+      obj = TenByteOffsetBase.create(adjust_offset: 13)
       obj.read(io).snapshot.must_equal data[2 + 13, 3]
     end
 
     it "succeeds when offset is correct" do
       io.seek(3)
-      obj = TenByteOffsetBase.create(:adjust_offset => 10)
+      obj = TenByteOffsetBase.create(adjust_offset: 10)
       obj.read(io).snapshot.must_equal data[3 + 10, 3]
     end
 
     it "fails if cannot adjust offset" do
       io.seek(4)
-      obj = TenByteOffsetBase.create(:adjust_offset => -5)
+      obj = TenByteOffsetBase.create(adjust_offset: -5)
       lambda { obj.read(io) }.must_raise BinData::ValidityError
     end
   end

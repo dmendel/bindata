@@ -17,7 +17,7 @@ end
 
 def create_choice(choices, options = {})
   chooser = Chooser.new
-  params = {:choices => choices, :selection => lambda { chooser.choice } }.merge(options)
+  params = {choices: choices, selection: -> { chooser.choice } }.merge(options)
   choice = BinData::Choice.new(params)
   choice.set_chooser(chooser)
   choice
@@ -28,30 +28,30 @@ describe BinData::Choice, "when instantiating" do
     args = {}
     lambda { BinData::Choice.new(args) }.must_raise ArgumentError
 
-    args = {:selection => 1}
+    args = {selection: 1}
     lambda { BinData::Choice.new(args) }.must_raise ArgumentError
 
-    args = {:choices => []}
+    args = {choices: []}
     lambda { BinData::Choice.new(args) }.must_raise ArgumentError
   end
 
   it "fails when a given type is unknown" do
-    args = {:choices => [:does_not_exist], :selection => 0}
+    args = {choices: [:does_not_exist], selection: 0}
     lambda { BinData::Choice.new(args) }.must_raise BinData::UnRegisteredTypeError
   end
 
   it "fails when a given type is unknown" do
-    args = {:choices => {0 => :does_not_exist}, :selection => 0}
+    args = {choices: {0 => :does_not_exist}, selection: 0}
     lambda { BinData::Choice.new(args) }.must_raise BinData::UnRegisteredTypeError
   end
 
   it "fails when :choices Hash has a symbol as key" do
-    args = {:choices => {:a => :uint8}, :selection => 0}
+    args = {choices: {a: :uint8}, selection: 0}
     lambda { BinData::Choice.new(args) }.must_raise ArgumentError
   end
 
   it "fails when :choices Hash has a nil key" do
-    args = {:choices => {nil => :uint8}, :selection => 0}
+    args = {choices: {nil => :uint8}, selection: 0}
     lambda { BinData::Choice.new(args) }.must_raise ArgumentError
   end
 end
@@ -112,9 +112,9 @@ describe BinData::Choice, "with sparse choices array" do
 
   let(:obj) {
     choices = [nil, nil, nil,
-               [:uint8, {:value => 30}], nil,
-               [:uint8, {:value => 50}], nil,
-               [:uint8, {:value => 70}]]
+               [:uint8, {value: 30}], nil,
+               [:uint8, {value: 50}], nil,
+               [:uint8, {value: 70}]]
     create_choice(choices)
   }
 end
@@ -123,9 +123,9 @@ describe BinData::Choice, "with choices hash" do
   include ChoiceInitializedWithArrayOrHash
 
   let(:obj) {
-    choices = {3 => [:uint8, {:value => 30}],
-               5 => [:uint8, {:value => 50}],
-               7 => [:uint8, {:value => 70}]}
+    choices = {3 => [:uint8, {value: 30}],
+               5 => [:uint8, {value: 50}],
+               7 => [:uint8, {value: 70}]}
     create_choice(choices)
   }
 end
@@ -202,7 +202,7 @@ end
 describe BinData::Choice, "with copy_on_change => true" do
   let(:obj) {
     choices = {3 => :uint8, 5 => :uint8, 7 => :uint8}
-    create_choice(choices, :copy_on_change => true)
+    create_choice(choices, copy_on_change: true)
   }
 
   it "copies value when changing selection" do
@@ -215,15 +215,15 @@ describe BinData::Choice, "with copy_on_change => true" do
 end
 
 describe BinData::Choice, "with :default" do
-  let(:choices) { { "a" => :int8, :default => :int16be } }
+  let(:choices) { { "a" => :int8, default: :int16be } }
 
   it "selects for existing case" do
-    obj = BinData::Choice.new(:selection => "a", :choices => choices)
+    obj = BinData::Choice.new(selection: "a", choices: choices)
     obj.num_bytes.must_equal 1
   end
 
   it "selects for default case" do
-    obj = BinData::Choice.new(:selection => "other", :choices => choices)
+    obj = BinData::Choice.new(selection: "other", choices: choices)
     obj.num_bytes.must_equal 2
   end
 end
@@ -231,7 +231,7 @@ end
 describe BinData::Choice, "subclassed with default parameters" do
   class DerivedChoice < BinData::Choice
     endian :big
-    default_parameter :selection => 'a'
+    default_parameter selection: 'a'
 
     uint16 'a'
     uint32 'b'
@@ -244,12 +244,12 @@ describe BinData::Choice, "subclassed with default parameters" do
   end
 
   it "overides default parameter" do
-    obj = DerivedChoice.new(:selection => 'b')
+    obj = DerivedChoice.new(selection: 'b')
     obj.num_bytes.must_equal 4
   end
 
   it "selects default selection" do
-    obj = DerivedChoice.new(:selection => 'z')
+    obj = DerivedChoice.new(selection: 'z')
     obj.num_bytes.must_equal 8
   end
 end

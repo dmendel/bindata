@@ -8,11 +8,11 @@ module BinData
   #
   #   data = "abcdefghij"
   #
-  #   obj = BinData::String.new(:read_length => 5)
+  #   obj = BinData::String.new(read_length: 5)
   #   obj.read(data)
   #   obj #=> "abcde"
   #
-  #   obj = BinData::String.new(:length => 6)
+  #   obj = BinData::String.new(length: 6)
   #   obj.read(data)
   #   obj #=> "abcdef"
   #   obj.assign("abcdefghij")
@@ -20,12 +20,12 @@ module BinData
   #   obj.assign("abcd")
   #   obj #=> "abcd\000\000"
   #
-  #   obj = BinData::String.new(:length => 6, :trim_padding => true)
+  #   obj = BinData::String.new(length: 6, trim_padding: true)
   #   obj.assign("abcd")
   #   obj #=> "abcd"
   #   obj.to_binary_s #=> "abcd\000\000"
   #
-  #   obj = BinData::String.new(:length => 6, :pad_byte => 'A')
+  #   obj = BinData::String.new(length: 6, pad_byte: 'A')
   #   obj.assign("abcd")
   #   obj #=> "abcdAA"
   #   obj.to_binary_s #=> "abcdAA"
@@ -52,7 +52,7 @@ module BinData
     arg_processor :string
 
     optional_parameters :read_length, :length, :trim_padding, :pad_front, :pad_left
-    default_parameters  :pad_byte => "\0"
+    default_parameters  pad_byte: "\0"
     mutually_exclusive_parameters :read_length, :length
     mutually_exclusive_parameters :length, :value
 

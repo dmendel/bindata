@@ -85,7 +85,7 @@ describe BinData::Primitive do
   end
 
   it "accepts standard parameters" do
-    obj = PrimitiveWithEndian.new(:initial_value => 2)
+    obj = PrimitiveWithEndian.new(initial_value: 2)
     obj.to_binary_s.must_equal_binary "\x02\x00"
   end
 
@@ -100,7 +100,7 @@ describe BinData::Primitive do
   end
 
   it "uses read value whilst reading" do
-    obj = PrimitiveWithEndian.new(:value => 2)
+    obj = PrimitiveWithEndian.new(value: 2)
     obj.read "\x05\x00"
     obj.must_equal 2
 
@@ -117,13 +117,13 @@ end
 
 describe BinData::Primitive, "requiring custom parameters" do
   class PrimitiveWithCustom < BinData::Primitive
-    int8 :a, :initial_value => :iv
+    int8 :a, initial_value: :iv
     def get; self.a; end
     def set(v); self.a = v; end
   end
 
   it "passes parameters correctly" do
-    obj = PrimitiveWithCustom.new(:iv => 5)
+    obj = PrimitiveWithCustom.new(iv: 5)
     obj.must_equal 5
   end
 end
@@ -132,7 +132,7 @@ describe BinData::Primitive, "with custom mandatory parameters" do
   class MandatoryPrimitive < BinData::Primitive
     mandatory_parameter :arg1
 
-    uint8 :a, :value => :arg1
+    uint8 :a, value: :arg1
     def get; self.a; end
     def set(v); self.a = v; end
   end
@@ -142,16 +142,16 @@ describe BinData::Primitive, "with custom mandatory parameters" do
   end
 
   it "uses mandatory parameter" do
-    obj = MandatoryPrimitive.new(:arg1 => 5)
+    obj = MandatoryPrimitive.new(arg1: 5)
     obj.must_equal 5
   end
 end
 
 describe BinData::Primitive, "with custom default parameters" do
   class DefaultPrimitive < BinData::Primitive
-    default_parameter :arg1 => 5
+    default_parameter arg1: 5
 
-    uint8 :a, :value => :arg1
+    uint8 :a, value: :arg1
     def get; self.a; end
     def set(v); self.a = v; end
   end
@@ -162,7 +162,7 @@ describe BinData::Primitive, "with custom default parameters" do
   end
 
   it "overrides default parameter" do
-    obj = DefaultPrimitive.new(:arg1 => 7)
+    obj = DefaultPrimitive.new(arg1: 7)
     obj.must_equal 7
   end
 end
@@ -175,11 +175,11 @@ describe BinData::Primitive, "subclassed with default parameter" do
   end
 
   class ChildDerivedPrimitive < ParentDerivedPrimitive
-    default_parameter :initial_value => 5
+    default_parameter initial_value: 5
   end
 
   it "overrides initial_value" do
-    a = ChildDerivedPrimitive.new(:initial_value => 7)
+    a = ChildDerivedPrimitive.new(initial_value: 7)
     a.to_binary_s.must_equal_binary "\000\007"
   end
 

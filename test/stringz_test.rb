@@ -74,7 +74,7 @@ describe BinData::Stringz, "when setting the value" do
 end
 
 describe BinData::Stringz, "with max_length" do
-  let(:obj) { BinData::Stringz.new(:max_length => 5) }
+  let(:obj) { BinData::Stringz.new(max_length: 5) }
 
   it "reads less than max_length" do
     io = StringIO.new("abc\0xyz")

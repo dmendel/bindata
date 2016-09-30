@@ -22,7 +22,7 @@ describe BinData::Virtual do
 
   it "asserts on #read" do
     data = []
-    obj = BinData::Virtual.new(:assert => lambda { data << 1; true })
+    obj = BinData::Virtual.new(assert: -> { data << 1; true })
 
     obj.read ""
     data.must_equal [1]
@@ -30,7 +30,7 @@ describe BinData::Virtual do
 
   it "asserts on #assign" do
     data = []
-    obj = BinData::Virtual.new(:assert => lambda { data << 1; true })
+    obj = BinData::Virtual.new(assert: -> { data << 1; true })
 
     obj.assign("foo")
     data.must_equal [1]
@@ -42,7 +42,7 @@ describe BinData::Virtual do
   end
 
   it "accepts the :value parameter" do
-    obj = BinData::Virtual.new(:value => 3)
+    obj = BinData::Virtual.new(value: 3)
     obj.must_equal 3
   end
 end

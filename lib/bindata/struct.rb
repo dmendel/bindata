@@ -16,10 +16,10 @@ module BinData
   #      int8  :z
   #    end
   #
-  #    obj = BinData::Struct.new(:hide => :a,
-  #                              :fields => [ [:int32le, :a],
-  #                                           [:int16le, :b],
-  #                                           [:tuple, :s] ])
+  #    obj = BinData::Struct.new(hide: :a,
+  #                              fields: [ [:int32le, :a],
+  #                                        [:int16le, :b],
+  #                                        [:tuple, :s] ])
   #    obj.field_names   =># [:b, :s]
   #
   #

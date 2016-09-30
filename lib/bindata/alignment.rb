@@ -37,7 +37,7 @@ module BinData
   #
   #     class MyRecord < BinData::Record
   #       bit4       :preamble
-  #       bit_string :str, :length => 2
+  #       bit_string :str, length: 2
   #     end
   #
   module BitAligned
