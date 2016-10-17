@@ -44,7 +44,7 @@ module BinData
   #                            parameter.  A boolean return indicates success
   #                            or failure.  Any other return is compared to
   #                            the value just read in.
-  # [<tt>:asserted_value</tt>] Equavalent to <tt>:assert</tt> and <tt>:value</tt>.
+  # [<tt>:asserted_value</tt>] Equivalent to <tt>:assert</tt> and <tt>:value</tt>.
   #
   class BasePrimitive < BinData::Base
     unregister_self
