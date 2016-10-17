@@ -1,5 +1,9 @@
 = BinData Changelog
 
+== Version 2.3.4 (2016-10-17)
+
+* Memoize dynamic methods for primitives.  Thanks to hiroeorz.
+
 == Version 2.3.3 (2016-09-07)
 
 * Fix bug #80.  Thanks to Michael Petter.
