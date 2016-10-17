@@ -36,11 +36,10 @@ module BinData
   # BinData classes that are part of the DSL must be extended by this.
   module DSLMixin
     def dsl_parser(parser_type = nil)
-      unless defined? @dsl_parser
-        parser_type = superclass.dsl_parser.parser_type if parser_type.nil?
-        @dsl_parser = DSLParser.new(self, parser_type)
+      @dsl_parser ||= begin
+        parser_type ||= superclass.dsl_parser.parser_type
+        DSLParser.new(self, parser_type)
       end
-      @dsl_parser
     end
 
     def method_missing(symbol, *args, &block) #:nodoc:
@@ -82,9 +81,7 @@ module BinData
       end
 
       def search_prefix(*args)
-        unless defined? @search_prefix
-          @search_prefix = parent_attribute(:search_prefix, []).dup
-        end
+        @search_prefix ||= parent_attribute(:search_prefix, []).dup
 
         prefix = args.collect(&:to_sym).compact
         unless prefix.empty?
@@ -100,25 +97,21 @@ module BinData
 
       def hide(*args)
         if option?(:hidden_fields)
-          hidden = args.collect(&:to_sym)
+          @hide ||= parent_attribute(:hide, []).dup
 
-          unless defined? @hide
-            @hide = parent_attribute(:hide, []).dup
-          end
+          hidden = args.collect(&:to_sym).compact
+          @hide.concat(hidden)
 
-          @hide.concat(hidden.compact)
           @hide
         end
       end
 
       def fields
-        unless defined? @fields
-          fields = parent_fields
-          @fields = SanitizedFields.new(hints)
-          @fields.copy_fields(fields) if fields
+        @fields ||= begin
+          SanitizedFields.new(hints).tap do |san_fields|
+            san_fields.copy_fields(parent_fields) if parent_fields
+          end
         end
-
-        @fields
       end
 
       def dsl_params

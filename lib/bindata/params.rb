@@ -28,12 +28,11 @@ module BinData
     alias default_parameter   default_parameters
 
     def accepted_parameters #:nodoc:
-      unless defined? @accepted_parameters
+      @accepted_parameters ||= begin
         ancestor_params = superclass.respond_to?(:accepted_parameters) ?
                             superclass.accepted_parameters : nil
-        @accepted_parameters = AcceptedParameters.new(ancestor_params)
+        AcceptedParameters.new(ancestor_params)
       end
-      @accepted_parameters
     end
 
     # BinData objects accept parameters when initializing.  AcceptedParameters
@@ -116,13 +115,13 @@ module BinData
       end
 
       def self.invalid_parameter_names
-        unless defined? @invalid_names
+        @invalid_names ||= begin
           all_names = LazyEvaluator.instance_methods(true) + Kernel.methods
           allowed_names = [:name, :type]
           invalid_names = (all_names - allowed_names).uniq
-          @invalid_names = Hash[*invalid_names.collect { |key| [key.to_sym, true] }.flatten]
+
+          Hash[*invalid_names.collect { |key| [key.to_sym, true] }.flatten]
         end
-        @invalid_names
       end
     end
   end
