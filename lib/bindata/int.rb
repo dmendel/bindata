@@ -194,7 +194,7 @@ module BinData
       mappings.each_pair do |regex, args|
         if regex =~ name.to_s
           nbits = $1.to_i
-          if (nbits % 8).zero?
+          if nbits > 0 && (nbits % 8).zero?
             return Int.define_class(name, nbits, *args)
           end
         end
