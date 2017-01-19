@@ -1,5 +1,10 @@
 = BinData Changelog
 
+== Version 2.3.5 (2017-01-19)
+
+* Enforce Integer#nbits > 0.  Reported by Keenan Tims.
+* Fix auto_call_delayed_io crash.  Reported by Michael Petter.
+
 == Version 2.3.4 (2016-10-17)
 
 * Memoize dynamic methods for primitives.  Thanks to hiroeorz.
