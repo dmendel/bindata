@@ -159,6 +159,8 @@ module BinData
       def auto_call_delayed_io
         include AutoCallDelayedIO
 
+        return if DelayedIO.method_defined? :initialize_instance_without_record_io
+
         DelayedIO.send(:alias_method, :initialize_instance_without_record_io, :initialize_instance)
         DelayedIO.send(:define_method, :initialize_instance) do
           if @parent && !defined? @delayed_io_recorded
