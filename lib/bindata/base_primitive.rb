@@ -101,9 +101,10 @@ module BinData
     def method_missing(symbol, *args, &block) #:nodoc:
       child = snapshot
       if child.respond_to?(symbol)
-        self.class.class_eval "def #{symbol}(*args, &block);" \
-                              "  snapshot.#{symbol}(*args, &block);" \
-                              "end"
+        self.class.class_eval \
+          "def #{symbol}(*args, &block);" \
+          "  snapshot.#{symbol}(*args, &block);" \
+          "end"
         child.__send__(symbol, *args, &block)
       else
         super

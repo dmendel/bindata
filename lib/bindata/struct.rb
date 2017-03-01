@@ -62,19 +62,20 @@ module BinData
     optional_parameters :endian, :search_prefix, :hide
 
     # These reserved words may not be used as field names
-    RESERVED = Hash[*
-                 (Hash.instance_methods +
-                  %w{alias and begin break case class def defined do else elsif
-                     end ensure false for if in module next nil not or redo
-                     rescue retry return self super then true undef unless until
-                     when while yield} +
-                  %w{array element index value} +
-                  %w{type initial_length read_until} +
-                  %w{fields endian search_prefix hide only_if byte_align} +
-                  %w{choices selection copy_on_change} +
-                  %w{read_abs_offset struct_params}).collect(&:to_sym).
-                  uniq.collect { |key| [key, true] }.flatten
-               ]
+    RESERVED =
+      Hash[*
+        (Hash.instance_methods +
+         %w{alias and begin break case class def defined do else elsif
+            end ensure false for if in module next nil not or redo
+            rescue retry return self super then true undef unless until
+            when while yield} +
+         %w{array element index value} +
+         %w{type initial_length read_until} +
+         %w{fields endian search_prefix hide only_if byte_align} +
+         %w{choices selection copy_on_change} +
+         %w{read_abs_offset struct_params}).collect(&:to_sym).
+         uniq.collect { |key| [key, true] }.flatten
+      ]
 
     def initialize_shared_instance
       fields = get_parameter(:fields)
