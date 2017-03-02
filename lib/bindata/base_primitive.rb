@@ -73,12 +73,13 @@ module BinData
       raise ArgumentError, "can't set a nil value for #{debug_name}" if val.nil?
 
       raw_val = val.respond_to?(:snapshot) ? val.snapshot : val
-      @value = begin
-                 raw_val.dup
-               rescue TypeError
-                 # can't dup Fixnums
-                 raw_val
-               end
+      @value =
+        begin
+          raw_val.dup
+        rescue TypeError
+          # can't dup Fixnums
+          raw_val
+        end
     end
 
     def snapshot
@@ -180,13 +181,14 @@ module BinData
         current_value = snapshot
         expected = eval_parameter(:assert, value: current_value)
 
-        msg = if !expected
-                "value '#{current_value}' not as expected"
-              elsif expected != true && current_value != expected
-                "value is '#{current_value}' but expected '#{expected}'"
-              else
-                nil
-              end
+        msg =
+          if !expected
+            "value '#{current_value}' not as expected"
+          elsif expected != true && current_value != expected
+            "value is '#{current_value}' but expected '#{expected}'"
+          else
+            nil
+          end
 
         raise ValidityError, "#{msg} for #{debug_name}" if msg
       end
