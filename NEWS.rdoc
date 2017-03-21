@@ -1,3 +1,19 @@
+= 2.4.0
+
+This release changes the internal API for sanitizing parameters.  This only
+affects those that implement the `#sanitize_parameters` method.
+
+= 2.3.x
+
+    if params.needs_sanitizing?(:type)
+      el_type, el_params = params[:type]
+      params[:type] = params.create_sanitized_object_prototype(el_type, el_params)
+    end
+
+= 2.4.0
+
+    params.sanitize_object_prototype(:type)
+
 = 2.3.0
 
 This release adds I/O features.

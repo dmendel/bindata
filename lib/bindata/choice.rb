@@ -122,10 +122,10 @@ module BinData
     def sanitize_parameters!(obj_class, params) #:nodoc:
       params.merge!(obj_class.dsl_params)
 
-      if params.needs_sanitizing?(:choices)
-        choices = choices_as_hash(params[:choices])
-        ensure_valid_keys(choices)
-        params[:choices] = params.create_sanitized_choices(choices)
+      params.sanitize_choices(:choices) do |choices|
+        hash_choices = choices_as_hash(choices)
+        ensure_valid_keys(hash_choices)
+        hash_choices
       end
     end
 

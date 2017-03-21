@@ -127,15 +127,8 @@ module BinData
     def sanitize_parameters!(obj_class, params)
       params.warn_replacement_parameter(:initial_length, :read_length)
       params.must_be_integer(:read_length, :length)
-
-      if params.has_parameter?(:pad_left)
-        params[:pad_front] = params.delete(:pad_left)
-      end
-
-      if params.has_parameter?(:pad_byte)
-        byte = params[:pad_byte]
-        params[:pad_byte] = sanitized_pad_byte(byte)
-      end
+      params.rename_parameter(:pad_left, :pad_front)
+      params.sanitize(:pad_byte) { |byte| sanitized_pad_byte(byte) }
     end
 
     #-------------

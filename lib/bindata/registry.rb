@@ -43,11 +43,13 @@ module BinData
 
     # Convert CamelCase +name+ to underscore style.
     def underscore_name(name)
-      name.to_s.sub(/.*::/, "").
-                gsub(/([A-Z]+)([A-Z][a-z])/, '\1_\2').
-                gsub(/([a-z\d])([A-Z])/, '\1_\2').
-                tr("-", "_").
-                downcase
+      name.
+        to_s.
+        sub(/.*::/, "").
+        gsub(/([A-Z]+)([A-Z][a-z])/, '\1_\2').
+        gsub(/([a-z\d])([A-Z])/, '\1_\2').
+        tr("-", "_").
+        downcase
     end
 
     #---------------

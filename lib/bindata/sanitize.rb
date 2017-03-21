@@ -72,16 +72,23 @@ module BinData
   class SanitizedFields < SanitizedParameter
     include Enumerable
 
-    def initialize(hints)
-      @fields = []
-      @hints  = hints
+    def initialize(hints, base_fields = nil)
+      @hints = hints
+      if base_fields
+        @fields = base_fields.raw_fields
+      else
+        @fields = []
+      end
     end
-    attr_reader :fields
 
     def add_field(type, name, params)
       name = nil if name == ""
 
       @fields << SanitizedField.new(name, type, params, @hints)
+    end
+
+    def raw_fields
+      @fields.dup
     end
 
     def [](idx)
@@ -118,10 +125,6 @@ module BinData
 
     def any_field_has_parameter?(parameter)
       @fields.any? { |f| f.has_parameter?(parameter) }
-    end
-
-    def copy_fields(other)
-      @fields.concat(other.fields)
     end
   end
   #----------------------------------------------------------------------------
@@ -209,10 +212,12 @@ module BinData
 
     alias_method :has_parameter?, :key?
 
-    def needs_sanitizing?(key)
-      parameter = self[key]
+    def has_at_least_one_of?(*keys)
+      keys.each do |key|
+        return true if has_parameter?(key)
+      end
 
-      parameter && !parameter.is_a?(SanitizedParameter)
+      false
     end
 
     def warn_replacement_parameter(bad_key, suggested_key)
@@ -245,19 +250,37 @@ module BinData
       end
     end
 
-    def hints
-      { endian: self[:endian], search_prefix: self[:search_prefix] }
+    def rename_parameter(old_key, new_key)
+      if has_parameter?(old_key)
+        self[new_key] = delete(old_key)
+      end
     end
 
-    def create_sanitized_endian(endian)
-      if endian == :big
-        BIG_ENDIAN
-      elsif endian == :little
-        LITTLE_ENDIAN
-      elsif endian == :big_and_little
-        raise ArgumentError, "endian: :big or endian: :little is required"
-      else
-        raise ArgumentError, "unknown value for endian '#{endian}'"
+    def sanitize_object_prototype(key)
+      sanitize(key) { |obj_type, obj_params| create_sanitized_object_prototype(obj_type, obj_params) }
+    end
+
+    def sanitize_fields(key, &block)
+      sanitize(key) do |fields|
+        sanitized_fields = create_sanitized_fields
+        yield(fields, sanitized_fields)
+        sanitized_fields
+      end
+    end
+
+    def sanitize_choices(key, &block)
+      sanitize(key) do |obj|
+        create_sanitized_choices(yield(obj))
+      end
+    end
+
+    def sanitize_endian(key)
+      sanitize(key) { |endian| create_sanitized_endian(endian) }
+    end
+
+    def sanitize(key, &block)
+      if needs_sanitizing?(key)
+        self[key] = yield(self[key])
       end
     end
 
@@ -265,16 +288,8 @@ module BinData
       SanitizedParameters.new(params, the_class, hints)
     end
 
-    def create_sanitized_choices(choices)
-      SanitizedChoices.new(choices, hints)
-    end
-
-    def create_sanitized_fields
-      SanitizedFields.new(hints)
-    end
-
-    def create_sanitized_object_prototype(obj_type, obj_params)
-      SanitizedPrototype.new(obj_type, obj_params, hints)
+    def hints
+      { endian: self[:endian], search_prefix: self[:search_prefix] }
     end
 
     #---------------
@@ -288,6 +303,12 @@ module BinData
 
       ensure_mandatory_parameters_exist
       ensure_mutual_exclusion_of_parameters
+    end
+
+    def needs_sanitizing?(key)
+      parameter = self[key]
+
+      parameter && !parameter.is_a?(SanitizedParameter)
     end
 
     def ensure_no_nil_values
@@ -323,6 +344,30 @@ module BinData
                                "are mutually exclusive in #{@the_class}"
         end
       end
+    end
+
+    def create_sanitized_endian(endian)
+      if endian == :big
+        BIG_ENDIAN
+      elsif endian == :little
+        LITTLE_ENDIAN
+      elsif endian == :big_and_little
+        raise ArgumentError, "endian: :big or endian: :little is required"
+      else
+        raise ArgumentError, "unknown value for endian '#{endian}'"
+      end
+    end
+
+    def create_sanitized_choices(choices)
+      SanitizedChoices.new(choices, hints)
+    end
+
+    def create_sanitized_fields
+      SanitizedFields.new(hints)
+    end
+
+    def create_sanitized_object_prototype(obj_type, obj_params)
+      SanitizedPrototype.new(obj_type, obj_params, hints)
     end
   end
   #----------------------------------------------------------------------------

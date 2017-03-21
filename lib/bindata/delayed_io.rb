@@ -141,13 +141,8 @@ module BinData
 
     def sanitize_parameters!(obj_class, params)
       params.merge!(obj_class.dsl_params)
-
       params.must_be_integer(:read_abs_offset)
-
-      if params.needs_sanitizing?(:type)
-        el_type, el_params = params[:type]
-        params[:type] = params.create_sanitized_object_prototype(el_type, el_params)
-      end
+      params.sanitize_object_prototype(:type)
     end
   end
 
@@ -157,10 +152,9 @@ module BinData
       # The +auto_call_delayed_io+ keyword sets a data object tree to perform
       # multi pass I/O automatically.
       def auto_call_delayed_io
-        include AutoCallDelayedIO
-
         return if DelayedIO.method_defined? :initialize_instance_without_record_io
 
+        include AutoCallDelayedIO
         DelayedIO.send(:alias_method, :initialize_instance_without_record_io, :initialize_instance)
         DelayedIO.send(:define_method, :initialize_instance) do
           if @parent && !defined? @delayed_io_recorded

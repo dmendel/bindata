@@ -107,11 +107,7 @@ module BinData
       end
 
       def fields
-        @fields ||= begin
-          SanitizedFields.new(hints).tap do |san_fields|
-            san_fields.copy_fields(parent_fields) if parent_fields
-          end
-        end
+        @fields ||= SanitizedFields.new(hints, parent_fields)
       end
 
       def dsl_params

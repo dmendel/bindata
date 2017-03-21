@@ -350,44 +350,38 @@ module BinData
     private
 
     def sanitize_endian(params)
-      if params.needs_sanitizing?(:endian)
-        endian = params.create_sanitized_endian(params[:endian])
-        params[:endian] = endian
-      end
+      params.sanitize_endian(:endian)
     end
 
     def sanitize_search_prefix(params)
-      if params.needs_sanitizing?(:search_prefix)
+      params.sanitize(:search_prefix) do |sprefix|
         search_prefix = []
-        Array(params[:search_prefix]).each do |prefix|
+        Array(sprefix).each do |prefix|
           prefix = prefix.to_s.chomp("_")
           search_prefix << prefix if prefix != ""
         end
 
-        params[:search_prefix] = search_prefix
+        search_prefix
       end
     end
 
     def sanitize_fields(obj_class, params)
-      if params.needs_sanitizing?(:fields)
-        fields = params[:fields]
-
-        params[:fields] = params.create_sanitized_fields
+      params.sanitize_fields(:fields) do |fields, sanitized_fields|
         fields.each do |ftype, fname, fparams|
-          params[:fields].add_field(ftype, fname, fparams)
+          sanitized_fields.add_field(ftype, fname, fparams)
         end
 
-        field_names = sanitized_field_names(params[:fields])
+        field_names = sanitized_field_names(sanitized_fields)
         ensure_field_names_are_valid(obj_class, field_names)
       end
     end
 
     def sanitize_hide(params)
-      if params.needs_sanitizing?(:hide) && params.has_parameter?(:fields)
+      params.sanitize(:hide) do |hidden|
         field_names  = sanitized_field_names(params[:fields])
-        hfield_names = hidden_field_names(params[:hide])
+        hfield_names = hidden_field_names(hidden)
 
-        params[:hide] = (hfield_names & field_names)
+        hfield_names & field_names
       end
     end
 

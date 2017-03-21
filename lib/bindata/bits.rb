@@ -10,7 +10,8 @@ module BinData
         unless BinData.const_defined?(name)
           BinData.module_eval <<-END
             class #{name} < BinData::BasePrimitive
-              BitField.define_methods(self, #{nbits.inspect}, #{endian.inspect}, #{signed.inspect})
+              # nbits is either an integer or the symbol `:nbits`
+              BitField.define_methods(self, #{nbits.inspect}, :#{endian}, :#{signed})
             end
           END
         end

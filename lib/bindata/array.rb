@@ -275,9 +275,8 @@ module BinData
 
   class ArrayArgProcessor < BaseArgProcessor
     def sanitize_parameters!(obj_class, params) #:nodoc:
-      unless params.has_parameter?(:initial_length) ||
-               params.has_parameter?(:read_until)
-        # ensure one of :initial_length and :read_until exists
+      # ensure one of :initial_length and :read_until exists
+      unless params.has_at_least_one_of?(:initial_length, :read_until)
         params[:initial_length] = 0
       end
 
@@ -286,11 +285,7 @@ module BinData
       params.must_be_integer(:initial_length)
 
       params.merge!(obj_class.dsl_params)
-
-      if params.needs_sanitizing?(:type)
-        el_type, el_params = params[:type]
-        params[:type] = params.create_sanitized_object_prototype(el_type, el_params)
-      end
+      params.sanitize_object_prototype(:type)
     end
   end
 
@@ -300,8 +295,7 @@ module BinData
       loop do
         element = append_new_element
         element.do_read(io)
-        variables = { index: self.length - 1, element: self.last,
-                      array: self }
+        variables = { index: self.length - 1, element: self.last, array: self }
         break if eval_parameter(:read_until, variables)
       end
     end

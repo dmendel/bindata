@@ -83,17 +83,12 @@ module BinData
 
   class SkipArgProcessor < BaseArgProcessor
     def sanitize_parameters!(obj_class, params)
-      unless params.has_parameter?(:length) ||
-             params.has_parameter?(:to_abs_offset) ||
-             params.has_parameter?(:until_valid)
-        raise ArgumentError, "#{obj_class} requires either :length, :to_abs_offset or :until_valid"
+      unless params.has_at_least_one_of?(:length, :to_abs_offset, :until_valid)
+        raise ArgumentError,
+          "#{obj_class} requires either :length, :to_abs_offset or :until_valid"
       end
       params.must_be_integer(:to_abs_offset, :length)
-
-      if params.needs_sanitizing?(:until_valid)
-        el_type, el_params = params[:until_valid]
-        params[:until_valid] = params.create_sanitized_object_prototype(el_type, el_params)
-      end
+      params.sanitize_object_prototype(:until_valid)
     end
   end
 
