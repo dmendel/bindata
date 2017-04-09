@@ -1,5 +1,10 @@
 = BinData Changelog
 
+== Version 2.4.0 (2017-04-09)
+
+* Reworked internal sanitizing API.
+* Fix bit-based integers inside buffers.  Reported by Claudius Coenen.
+
 == Version 2.3.5 (2017-01-19)
 
 * Enforce Integer#nbits > 0.  Reported by Keenan Tims.

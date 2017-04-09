@@ -273,11 +273,7 @@ module BinData
       # If the data read is too short an IOError is raised.
       def readbytes(n)
         reset_read_bits
-
-        str = read(n)
-        raise EOFError, "End of file reached" if str.nil?
-        raise IOError, "data truncated" if str.size < n
-        str
+        read(n)
       end
 
       # Reads all remaining bytes from the stream.
@@ -313,7 +309,12 @@ module BinData
       private
 
       def read(n = nil)
-        read_raw(buffer_limited_n(n))
+        str = read_raw(buffer_limited_n(n))
+        if n
+          raise EOFError, "End of file reached" if str.nil?
+          raise IOError, "data truncated" if str.size < n
+        end
+        str
       end
 
       def read_big_endian_bits(nbits)
@@ -329,10 +330,7 @@ module BinData
       end
 
       def accumulate_big_endian_bits
-        byte = read(1)
-        raise EOFError, "End of file reached" if byte.nil?
-        byte = byte.unpack('C').at(0) & 0xff
-
+        byte = read(1).unpack('C').at(0) & 0xff
         @rval = (@rval << 8) | byte
         @rnbits += 8
       end
@@ -350,10 +348,7 @@ module BinData
       end
 
       def accumulate_little_endian_bits
-        byte = read(1)
-        raise EOFError, "End of file reached" if byte.nil?
-        byte = byte.unpack('C').at(0) & 0xff
-
+        byte = read(1).unpack('C').at(0) & 0xff
         @rval = @rval | (byte << @rnbits)
         @rnbits += 8
       end
