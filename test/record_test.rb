@@ -642,7 +642,9 @@ describe BinData::Record, "with :onlyif" do
   it "identifies if fields are included" do
     obj.a?.must_equal true
     obj.b?.must_equal true
-    obj.c?.must_equal false
+    assert_raises(NoMethodError) { obj.c? }
+    assert_raises(NoMethodError) { obj.c }
+    assert_raises(NoMethodError) { obj.c = 8 }
   end
 
   it "reads as lambdaed" do
