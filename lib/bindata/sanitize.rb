@@ -12,8 +12,7 @@ module BinData
         raw_hints[:endian] = raw_hints[:endian].endian
       end
       obj_params ||= {}
-
-      if BinData::Base === obj_type
+      if BinData::Base === obj_type or obj_type.is_a?(Class)
         obj_class = obj_type
       else
         obj_class = RegisteredClasses.lookup(obj_type, raw_hints)
