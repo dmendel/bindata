@@ -1,5 +1,10 @@
 = BinData Changelog
 
+== Version 2.4.1 (2017-08-30)
+
+* Fix crash with String :length invoking :rel_offset.  Reported by Claudius
+  Coenen.
+
 == Version 2.4.0 (2017-04-09)
 
 * Reworked internal sanitizing API.
