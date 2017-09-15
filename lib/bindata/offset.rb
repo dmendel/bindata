@@ -71,7 +71,7 @@ module BinData
 
       def adjust_offset(io)
         actual_offset = io.offset
-        expected = eval_parameter(:adjust_offset)
+        expected = eval_parameter(:adjust_offset, offset: actual_offset)
         if actual_offset != expected
           begin
             seek = expected - actual_offset
