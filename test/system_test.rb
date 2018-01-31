@@ -338,3 +338,25 @@ describe BinData::Primitive, "representing a string" do
   end
 end
 
+describe BinData::Record, "with boolean parameters" do
+  class BooleanParameterRecord < BinData::Record
+    default_parameter flag: true
+
+    int8 :a, value: -> { flag ? 2 : 3 }
+  end
+
+  it "uses default parameter" do
+    obj = BooleanParameterRecord.new
+    obj.a.must_equal 2
+  end
+
+  it "overrides parameter" do
+    obj = BooleanParameterRecord.new(flag: false)
+    obj.a.must_equal 3
+  end
+
+  it "overrides parameter with same value" do
+    obj = BooleanParameterRecord.new(flag: true)
+    obj.a.must_equal 2
+  end
+end
