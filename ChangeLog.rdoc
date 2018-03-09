@@ -1,5 +1,9 @@
 = BinData Changelog
 
+== Version 2.4.3 (2018-03-10)
+
+* Add Uint8Arrays.  Requested by masarakki.
+
 == Version 2.4.2 (2018-01-31)
 
 * Allow boolean values as parameters.  Requested by Patrik Wenger.
