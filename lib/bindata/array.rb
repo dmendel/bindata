@@ -65,7 +65,11 @@ module BinData
       elsif has_parameter?(:read_until)
         extend ReadUntilPlugin
       elsif has_parameter?(:initial_length)
-        extend InitialLengthPlugin
+        if has_parameter?(:lazy)
+          extend LazyInitialLengthPlugin
+        else
+          extend InitialLengthPlugin
+        end
       end
 
       super
@@ -331,6 +335,36 @@ module BinData
       end
 
       @element_list
+    end
+  end
+
+  module LazyInitialLengthPlugin
+    def do_read(io)
+      binary_data = BinData::IO::Read.new(StringIO.new(io.readbytes(num_bytes)))
+      @element_list = (1..length).lazy.map do |i|
+        @cache ||= []
+        @cache[i] = new_element.do_read(binary_data) unless @cache[i]
+        @cache[i]
+      end
+    end
+
+    def length
+      eval_parameter(:initial_length)
+    end
+
+    def elements
+      @element_list.rewind
+    end
+
+    def sum_num_bytes_below_index(index)
+      nbytes = new_element.do_num_bytes
+      (0...index).inject(0) do |sum, i|
+        if nbytes.is_a?(Integer)
+          sum.ceil + nbytes
+        else
+          sum + nbytes
+        end
+      end
     end
   end
 end

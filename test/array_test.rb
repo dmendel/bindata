@@ -388,3 +388,14 @@ describe BinData::Array, "of bits" do
   end
 end
 
+describe BinData::Array, 'with lazy option' do
+  let(:obj) { BinData::Array.new(type: :uint8, initial_length: 32, lazy: true) }
+  let(:binary) { "\xff" * 100 }
+
+  it do
+    data = obj.read(binary)
+    data.map {|x| x * 2 }.each { |x| x.must_equal 510 }
+    data.map {|x| x % 16 }.each { |x| x.must_equal 15 }
+    data.map(&:to_i).size.must_equal 32
+  end
+end
