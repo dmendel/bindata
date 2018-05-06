@@ -37,8 +37,14 @@ module BinData
     end
 
     def lookup(name, hints = {})
-      key = normalize_name(name, hints)
-      @registry[key] || raise(UnRegisteredTypeError, name.to_s)
+      the_class = @registry[normalize_name(name, hints)]
+      if the_class
+        the_class
+      elsif @registry[normalize_name(name, hints.merge(endian: :big))]
+        raise(UnRegisteredTypeError, "#{name}, do you need to specify endian?")
+      else
+        raise(UnRegisteredTypeError, name)
+      end
     end
 
     # Convert CamelCase +name+ to underscore style.

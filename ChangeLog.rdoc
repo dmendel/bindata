@@ -1,5 +1,9 @@
 = BinData Changelog
 
+== Version 2.4.4 (2018-xx-xx)
+
+* Display a hint when endian is omitted.  Requested by Tails.
+
 == Version 2.4.3 (2018-03-10)
 
 * Add Uint8Arrays.  Requested by masarakki.

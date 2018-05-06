@@ -71,6 +71,14 @@ describe BinData::Registry, "with numerics" do
     }.must_raise BinData::UnRegisteredTypeError
   end
 
+  it "provides a nice error message when endian is omitted" do
+    begin
+      r.lookup("int24")
+    rescue BinData::UnRegisteredTypeError => e
+      e.message.must_equal "int24, do you need to specify endian?"
+    end
+  end
+
   it "does not lookup non byte based integers" do
     lambda {
       r.lookup("int3")
