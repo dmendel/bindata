@@ -29,7 +29,7 @@ module BinData
 
       def seekable?
         @raw_io.pos
-      rescue NoMethodError, Errno::ESPIPE, Errno::EPIPE
+      rescue NoMethodError, Errno::ESPIPE, Errno::EPIPE, Errno::EINVAL
         nil
       end
 
