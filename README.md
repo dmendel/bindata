@@ -2,7 +2,6 @@
 
 [![Version     ](http://img.shields.io/gem/v/bindata.svg)                       ](https://rubygems.org/gems/bindata)
 [![Travis CI   ](http://img.shields.io/travis/dmendel/bindata/master.svg)     ](https://travis-ci.org/dmendel/bindata)
-[![Quality     ](http://img.shields.io/codeclimate/github/dmendel/bindata.svg)](https://codeclimate.com/github/dmendel/bindata)
 [![Coverage    ](http://img.shields.io/coveralls/dmendel/bindata.svg)         ](https://coveralls.io/r/dmendel/bindata)
 
 Do you ever find yourself writing code like this?
