@@ -1,3 +1,4 @@
+require 'thread'
 require 'bindata/base_primitive'
 
 module BinData
@@ -5,15 +6,18 @@ module BinData
   # The integer is defined by endian and number of bits.
 
   module BitField #:nodoc: all
+    @@mutex = Mutex.new
+
     class << self
       def define_class(name, nbits, endian, signed = :unsigned)
-        unless BinData.const_defined?(name)
-          BinData.module_eval <<-END
-            class #{name} < BinData::BasePrimitive
-              # nbits is either an integer or the symbol `:nbits`
-              BitField.define_methods(self, #{nbits.inspect}, :#{endian}, :#{signed})
-            end
-          END
+        @@mutex.synchronize do
+          unless BinData.const_defined?(name)
+            new_class = Class.new(BinData::BasePrimitive)
+            BitField.define_methods(new_class, nbits, endian.to_sym, signed.to_sym)
+            RegisteredClasses.register(name, new_class)
+
+            BinData.const_set(name, new_class)
+          end
         end
 
         BinData.const_get(name)

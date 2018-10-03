@@ -24,7 +24,7 @@ module BinData
     end
 
     def register(name, class_to_register)
-      return if class_to_register.nil?
+      return if name.nil? || class_to_register.nil?
 
       formatted_name = underscore_name(name)
       warn_if_name_is_already_registered(formatted_name, class_to_register)
