@@ -14,7 +14,7 @@ class MacAddr < BinData::Primitive
   array :octets, type: :uint8, initial_length: 6
 
   def set(val)
-    self.octets = val.split(/\./).collect(&:to_i)
+    self.octets = val.split(/:/).collect(&:to_i)
   end
 
   def get
