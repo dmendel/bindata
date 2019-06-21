@@ -23,7 +23,7 @@ class MacAddr < BinData::Primitive
 end
 
 # Present IP addresses in a human readable way
-class IPAddr < BinData::Primitive
+class IP_Addr < BinData::Primitive
   array :octets, type: :uint8, initial_length: 4
 
   def set(val)
