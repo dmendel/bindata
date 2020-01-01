@@ -9,16 +9,14 @@ Gem::Specification.new do |s|
   s.author = 'Dion Mendel'
   s.email = 'bindata@dm9.info'
   s.homepage = 'http://github.com/dmendel/bindata'
-  s.rubyforge_project = 'bindata'
   s.require_path = 'lib'
-  s.has_rdoc = true
   s.extra_rdoc_files = ['NEWS.rdoc']
   s.rdoc_options << '--main' << 'NEWS.rdoc'
   s.files = `git ls-files`.split("\n")
   s.license = 'Ruby'
 
   s.add_development_dependency('rake')
-  s.add_development_dependency('minitest', "> 5.0.0")
+  s.add_development_dependency('minitest', "> 5.0.0", "< 5.12.0")
   s.add_development_dependency('coveralls')
   s.description = <<-END.gsub(/^ +/, "")
     BinData is a declarative way to read and write binary file formats.
