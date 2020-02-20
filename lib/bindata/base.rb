@@ -172,8 +172,7 @@ module BinData
     def to_binary_s(&block)
       io = BinData::IO.create_string_io
       write(io, &block)
-      io.rewind
-      io.read
+      io.string
     end
 
     # Returns the hexadecimal string representation of this data object.
