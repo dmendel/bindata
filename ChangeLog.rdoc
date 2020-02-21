@@ -1,5 +1,11 @@
 = BinData Changelog
 
+== Version 2.4.5 (2020-02-21)
+
+* Small typo fixes to examples.
+* Fix encoding issue for ruby 2.7.  Thanks to Aaron Patterson.
+* Quieter test output.
+
 == Version 2.4.4 (2018-10-03)
 
 * Display a hint when endian is omitted.  Requested by Tails.
