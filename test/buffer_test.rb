@@ -52,6 +52,25 @@ describe BinData::Buffer, "subclassed with a single type" do
     obj.to_binary_s.must_equal_binary "\000\003\000\000\000"
   end
 
+  it "returns binary encoded data" do
+    obj = IntBuffer.new(3)
+    obj.to_binary_s.encoding.must_equal Encoding::ASCII_8BIT
+  end
+
+  it "returns binary encoded data despite Encoding.default_internal" do
+    w, $-w = $-w, false
+    before_enc = Encoding.default_internal
+
+    begin
+      Encoding.default_internal = Encoding::UTF_8
+      obj = IntBuffer.new(3)
+      obj.to_binary_s.encoding.must_equal Encoding::ASCII_8BIT
+    ensure
+      Encoding.default_internal = before_enc
+      $-w = w
+    end
+  end
+
   it "has total num_bytes" do
     obj = IntBuffer.new
     assert obj.clear?
