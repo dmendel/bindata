@@ -74,9 +74,15 @@ describe BinData::Base, "offsets" do
     end
 
     it "adjust offset when incorrect" do
-      io.seek(2)
-      obj = TenByteOffsetBase.create(adjust_offset: 13)
-      obj.read(io).snapshot.must_equal data[2 + 13, 3]
+      w, $-w = $-w, false
+
+      begin
+        io.seek(2)
+        obj = TenByteOffsetBase.create(adjust_offset: 13)
+        obj.read(io).snapshot.must_equal data[2 + 13, 3]
+      ensure
+        $-w = w
+      end
     end
 
     it "succeeds when offset is correct" do

@@ -36,10 +36,16 @@ describe BinData::Registry do
   end
 
   it "allows overriding of registered classes" do
-    r.register('A', A)
-    r.register('A', B)
+    w, $-w = $-w, false
 
-    r.lookup('a').must_equal B
+    begin
+      r.register('A', A)
+      r.register('A', B)
+
+      r.lookup('a').must_equal B
+    ensure
+      $-w = w
+    end
   end
 
   it "converts CamelCase to underscores" do
