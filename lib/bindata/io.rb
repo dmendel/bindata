@@ -213,7 +213,9 @@ module BinData
 
     # Creates a StringIO around +str+.
     def self.create_string_io(str = "")
-      StringIO.new(str.dup.force_encoding(Encoding::BINARY))
+      s = StringIO.new(str.dup.force_encoding(Encoding::BINARY))
+      s.binmode
+      s
     end
 
     # Create a new IO Read wrapper around +io+.  +io+ must provide #read,
