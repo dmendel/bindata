@@ -1,5 +1,9 @@
 = BinData Changelog
 
+== Version 2.4.6 (2020-02-27)
+
+* More encoding fixes.  Thanks to Aaron Patterson.
+
 == Version 2.4.5 (2020-02-21)
 
 * Small typo fixes to examples.
