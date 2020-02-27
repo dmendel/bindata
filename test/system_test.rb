@@ -360,3 +360,37 @@ describe BinData::Record, "with boolean parameters" do
     obj.a.must_equal 2
   end
 end
+
+describe BinData::Record, "encoding" do
+  class EncodingTestBufferRecord < BinData::Record
+    endian :big
+    default_parameter length: 5
+
+    uint16 :num
+    string :str, length: 10
+  end
+
+  it "returns binary encoded data" do
+    obj = EncodingTestBufferRecord.new(num: 3)
+    obj.to_binary_s.encoding.must_equal Encoding::ASCII_8BIT
+  end
+
+  it "returns binary encoded data with utf-8 string" do
+    obj = EncodingTestBufferRecord.new(num: 3, str: "日本語")
+    obj.to_binary_s.encoding.must_equal Encoding::ASCII_8BIT
+  end
+
+  it "returns binary encoded data despite Encoding.default_internal" do
+    w, $-w = $-w, false
+    before_enc = Encoding.default_internal
+
+    begin
+      Encoding.default_internal = Encoding::UTF_8
+      obj = EncodingTestBufferRecord.new(num: 3, str: "日本語")
+      obj.to_binary_s.encoding.must_equal Encoding::ASCII_8BIT
+    ensure
+      Encoding.default_internal = before_enc
+      $-w = w
+    end
+  end
+end
