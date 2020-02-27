@@ -52,25 +52,6 @@ describe BinData::Buffer, "subclassed with a single type" do
     obj.to_binary_s.must_equal_binary "\000\003\000\000\000"
   end
 
-  it "returns binary encoded data" do
-    obj = IntBuffer.new(3)
-    obj.to_binary_s.encoding.must_equal Encoding::ASCII_8BIT
-  end
-
-  it "returns binary encoded data despite Encoding.default_internal" do
-    w, $-w = $-w, false
-    before_enc = Encoding.default_internal
-
-    begin
-      Encoding.default_internal = Encoding::UTF_8
-      obj = IntBuffer.new(3)
-      obj.to_binary_s.encoding.must_equal Encoding::ASCII_8BIT
-    ensure
-      Encoding.default_internal = before_enc
-      $-w = w
-    end
-  end
-
   it "has total num_bytes" do
     obj = IntBuffer.new
     assert obj.clear?
@@ -173,3 +154,36 @@ describe BinData::Buffer, "nested buffers" do
   end
 end
 
+describe BinData::Buffer, "encoding" do
+  class EncodingTestBufferRecord < BinData::Record
+    endian :big
+    default_parameter length: 5
+
+    uint16 :num
+    string :str, length: 10
+  end
+
+  it "returns binary encoded data" do
+    obj = EncodingTestBufferRecord.new(num: 3)
+    obj.to_binary_s.encoding.must_equal Encoding::ASCII_8BIT
+  end
+
+  it "returns binary encoded data with utf-8 string" do
+    obj = EncodingTestBufferRecord.new(num: 3, str: "日本語")
+    obj.to_binary_s.encoding.must_equal Encoding::ASCII_8BIT
+  end
+
+  it "returns binary encoded data despite Encoding.default_internal" do
+    w, $-w = $-w, false
+    before_enc = Encoding.default_internal
+
+    begin
+      Encoding.default_internal = Encoding::UTF_8
+      obj = EncodingTestBufferRecord.new(num: 3, str: "日本語")
+      obj.to_binary_s.encoding.must_equal Encoding::ASCII_8BIT
+    ensure
+      Encoding.default_internal = before_enc
+      $-w = w
+    end
+  end
+end
