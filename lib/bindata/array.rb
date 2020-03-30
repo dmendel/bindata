@@ -82,7 +82,8 @@ module BinData
     def assign(array)
       raise ArgumentError, "can't set a nil value for #{debug_name}" if array.nil?
 
-      @element_list = to_storage_formats(array.to_ary)
+      @element_list = []
+      concat(array)
     end
 
     def snapshot
@@ -119,7 +120,17 @@ module BinData
 
     def insert(index, *objs)
       extend_array(index - 1)
-      elements.insert(index, *to_storage_formats(objs))
+      abs_index = (index >= 0) ? index : index + 1 + length
+
+      # insert elements before...
+      new_elements = objs.map { new_element }
+      elements.insert(index, *new_elements)
+
+      # ...assigning values
+      objs.each_with_index do |obj, i|
+        self[abs_index + i] = obj
+      end
+
       self
     end
 
@@ -238,10 +249,6 @@ module BinData
       end
     end
 
-    def to_storage_formats(els)
-      els.collect { |el| new_element(el) }
-    end
-
     def elements
       @element_list ||= []
     end
@@ -252,8 +259,8 @@ module BinData
       element
     end
 
-    def new_element(value = nil)
-      @element_prototype.instantiate(value, self)
+    def new_element
+      @element_prototype.instantiate(nil, self)
     end
 
     def sum_num_bytes_for_all_elements
