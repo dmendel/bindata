@@ -208,3 +208,30 @@ describe BinData::Primitive, "with mutating #get and #set" do
     obj.to_binary_s.must_equal_binary "\062\000"
   end
 end
+
+describe BinData::Primitive, "when describing an array" do
+  class ArrayPrimitive < BinData::Primitive
+    endian :little
+    array :elements, type: :uint8
+
+    def get
+      self.elements
+    end
+
+    def set(v)
+      self.elements = v
+    end
+  end
+
+  it "#do_num_bytes does not change the value" do
+    obj = ArrayPrimitive.new([1, 2])
+    obj.do_num_bytes.must_equal 2
+    obj.to_ary.must_equal [1, 2]
+  end
+
+  it "#to_binary_s does not change the value" do
+    obj = ArrayPrimitive.new([1, 2])
+    obj.to_binary_s.must_equal_binary "\001\002"
+    obj.to_ary.must_equal [1, 2]
+  end
+end

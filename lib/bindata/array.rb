@@ -82,6 +82,7 @@ module BinData
     def assign(array)
       raise ArgumentError, "can't set a nil value for #{debug_name}" if array.nil?
 
+      array = array.to_ary
       @element_list = []
       concat(array)
     end
