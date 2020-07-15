@@ -80,6 +80,7 @@ module BinData
     end
 
     def assign(array)
+      return if self.equal?(array)  # prevent self assignment
       raise ArgumentError, "can't set a nil value for #{debug_name}" if array.nil?
 
       @element_list = []

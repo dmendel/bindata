@@ -1,5 +1,9 @@
 = BinData Changelog
 
+== Version 2.4.8
+
+* Bug fix array self assignment.  Thanks to Spencer McIntyre.
+
 == Version 2.4.7 (2020-03-31)
 
 * Fix choice assignment inside arrays.  Reported by Spencer McIntyre.

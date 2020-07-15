@@ -266,6 +266,11 @@ describe BinData::Array, "when accessing elements" do
     lambda { obj["a"] }.must_raise TypeError
     lambda { obj[1, "a"] }.must_raise TypeError
   end
+
+  it "is unaffected by self assignment" do
+    obj.assign(obj)
+    obj.snapshot.must_equal [1, 2, 3, 4, 5]
+  end
 end
 
 describe BinData::Array, "with :read_until" do
