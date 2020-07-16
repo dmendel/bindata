@@ -106,12 +106,12 @@ describe BinData::Stringz, "with max_length" do
   end
 
   it "trims values greater than max_length" do
-    obj.assign("abcde")
+    obj.assign("abcdefg")
     obj.must_equal "abcd"
   end
 
   it "writes values greater than max_length" do
-    obj.assign("abcde")
+    obj.assign("abcdefg")
     obj.to_binary_s.must_equal_binary "abcd\0"
   end
 

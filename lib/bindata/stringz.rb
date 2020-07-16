@@ -80,7 +80,7 @@ module BinData
     def trim_to!(str, max_length = nil)
       if max_length
         max_length = 1 if max_length < 1
-        str.slice!(max_length)
+        str.slice!(max_length..-1)
         if str.length == max_length && str[-1, 1] != "\0"
           str[-1, 1] = "\0"
         end
