@@ -8,7 +8,7 @@ Gem::Specification.new do |s|
   s.summary = 'A declarative way to read and write binary file formats'
   s.author = 'Dion Mendel'
   s.email = 'bindata@dm9.info'
-  s.homepage = 'http://github.com/dmendel/bindata'
+  s.homepage = 'https://github.com/dmendel/bindata'
   s.require_path = 'lib'
   s.extra_rdoc_files = ['NEWS.rdoc']
   s.rdoc_options << '--main' << 'NEWS.rdoc'
