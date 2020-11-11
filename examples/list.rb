@@ -105,7 +105,7 @@ class Term < BinData::Record
   end
 
   def self.encode(val)
-    if Fixnum === val
+    if Integer === val
       Term.new(tag: 'a', term: Atom.encode(val))
     else
       Term.new(tag: 'l', term: List.encode(val))

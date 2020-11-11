@@ -1,5 +1,9 @@
 = BinData Changelog
 
+== Version 2.4.9 (xxxx-xx-xx)
+
+* Change example from Fixnum to Integer.  Thanks to Tim Chambers.
+
 == Version 2.4.8 (2020-07-21)
 
 * Bug fix array self assignment.  Thanks to Spencer McIntyre.
