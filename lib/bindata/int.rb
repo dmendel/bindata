@@ -157,7 +157,7 @@ module BinData
       def pack_directive(nbits, endian, signed)
         nwords = nbits / bits_per_word(nbits)
 
-        directives = { 8 => "C", 16 => "S", 32 => "L", 64 => "Q" }
+        directives = { 8 => "C".dup, 16 => "S".dup, 32 => "L".dup, 64 => "Q".dup }
 
         d = directives[bits_per_word(nbits)]
         d << ((endian == :big) ? ">" : "<") unless d == "C"
