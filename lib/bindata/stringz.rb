@@ -54,7 +54,7 @@ module BinData
       # read until zero byte or we have read in the max number of bytes
       while ch != "\0" && i != max_length
         ch = io.readbytes(1)
-        str << ch
+        str += ch
         i += 1
       end
 

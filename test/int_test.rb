@@ -128,7 +128,7 @@ module AllIntegers
   end
 
   def int_to_binary_str(val)
-    str = "".force_encoding(Encoding::BINARY)
+    str = "".dup.force_encoding(Encoding::BINARY)
     v = val & ((1 << (@nbytes * 8)) - 1)
     @nbytes.times do
       str.concat(v & 0xff)

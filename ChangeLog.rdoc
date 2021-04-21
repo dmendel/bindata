@@ -3,6 +3,7 @@
 == Version 2.4.9 (xxxx-xx-xx)
 
 * Change example from Fixnum to Integer.  Thanks to Tim Chambers.
+* Now works with frozen string literals.  Requested by Jeremy Evans.
 
 == Version 2.4.8 (2020-07-21)
 

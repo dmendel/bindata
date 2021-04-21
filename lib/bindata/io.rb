@@ -169,7 +169,7 @@ module BinData
 
           unless @read_data.empty? || @in_readahead
             bytes_to_consume = [n, @read_data.length].min
-            data << @read_data.slice!(0, bytes_to_consume)
+            data += @read_data.slice!(0, bytes_to_consume)
             n -= bytes_to_consume
 
             if @read_data.empty?
@@ -180,10 +180,10 @@ module BinData
           end
 
           raw_data = @raw_io.read(n)
-          data << raw_data if raw_data
+          data += raw_data if raw_data
 
           if @in_readahead
-            @read_data << data
+            @read_data += data
           end
 
           @offset += data.size

@@ -99,7 +99,7 @@ describe BinData::DelayedIO, "subclassed with a single type" do
   end
 
   it "writes explicitly" do
-    io = StringIO.new "\001\002\003\004\005\006\007\010\011"
+    io = StringIO.new "\001\002\003\004\005\006\007\010\011".dup
     obj = IntDelayedIO.new(3)
     obj.write(io)
     obj.write_now!
@@ -107,7 +107,7 @@ describe BinData::DelayedIO, "subclassed with a single type" do
   end
 
   it "writes explicitly after setting abs_offset" do
-    io = StringIO.new "\001\002\003\004\005\006\007\010\011"
+    io = StringIO.new "\001\002\003\004\005\006\007\010\011".dup
     obj = IntDelayedIO.new(7)
     obj.write(io)
 
@@ -139,7 +139,7 @@ describe BinData::DelayedIO, "subclassed with multiple types" do
   end
 
   it "writes explicitly" do
-    io = StringIO.new "\001\002\003\004\005\006\007\010\011\012\013\014\015"
+    io = StringIO.new "\001\002\003\004\005\006\007\010\011\012\013\014\015".dup
     obj = StringDelayedIO.new(str: "hello")
     obj.write(io)
     obj.write_now!

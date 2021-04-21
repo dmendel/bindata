@@ -107,7 +107,7 @@ module BinData
         parts = (0...nwords).collect do |i|
                   "(ints.at(#{idx[i]}) << #{bits_per_word(nbits) * i})"
                 end
-        parts[0].sub!(/ << 0\b/, "")  # Remove " << 0" for optimisation
+        parts[0] = parts[0].sub(/ << 0\b/, "")  # Remove " << 0" for optimisation
 
         parts.join(" + ")
       end
@@ -132,7 +132,7 @@ module BinData
         mask   = (1 << bits_per_word(nbits)) - 1
 
         vals = (0...nwords).collect { |i| "val >> #{bits_per_word(nbits) * i}" }
-        vals[0].sub!(/ >> 0\b/, "")  # Remove " >> 0" for optimisation
+        vals[0] = vals[0].sub(/ >> 0\b/, "")  # Remove " >> 0" for optimisation
         vals.reverse! if (endian == :big)
 
         vals = vals.collect { |val| "#{val} & #{mask}" }  # TODO: "& mask" is needed to work around jruby bug. Remove this line when fixed.
@@ -160,7 +160,7 @@ module BinData
         directives = { 8 => "C", 16 => "S", 32 => "L", 64 => "Q" }
 
         d = directives[bits_per_word(nbits)]
-        d << ((endian == :big) ? ">" : "<") unless d == "C"
+        d += ((endian == :big) ? ">" : "<") unless d == "C"
 
         if signed == :signed && directives.key?(nbits)
           (d * nwords).downcase

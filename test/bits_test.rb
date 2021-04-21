@@ -101,14 +101,14 @@ def generate_bit_classes_to_test(endian, signed)
 
   (start .. 64).each do |nbits|
     name = "#{base}#{nbits}"
-    name << "le" if endian == :little
+    name += "le" if endian == :little
     obj = BinData.const_get(name).new
     bits << [obj, nbits]
   end
 
   (start .. 64).each do |nbits|
     name = "#{base}"
-    name << "Le" if endian == :little
+    name += "Le" if endian == :little
     obj = BinData.const_get(name).new(nbits: nbits)
     bits << [obj, nbits]
   end
