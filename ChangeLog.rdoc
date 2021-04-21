@@ -1,6 +1,6 @@
 = BinData Changelog
 
-== Version 2.4.9 (xxxx-xx-xx)
+== Version 2.4.9 (2021-04-22)
 
 * Change example from Fixnum to Integer.  Thanks to Tim Chambers.
 * Now works with frozen string literals.  Requested by Jeremy Evans.
