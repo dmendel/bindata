@@ -115,14 +115,14 @@ module BinData
         end
 
         if signed == :signed
-          max = (1 << (nbits - 1)) - 1
-          min = -(max + 1)
+          max = "max = (1 << (#{nbits} - 1)) - 1"
+          min = "min = -(max + 1)"
         else
-          min = 0
-          max = (1 << nbits) - 1
+          min = "min = 0"
+          max = "max = (1 << #{nbits}) - 1"
         end
 
-        clamp = "(val < #{min}) ? #{min} : (val > #{max}) ? #{max} : val"
+        clamp = "(#{max}; #{min}; val = (val < min) ? min : (val > max) ? max : val)"
 
         if nbits == 1
           # allow single bits to be used as booleans

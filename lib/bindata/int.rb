@@ -59,14 +59,16 @@ module BinData
 
       def create_clamp_code(nbits, signed)
         if signed == :signed
-          max = (1 << (nbits - 1)) - 1
-          min = -(max + 1)
+          max = "max = (1 << (#{nbits} - 1)) - 1"
+          min = "min = -(max + 1)"
         else
-          max = (1 << nbits) - 1
-          min = 0
+          max = "max = (1 << #{nbits}) - 1"
+          min = "min = 0"
         end
 
-        "val = (val < #{min}) ? #{min} : (val > #{max}) ? #{max} : val"
+        clamp = "(#{max}; #{min}; val = (val < min) ? min : (val > max) ? max : val)"
+
+        "val = #{clamp}"
       end
 
       def create_read_code(nbits, endian, signed)
