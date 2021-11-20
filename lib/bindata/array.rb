@@ -300,7 +300,7 @@ module BinData
   # Logic for the :read_until parameter
   module ReadUntilPlugin
     def do_read(io)
-      variables = { index: -1, element: nil, array: self }
+      variables = { index: self.length - 1, element: self.last, array: self }
       until eval_parameter(:read_until, variables)
         element = append_new_element
         element.do_read(io)
