@@ -184,6 +184,51 @@ describe BinData::DelayedIO, "inside a Record" do
   end
 end
 
+describe BinData::DelayedIO, "inside a Record with onlyif" do
+  class DelayedIOOnlyIfRecord < BinData::Record
+    endian :little
+
+    uint8 :flag
+    delayed_io :my_int1, read_abs_offset: 4, onlyif: -> { flag != 0 } do
+      uint16 initial_value: 6
+    end
+    delayed_io :my_int2, read_abs_offset: 2, onlyif: -> { flag == 0 } do
+      uint16 initial_value: 7
+    end
+  end
+
+  it "reads" do
+    obj = DelayedIOOnlyIfRecord.read "\x01\x00\x03\x0012345"
+    obj.num_bytes.must_equal 1
+    obj.snapshot.must_equal({flag: 1, my_int1: 6, my_int2: 7})
+  end
+
+  it "reads explicitly when flag is set" do
+    obj = DelayedIOOnlyIfRecord.read "\x01\xff\x01\x00\x02\x00"
+    obj.my_int1.read_now!
+    obj.my_int2.read_now!
+    obj.num_bytes.must_equal 1
+    obj.snapshot.must_equal({flag: 1, my_int1: 2, my_int2: 7})
+  end
+
+  it "reads explicitly when flag is not set" do
+    obj = DelayedIOOnlyIfRecord.read "\x00\xff\x01\x00\x02\x00"
+    obj.my_int1.read_now!
+    obj.my_int2.read_now!
+    obj.num_bytes.must_equal 1
+    obj.snapshot.must_equal({flag: 0, my_int1: 6, my_int2: 1})
+  end
+
+  it "writes" do
+    obj = DelayedIOOnlyIfRecord.new(flag:1, my_int1: 3, my_int2: 4)
+    io = StringIO.new
+    obj.write(io)
+    obj.my_int1.write_now!
+    obj.my_int2.write_now!
+    io.value.must_equal "\x01\x00\x00\x00\x03\x00"
+  end
+end
+
 describe BinData::DelayedIO, "with auto_call" do
   class AutoCallDelayedIORecord < BinData::Record
     auto_call_delayed_io

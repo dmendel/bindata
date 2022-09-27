@@ -116,9 +116,25 @@ module BinData
       0
     end
 
+    def eval_parameter_with_delayed_io(key, overrides = nil)
+      result = eval_parameter_without_delayed_io(key, overrides)
+
+      # Delay processing :onlyif until we do the actual read/write
+      result = true if key == :onlyif && ! result
+
+      result
+    end
+    alias_method :eval_parameter_without_delayed_io, :eval_parameter
+    alias_method :eval_parameter, :eval_parameter_with_delayed_io
+
+    def include_obj?
+      ! has_parameter?(:onlyif) || eval_parameter_without_delayed_io(:onlyif)
+    end
+
     # DelayedIO objects aren't read when #read is called.
     # The reading is delayed until this method is called.
     def read_now!
+      return unless include_obj?
       raise IOError, "read from where?" unless @read_io
 
       @read_io.seekbytes(abs_offset - @read_io.offset)
@@ -130,7 +146,9 @@ module BinData
     # DelayedIO objects aren't written when #write is called.
     # The writing is delayed until this method is called.
     def write_now!
+      return unless include_obj?
       raise IOError, "write to where?" unless @write_io
+
       @write_io.seekbytes(abs_offset - @write_io.offset)
       @type.do_write(@write_io)
     end
