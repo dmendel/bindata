@@ -1,5 +1,9 @@
 = BinData Changelog
 
+== Version 2.4.11 (2022-09-27)
+
+* Make DelayedIO work with :onlyif.  Reported by Spencer McIntyre.
+
 == Version 2.4.10 (2021-05-18)
 
 * Improve speed of dynamic object creation.  Reported by Charlie Ablett.
