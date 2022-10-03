@@ -200,7 +200,7 @@ describe BinData::DelayedIO, "inside a Record with onlyif" do
   it "reads" do
     obj = DelayedIOOnlyIfRecord.read "\x01\x00\x03\x0012345"
     obj.num_bytes.must_equal 1
-    obj.snapshot.must_equal({flag: 1, my_int1: 6, my_int2: 7})
+    obj.snapshot.must_equal({flag: 1, my_int1: 6})
   end
 
   it "reads explicitly when flag is set" do
@@ -208,7 +208,7 @@ describe BinData::DelayedIO, "inside a Record with onlyif" do
     obj.my_int1.read_now!
     obj.my_int2.read_now!
     obj.num_bytes.must_equal 1
-    obj.snapshot.must_equal({flag: 1, my_int1: 2, my_int2: 7})
+    obj.snapshot.must_equal({flag: 1, my_int1: 2})
   end
 
   it "reads explicitly when flag is not set" do
@@ -216,7 +216,7 @@ describe BinData::DelayedIO, "inside a Record with onlyif" do
     obj.my_int1.read_now!
     obj.my_int2.read_now!
     obj.num_bytes.must_equal 1
-    obj.snapshot.must_equal({flag: 0, my_int1: 6, my_int2: 1})
+    obj.snapshot.must_equal({flag: 0, my_int2: 1})
   end
 
   it "writes" do

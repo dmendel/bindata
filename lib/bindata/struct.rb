@@ -1,4 +1,5 @@
 require 'bindata/base'
+require 'bindata/delayed_io'
 
 module BinData
 
@@ -136,12 +137,12 @@ module BinData
 
     def do_read(io) #:nodoc:
       instantiate_all_objs
-      @field_objs.each { |f| f.do_read(io) if include_obj?(f) }
+      @field_objs.each { |f| f.do_read(io) if include_obj_for_io?(f) }
     end
 
     def do_write(io) #:nodoc
       instantiate_all_objs
-      @field_objs.each { |f| f.do_write(io) if include_obj?(f) }
+      @field_objs.each { |f| f.do_write(io) if include_obj_for_io?(f) }
     end
 
     def do_num_bytes #:nodoc:
@@ -261,6 +262,12 @@ module BinData
           sum
         end
       end
+    end
+
+    def include_obj_for_io?(obj)
+      # Used by #do_read and #do_write, to ensure the stream is passed to
+      # DelayedIO objects for delayed processing.
+      include_obj?(obj) || DelayedIO === obj
     end
 
     def include_obj?(obj)
