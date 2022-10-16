@@ -116,7 +116,7 @@ module BinData
 
       def self.invalid_parameter_names
         @invalid_names ||= begin
-          all_names = LazyEvaluator.instance_methods(true) + Kernel.methods
+          all_names = LazyEvaluator.instance_methods(true)
           allowed_names = [:name, :type]
           invalid_names = (all_names - allowed_names).uniq
 

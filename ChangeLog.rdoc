@@ -1,5 +1,10 @@
 = BinData Changelog
 
+== Version 2.4.13 (2022-10-16)
+
+* Relax over-strict parameter naming requirements.  Requested by
+  vinayak3qilabs.
+
 == Version 2.4.12 (2022-10-03)
 
 * Do not include DelayedIO objects when :onlyif is false.

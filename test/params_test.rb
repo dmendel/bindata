@@ -7,7 +7,7 @@ describe BinData::Base, "parameters" do
   it "fails when parameter name is invalid" do
     lambda {
       class InvalidParameterNameBase < BinData::Base
-        optional_parameter :eval # i.e. Kernel#eval
+        optional_parameter :lazy_eval # from LazyEvaluator
       end
     }.must_raise NameError
   end
