@@ -54,7 +54,7 @@ describe BinData::Record, "when defining with errors" do
         int8 :a
         int8 "45"
       end
-    }.must_raise_on_line NameError, 3, "field '45' is an illegal fieldname in MalformedNameRecord"
+    }.must_raise_on_line SyntaxError, 3, "field '45' is an illegal fieldname in MalformedNameRecord"
   end
 
   it "fails on duplicate names" do
@@ -73,7 +73,7 @@ describe BinData::Record, "when defining with errors" do
         int8 :a
         int8 :invert # from Hash.instance_methods
       end
-    }.must_raise_on_line NameError, 3, "field 'invert' is a reserved name in ReservedNameRecord"
+    }.must_raise_on_line SyntaxError, 3, "field 'invert' is a reserved name in ReservedNameRecord"
   end
 
   it "fails when field name shadows an existing method" do
@@ -81,7 +81,7 @@ describe BinData::Record, "when defining with errors" do
       class ExistingNameRecord < BinData::Record
         int8 :object_id
       end
-    }.must_raise_on_line NameError, 2, "field 'object_id' shadows an existing method in ExistingNameRecord"
+    }.must_raise_on_line SyntaxError, 2, "field 'object_id' shadows an existing method in ExistingNameRecord"
   end
 
   it "fails on unknown endian" do

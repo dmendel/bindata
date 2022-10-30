@@ -4,6 +4,7 @@
 
 * Use Comparable#clamp instead of manual calculations.
 * Update tests to new minitest requirements.
+* Adjust tests due to changes in ruby 3.1
 
 == Version 2.4.13 (2022-10-16)
 

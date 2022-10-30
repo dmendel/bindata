@@ -47,7 +47,7 @@ describe BinData::Primitive, "when defining with errors" do
       class ExistingNamePrimitive < BinData::Primitive
         int8 :object_id
       end
-    }.must_raise_on_line NameError, 2, "field 'object_id' shadows an existing method in ExistingNamePrimitive"
+    }.must_raise_on_line SyntaxError, 2, "field 'object_id' shadows an existing method in ExistingNamePrimitive"
   end
 
   it "fails on unknown endian" do
