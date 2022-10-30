@@ -7,17 +7,17 @@ describe BinData::Virtual do
 
   it "must not read from any stream" do
     BinData::Virtual.read(stream)
-    stream.pos.must_equal 0
+    _(stream.pos).must_equal 0
   end
 
   it "must not write to a stream" do
     obj = BinData::Virtual.new
-    obj.to_binary_s.must_equal_binary ""
+    _(obj.to_binary_s).must_equal_binary ""
   end
 
   it "occupies no space" do
     obj = BinData::Virtual.new
-    obj.num_bytes.must_equal 0
+    _(obj.num_bytes).must_equal 0
   end
 
   it "asserts on #read" do
@@ -25,7 +25,7 @@ describe BinData::Virtual do
     obj = BinData::Virtual.new(assert: -> { data << 1; true })
 
     obj.read ""
-    data.must_equal [1]
+    _(data).must_equal [1]
   end
 
   it "asserts on #assign" do
@@ -33,16 +33,16 @@ describe BinData::Virtual do
     obj = BinData::Virtual.new(assert: -> { data << 1; true })
 
     obj.assign("foo")
-    data.must_equal [1]
+    _(data).must_equal [1]
   end
 
   it "assigns a value" do
     obj = BinData::Virtual.new(3)
-    obj.must_equal 3
+    _(obj).must_equal 3
   end
 
   it "accepts the :value parameter" do
     obj = BinData::Virtual.new(value: 3)
-    obj.must_equal 3
+    _(obj).must_equal 3
   end
 end

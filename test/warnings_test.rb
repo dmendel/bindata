@@ -10,7 +10,7 @@ describe BinData::Base, "when defining" do
       end
     end
 
-    lambda {
+    _ {
       BaseWithInitialize.new
     }.must_raise RuntimeError
   end
@@ -22,7 +22,7 @@ describe BinData::Base, "when defining" do
       end
     end
 
-    lambda {
+    _ {
       BaseWithInitializeInstance.new
     }.must_raise RuntimeError
   end

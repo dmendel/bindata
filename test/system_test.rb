@@ -11,18 +11,18 @@ describe "lambdas with index" do
     arr = BinData::Array.new(type:
                                [:uint8, { value: -> { index * 10 } }],
                              initial_length: 3)
-    arr.snapshot.must_equal [0, 10, 20]
+    _(arr.snapshot).must_equal [0, 10, 20]
   end
 
   it "uses index of nearest containing array" do
     arr = BinData::Array.new(type: :nested_lambda_with_index,
                              initial_length: 3)
-    arr.snapshot.must_equal [{a: 0}, {a: 10}, {a: 20}]
+    _(arr.snapshot).must_equal [{a: 0}, {a: 10}, {a: 20}]
   end
 
   it "fails if there is no containing array" do
     obj = NestedLambdaWithIndex.new
-    lambda { obj.a.to_s }.must_raise NoMethodError
+    _ { obj.a.to_s }.must_raise NoMethodError
   end
 end
 
@@ -39,7 +39,7 @@ describe "lambdas with parent" do
     end
 
     obj = TestLambdaWithoutParent.new
-    obj.x.b.must_equal 5
+    _(obj.x.b).must_equal 5
   end
 
   it "accesses parent's parent when parent is specified" do
@@ -54,7 +54,7 @@ describe "lambdas with parent" do
     end
 
     obj = TestLambdaWithParent.new
-    obj.x.b.must_equal 3
+    _(obj.x.b).must_equal 3
   end
 end
 
@@ -82,18 +82,18 @@ describe BinData::Record, "with choice field" do
   it "treats choice object transparently " do
     obj = RecordWithChoiceField.new
 
-    obj.x.a.must_equal 3
+    _(obj.x.a).must_equal 3
   end
 
   it "treats nested choice object transparently " do
     obj = RecordWithNestedChoiceField.new
 
-    obj.x.a.must_equal 3
+    _(obj.x.a).must_equal 3
   end
 
   it "has correct offset" do
     obj = RecordWithNestedChoiceField.new
-    obj.x.b.abs_offset.must_equal 2
+    _(obj.x.b.abs_offset).must_equal 2
   end
 end
 
@@ -132,17 +132,17 @@ describe BinData::Record, "containing bitfields" do
   let(:obj) { BitfieldRecord.new }
 
   it "has correct num_bytes" do
-    obj.num_bytes.must_equal 5
+    _(obj.num_bytes).must_equal 5
   end
 
   it "reads across bitfield boundaries" do
     obj.read [0b0111_0010, 0b0110_0101, 0b0010_1010, 0b1000_0101, 0b1000_0000].pack("CCCCC")
 
-    obj.a.w.must_equal 7
-    obj.b.must_equal [0, 0, 1, 0, 0, 1, 1, 0, 0]
-    obj.c.x.must_equal 2
-    obj.d.must_equal 954
-    obj.e.must_equal 11
+    _(obj.a.w).must_equal 7
+    _(obj.b).must_equal [0, 0, 1, 0, 0, 1, 1, 0, 0]
+    _(obj.c.x).must_equal 2
+    _(obj.d).must_equal 954
+    _(obj.e).must_equal 11
   end
 
   it "writes across bitfield boundaries" do
@@ -152,37 +152,37 @@ describe BinData::Record, "containing bitfields" do
     obj.c.x = 1
     obj.d = 850
     obj.e = 35
-    obj.to_binary_s.must_equal_binary [0b0011_0010, 0b0100_0011, 0b0000_1010, 0b0001_0001, 0b1000_0000].pack("CCCCC")
+    _(obj.to_binary_s).must_equal_binary [0b0011_0010, 0b0100_0011, 0b0000_1010, 0b0001_0001, 0b1000_0000].pack("CCCCC")
   end
 end
 
 describe "Objects with debug_name" do
   it "haves default name of obj" do
     el = BinData::Uint8.new
-    el.debug_name.must_equal "obj"
+    _(el.debug_name).must_equal "obj"
   end
 
   it "includes array index" do
     arr = BinData::Array.new(type: :uint8, initial_length: 2)
-    arr[2].debug_name.must_equal "obj[2]"
+    _(arr[2].debug_name).must_equal "obj[2]"
   end
 
   it "includes field name" do
     s = BinData::Struct.new(fields: [[:uint8, :a]])
-    s.a.debug_name.must_equal "obj.a"
+    _(s.a.debug_name).must_equal "obj.a"
   end
 
   it "delegates to choice" do
     choice_params = {choices: [:uint8], selection: 0}
     s = BinData::Struct.new(fields: [[:choice, :a, choice_params]])
-    s.a.debug_name.must_equal "obj.a"
+    _(s.a.debug_name).must_equal "obj.a"
   end
 
   it "nests" do
     nested_struct_params = {fields: [[:uint8, :c]]}
     struct_params = {fields: [[:struct, :b, nested_struct_params]]}
     s = BinData::Struct.new(fields: [[:struct, :a, struct_params]])
-    s.a.b.c.debug_name.must_equal "obj.a.b.c"
+    _(s.a.b.c.debug_name).must_equal "obj.a.b.c"
   end
 end
 
@@ -194,7 +194,7 @@ describe "Tracing"  do
     BinData::trace_reading(io) { arr.read("\x01\x02\x03\x04\x05") }
 
     expected = (0..4).collect { |i| "obj[#{i}] => #{i + 1}\n" }.join("")
-    io.value.must_equal expected
+    _(io.value).must_equal expected
   end
 
   it "traces custom single values" do
@@ -209,7 +209,7 @@ describe "Tracing"  do
     io = StringIO.new
     BinData::trace_reading(io) { obj.read("\x01") }
 
-    io.value.must_equal ["obj-internal-.ex => 1\n", "obj => 1\n"].join("")
+    _(io.value).must_equal ["obj-internal-.ex => 1\n", "obj => 1\n"].join("")
   end
 
   it "traces choice selection" do
@@ -218,7 +218,7 @@ describe "Tracing"  do
     io = StringIO.new
     BinData::trace_reading(io) { obj.read("\x01") }
 
-    io.value.must_equal ["obj-selection- => 0\n", "obj => 1\n"].join("")
+    _(io.value).must_equal ["obj-selection- => 0\n", "obj => 1\n"].join("")
   end
 
   it "trims long trace values" do
@@ -227,7 +227,7 @@ describe "Tracing"  do
     io = StringIO.new
     BinData::trace_reading(io) { obj.read("0000000000111111111122222222223333333333") }
 
-    io.value.must_equal "obj => \"000000000011111111112222222222...\n"
+    _(io.value).must_equal "obj => \"000000000011111111112222222222...\n"
   end
 end
 
@@ -240,17 +240,17 @@ describe "Forward referencing with Primitive" do
   let(:obj) { FRPrimitive.new }
 
   it "initialises" do
-    obj.snapshot.must_equal({len: 0, data: ""})
+    _(obj.snapshot).must_equal({len: 0, data: ""})
   end
 
   it "reads" do
     obj.read("\x04test")
-    obj.snapshot.must_equal({len: 4, data: "test"})
+    _(obj.snapshot).must_equal({len: 4, data: "test"})
   end
 
   it "sets value" do
     obj.data = "hello"
-    obj.snapshot.must_equal({len: 5, data: "hello"})
+    _(obj.snapshot).must_equal({len: 5, data: "hello"})
   end
 end
 
@@ -263,17 +263,17 @@ describe "Forward referencing with Array" do
   let(:obj) { FRArray.new }
 
   it "initialises" do
-    obj.snapshot.must_equal({len: 0, data: []})
+    _(obj.snapshot).must_equal({len: 0, data: []})
   end
 
   it "reads" do
     obj.read("\x04\x01\x02\x03\x04")
-    obj.snapshot.must_equal({len: 4, data: [1, 2, 3, 4]})
+    _(obj.snapshot).must_equal({len: 4, data: [1, 2, 3, 4]})
   end
 
   it "sets value" do
     obj.data = [1, 2, 3]
-    obj.snapshot.must_equal({len: 3, data: [1, 2, 3]})
+    _(obj.snapshot).must_equal({len: 3, data: [1, 2, 3]})
   end
 end
 
@@ -288,7 +288,7 @@ describe "Evaluating custom parameters" do
 
   it "recursively evaluates parameter" do
     obj = CustomParameterRecord.new(zz: 5)
-    obj.c.eval_parameter(:custom).must_equal 5
+    _(obj.c.eval_parameter(:custom)).must_equal 5
   end
 end
 
@@ -299,7 +299,7 @@ describe BinData::Record, "with custom sized integers" do
 
   it "reads as expected" do
     str = "\x00\x00\x00\x00\x05"
-    CustomIntRecord.read(str).snapshot.must_equal({a: 5})
+    _(CustomIntRecord.read(str).snapshot).must_equal({a: 5})
   end
 end
 
@@ -330,11 +330,11 @@ describe BinData::Primitive, "representing a string" do
   let(:obj) { PascalStringPrimitive.new("testing") }
 
   it "compares to regexp" do
-    (obj =~ /es/).must_equal 1
+    _((obj =~ /es/)).must_equal 1
   end
 
   it "compares to regexp" do
-    (/es/ =~ obj).must_equal 1
+    _((/es/ =~ obj)).must_equal 1
   end
 end
 
@@ -347,17 +347,17 @@ describe BinData::Record, "with boolean parameters" do
 
   it "uses default parameter" do
     obj = BooleanParameterRecord.new
-    obj.a.must_equal 2
+    _(obj.a).must_equal 2
   end
 
   it "overrides parameter" do
     obj = BooleanParameterRecord.new(flag: false)
-    obj.a.must_equal 3
+    _(obj.a).must_equal 3
   end
 
   it "overrides parameter with same value" do
     obj = BooleanParameterRecord.new(flag: true)
-    obj.a.must_equal 2
+    _(obj.a).must_equal 2
   end
 end
 
@@ -372,12 +372,12 @@ describe BinData::Record, "encoding" do
 
   it "returns binary encoded data" do
     obj = EncodingTestBufferRecord.new(num: 3)
-    obj.to_binary_s.encoding.must_equal Encoding::ASCII_8BIT
+    _(obj.to_binary_s.encoding).must_equal Encoding::ASCII_8BIT
   end
 
   it "returns binary encoded data with utf-8 string" do
     obj = EncodingTestBufferRecord.new(num: 3, str: "日本語")
-    obj.to_binary_s.encoding.must_equal Encoding::ASCII_8BIT
+    _(obj.to_binary_s.encoding).must_equal Encoding::ASCII_8BIT
   end
 
   it "returns binary encoded data despite Encoding.default_internal" do
@@ -387,7 +387,7 @@ describe BinData::Record, "encoding" do
     begin
       Encoding.default_internal = Encoding::UTF_8
       obj = EncodingTestBufferRecord.new(num: 3, str: "日本語")
-      obj.to_binary_s.encoding.must_equal Encoding::ASCII_8BIT
+      _(obj.to_binary_s.encoding).must_equal Encoding::ASCII_8BIT
     ensure
       Encoding.default_internal = before_enc
       $-w = w

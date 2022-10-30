@@ -6,21 +6,21 @@ module AllBitfields
 
   def test_has_a_sensible_value_of_zero
     all_objects do |obj, nbits|
-      obj.must_equal 0
+      _(obj).must_equal 0
     end
   end
 
   def test_avoids_underflow
     all_objects do |obj, nbits|
       obj.assign(min_value - 1)
-      obj.must_equal min_value
+      _(obj).must_equal min_value
     end
   end
 
   def test_avoids_overflow
     all_objects do |obj, nbits|
       obj.assign(max_value + 1)
-      obj.must_equal max_value
+      _(obj).must_equal max_value
     end
   end
 
@@ -28,7 +28,7 @@ module AllBitfields
     all_objects do |obj, nbits|
       some_values_within_range.each do |val|
         obj.assign(val)
-        obj.must_equal val
+        _(obj).must_equal val
       end
     end
   end
@@ -37,7 +37,7 @@ module AllBitfields
     all_objects do |obj, nbits|
       some_values_within_range.each do |val|
         obj.assign(obj.new(val))
-        obj.must_equal val
+        _(obj).must_equal val
       end
     end
   end
@@ -48,7 +48,7 @@ module AllBitfields
         obj.assign(val)
         other = obj.new
         other.read(obj.to_binary_s)
-        other.must_equal obj
+        _(other).must_equal obj
       end
     end
   end
@@ -130,7 +130,7 @@ describe "Unsigned big endian bitfields" do
       str = [0b1000_0000].pack("C") + "\000" * (nbytes - 1)
 
       obj.read(str)
-      obj.must_equal 1 << (nbits - 1)
+      _(obj).must_equal 1 << (nbits - 1)
     end
   end
 end
@@ -149,7 +149,7 @@ describe "Signed big endian bitfields" do
       str = [0b0100_0000].pack("C") + "\000" * (nbytes - 1)
 
       obj.read(str)
-      obj.must_equal 1 << (nbits - 2)
+      _(obj).must_equal 1 << (nbits - 2)
     end
   end
 end
@@ -168,7 +168,7 @@ describe "Unsigned little endian bitfields" do
       str = [0b0000_0001].pack("C") + "\000" * (nbytes - 1)
 
       obj.read(str)
-      obj.must_equal 1
+      _(obj).must_equal 1
     end
   end
 end
@@ -187,7 +187,7 @@ describe "Signed little endian bitfields" do
       str = [0b0000_0001].pack("C") + "\000" * (nbytes - 1)
 
       obj.read(str)
-      obj.must_equal 1
+      _(obj).must_equal 1
     end
   end
 end
@@ -199,7 +199,7 @@ describe "Bits of size 1" do
     bit_classes.each do |bit_class|
       obj = bit_class.new
       obj.assign(true)
-      obj.must_equal 1
+      _(obj).must_equal 1
     end
   end
 
@@ -207,7 +207,7 @@ describe "Bits of size 1" do
     bit_classes.each do |bit_class|
       obj = bit_class.new
       obj.assign(false)
-      obj.must_equal 0
+      _(obj).must_equal 0
     end
   end
 
@@ -215,16 +215,16 @@ describe "Bits of size 1" do
     bit_classes.each do |bit_class|
       obj = bit_class.new
       obj.assign(nil)
-      obj.must_equal 0
+      _(obj).must_equal 0
     end
   end
 
   it "must not be signed" do
-    lambda {
+    _ {
       BinData::Sbit1
     }.must_raise RuntimeError
 
-    lambda {
+    _ {
       BinData::Sbit1le
     }.must_raise RuntimeError
   end

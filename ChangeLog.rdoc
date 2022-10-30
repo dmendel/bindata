@@ -3,6 +3,7 @@
 == Version 2.4.14 (2022-xx-xx)
 
 * Use Comparable#clamp instead of manual calculations.
+* Update tests to new minitest requirements.
 
 == Version 2.4.13 (2022-10-16)
 

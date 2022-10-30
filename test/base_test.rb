@@ -28,23 +28,23 @@ describe "BinData::Base", "framework" do
   end
 
   it "raises errors on unimplemented methods" do
-    lambda { obj.clear?        }.must_raise NotImplementedError
-    lambda { obj.assign(nil)   }.must_raise NotImplementedError
-    lambda { obj.snapshot      }.must_raise NotImplementedError
-    lambda { obj.do_read(nil)  }.must_raise NotImplementedError
-    lambda { obj.do_write(nil) }.must_raise NotImplementedError
-    lambda { obj.do_num_bytes  }.must_raise NotImplementedError
+    _ { obj.clear?        }.must_raise NotImplementedError
+    _ { obj.assign(nil)   }.must_raise NotImplementedError
+    _ { obj.snapshot      }.must_raise NotImplementedError
+    _ { obj.do_read(nil)  }.must_raise NotImplementedError
+    _ { obj.do_write(nil) }.must_raise NotImplementedError
+    _ { obj.do_num_bytes  }.must_raise NotImplementedError
   end
 
   it "calls initialize methods in order" do
     FrameworkBase.record_calls { FrameworkBase.new }
-    FrameworkBase.calls.must_equal [:initialize_shared_instance, :initialize_instance]
+    _(FrameworkBase.calls).must_equal [:initialize_shared_instance, :initialize_instance]
   end
 
   it "does not call #initialize_shared_instance for prototypes" do
     prototype = obj
     FrameworkBase.record_calls { prototype.new }
-    FrameworkBase.calls.must_equal [:initialize_instance]
+    _(FrameworkBase.calls).must_equal [:initialize_instance]
   end
 end
 
@@ -72,9 +72,9 @@ describe BinData::Base, "ArgExtractor" do
     data.each do |el|
       args, val, param_keys, parent = *el
       obj = ParamParserBase.new(*args)
-      obj.val.must_be_same_as val
-      obj.params.keys.must_equal param_keys
-      obj.parent.must_be_same_as parent
+      _(obj.val).must_be_same_as val
+      _(obj.params.keys).must_equal param_keys
+      _(obj.parent).must_be_same_as parent
     end
   end
 end
@@ -93,36 +93,36 @@ describe BinData::Base do
   let(:obj) { BaseStub.new }
 
   it "::bindata_name returns lowercased name" do
-    BaseStub.bindata_name.must_equal "base_stub"
+    _(BaseStub.bindata_name).must_equal "base_stub"
   end
 
   it "::read instantiates self" do
-    BaseStub.read("").must_be_instance_of BaseStub
+    _(BaseStub.read("")).must_be_instance_of BaseStub
   end
 
   it "#read returns self" do
-    obj.read("").must_equal obj
+    _(obj.read("")).must_equal obj
   end
 
   it "#write returns self" do
-    obj.write("").must_equal obj
+    _(obj.write("")).must_equal obj
   end
 
   it "#to_hex uses #to_binary_s representation" do
     obj.stub :to_binary_s, "\x01\xab\xCD" do
-      obj.to_hex.must_equal "01abcd"
+      _(obj.to_hex).must_equal "01abcd"
     end
   end
 
   it "#inspect is forwarded to snapshot" do
     obj.stub :snapshot, [1, 2, 3] do
-      obj.inspect.must_equal obj.snapshot.inspect
+      _(obj.inspect).must_equal obj.snapshot.inspect
     end
   end
 
   it "#to_s is forwarded to snapshot" do
     obj.stub :snapshot, [1, 2, 3] do
-      obj.to_s.must_equal obj.snapshot.to_s
+      _(obj.to_s).must_equal obj.snapshot.to_s
     end
   end
 
@@ -136,7 +136,7 @@ describe BinData::Base do
       PP.pp(obj.snapshot, expected_io)
     end
 
-    actual_io.value.must_equal expected_io.value
+    _(actual_io.value).must_equal expected_io.value
   end
 
   it "#write writes the same as #to_binary_s" do
@@ -147,7 +147,7 @@ describe BinData::Base do
     obj = WriteToSBase.new
     io = StringIO.new
     obj.write(io)
-    io.value.must_equal obj.to_binary_s
+    _(io.value).must_equal obj.to_binary_s
   end
 
   it "#read is forwarded to #do_read" do
@@ -161,7 +161,7 @@ describe BinData::Base do
       end
     end
 
-    calls.must_equal [:clear, :do_read]
+    _(calls).must_equal [:clear, :do_read]
   end
 
   it "#write is forwarded to #do_write" do
@@ -172,18 +172,18 @@ describe BinData::Base do
       obj.write(nil)
     end
 
-    calls.must_equal [:do_write]
+    _(calls).must_equal [:do_write]
   end
 
   it "#num_bytes is forwarded to #do_num_bytes" do
     obj.stub :do_num_bytes, 42 do
-      obj.num_bytes.must_equal 42
+      _(obj.num_bytes).must_equal 42
     end
   end
 
   it "#num_bytes rounds up fractional values" do
     obj.stub :do_num_bytes, 42.1 do
-      obj.num_bytes.must_equal 43
+      _(obj.num_bytes).must_equal 43
     end
   end
 end

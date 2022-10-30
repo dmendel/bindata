@@ -5,7 +5,7 @@ require File.expand_path(File.join(File.dirname(__FILE__), "test_helper"))
 
 describe BinData::Base, "parameters" do
   it "fails when parameter name is invalid" do
-    lambda {
+    _ {
       class InvalidParameterNameBase < BinData::Base
         optional_parameter :lazy_eval # from LazyEvaluator
       end
@@ -13,7 +13,7 @@ describe BinData::Base, "parameters" do
   end
 
   it "fails when parameter has nil value" do
-    lambda { BinData::Base.new(a: nil) }.must_raise ArgumentError
+    _ { BinData::Base.new(a: nil) }.must_raise ArgumentError
   end
 end
 
@@ -32,17 +32,17 @@ end
 describe BinData::Base, "#get_parameter" do
   it "retrieves parameter values" do
     obj = BinData::Base.new(a: 3)
-    obj.get_parameter(:a).must_equal 3
+    _(obj.get_parameter(:a)).must_equal 3
   end
 
   it "retrieves parameter values with string keys" do
     obj = BinData::Base.new('a' => 3)
-    obj.get_parameter(:a).must_equal 3
+    _(obj.get_parameter(:a)).must_equal 3
   end
 
   it "returns nil for non existing parameters" do
     obj = BinData::Base.new
-    obj.get_parameter(:a).must_be_nil
+    _(obj.get_parameter(:a)).must_be_nil
   end
 
   it "wont eval parameters" do
@@ -54,12 +54,12 @@ end
 describe BinData::Base, "#eval_parameter" do
   it "evals the parameter" do
     obj = BinData::Base.new(a: -> { 3 })
-    obj.eval_parameter(:a).must_equal 3
+    _(obj.eval_parameter(:a)).must_equal 3
   end
 
   it "returns nil for a non existing parameter" do
     obj = BinData::Base.new
-    obj.eval_parameter(:a).must_be_nil
+    _(obj.eval_parameter(:a)).must_be_nil
   end
 end
 
@@ -71,11 +71,11 @@ describe BinData::Base, ".mandatory_parameters" do
 
   it "fails when not all mandatory parameters are present" do
     params = {p1: "a", xx: "b" }
-    lambda { MandatoryBase.new(params) }.must_raise ArgumentError
+    _ { MandatoryBase.new(params) }.must_raise ArgumentError
   end
 
   it "fails when no mandatory parameters are present" do
-    lambda { MandatoryBase.new() }.must_raise ArgumentError
+    _ { MandatoryBase.new() }.must_raise ArgumentError
   end
 end
 
@@ -86,12 +86,12 @@ describe BinData::Base, ".default_parameters" do
 
   it "uses default parameters when not specified" do
     obj = DefaultBase.new
-    obj.eval_parameter(:p1).must_equal "a"
+    _(obj.eval_parameter(:p1)).must_equal "a"
   end
 
   it "can override default parameters" do
     obj = DefaultBase.new(p1: "b")
-    obj.eval_parameter(:p1).must_equal "b"
+    _(obj.eval_parameter(:p1)).must_equal "b"
   end
 end
 
@@ -102,9 +102,9 @@ describe BinData::Base, ".mutually_exclusive_parameters" do
   end
 
   it "fails when any two of those parameters are present" do
-    lambda { MutexParamBase.new(p1: "a", p2: "b") }.must_raise ArgumentError
-    lambda { MutexParamBase.new(p1: "a", p3: "c") }.must_raise ArgumentError
-    lambda { MutexParamBase.new(p2: "b", p3: "c") }.must_raise ArgumentError
+    _ { MutexParamBase.new(p1: "a", p2: "b") }.must_raise ArgumentError
+    _ { MutexParamBase.new(p1: "a", p3: "c") }.must_raise ArgumentError
+    _ { MutexParamBase.new(p2: "b", p3: "c") }.must_raise ArgumentError
   end
 end
 
@@ -119,8 +119,8 @@ describe BinData::Base, "subclassing" do
 
   it "inherits parameters" do
     accepted = ParamLevel2Base.accepted_parameters.all
-    accepted.must_include :p1
-    accepted.must_include :p2
+    _(accepted).must_include :p1
+    _(accepted).must_include :p2
   end
 end
 
@@ -138,7 +138,7 @@ describe BinData::Base, "subclassing when skipping a level" do
 
   it "inherits parameters" do
     accepted = ParamLevel3Base.accepted_parameters.all
-    accepted.must_include :p1
-    accepted.must_include :p2
+    _(accepted).must_include :p1
+    _(accepted).must_include :p2
   end
 end

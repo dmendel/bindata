@@ -14,14 +14,14 @@ describe BinData::Registry do
     r.register('ASubClass', A)
     r.register('AnotherSubClass', B)
 
-    r.lookup('ASubClass').must_equal A
-    r.lookup('a_sub_class').must_equal A
-    r.lookup('AnotherSubClass').must_equal B
-    r.lookup('another_sub_class').must_equal B
+    _(r.lookup('ASubClass')).must_equal A
+    _(r.lookup('a_sub_class')).must_equal A
+    _(r.lookup('AnotherSubClass')).must_equal B
+    _(r.lookup('another_sub_class')).must_equal B
   end
 
   it "does not lookup unregistered names" do
-    lambda {
+    _ {
       r.lookup('a_non_existent_sub_class')
     }.must_raise BinData::UnRegisteredTypeError
   end
@@ -30,7 +30,7 @@ describe BinData::Registry do
     r.register('ASubClass', A)
     r.unregister('ASubClass')
 
-    lambda {
+    _ {
       r.lookup('ASubClass')
     }.must_raise BinData::UnRegisteredTypeError
   end
@@ -42,22 +42,22 @@ describe BinData::Registry do
       r.register('A', A)
       r.register('A', B)
 
-      r.lookup('a').must_equal B
+      _(r.lookup('a')).must_equal B
     ensure
       $-w = w
     end
   end
 
   it "converts CamelCase to underscores" do
-    r.underscore_name('CamelCase').must_equal 'camel_case'
+    _(r.underscore_name('CamelCase')).must_equal 'camel_case'
   end
 
   it "converts adjacent caps camelCase to underscores" do
-    r.underscore_name('XYZCamelCase').must_equal 'xyz_camel_case'
+    _(r.underscore_name('XYZCamelCase')).must_equal 'xyz_camel_case'
   end
 
   it "ignores the outer nestings of classes" do
-    r.underscore_name('A::B::C').must_equal 'c'
+    _(r.underscore_name('A::B::C')).must_equal 'c'
   end
 end
 
@@ -65,14 +65,14 @@ describe BinData::Registry, "with numerics" do
   let(:r) { BinData::RegisteredClasses }
 
   it "lookup integers with endian" do
-    r.lookup("int24", {endian: :big}).to_s.must_equal "BinData::Int24be"
-    r.lookup("int24", {endian: :little}).to_s.must_equal "BinData::Int24le"
-    r.lookup("uint24", {endian: :big}).to_s.must_equal "BinData::Uint24be"
-    r.lookup("uint24", {endian: :little}).to_s.must_equal "BinData::Uint24le"
+    _(r.lookup("int24", {endian: :big}).to_s).must_equal "BinData::Int24be"
+    _(r.lookup("int24", {endian: :little}).to_s).must_equal "BinData::Int24le"
+    _(r.lookup("uint24", {endian: :big}).to_s).must_equal "BinData::Uint24be"
+    _(r.lookup("uint24", {endian: :little}).to_s).must_equal "BinData::Uint24le"
   end
 
   it "does not lookup integers without endian" do
-    lambda {
+    _ {
       r.lookup("int24")
     }.must_raise BinData::UnRegisteredTypeError
   end
@@ -81,47 +81,47 @@ describe BinData::Registry, "with numerics" do
     begin
       r.lookup("int24")
     rescue BinData::UnRegisteredTypeError => e
-      e.message.must_equal "int24, do you need to specify endian?"
+      _(e.message).must_equal "int24, do you need to specify endian?"
     end
   end
 
   it "does not lookup non byte based integers" do
-    lambda {
+    _ {
       r.lookup("int3")
     }.must_raise BinData::UnRegisteredTypeError
-    lambda {
+    _ {
       r.lookup("int3", {endian: :big})
     }.must_raise BinData::UnRegisteredTypeError
-    lambda {
+    _ {
       r.lookup("int3", {endian: :little})
     }.must_raise BinData::UnRegisteredTypeError
   end
 
   it "lookup floats with endian" do
-    r.lookup("float", {endian: :big}).to_s.must_equal "BinData::FloatBe"
-    r.lookup("float", {endian: :little}).to_s.must_equal "BinData::FloatLe"
-    r.lookup("double", {endian: :big}).to_s.must_equal "BinData::DoubleBe"
-    r.lookup("double", {endian: :little}).to_s.must_equal "BinData::DoubleLe"
+    _(r.lookup("float", {endian: :big}).to_s).must_equal "BinData::FloatBe"
+    _(r.lookup("float", {endian: :little}).to_s).must_equal "BinData::FloatLe"
+    _(r.lookup("double", {endian: :big}).to_s).must_equal "BinData::DoubleBe"
+    _(r.lookup("double", {endian: :little}).to_s).must_equal "BinData::DoubleLe"
   end
 
   it "lookup bits" do
-    r.lookup("bit5").to_s.must_equal "BinData::Bit5"
-    r.lookup("sbit5").to_s.must_equal "BinData::Sbit5"
-    r.lookup("bit6le").to_s.must_equal "BinData::Bit6le"
+    _(r.lookup("bit5").to_s).must_equal "BinData::Bit5"
+    _(r.lookup("sbit5").to_s).must_equal "BinData::Sbit5"
+    _(r.lookup("bit6le").to_s).must_equal "BinData::Bit6le"
   end
 
   it "lookup bits by ignoring endian" do
-    r.lookup("bit2", {endian: :big}).to_s.must_equal "BinData::Bit2"
-    r.lookup("bit3le", {endian: :big}).to_s.must_equal "BinData::Bit3le"
-    r.lookup("bit2", {endian: :little}).to_s.must_equal "BinData::Bit2"
-    r.lookup("bit3le", {endian: :little}).to_s.must_equal "BinData::Bit3le"
+    _(r.lookup("bit2", {endian: :big}).to_s).must_equal "BinData::Bit2"
+    _(r.lookup("bit3le", {endian: :big}).to_s).must_equal "BinData::Bit3le"
+    _(r.lookup("bit2", {endian: :little}).to_s).must_equal "BinData::Bit2"
+    _(r.lookup("bit3le", {endian: :little}).to_s).must_equal "BinData::Bit3le"
   end
 
   it "lookup signed bits by ignoring endian" do
-    r.lookup("sbit2", {endian: :big}).to_s.must_equal "BinData::Sbit2"
-    r.lookup("sbit3le", {endian: :big}).to_s.must_equal "BinData::Sbit3le"
-    r.lookup("sbit2", {endian: :little}).to_s.must_equal "BinData::Sbit2"
-    r.lookup("sbit3le", {endian: :little}).to_s.must_equal "BinData::Sbit3le"
+    _(r.lookup("sbit2", {endian: :big}).to_s).must_equal "BinData::Sbit2"
+    _(r.lookup("sbit3le", {endian: :big}).to_s).must_equal "BinData::Sbit3le"
+    _(r.lookup("sbit2", {endian: :little}).to_s).must_equal "BinData::Sbit2"
+    _(r.lookup("sbit3le", {endian: :little}).to_s).must_equal "BinData::Sbit3le"
   end
 end
 
@@ -134,15 +134,15 @@ describe BinData::Registry, "with endian specific types" do
   end
   
   it "lookup little endian types" do
-    r.lookup('a', {endian: :little}).must_equal A
+    _(r.lookup('a', {endian: :little})).must_equal A
   end
 
   it "lookup big endian types" do
-    r.lookup('b', {endian: :big}).must_equal B
+    _(r.lookup('b', {endian: :big})).must_equal B
   end
 
   it "does not lookup types with non existent endian" do
-    lambda {
+    _ {
       r.lookup('a', {endian: :big})
     }.must_raise BinData::UnRegisteredTypeError
   end
@@ -151,7 +151,7 @@ describe BinData::Registry, "with endian specific types" do
     r.register('c', C)
     r.register('c_le', D)
 
-    r.lookup('c', {endian: :little}).must_equal C
+    _(r.lookup('c', {endian: :little})).must_equal C
   end
 end
 
@@ -164,18 +164,18 @@ describe BinData::Registry, "with search_prefix" do
   end
 
   it "lookup single search_prefix" do
-    r.lookup('f', {search_prefix: :a}).must_equal A
+    _(r.lookup('f', {search_prefix: :a})).must_equal A
   end
 
   it "lookup single search_prefix with endian" do
-    r.lookup('f', {search_prefix: :a, endian: :little}).must_equal A
+    _(r.lookup('f', {search_prefix: :a, endian: :little})).must_equal A
   end
 
   it "lookup multiple search_prefix" do
-    r.lookup('f', {search_prefix: [:x, :a]}).must_equal A
+    _(r.lookup('f', {search_prefix: [:x, :a]})).must_equal A
   end
 
   it "lookup first match in search_prefix" do
-    r.lookup('f', {search_prefix: [:a, :b]}).must_equal A
+    _(r.lookup('f', {search_prefix: [:a, :b]})).must_equal A
   end
 end

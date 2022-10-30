@@ -26,84 +26,84 @@ end
 describe BinData::Choice, "when instantiating" do
   it "ensures mandatory parameters are supplied" do
     args = {}
-    lambda { BinData::Choice.new(args) }.must_raise ArgumentError
+    _ { BinData::Choice.new(args) }.must_raise ArgumentError
 
     args = {selection: 1}
-    lambda { BinData::Choice.new(args) }.must_raise ArgumentError
+    _ { BinData::Choice.new(args) }.must_raise ArgumentError
 
     args = {choices: []}
-    lambda { BinData::Choice.new(args) }.must_raise ArgumentError
+    _ { BinData::Choice.new(args) }.must_raise ArgumentError
   end
 
   it "fails when a given type is unknown" do
     args = {choices: [:does_not_exist], selection: 0}
-    lambda { BinData::Choice.new(args) }.must_raise BinData::UnRegisteredTypeError
+    _ { BinData::Choice.new(args) }.must_raise BinData::UnRegisteredTypeError
   end
 
   it "fails when a given type is unknown" do
     args = {choices: {0 => :does_not_exist}, selection: 0}
-    lambda { BinData::Choice.new(args) }.must_raise BinData::UnRegisteredTypeError
+    _ { BinData::Choice.new(args) }.must_raise BinData::UnRegisteredTypeError
   end
 
   it "fails when :choices Hash has a symbol as key" do
     args = {choices: {a: :uint8}, selection: 0}
-    lambda { BinData::Choice.new(args) }.must_raise ArgumentError
+    _ { BinData::Choice.new(args) }.must_raise ArgumentError
   end
 
   it "fails when :choices Hash has a nil key" do
     args = {choices: {nil => :uint8}, selection: 0}
-    lambda { BinData::Choice.new(args) }.must_raise ArgumentError
+    _ { BinData::Choice.new(args) }.must_raise ArgumentError
   end
 end
 
 module ChoiceInitializedWithArrayOrHash
   def test_can_select_the_choice
     obj.choice = 3
-    obj.must_equal 30
+    _(obj).must_equal 30
   end
 
   def test_shows_the_current_selection
     obj.choice = 3
-    obj.selection.must_equal 3
+    _(obj.selection).must_equal 3
   end
 
   def test_forwards_snapshot
     obj.choice = 3
-    obj.snapshot.must_equal 30
+    _(obj.snapshot).must_equal 30
   end
 
   def test_can_change_the_choice
     obj.choice = 3
 
     obj.choice = 7
-    obj.must_equal 70
+    _(obj).must_equal 70
   end
 
   def test_fails_if_no_choice_has_been_set
-    lambda { obj.to_s }.must_raise IndexError
+    _ { obj.to_s }.must_raise IndexError
   end
 
   def test_wont_select_an_invalid_choice
     obj.choice = 99
-    lambda { obj.to_s }.must_raise IndexError
+    _ { obj.to_s }.must_raise IndexError
   end
 
   def test_wont_select_a_nil_choice
     obj.choice = 1
-    lambda { obj.to_s }.must_raise IndexError
+    _ { obj.to_s }.must_raise IndexError
   end
 
   def test_handles_missing_methods_correctly
     obj.choice = 3
 
-    obj.must_respond_to :value
-    obj.wont_respond_to :does_not_exist
-    lambda { obj.does_not_exist }.must_raise NoMethodError
+    _(obj).must_respond_to :value
+    _(obj).wont_respond_to :does_not_exist
+    _ { obj.does_not_exist }.must_raise NoMethodError
   end
 
   def test_delegates_methods_to_the_selected_single_choice
     obj.choice = 5
-    obj.num_bytes.must_equal 1
+    _(obj.num_bytes).must_equal 1
   end
 end
 
@@ -138,7 +138,7 @@ describe BinData::Choice, "with single values" do
   it "assigns raw values" do
     obj.choice = 3
     obj.assign(254)
-    obj.must_equal 254
+    _(obj).must_equal 254
   end
 
   it "assigns BinData values" do
@@ -146,7 +146,7 @@ describe BinData::Choice, "with single values" do
 
     obj.choice = 3
     obj.assign(data)
-    obj.must_equal 11
+    _(obj).must_equal 11
   end
 
   it "clears" do
@@ -154,7 +154,7 @@ describe BinData::Choice, "with single values" do
     obj.assign(254)
 
     obj.clear
-    obj.must_equal 0
+    _(obj).must_equal 0
   end
 
   it "clears all possible choices" do
@@ -166,7 +166,7 @@ describe BinData::Choice, "with single values" do
     obj.clear
 
     obj.choice = 3
-    obj.must_equal 0
+    _(obj).must_equal 0
   end
 
   it "is clear on initialisation" do
@@ -187,15 +187,15 @@ describe BinData::Choice, "with single values" do
     obj.assign(254)
 
     obj.choice = 7
-    obj.wont_equal 254
+    _(obj).wont_equal 254
   end
 
   it "behaves as value" do
     obj.choice = 3
     obj.assign(5)
 
-    (obj + 1).must_equal 6
-    (1 + obj).must_equal 6
+    _((obj + 1)).must_equal 6
+    _((1 + obj)).must_equal 6
   end
 end
 
@@ -210,7 +210,7 @@ describe BinData::Choice, "with copy_on_change => true" do
     obj.assign(254)
 
     obj.choice = 7
-    obj.must_equal 254
+    _(obj).must_equal 254
   end
 end
 
@@ -219,12 +219,12 @@ describe BinData::Choice, "with :default" do
 
   it "selects for existing case" do
     obj = BinData::Choice.new(selection: "a", choices: choices)
-    obj.num_bytes.must_equal 1
+    _(obj.num_bytes).must_equal 1
   end
 
   it "selects for default case" do
     obj = BinData::Choice.new(selection: "other", choices: choices)
-    obj.num_bytes.must_equal 2
+    _(obj.num_bytes).must_equal 2
   end
 end
 
@@ -240,16 +240,16 @@ describe BinData::Choice, "subclassed with default parameters" do
 
   it "sets initial selection" do
     obj = DerivedChoice.new
-    obj.num_bytes.must_equal 2
+    _(obj.num_bytes).must_equal 2
   end
 
   it "overides default parameter" do
     obj = DerivedChoice.new(selection: 'b')
-    obj.num_bytes.must_equal 4
+    _(obj.num_bytes).must_equal 4
   end
 
   it "selects default selection" do
     obj = DerivedChoice.new(selection: 'z')
-    obj.num_bytes.must_equal 8
+    _(obj.num_bytes).must_equal 8
   end
 end

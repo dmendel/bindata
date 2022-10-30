@@ -4,7 +4,7 @@ require File.expand_path(File.join(File.dirname(__FILE__), "test_helper"))
 
 describe BinData::Primitive do
   it "is not registered" do
-    lambda {
+    _ {
       BinData::RegisteredClasses.lookup("Primitive")
     }.must_raise BinData::UnRegisteredTypeError
   end
@@ -18,14 +18,14 @@ describe BinData::Primitive, "all subclasses" do
   let(:obj) { SubClassOfPrimitive.new }
 
   it "raise errors on unimplemented methods" do
-    lambda { obj.set(nil) }.must_raise NotImplementedError
-    lambda { obj.get      }.must_raise NotImplementedError
+    _ { obj.set(nil) }.must_raise NotImplementedError
+    _ { obj.get      }.must_raise NotImplementedError
   end
 end
 
 describe BinData::Primitive, "when defining with errors" do
   it "fails on non registered types" do
-    lambda {
+    _ {
       class BadTypePrimitive < BinData::Primitive
         non_registered_type :a
       end
@@ -33,7 +33,7 @@ describe BinData::Primitive, "when defining with errors" do
   end
 
   it "fails on duplicate names" do
-    lambda {
+    _ {
       class DuplicateNamePrimitive < BinData::Primitive
         int8 :a
         int8 :b
@@ -43,7 +43,7 @@ describe BinData::Primitive, "when defining with errors" do
   end
 
   it "fails when field name shadows an existing method" do
-    lambda {
+    _ {
       class ExistingNamePrimitive < BinData::Primitive
         int8 :object_id
       end
@@ -51,7 +51,7 @@ describe BinData::Primitive, "when defining with errors" do
   end
 
   it "fails on unknown endian" do
-    lambda {
+    _ {
       class BadEndianPrimitive < BinData::Primitive
         endian 'a bad value'
       end
@@ -71,30 +71,30 @@ describe BinData::Primitive do
 
   it "assigns value" do
     obj.value = 5
-    obj.value.must_equal 5
+    _(obj.value).must_equal 5
   end
 
   it "produces binary string" do
     obj.assign(5)
-    obj.to_binary_s.must_equal_binary "\x05\x00"
+    _(obj.to_binary_s).must_equal_binary "\x05\x00"
   end
 
   it "reads value" do
     obj.read("\x00\x01")
-    obj.must_equal 0x100
+    _(obj).must_equal 0x100
   end
 
   it "accepts standard parameters" do
     obj = PrimitiveWithEndian.new(initial_value: 2)
-    obj.to_binary_s.must_equal_binary "\x02\x00"
+    _(obj.to_binary_s).must_equal_binary "\x02\x00"
   end
 
   it "returns num_bytes" do
-    obj.num_bytes.must_equal 2
+    _(obj.num_bytes).must_equal 2
   end
 
   it "raises error on missing methods" do
-    lambda {
+    _ {
       obj.does_not_exist
     }.must_raise NoMethodError
   end
@@ -102,16 +102,16 @@ describe BinData::Primitive do
   it "uses read value whilst reading" do
     obj = PrimitiveWithEndian.new(value: 2)
     obj.read "\x05\x00"
-    obj.must_equal 2
+    _(obj).must_equal 2
 
     obj.stub :reading?, true do
-      obj.must_equal 5
+      _(obj).must_equal 5
     end
   end
 
   it "behaves as primitive" do
     obj.assign(5)
-    (2 + obj).must_equal 7
+    _((2 + obj)).must_equal 7
   end
 end
 
@@ -124,7 +124,7 @@ describe BinData::Primitive, "requiring custom parameters" do
 
   it "passes parameters correctly" do
     obj = PrimitiveWithCustom.new(iv: 5)
-    obj.must_equal 5
+    _(obj).must_equal 5
   end
 end
 
@@ -138,12 +138,12 @@ describe BinData::Primitive, "with custom mandatory parameters" do
   end
 
   it "raises error if mandatory parameter is not supplied" do
-    lambda { MandatoryPrimitive.new }.must_raise ArgumentError
+    _ { MandatoryPrimitive.new }.must_raise ArgumentError
   end
 
   it "uses mandatory parameter" do
     obj = MandatoryPrimitive.new(arg1: 5)
-    obj.must_equal 5
+    _(obj).must_equal 5
   end
 end
 
@@ -158,12 +158,12 @@ describe BinData::Primitive, "with custom default parameters" do
 
   it "uses default parameter" do
     obj = DefaultPrimitive.new
-    obj.must_equal 5
+    _(obj).must_equal 5
   end
 
   it "overrides default parameter" do
     obj = DefaultPrimitive.new(arg1: 7)
-    obj.must_equal 7
+    _(obj).must_equal 7
   end
 end
 
@@ -180,12 +180,12 @@ describe BinData::Primitive, "subclassed with default parameter" do
 
   it "overrides initial_value" do
     a = ChildDerivedPrimitive.new(initial_value: 7)
-    a.to_binary_s.must_equal_binary "\000\007"
+    _(a.to_binary_s).must_equal_binary "\000\007"
   end
 
   it "uses default parameter" do
     a = ChildDerivedPrimitive.new
-    a.to_binary_s.must_equal_binary "\000\005"
+    _(a.to_binary_s).must_equal_binary "\000\005"
   end
 end
 
@@ -199,12 +199,12 @@ describe BinData::Primitive, "with mutating #get and #set" do
   it "#assign applies mutator" do
     obj = MutatingPrimitive.new
     obj.assign(-50)
-    obj.snapshot.must_equal 50
+    _(obj.snapshot).must_equal 50
   end
 
   it "#to_binary_s applies mutator" do
     obj = MutatingPrimitive.new
     obj.assign(-50)
-    obj.to_binary_s.must_equal_binary "\062\000"
+    _(obj.to_binary_s).must_equal_binary "\062\000"
   end
 end

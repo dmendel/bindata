@@ -5,14 +5,14 @@ require File.expand_path(File.join(File.dirname(__FILE__), "test_helper"))
 describe BinData::Struct, "when initializing" do
   it "fails on non registered types" do
     params = {fields: [[:non_registered_type, :a]]}
-    lambda {
+    _ {
       BinData::Struct.new(params)
     }.must_raise BinData::UnRegisteredTypeError
   end
 
   it "fails on duplicate names" do
     params = {fields: [[:int8, :a], [:int8, :b], [:int8, :a]]}
-    lambda {
+    _ {
       BinData::Struct.new(params)
     }.must_raise NameError
   end
@@ -20,21 +20,21 @@ describe BinData::Struct, "when initializing" do
   it "fails on reserved names" do
     # note that #invert is from Hash.instance_methods
     params = {fields: [[:int8, :a], [:int8, :invert]]}
-    lambda {
+    _ {
       BinData::Struct.new(params)
     }.must_raise NameError
   end
 
   it "fails when field name shadows an existing method" do
     params = {fields: [[:int8, :object_id]]}
-    lambda {
+    _ {
       BinData::Struct.new(params)
     }.must_raise NameError
   end
 
   it "fails on unknown endian" do
     params = {endian: 'bad value', fields: []}
-    lambda {
+    _ {
       BinData::Struct.new(params)
     }.must_raise ArgumentError
   end
@@ -51,18 +51,18 @@ describe BinData::Struct, "with anonymous fields" do
   }
 
   it "only shows non anonymous fields" do
-    obj.field_names.must_equal [:a]
+    _(obj.field_names).must_equal [:a]
   end
 
   it "does not include anonymous fields in snapshot" do
     obj.a = 5
-    obj.snapshot.must_equal({a: 5})
+    _(obj.snapshot).must_equal({a: 5})
   end
 
   it "writes anonymous fields" do
     obj.read("\001\002\003")
     obj.a.clear
-    obj.to_binary_s.must_equal_binary "\005\002\005"
+    _(obj.to_binary_s).must_equal_binary "\005\002\005"
   end
 end
 
@@ -78,24 +78,24 @@ describe BinData::Struct, "with hidden fields" do
   }
 
   it "only shows fields that aren't hidden" do
-    obj.field_names.must_equal [:a, :d]
+    _(obj.field_names).must_equal [:a, :d]
   end
 
   it "shows all fields when requested" do
-    obj.field_names(true).must_equal [:a, :b, :c, :d]
+    _(obj.field_names(true)).must_equal [:a, :b, :c, :d]
   end
 
   it "accesses hidden fields directly" do
-    obj.b.must_equal 5
+    _(obj.b).must_equal 5
     obj.c = 15
-    obj.c.must_equal 15
+    _(obj.c).must_equal 15
 
-    obj.must_respond_to :b=
+    _(obj).must_respond_to :b=
   end
 
   it "does not include hidden fields in snapshot" do
     obj.b = 7
-    obj.snapshot.must_equal({a: 0, d: 7})
+    _(obj.snapshot).must_equal({a: 0, d: 7})
   end
 
   it "detects hidden fields with has_key?" do
@@ -107,19 +107,19 @@ describe BinData::Struct, "with multiple fields" do
   let(:params) { { fields: [ [:int8, :a], [:int8, :b] ] } }
   let(:obj) { BinData::Struct.new({a: 1, b: 2}, params) }
 
-  specify { obj.field_names.must_equal [:a, :b] }
-  specify { obj.to_binary_s.must_equal_binary "\x01\x02" }
+  specify { _(obj.field_names).must_equal [:a, :b] }
+  specify { _(obj.to_binary_s).must_equal_binary "\x01\x02" }
 
   it "returns num_bytes" do
-    obj.a.num_bytes.must_equal 1
-    obj.b.num_bytes.must_equal 1
-    obj.num_bytes.must_equal   2
+    _(obj.a.num_bytes).must_equal 1
+    _(obj.b.num_bytes).must_equal 1
+    _(obj.num_bytes).must_equal   2
   end
 
   it "identifies accepted parameters" do
-    BinData::Struct.accepted_parameters.all.must_include :fields
-    BinData::Struct.accepted_parameters.all.must_include :hide
-    BinData::Struct.accepted_parameters.all.must_include :endian
+    _(BinData::Struct.accepted_parameters.all).must_include :fields
+    _(BinData::Struct.accepted_parameters.all).must_include :hide
+    _(BinData::Struct.accepted_parameters.all).must_include :endian
   end
 
   it "clears" do
@@ -137,16 +137,16 @@ describe BinData::Struct, "with multiple fields" do
   end
 
   it "reads elements dynamically" do
-    obj[:a].must_equal 1
+    _(obj[:a]).must_equal 1
   end
 
   it "handles not existing elements" do
-    obj[:does_not_exist].must_be_nil
+    _(obj[:does_not_exist]).must_be_nil
   end
 
   it "writes elements dynamically" do
     obj[:a] = 2
-    obj.a.must_equal 2
+    _(obj.a).must_equal 2
   end
 
   it "implements has_key?" do
@@ -156,28 +156,28 @@ describe BinData::Struct, "with multiple fields" do
   it "reads ordered" do
     obj.read("\x03\x04")
 
-    obj.a.must_equal 3
-    obj.b.must_equal 4
+    _(obj.a).must_equal 3
+    _(obj.b).must_equal 4
   end
 
   it "returns a snapshot" do
     snap = obj.snapshot
     assert snap.respond_to?(:a)
-    snap.a.must_equal 1
-    snap.b.must_equal 2
-    snap.must_equal({ a: 1, b: 2 })
+    _(snap.a).must_equal 1
+    _(snap.b).must_equal 2
+    _(snap).must_equal({ a: 1, b: 2 })
   end
 
   it "assigns from partial hash" do
     obj.assign(a: 3)
-    obj.a.must_equal 3
-    obj.b.must_equal 0
+    _(obj.a).must_equal 3
+    _(obj.b).must_equal 0
   end
 
   it "assigns from hash" do
     obj.assign(a: 3, b: 4)
-    obj.a.must_equal 3
-    obj.b.must_equal 4
+    _(obj.a).must_equal 3
+    _(obj.b).must_equal 4
   end
 
   it "assigns from nil" do
@@ -191,8 +191,8 @@ describe BinData::Struct, "with multiple fields" do
     src.b = 4
 
     obj.assign(src)
-    obj.a.must_equal 3
-    obj.b.must_equal 4
+    _(obj.a).must_equal 3
+    _(obj.b).must_equal 4
   end
 
   it "assigns from snapshot" do
@@ -201,29 +201,29 @@ describe BinData::Struct, "with multiple fields" do
     src.b = 4
 
     obj.assign(src.snapshot)
-    obj.a.must_equal 3
-    obj.b.must_equal 4
+    _(obj.a).must_equal 3
+    _(obj.b).must_equal 4
   end
 
   it "fails on unknown method call" do
-    lambda { obj.does_not_exist }.must_raise NoMethodError
+    _ { obj.does_not_exist }.must_raise NoMethodError
   end
 
   describe "#snapshot" do
     it "has ordered #keys" do
-      obj.snapshot.keys.must_equal [:a, :b]
+      _(obj.snapshot.keys).must_equal [:a, :b]
     end
 
     it "has ordered #each" do
       keys = []
       obj.snapshot.each { |el| keys << el[0] }
-      keys.must_equal [:a, :b]
+      _(keys).must_equal [:a, :b]
     end
 
     it "has ordered #each_pair" do
       keys = []
       obj.snapshot.each_pair { |k, v| keys << k }
-      keys.must_equal [:a, :b]
+      _(keys).must_equal [:a, :b]
     end
   end
 end
@@ -243,27 +243,27 @@ describe BinData::Struct, "with nested structs" do
     BinData::Struct.new(params)
   }
 
-  specify { obj.field_names.must_equal [:a, :b, :c] }
+  specify { _(obj.field_names).must_equal [:a, :b, :c] }
 
   it "returns num_bytes" do
-    obj.b.num_bytes.must_equal 2
-    obj.c.num_bytes.must_equal 2
-    obj.num_bytes.must_equal 5
+    _(obj.b.num_bytes).must_equal 2
+    _(obj.c.num_bytes).must_equal 2
+    _(obj.num_bytes).must_equal 5
   end
 
   it "accesses nested fields" do
-    obj.a.must_equal   6
-    obj.b.w.must_equal 3
-    obj.b.x.must_equal 6
-    obj.c.y.must_equal 3
-    obj.c.z.must_equal 0
+    _(obj.a).must_equal   6
+    _(obj.b.w).must_equal 3
+    _(obj.b.x).must_equal 6
+    _(obj.c.y).must_equal 3
+    _(obj.c.z).must_equal 0
   end
 
   it "returns correct abs_offset" do
-    obj.b.abs_offset.must_equal 1
-    obj.b.w.abs_offset.must_equal 1
-    obj.c.abs_offset.must_equal 3
-    obj.c.z.abs_offset.must_equal 4
+    _(obj.b.abs_offset).must_equal 1
+    _(obj.b.w.abs_offset).must_equal 1
+    _(obj.c.abs_offset).must_equal 3
+    _(obj.c.z.abs_offset).must_equal 4
   end
 end
 
@@ -300,7 +300,7 @@ describe BinData::Struct, "with an endian defined" do
 
     expected = [1, 2.0, 3, 4, 5, 6, 7, 8].pack('veCCVvNv')
 
-    obj.to_binary_s.must_equal_binary expected
+    _(obj.to_binary_s).must_equal_binary expected
   end
 end
 
@@ -310,23 +310,23 @@ describe BinData::Struct, "with bit fields" do
     BinData::Struct.new({a: 1, b: 2, c: 3, d: 1}, params)
   }
 
-  specify { obj.num_bytes.must_equal 3 }
-  specify { obj.to_binary_s.must_equal_binary [0b0000_0101, 3, 1].pack("C*") }
+  specify { _(obj.num_bytes).must_equal 3 }
+  specify { _(obj.to_binary_s).must_equal_binary [0b0000_0101, 3, 1].pack("C*") }
 
   it "reads" do
     str = [0b0000_0110, 5, 0].pack("C*")
     obj.read(str)
-    obj.a.must_equal 0
-    obj.b.must_equal 3
-    obj.c.must_equal 5
-    obj.d.must_equal 0
+    _(obj.a).must_equal 0
+    _(obj.b).must_equal 3
+    _(obj.c).must_equal 5
+    _(obj.d).must_equal 0
   end
 
   it "has correct offsets" do
-    obj.a.rel_offset.must_equal 0
-    obj.b.rel_offset.must_equal 0
-    obj.c.rel_offset.must_equal 1
-    obj.d.rel_offset.must_equal 2
+    _(obj.a.rel_offset).must_equal 0
+    _(obj.b.rel_offset).must_equal 0
+    _(obj.c.rel_offset).must_equal 1
+    _(obj.d.rel_offset).must_equal 2
   end
 end
 
@@ -341,10 +341,10 @@ describe BinData::Struct, "with nested endian" do
     obj = BinData::Struct.new(params)
     obj.read("\x00\x01\x02\x00\x03\x00\x00\x04")
 
-    obj.a.must_equal   1
-    obj.s.b.must_equal 2
-    obj.s.c.must_equal 3
-    obj.d.must_equal   4
+    _(obj.a).must_equal   1
+    _(obj.s.b).must_equal 2
+    _(obj.s.c).must_equal 3
+    _(obj.d).must_equal   4
   end
 end
 
@@ -355,46 +355,46 @@ describe BinData::Struct, "with a search_prefix" do
   it "searches symbol prefixes" do
     obj = BinData::Struct.new(search_prefix: :a,
                               fields: [ [:short, :f] ])
-    obj.f.class.name.must_equal "AShort"
+    _(obj.f.class.name).must_equal "AShort"
   end
 
   it "searches string prefixes" do
     obj = BinData::Struct.new(search_prefix: "a",
                               fields: [ [:short, :f] ])
-    obj.f.class.name.must_equal "AShort"
+    _(obj.f.class.name).must_equal "AShort"
   end
 
   it "searches string prefixes with optional underscore" do
     obj = BinData::Struct.new(search_prefix: "a_",
                               fields: [ [:short, :f] ])
-    obj.f.class.name.must_equal "AShort"
+    _(obj.f.class.name).must_equal "AShort"
   end
 
   it "searches multiple prefixes" do
     obj = BinData::Struct.new(search_prefix: [:x, :a],
                               fields: [ [:short, :f] ])
-    obj.f.class.name.must_equal "AShort"
+    _(obj.f.class.name).must_equal "AShort"
   end
 
   it "uses parent search_prefix" do
     nested_params = { fields: [[:short, :f]] }
     obj = BinData::Struct.new(search_prefix: :a,
                               fields: [[:struct, :s, nested_params]])
-    obj.s.f.class.name.must_equal "AShort"
+    _(obj.s.f.class.name).must_equal "AShort"
   end
 
   it "searches parent search_prefix" do
     nested_params = { search_prefix: :x, fields: [[:short, :f]] }
     obj = BinData::Struct.new(search_prefix: :a,
                               fields: [[:struct, :s, nested_params]])
-    obj.s.f.class.name.must_equal "AShort"
+    _(obj.s.f.class.name).must_equal "AShort"
   end
 
   it "prioritises nested search_prefix" do
     nested_params = { search_prefix: :a, fields: [[:short, :f]] }
     obj = BinData::Struct.new(search_prefix: :b,
                               fields: [[:struct, :s, nested_params]])
-    obj.s.f.class.name.must_equal "AShort"
+    _(obj.s.f.class.name).must_equal "AShort"
   end
 end
 
@@ -408,24 +408,24 @@ describe BinData::Struct, "with byte_align" do
   }
 
   it "has #num_bytes" do
-    obj.num_bytes.must_equal 10
+    _(obj.num_bytes).must_equal 10
   end
 
   it "reads" do
     obj.read("\x01\x00\x00\x00\x00\x02\xc0\x00\x00\x04")
-    obj.snapshot.must_equal({ a: 1, b: 2, c: 3, d: 4 })
+    _(obj.snapshot).must_equal({ a: 1, b: 2, c: 3, d: 4 })
   end
 
   it "writes" do
     obj.assign(a: 1, b: 2, c: 3, d: 4)
-    obj.to_binary_s.must_equal_binary "\x01\x00\x00\x00\x00\x02\xc0\x00\x00\x04"
+    _(obj.to_binary_s).must_equal_binary "\x01\x00\x00\x00\x00\x02\xc0\x00\x00\x04"
   end
 
   it "has correct offsets" do
-    obj.a.rel_offset.must_equal 0
-    obj.b.rel_offset.must_equal 5
-    obj.c.rel_offset.must_equal 6
-    obj.d.rel_offset.must_equal 9
+    _(obj.a.rel_offset).must_equal 0
+    _(obj.b.rel_offset).must_equal 5
+    _(obj.c.rel_offset).must_equal 6
+    _(obj.d.rel_offset).must_equal 9
   end
 end
 
@@ -435,6 +435,6 @@ describe BinData::Struct, "with dynamically named types" do
 
     obj = BinData::Struct.new(fields: [[:my_struct, :v]])
 
-    obj.v.a.must_equal 3
+    _(obj.v.a).must_equal 3
   end
 end

@@ -41,33 +41,33 @@ describe BinData::LazyEvaluator, "with no parents" do
   }
 
   it "evaluates raw value when instantiated" do
-    lazy_eval(5).must_equal 5
+    _(lazy_eval(5)).must_equal 5
   end
 
   it "evaluates raw value" do
-    lazy_eval(5).must_equal 5
+    _(lazy_eval(5)).must_equal 5
   end
 
   it "evaluates value" do
-    lazy_eval(lambda { 5 }).must_equal 5
+    _(lazy_eval(lambda { 5 })).must_equal 5
   end
 
   it "evaluates overrides" do
-    lazy_eval(lambda { o1 }, o1: 'o1').must_equal 'o1'
+    _(lazy_eval(lambda { o1 }, o1: 'o1')).must_equal 'o1'
   end
 
   it "does not resolve any unknown methods" do
-    lambda { lazy_eval(lambda { unknown }) }.must_raise NameError
-    lambda { lazy_eval(lambda { m1 }) }.must_raise NameError
-    lambda { lazy_eval(lambda { p1 }) }.must_raise NameError
+    _ { lazy_eval(lambda { unknown }) }.must_raise NameError
+    _ { lazy_eval(lambda { m1 }) }.must_raise NameError
+    _ { lazy_eval(lambda { p1 }) }.must_raise NameError
   end
 
   it "does not have a parent" do
-    lazy_eval(lambda { parent }).must_be_nil
+    _(lazy_eval(lambda { parent })).must_be_nil
   end
 
   it "does not resolve #index" do
-    lambda { lazy_eval(lambda { index }) }.must_raise NoMethodError
+    _ { lazy_eval(lambda { index }) }.must_raise NoMethodError
   end
 end
 
@@ -91,51 +91,51 @@ describe BinData::LazyEvaluator, "with one parent" do
   }
 
   it "evaluates raw value" do
-    lazy_eval(5).must_equal 5
+    _(lazy_eval(5)).must_equal 5
   end
 
   it "evaluates value" do
-    lazy_eval(lambda { 5 }).must_equal 5
+    _(lazy_eval(lambda { 5 })).must_equal 5
   end
 
   it "evaluates overrides before params" do
-    lazy_eval(lambda { p1 }, p1: 'o1').must_equal 'o1'
+    _(lazy_eval(lambda { p1 }, p1: 'o1')).must_equal 'o1'
   end
 
   it "evaluates overrides before methods" do
-    lazy_eval(lambda { m1 }, m1: 'o1').must_equal 'o1'
+    _(lazy_eval(lambda { m1 }, m1: 'o1')).must_equal 'o1'
   end
 
   it "does not resolve any unknown methods" do
-    lambda { lazy_eval(lambda { unknown }) }.must_raise NoMethodError
+    _ { lazy_eval(lambda { unknown }) }.must_raise NoMethodError
   end
 
   it "resolves parameters in the parent" do
-    lazy_eval(lambda { p1 }).must_equal 'Pp1'
+    _(lazy_eval(lambda { p1 })).must_equal 'Pp1'
   end
 
   it "resolves methods in the parent" do
-    lazy_eval(lambda { m1 }).must_equal 'Pm1'
+    _(lazy_eval(lambda { m1 })).must_equal 'Pm1'
   end
 
   it "invokes methods in the parent" do
-    lazy_eval(lambda { echo(p1, m1) }).must_equal ['Pp1', 'Pm1']
+    _(lazy_eval(lambda { echo(p1, m1) })).must_equal ['Pp1', 'Pm1']
   end
 
   it "invokes private methods in the parent" do
-    lazy_eval(lambda { m2 }).must_equal 'Pm2'
+    _(lazy_eval(lambda { m2 })).must_equal 'Pm2'
   end
 
   it "resolves parameters in preference to methods in the parent" do
-    lazy_eval(lambda { com1 }).must_equal 'PpC'
+    _(lazy_eval(lambda { com1 })).must_equal 'PpC'
   end
 
   it "has a parent" do
-    lazy_eval(lambda { parent }).wont_be_nil
+    _(lazy_eval(lambda { parent })).wont_be_nil
   end
 
   it "does not resolve #index" do
-    lambda { lazy_eval(lambda { index }) }.must_raise NoMethodError
+    _ { lazy_eval(lambda { index }) }.must_raise NoMethodError
   end
 end
 
@@ -167,58 +167,58 @@ describe BinData::LazyEvaluator, "with nested parents" do
   }
 
   it "accepts symbols as a shortcut to lambdas" do
-    lazy_eval(:p1).must_equal 'Pp1'
-    lazy_eval(:p2).must_equal 'PPp2'
-    lazy_eval(:m1).must_equal 'Pm1'
-    lazy_eval(:m2).must_equal 'PPm2'
+    _(lazy_eval(:p1)).must_equal 'Pp1'
+    _(lazy_eval(:p2)).must_equal 'PPp2'
+    _(lazy_eval(:m1)).must_equal 'Pm1'
+    _(lazy_eval(:m2)).must_equal 'PPm2'
   end
 
   it "does not resolve any unknown methods" do
-    lambda { lazy_eval(lambda { unknown }) }.must_raise NoMethodError
+    _ { lazy_eval(lambda { unknown }) }.must_raise NoMethodError
   end
 
   it "resolves parameters in the parent" do
-    lazy_eval(lambda { p1 }).must_equal 'Pp1'
+    _(lazy_eval(lambda { p1 })).must_equal 'Pp1'
   end
 
   it "resolves methods in the parent" do
-    lazy_eval(lambda { m1 }).must_equal 'Pm1'
+    _(lazy_eval(lambda { m1 })).must_equal 'Pm1'
   end
 
   it "resolves parameters in the parent's parent" do
-    lazy_eval(lambda { p2 }).must_equal 'PPp2'
+    _(lazy_eval(lambda { p2 })).must_equal 'PPp2'
   end
 
   it "resolves methods in the parent's parent" do
-    lazy_eval(lambda { m2 }).must_equal 'PPm2'
+    _(lazy_eval(lambda { m2 })).must_equal 'PPm2'
   end
 
   it "invokes methods in the parent" do
-    lazy_eval(lambda { echo(m1) }).must_equal ['P', 'Pm1']
+    _(lazy_eval(lambda { echo(m1) })).must_equal ['P', 'Pm1']
   end
 
   it "invokes methods in the parent's parent" do
-    lazy_eval(lambda { parent.echo(m1) }, { m1: 'o1'}).must_equal ['PP', 'o1']
+    _(lazy_eval(lambda { parent.echo(m1) }, { m1: 'o1'})).must_equal ['PP', 'o1']
   end
 
   it "invokes methods in the parent's parent" do
-    lazy_eval(lambda { echo2(m1) }).must_equal ['PP2', 'Pm1']
+    _(lazy_eval(lambda { echo2(m1) })).must_equal ['PP2', 'Pm1']
   end
 
   it "resolves parameters in preference to methods in the parent" do
-    lazy_eval(lambda { com1 }).must_equal 'PpC'
+    _(lazy_eval(lambda { com1 })).must_equal 'PpC'
   end
 
   it "resolves methods in the parent explicitly" do
-    lazy_eval(lambda { parent.m1 }).must_equal 'PPm1'
+    _(lazy_eval(lambda { parent.m1 })).must_equal 'PPm1'
   end
 
   it "cascades lambdas " do
-    lazy_eval(lambda { sym1 }).must_equal 'PPm2'
-    lazy_eval(lambda { sym2 }).must_equal 'PPm2'
+    _(lazy_eval(lambda { sym1 })).must_equal 'PPm2'
+    _(lazy_eval(lambda { sym2 })).must_equal 'PPm2'
   end
 
   it "does not resolve #index" do
-    lambda { lazy_eval(lambda { index }) }.must_raise NoMethodError
+    _ { lazy_eval(lambda { index }) }.must_raise NoMethodError
   end
 end

@@ -4,7 +4,7 @@ require File.expand_path(File.join(File.dirname(__FILE__), "test_helper"))
 
 describe BinData::Record do
   it "is not registered" do
-    lambda {
+    _ {
       BinData::RegisteredClasses.lookup("Record")
     }.must_raise BinData::UnRegisteredTypeError
   end
@@ -12,7 +12,7 @@ end
 
 describe BinData::Record, "when defining with errors" do
   it "fails on non registered types" do
-    lambda {
+    _ {
       class BadTypeRecord < BinData::Record
         non_registered_type :a
       end
@@ -20,7 +20,7 @@ describe BinData::Record, "when defining with errors" do
   end
 
   it "gives correct error message for non registered nested types" do
-    lambda {
+    _ {
       class BadNestedTypeRecord < BinData::Record
         array :a, type: :non_registered_type
       end
@@ -28,7 +28,7 @@ describe BinData::Record, "when defining with errors" do
   end
 
   it "gives correct error message for non registered nested types in blocks" do
-    lambda {
+    _ {
       class BadNestedTypeInBlockRecord < BinData::Record
         array :a do
           non_registered_type
@@ -38,7 +38,7 @@ describe BinData::Record, "when defining with errors" do
   end
 
   it "fails on nested choice when missing names" do
-    lambda {
+    _ {
       class MissingChoiceNamesRecord < BinData::Record
         choice do
           int8 :a
@@ -49,7 +49,7 @@ describe BinData::Record, "when defining with errors" do
   end
 
   it "fails on malformed names" do
-    lambda {
+    _ {
       class MalformedNameRecord < BinData::Record
         int8 :a
         int8 "45"
@@ -58,7 +58,7 @@ describe BinData::Record, "when defining with errors" do
   end
 
   it "fails on duplicate names" do
-    lambda {
+    _ {
       class DuplicateNameRecord < BinData::Record
         int8 :a
         int8 :b
@@ -68,7 +68,7 @@ describe BinData::Record, "when defining with errors" do
   end
 
   it "fails on reserved names" do
-    lambda {
+    _ {
       class ReservedNameRecord < BinData::Record
         int8 :a
         int8 :invert # from Hash.instance_methods
@@ -77,7 +77,7 @@ describe BinData::Record, "when defining with errors" do
   end
 
   it "fails when field name shadows an existing method" do
-    lambda {
+    _ {
       class ExistingNameRecord < BinData::Record
         int8 :object_id
       end
@@ -85,7 +85,7 @@ describe BinData::Record, "when defining with errors" do
   end
 
   it "fails on unknown endian" do
-    lambda {
+    _ {
       class BadEndianRecord < BinData::Record
         endian 'a bad value'
       end
@@ -93,7 +93,7 @@ describe BinData::Record, "when defining with errors" do
   end
 
   it "fails when endian is after a field" do
-    lambda {
+    _ {
       class BadEndianPosRecord < BinData::Record
         string :a
         endian :little
@@ -102,7 +102,7 @@ describe BinData::Record, "when defining with errors" do
   end
 
   it "fails when search_prefix is after a field" do
-    lambda {
+    _ {
       class BadSearchPrefixPosRecord < BinData::Record
         string :a
         search_prefix :pre
@@ -123,19 +123,19 @@ describe BinData::Record, "with anonymous fields" do
   let(:obj) { AnonymousRecord.new }
 
   it "only shows non anonymous fields" do
-    obj.field_names.must_equal [:a]
+    _(obj.field_names).must_equal [:a]
   end
 
   it "does not include anonymous fields in snapshot" do
     obj.a = 5
-    obj.snapshot.must_equal({a: 5})
+    _(obj.snapshot).must_equal({a: 5})
   end
 
   it "writes anonymous fields" do
     str = "\001\002\003\004\005"
     obj.read(str)
     obj.a.clear
-    obj.to_binary_s.must_equal_binary "\012\002\003\004\012"
+    _(obj.to_binary_s).must_equal_binary "\012\002\003\004\012"
   end
 end
 
@@ -151,20 +151,20 @@ describe BinData::Record, "with hidden fields" do
   let(:obj) { HiddenRecord.new }
 
   it "only shows fields that aren't hidden" do
-    obj.field_names.must_equal [:a, :d]
+    _(obj.field_names).must_equal [:a, :d]
   end
 
   it "accesses hidden fields directly" do
-    obj.b.must_equal 10
+    _(obj.b).must_equal 10
     obj.c = 15
-    obj.c.must_equal 15
+    _(obj.c).must_equal 15
 
-    obj.must_respond_to :b=
+    _(obj).must_respond_to :b=
   end
 
   it "does not include hidden fields in snapshot" do
     obj.b = 5
-    obj.snapshot.must_equal({a: 0, d: 5})
+    _(obj.snapshot).must_equal({a: 0, d: 5})
   end
 end
 
@@ -177,14 +177,14 @@ describe BinData::Record, "with multiple fields" do
   let(:obj) { MultiFieldRecord.new(a: 1, b: 2) }
 
   it "returns num_bytes" do
-    obj.a.num_bytes.must_equal 1
-    obj.b.num_bytes.must_equal 1
-    obj.num_bytes.must_equal   2
+    _(obj.a.num_bytes).must_equal 1
+    _(obj.b.num_bytes).must_equal 1
+    _(obj.num_bytes).must_equal   2
   end
 
   it "identifies accepted parameters" do
-    BinData::Record.accepted_parameters.all.must_include :hide
-    BinData::Record.accepted_parameters.all.must_include :endian
+    _(BinData::Record.accepted_parameters.all).must_include :hide
+    _(BinData::Record.accepted_parameters.all).must_include :endian
   end
 
   it "clears" do
@@ -202,29 +202,29 @@ describe BinData::Record, "with multiple fields" do
   end
 
   it "writes ordered" do
-    obj.to_binary_s.must_equal_binary "\x01\x02"
+    _(obj.to_binary_s).must_equal_binary "\x01\x02"
   end
 
   it "reads ordered" do
     obj.read("\x03\x04")
 
-    obj.a.must_equal 3
-    obj.b.must_equal 4
+    _(obj.a).must_equal 3
+    _(obj.b).must_equal 4
   end
 
   it "returns a snapshot" do
     snap = obj.snapshot
-    snap.a.must_equal 1
-    snap.b.must_equal 2
-    snap.must_equal({ a: 1, b: 2 })
+    _(snap.a).must_equal 1
+    _(snap.b).must_equal 2
+    _(snap).must_equal({ a: 1, b: 2 })
   end
 
   it "returns field_names" do
-    obj.field_names.must_equal [:a, :b]
+    _(obj.field_names).must_equal [:a, :b]
   end
   
   it "fails on unknown method call" do
-    lambda { obj.does_not_exist }.must_raise NoMethodError
+    _ { obj.does_not_exist }.must_raise NoMethodError
   end
 end
 
@@ -245,42 +245,42 @@ describe BinData::Record, "with nested structs" do
   let(:obj) { NestedStructRecord.new }
 
   it "includes nested field names" do
-    obj.field_names.must_equal [:a, :b, :c]
+    _(obj.field_names).must_equal [:a, :b, :c]
   end
 
   it "hides nested field names" do
-    obj.b.field_names.must_equal [:x]
+    _(obj.b.field_names).must_equal [:x]
   end
 
   it "accesses nested fields" do
-    obj.a.must_equal   6
-    obj.b.w.must_equal 3
-    obj.b.x.must_equal 6
-    obj.c.y.must_equal 3
+    _(obj.a).must_equal   6
+    _(obj.b.w).must_equal 3
+    _(obj.b.x).must_equal 6
+    _(obj.c.y).must_equal 3
   end
 
   it "returns correct abs_offset" do
-    obj.abs_offset.must_equal 0
-    obj.b.abs_offset.must_equal 1
-    obj.b.w.abs_offset.must_equal 1
-    obj.c.abs_offset.must_equal 3
-    obj.c.z.abs_offset.must_equal 4
+    _(obj.abs_offset).must_equal 0
+    _(obj.b.abs_offset).must_equal 1
+    _(obj.b.w.abs_offset).must_equal 1
+    _(obj.c.abs_offset).must_equal 3
+    _(obj.c.z.abs_offset).must_equal 4
   end
 
   it "returns correct rel_offset" do
-    obj.rel_offset.must_equal 0
-    obj.b.rel_offset.must_equal 1
-    obj.b.w.rel_offset.must_equal 0
-    obj.c.rel_offset.must_equal 3
-    obj.c.z.rel_offset.must_equal 1
+    _(obj.rel_offset).must_equal 0
+    _(obj.b.rel_offset).must_equal 1
+    _(obj.b.w.rel_offset).must_equal 0
+    _(obj.c.rel_offset).must_equal 3
+    _(obj.c.z.rel_offset).must_equal 1
   end
 
   it "assigns nested fields" do
     obj.assign(a: 2, b: {w: 4})
-    obj.a.must_equal   2
-    obj.b.w.must_equal 4
-    obj.b.x.must_equal 2
-    obj.c.y.must_equal 4
+    _(obj.a).must_equal   2
+    _(obj.b.w).must_equal 4
+    _(obj.b.x).must_equal 2
+    _(obj.c.y).must_equal 4
   end
 end
 
@@ -294,7 +294,7 @@ describe BinData::Record, "with nested array of primitives" do
   let(:obj) { NestedPrimitiveArrayRecord.new }
 
   it "uses block as :type" do
-    obj.snapshot.must_equal({a: [0, 1, 2]})
+    _(obj.snapshot).must_equal({a: [0, 1, 2]})
   end
 end
 
@@ -310,7 +310,7 @@ describe BinData::Record, "with nested array of structs" do
 
   it "uses block as struct for :type" do
     obj.a[0].b = 2
-    obj.snapshot.must_equal({a: [{b: 2, c: 0}]})
+    _(obj.snapshot).must_equal({a: [{b: 2, c: 0}]})
   end
 end
 
@@ -324,7 +324,7 @@ describe BinData::Record, "with nested choice with implied keys" do
 
   let(:obj) { NestedChoiceWithImpliedKeysRecord.new }
 
-  specify { obj.a.must_equal 2 }
+  specify { _(obj.a).must_equal 2 }
 end
 
 describe BinData::Record, "with nested choice with explicit keys" do
@@ -337,7 +337,7 @@ describe BinData::Record, "with nested choice with explicit keys" do
 
   let(:obj) { NestedChoiceWithKeysRecord.new }
 
-  specify { obj.a.must_equal 2 }
+  specify { _(obj.a).must_equal 2 }
 end
 
 describe BinData::Record, "with nested choice with names" do
@@ -350,7 +350,7 @@ describe BinData::Record, "with nested choice with names" do
 
   let(:obj) { NestedChoiceWithNamesRecord.new }
 
-  specify { obj.a.must_equal 1 }
+  specify { _(obj.a).must_equal 1 }
 end
 
 describe BinData::Record, "with an endian defined" do
@@ -392,7 +392,7 @@ describe BinData::Record, "with an endian defined" do
 
     lambdaed = [1, 2.0, 3, 4, 5, 6, 7, 8].pack('veCCVvNn')
 
-    obj.to_binary_s.must_equal_binary lambdaed
+    _(obj.to_binary_s).must_equal_binary lambdaed
   end
 end
 
@@ -430,22 +430,22 @@ describe BinData::Record, "with search_prefix" do
 
   it "uses search_prefix" do
     obj = RecordWithSearchPrefix.new
-    obj.f.class.name.must_equal "ASprefix"
+    _(obj.f.class.name).must_equal "ASprefix"
   end
 
   it "uses parent search_prefix" do
     obj = RecordWithParentSearchPrefix.new
-    obj.s.f.class.name.must_equal "ASprefix"
+    _(obj.s.f.class.name).must_equal "ASprefix"
   end
 
   it "uses nested search_prefix" do
     obj = RecordWithNestedSearchPrefix.new
-    obj.s.f.class.name.must_equal "ASprefix"
+    _(obj.s.f.class.name).must_equal "ASprefix"
   end
 
   it "uses prioritised nested search_prefix" do
     obj = RecordWithPrioritisedNestedSearchPrefix.new
-    obj.s.f.class.name.must_equal "ASprefix"
+    _(obj.s.f.class.name).must_equal "ASprefix"
   end
 end
 
@@ -456,30 +456,30 @@ describe BinData::Record, "with endian :big_and_little" do
   end
 
   it "is not registered" do
-    lambda {
+    _ {
       BinData::RegisteredClasses.lookup("RecordWithBnLEndian")
     }.must_raise BinData::UnRegisteredTypeError
   end
 
   it "creates big endian version" do
     obj = RecordWithBnLEndianBe.new
-    obj.to_binary_s.must_equal_binary "\x00\x01"
+    _(obj.to_binary_s).must_equal_binary "\x00\x01"
   end
 
   it "creates little endian version" do
     obj = RecordWithBnLEndianLe.new
-    obj.to_binary_s.must_equal_binary "\x01\x00"
+    _(obj.to_binary_s).must_equal_binary "\x01\x00"
   end
 
   it "requires :endian as argument" do
-    lambda {
+    _ {
       RecordWithBnLEndian.new
     }.must_raise ArgumentError
   end
 
   it "accepts :endian as argument" do
     obj = RecordWithBnLEndian.new(endian: :little)
-    obj.to_binary_s.must_equal_binary "\x01\x00"
+    _(obj.to_binary_s).must_equal_binary "\x01\x00"
   end
 end
 
@@ -495,12 +495,12 @@ describe BinData::Record, "with endian :big_and_little and search_prefix" do
 
   it "creates big endian version" do
     obj = RecordWithBnLEndianAndSearchPrefixBe.new
-    obj.to_binary_s.must_equal_binary "\x00\x01"
+    _(obj.to_binary_s).must_equal_binary "\x00\x01"
   end
 
   it "creates little endian version" do
     obj = RecordWithBnLEndianAndSearchPrefixLe.new
-    obj.to_binary_s.must_equal_binary "\x01\x00"
+    _(obj.to_binary_s).must_equal_binary "\x01\x00"
   end
 end
 
@@ -514,30 +514,30 @@ describe BinData::Record, "with endian :big_and_little when subclassed" do
   end
 
   it "is not registered" do
-    lambda {
+    _ {
       BinData::RegisteredClasses.lookup("BRecordWithBnLEndian")
     }.must_raise BinData::UnRegisteredTypeError
   end
 
   it "creates big endian version" do
     obj = BRecordWithBnLEndianBe.new
-    obj.to_binary_s.must_equal_binary "\x00\x01\x00\x02"
+    _(obj.to_binary_s).must_equal_binary "\x00\x01\x00\x02"
   end
 
   it "creates little endian version" do
     obj = BRecordWithBnLEndianLe.new
-    obj.to_binary_s.must_equal_binary "\x01\x00\x02\x00"
+    _(obj.to_binary_s).must_equal_binary "\x01\x00\x02\x00"
   end
 
   it "requires :endian as argument" do
-    lambda {
+    _ {
       BRecordWithBnLEndian.new
     }.must_raise ArgumentError
   end
 
   it "accepts :endian as argument" do
     obj = BRecordWithBnLEndian.new(endian: :little)
-    obj.to_binary_s.must_equal_binary "\x01\x00\x02\x00"
+    _(obj.to_binary_s).must_equal_binary "\x01\x00\x02\x00"
   end
 end
 
@@ -556,9 +556,9 @@ describe BinData::Record, "defined recursively" do
   it "reads" do
     str = "\x00\x01\x01\x00\x02\x01\x00\x03\x00"
     obj = RecursiveRecord.read(str)
-    obj.val.must_equal 1
-    obj.nxt.val.must_equal 2
-    obj.nxt.nxt.val.must_equal 3
+    _(obj.val).must_equal 1
+    _(obj.nxt.val).must_equal 2
+    _(obj.nxt.nxt.val).must_equal 3
   end
 
   it "is assignable on demand" do
@@ -573,7 +573,7 @@ describe BinData::Record, "defined recursively" do
     obj.val = 5
     obj.nxt.val = 6
     obj.nxt.nxt.val = 7
-    obj.to_binary_s.must_equal_binary "\x00\x05\x01\x00\x06\x01\x00\x07\x00"
+    _(obj.to_binary_s).must_equal_binary "\x00\x05\x01\x00\x06\x01\x00\x07\x00"
   end
 end
 
@@ -585,12 +585,12 @@ describe BinData::Record, "with custom mandatory parameters" do
   end
 
   it "raises error if mandatory parameter is not supplied" do
-    lambda { MandatoryRecord.new }.must_raise ArgumentError
+    _ { MandatoryRecord.new }.must_raise ArgumentError
   end
 
   it "uses mandatory parameter" do
     obj = MandatoryRecord.new(arg1: 5)
-    obj.a.must_equal 5
+    _(obj.a).must_equal 5
   end
 end
 
@@ -604,23 +604,23 @@ describe BinData::Record, "with custom default parameters" do
 
   it "uses default parameter" do
     obj = DefaultRecord.new
-    obj.a.must_equal 5
+    _(obj.a).must_equal 5
   end
 
   it "overrides default parameter" do
     obj = DefaultRecord.new(arg1: 7)
-    obj.a.must_equal 7
+    _(obj.a).must_equal 7
   end
 
   it "accepts values" do
     obj = DefaultRecord.new(b: 2)
-    obj.b.must_equal 2
+    _(obj.b).must_equal 2
   end
 
   it "accepts values and parameters" do
     obj = DefaultRecord.new({b: 2}, arg1: 3)
-    obj.a.must_equal 3
-    obj.b.must_equal 2
+    _(obj.a).must_equal 3
+    _(obj.b).must_equal 2
   end
 end
 
@@ -634,20 +634,20 @@ describe BinData::Record, "with :onlyif" do
   let(:obj) { OnlyIfRecord.new }
 
   it "initial state" do
-    obj.num_bytes.must_equal 2
-    obj.snapshot.must_equal({a: 3, b: 5})
-    obj.to_binary_s.must_equal_binary "\x03\x05"
+    _(obj.num_bytes).must_equal 2
+    _(obj.snapshot).must_equal({a: 3, b: 5})
+    _(obj.to_binary_s).must_equal_binary "\x03\x05"
   end
 
   it "identifies if fields are included" do
-    obj.a?.must_equal true
-    obj.b?.must_equal true
-    obj.c?.must_equal false
+    _(obj.a?).must_equal true
+    _(obj.b?).must_equal true
+    _(obj.c?).must_equal false
   end
 
   it "reads as lambdaed" do
     obj.read("\x01\x02")
-    obj.snapshot.must_equal({a: 1, c: 2})
+    _(obj.snapshot).must_equal({a: 1, c: 2})
   end
 end
 
@@ -665,14 +665,14 @@ describe BinData::Record, "derived classes" do
   end
 
   it "does not affect parent" do
-    ParentRecord.new.field_names.must_equal [:a]
+    _(ParentRecord.new.field_names).must_equal [:a]
   end
 
   it "inherits fields for first child" do
-    Child1Record.new.field_names.must_equal [:a, :b]
+    _(Child1Record.new.field_names).must_equal [:a, :b]
   end
 
   it "inherits fields for second child" do
-    Child2Record.new.field_names.must_equal [:a, :b, :c]
+    _(Child2Record.new.field_names).must_equal [:a, :b, :c]
   end
 end

@@ -37,7 +37,7 @@ module Kernel
 
   def must_raise_on_line(exp, line, msg = nil)
     ex = self.must_raise exp
-    ex.message.must_equal msg if msg
+    (ex.message).must_equal msg if msg
 
     idx = ex.backtrace.find_index { |bt| /:in `must_raise_on_line'$/ =~ bt }
 
@@ -56,6 +56,6 @@ module Kernel
     self.stub(:warn, callable) do
       block.call
     end
-    result.must_equal msg
+    (result).must_equal msg
   end
 end

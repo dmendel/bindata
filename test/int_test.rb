@@ -6,13 +6,13 @@ module AllIntegers
 
   def test_have_correct_num_bytes
     all_classes do |int_class|
-      int_class.new.num_bytes.must_equal @nbytes
+      _(int_class.new.num_bytes).must_equal @nbytes
     end
   end
 
   def test_have_a_sensible_value_of_zero
     all_classes do |int_class|
-      int_class.new.must_equal 0
+      _(int_class.new).must_equal 0
     end
   end
 
@@ -21,7 +21,7 @@ module AllIntegers
       subject = int_class.new
       subject.assign(min_value - 1)
 
-      subject.must_equal min_value
+      _(subject).must_equal min_value
     end
   end
 
@@ -30,7 +30,7 @@ module AllIntegers
       subject = int_class.new
       subject.assign(max_value + 1)
 
-      subject.must_equal max_value
+      _(subject).must_equal max_value
     end
   end
 
@@ -40,7 +40,7 @@ module AllIntegers
       test_int = gen_test_int
       subject.assign(test_int)
 
-      subject.must_equal test_int
+      _(subject).must_equal test_int
     end
   end
 
@@ -51,7 +51,7 @@ module AllIntegers
 
       subject = int_class.new
       subject.assign(src)
-      subject.must_equal src
+      _(subject).must_equal src
     end
   end
 
@@ -60,7 +60,7 @@ module AllIntegers
       subject = int_class.new
       subject.assign(gen_test_int)
 
-      subject.value_read_from_written.must_equal subject
+      _(subject.value_read_from_written).must_equal subject
     end
   end
 
@@ -70,7 +70,7 @@ module AllIntegers
         subject = int_class.new
         subject.assign(-gen_test_int)
 
-        subject.value_read_from_written.must_equal subject
+        _(subject.value_read_from_written).must_equal subject
       end
     end
   end
@@ -82,7 +82,7 @@ module AllIntegers
       subject = int_class.new
       subject.assign(val)
 
-      subject.to_binary_s.must_equal_binary int_to_binary_str(val)
+      _(subject.to_binary_s).must_equal_binary int_to_binary_str(val)
     end
   end
 
@@ -94,7 +94,7 @@ module AllIntegers
         subject = int_class.new
         subject.assign(val)
 
-        subject.to_binary_s.must_equal_binary int_to_binary_str(val)
+        _(subject.to_binary_s).must_equal_binary int_to_binary_str(val)
       end
     end
   end
@@ -195,12 +195,12 @@ end
 
 describe "Custom defined integers" do
   it "fail unless bits are a multiple of 8" do
-    lambda { BinData::Uint7le }.must_raise NameError
+    _ { BinData::Uint7le }.must_raise NameError
 
-    lambda { BinData::Uint7be }.must_raise NameError
+    _ { BinData::Uint7be }.must_raise NameError
 
-    lambda { BinData::Int7le }.must_raise NameError
+    _ { BinData::Int7le }.must_raise NameError
 
-    lambda { BinData::Int7be }.must_raise NameError
+    _ { BinData::Int7be }.must_raise NameError
   end
 end
