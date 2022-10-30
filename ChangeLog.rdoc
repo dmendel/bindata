@@ -1,5 +1,9 @@
 = BinData Changelog
 
+== Version 2.4.14 (2022-xx-xx)
+
+* Use Comparable#clamp instead of manual calculations.
+
 == Version 2.4.13 (2022-10-16)
 
 * Relax over-strict parameter naming requirements.  Requested by

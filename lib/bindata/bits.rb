@@ -99,14 +99,14 @@ module BinData
 
       def create_dynamic_clamp_code(signed)
         if signed == :signed
-          max = "max = (1 << (nbits - 1)) - 1"
-          min = "min = -(max + 1)"
+          max = "(1 << (nbits - 1)) - 1"
+          min = "-((#{max}) + 1)"
         else
-          max = "max = (1 << nbits) - 1"
-          min = "min = 0"
+          max = "(1 << nbits) - 1"
+          min = "0"
         end
 
-        "#{max}; #{min}; val = (val < min) ? min : (val > max) ? max : val"
+        "val = val.clamp(#{min}, #{max})"
       end
 
       def create_fixed_clamp_code(nbits, signed)
@@ -115,14 +115,14 @@ module BinData
         end
 
         if signed == :signed
-          max = "max = (1 << (#{nbits} - 1)) - 1"
-          min = "min = -(max + 1)"
+          max = "(1 << (#{nbits} - 1)) - 1"
+          min = "-((#{max}) + 1)"
         else
-          min = "min = 0"
-          max = "max = (1 << #{nbits}) - 1"
+          min = "0"
+          max = "(1 << #{nbits}) - 1"
         end
 
-        clamp = "(#{max}; #{min}; val = (val < min) ? min : (val > max) ? max : val)"
+        clamp = "(val = val.clamp(#{min}, #{max}))"
 
         if nbits == 1
           # allow single bits to be used as booleans
