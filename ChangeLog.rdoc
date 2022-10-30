@@ -1,6 +1,6 @@
 = BinData Changelog
 
-== Version 2.4.14 (2022-xx-xx)
+== Version 2.4.14 (2022-10-31)
 
 * Use Comparable#clamp instead of manual calculations.
 * Update tests to new minitest requirements.
