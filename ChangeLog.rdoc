@@ -1,5 +1,9 @@
 = BinData Changelog
 
+== Version 2.4.15 (202x-xx-xx)
+
+* Added ruby 2.4.0 requirement to gemspec.  Thanks to theldoria.
+
 == Version 2.4.14 (2022-10-31)
 
 * Use Comparable#clamp instead of manual calculations.

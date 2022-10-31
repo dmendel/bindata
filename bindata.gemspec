@@ -14,6 +14,7 @@ Gem::Specification.new do |s|
   s.rdoc_options << '--main' << 'NEWS.rdoc'
   s.files = `git ls-files`.split("\n")
   s.license = 'Ruby'
+  s.required_ruby_version = ">= 2.4.0"
 
   s.add_development_dependency('rake')
   s.add_development_dependency('minitest', "> 5.0.0", "< 5.12.0")
