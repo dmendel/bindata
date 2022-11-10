@@ -107,7 +107,7 @@ You should end up with this:
 	   TAG_Short("shortTest"): 32767
 	   TAG_Long("longTest"): 9223372036854775807
 	   TAG_Float("floatTest"): 0.49823147
-	   TAG_String("stringTest"): HELLO WORLD THIS IS A TEST STRING ÅÄÖ!
+	   TAG_String("stringTest"): HELLO WORLD THIS IS A TEST STRING Ã…Ã„Ã–!
 	   TAG_Int("intTest"): 2147483647
 	   TAG_Compound("nested compound test"): 2 entries
 	   {
