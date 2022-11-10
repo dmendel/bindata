@@ -3,6 +3,9 @@
 == Version 2.4.15 (202x-xx-xx)
 
 * Added ruby 2.4.0 requirement to gemspec.  Thanks to theldoria.
+* Added github CI action.  Thanks to Peter Goldstein.
+* Convert file from latin1 to UTF-8.  Thanks to Cédric Boutillier.
+* Move license from dual license to solely BSD-2-Clause.
 
 == Version 2.4.14 (2022-10-31)
 

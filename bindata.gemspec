@@ -13,7 +13,7 @@ Gem::Specification.new do |s|
   s.extra_rdoc_files = ['NEWS.rdoc']
   s.rdoc_options << '--main' << 'NEWS.rdoc'
   s.files = `git ls-files`.split("\n")
-  s.license = 'Ruby'
+  s.license = 'BSD-2-Clause'
   s.required_ruby_version = ">= 2.4.0"
 
   s.add_development_dependency('rake')

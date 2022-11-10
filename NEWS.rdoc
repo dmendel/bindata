@@ -1,3 +1,8 @@
+= 2.4.15
+
+This software was originally dual licensed under the Ruby license and the
+BSD-2-Clause license.  It is now licensed solely as BSD-2-Clause.
+
 = 2.4.0
 
 This release changes the internal API for sanitizing parameters.  This only
