@@ -1,8 +1,8 @@
 # What is BinData?
 
-[![Version     ](http://img.shields.io/gem/v/bindata.svg)                       ](https://rubygems.org/gems/bindata)
-[![Travis CI   ](http://img.shields.io/travis/dmendel/bindata/master.svg)     ](https://travis-ci.org/dmendel/bindata)
-[![Coverage    ](http://img.shields.io/coveralls/dmendel/bindata.svg)         ](https://coveralls.io/r/dmendel/bindata)
+[![Version     ](https://img.shields.io/gem/v/bindata.svg)                       ](https://rubygems.org/gems/bindata)
+[![Github CI   ](https://github.com/dmendel/bindata/actions/workflows/ci.yml/badge.svg)     ](https://github.com/dmendel/bindata/actions/workflows/ci.yml)
+[![Coverage    ](https://img.shields.io/coveralls/dmendel/bindata.svg)         ](https://coveralls.io/r/dmendel/bindata)
 
 Do you ever find yourself writing code like this?
 
