@@ -12,7 +12,11 @@ Gem::Specification.new do |s|
   s.require_path = 'lib'
   s.extra_rdoc_files = ['NEWS.rdoc']
   s.rdoc_options << '--main' << 'NEWS.rdoc'
-  s.files = `git ls-files`.split("\n")
+  s.files = Dir.chdir(__dir__) do
+    `git ls-files -z`.split("\x0").reject do |file|
+      file.start_with?(*%w[.git Gemfile INSTALL Rakefile bindata.gemspec test])
+    end
+  end
   s.license = 'BSD-2-Clause'
   s.required_ruby_version = ">= 2.4.0"
 
