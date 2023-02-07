@@ -1,11 +1,13 @@
 = BinData Changelog
 
-== Version 2.4.15 (202x-xx-xx)
+== Version 2.4.15 (2023-02-07)
 
 * Added ruby 2.4.0 requirement to gemspec.  Thanks to theldoria.
 * Added github CI action.  Thanks to Peter Goldstein.
 * Convert file from latin1 to UTF-8.  Thanks to Cédric Boutillier.
 * Move license from dual license to solely BSD-2-Clause.
+* Remove unnecessary files from gem.  Requested by Orien Madgwick.
+* Allow multiple calls to auto_call_delayed_io.  Thanks to dwelch-r7.
 
 == Version 2.4.14 (2022-10-31)
 
