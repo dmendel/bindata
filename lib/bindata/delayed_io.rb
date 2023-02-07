@@ -159,9 +159,10 @@ module BinData
       # The +auto_call_delayed_io+ keyword sets a data object tree to perform
       # multi pass I/O automatically.
       def auto_call_delayed_io
+        include AutoCallDelayedIO
+
         return if DelayedIO.method_defined? :initialize_instance_without_record_io
 
-        include AutoCallDelayedIO
         DelayedIO.send(:alias_method, :initialize_instance_without_record_io, :initialize_instance)
         DelayedIO.send(:define_method, :initialize_instance) do
           if @parent && !defined? @delayed_io_recorded
