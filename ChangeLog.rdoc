@@ -1,5 +1,9 @@
 = BinData Changelog
 
+== Version 2.5.0 (2023-xx-xx)
+
+* Removed experimental :check_offset and :adjust_offset parameters.
+
 == Version 2.4.15 (2023-02-07)
 
 * Added ruby 2.4.0 requirement to gemspec.  Thanks to theldoria.
