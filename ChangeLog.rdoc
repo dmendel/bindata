@@ -4,6 +4,7 @@
 
 * Removed experimental :check_offset and :adjust_offset parameters.
 * Nested tracing is no longer an error.
+* Ruby 2.4 no longer supported.
 
 == Version 2.4.15 (2023-02-07)
 
