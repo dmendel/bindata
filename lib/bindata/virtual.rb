@@ -15,7 +15,7 @@ module BinData
   #
   #   obj = A.read("abcdeabcde")
   #   obj.a #=> "abcde"
-  #   obj.c.offset #=> 10
+  #   obj.c.rel_offset #=> 10
   #
   #   obj = A.read("abcdeABCDE") #=> BinData::ValidityError: assertion failed for obj.c
   #
