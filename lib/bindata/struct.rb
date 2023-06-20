@@ -2,7 +2,6 @@ require 'bindata/base'
 require 'bindata/delayed_io'
 
 module BinData
-
   class Base
     optional_parameter :onlyif, :byte_align  # Used by Struct
   end
@@ -66,16 +65,18 @@ module BinData
     RESERVED =
       Hash[*
         (Hash.instance_methods +
-         %w{alias and begin break case class def defined do else elsif
+         %w[alias and begin break case class def defined do else elsif
             end ensure false for if in module next nil not or redo
             rescue retry return self super then true undef unless until
-            when while yield} +
-         %w{array element index value} +
-         %w{type initial_length read_until} +
-         %w{fields endian search_prefix hide only_if byte_align} +
-         %w{choices selection copy_on_change} +
-         %w{read_abs_offset struct_params}).collect(&:to_sym).
-         uniq.collect { |key| [key, true] }.flatten
+            when while yield] +
+         %w[array element index value] +
+         %w[type initial_length read_until] +
+         %w[fields endian search_prefix hide onlyif byte_align] +
+         %w[choices selection copy_on_change] +
+         %w[read_abs_offset struct_params])
+        .collect(&:to_sym)
+        .uniq.collect { |key| [key, true] }
+        .flatten
       ]
 
     def initialize_shared_instance
@@ -90,11 +91,11 @@ module BinData
       @field_objs = []
     end
 
-    def clear #:nodoc:
-      @field_objs.each { |f| f.clear unless f.nil? }
+    def clear # :nodoc:
+      @field_objs.each { |f| f.nil? || f.clear }
     end
 
-    def clear? #:nodoc:
+    def clear? # :nodoc:
       @field_objs.all? { |f| f.nil? || f.clear? }
     end
 
@@ -124,28 +125,28 @@ module BinData
       end
     end
 
-    def debug_name_of(child) #:nodoc:
+    def debug_name_of(child) # :nodoc:
       field_name = @field_names[find_index_of(child)]
       "#{debug_name}.#{field_name}"
     end
 
-    def offset_of(child) #:nodoc:
+    def offset_of(child) # :nodoc:
       instantiate_all_objs
       sum = sum_num_bytes_below_index(find_index_of(child))
       child.bit_aligned? ? sum.floor : sum.ceil
     end
 
-    def do_read(io) #:nodoc:
+    def do_read(io) # :nodoc:
       instantiate_all_objs
       @field_objs.each { |f| f.do_read(io) if include_obj_for_io?(f) }
     end
 
-    def do_write(io) #:nodoc
+    def do_write(io) # :nodoc:
       instantiate_all_objs
       @field_objs.each { |f| f.do_write(io) if include_obj_for_io?(f) }
     end
 
-    def do_num_bytes #:nodoc:
+    def do_num_bytes # :nodoc:
       instantiate_all_objs
       sum_num_bytes_for_all_fields
     end
@@ -155,10 +156,7 @@ module BinData
     end
 
     def []=(key, value)
-      obj = find_obj_for_name(key)
-      if obj
-        obj.assign(value)
-      end
+      find_obj_for_name(key)&.assign(value)
     end
 
     def key?(key)
@@ -205,8 +203,6 @@ module BinData
       if index
         instantiate_obj_at(index)
         @field_objs[index]
-      else
-        nil
       end
     end
 
@@ -243,7 +239,7 @@ module BinData
         {}
       else
         hash = Snapshot.new
-        val.each_pair { |k,v| hash[k] = v }
+        val.each_pair { |k, v| hash[k] = v }
         hash
       end
     end
@@ -275,12 +271,12 @@ module BinData
     end
 
     # A hash that can be accessed via attributes.
-    class Snapshot < ::Hash #:nodoc:
+    class Snapshot < ::Hash # :nodoc:
       def []=(key, value)
         super unless value.nil?
       end
 
-      def respond_to?(symbol, include_private = false)
+      def respond_to_missing?(symbol, include_all = false)
         key?(symbol) || super
       end
 
@@ -288,60 +284,71 @@ module BinData
         key?(symbol) ? self[symbol] : super
       end
     end
-  end
 
-  # Align fields to a multiple of :byte_align
-  module ByteAlignPlugin
-    def do_read(io)
-      initial_offset = io.offset
-      instantiate_all_objs
-      @field_objs.each do |f|
-        if include_obj?(f)
+    # Align fields to a multiple of :byte_align
+    module ByteAlignPlugin
+      def do_read(io)
+        offset = 0
+        instantiate_all_objs
+        @field_objs.each do |f|
+          next unless include_obj?(f)
+
           if align_obj?(f)
-            io.seekbytes(bytes_to_align(f, io.offset - initial_offset))
+            nbytes = bytes_to_align(f, offset.ceil)
+            offset = offset.ceil + nbytes
+            io.readbytes(nbytes)
           end
+
           f.do_read(io)
+          nbytes = f.do_num_bytes
+          offset = (nbytes.is_a?(Integer) ? offset.ceil : offset) + nbytes
         end
       end
-    end
 
-    def do_write(io)
-      initial_offset = io.offset
-      instantiate_all_objs
-      @field_objs.each do |f|
-        if include_obj?(f)
+      def do_write(io)
+        offset = 0
+        instantiate_all_objs
+        @field_objs.each do |f|
+          next unless include_obj?(f)
+
           if align_obj?(f)
-            io.writebytes("\x00" * bytes_to_align(f, io.offset - initial_offset))
+            nbytes = bytes_to_align(f, offset.ceil)
+            offset = offset.ceil + nbytes
+            io.writebytes("\x00" * nbytes)
           end
+
           f.do_write(io)
+          nbytes = f.do_num_bytes
+          offset = (nbytes.is_a?(Integer) ? offset.ceil : offset) + nbytes
         end
       end
-    end
 
-    def sum_num_bytes_below_index(index)
-      sum = 0
-      (0...@field_objs.length).each do |i|
-        obj = @field_objs[i]
-        if include_obj?(obj)
-          sum = sum.ceil + bytes_to_align(obj, sum.ceil) if align_obj?(obj)
+      def sum_num_bytes_below_index(index)
+        sum = 0
+        @field_objs.each_with_index do |obj, i|
+          next unless include_obj?(obj)
+
+          if align_obj?(obj)
+            sum = sum.ceil + bytes_to_align(obj, sum.ceil)
+          end
 
           break if i >= index
 
           nbytes = obj.do_num_bytes
           sum = (nbytes.is_a?(Integer) ? sum.ceil : sum) + nbytes
         end
+
+        sum
       end
 
-      sum
-    end
+      def bytes_to_align(obj, rel_offset)
+        align = obj.eval_parameter(:byte_align)
+        (align - (rel_offset % align)) % align
+      end
 
-    def bytes_to_align(obj, rel_offset)
-      align = obj.eval_parameter(:byte_align)
-      (align - (rel_offset % align)) % align
-    end
-
-    def align_obj?(obj)
-      obj.has_parameter?(:byte_align)
+      def align_obj?(obj)
+        obj.has_parameter?(:byte_align)
+      end
     end
   end
 
@@ -362,13 +369,11 @@ module BinData
 
     def sanitize_search_prefix(params)
       params.sanitize(:search_prefix) do |sprefix|
-        search_prefix = []
-        Array(sprefix).each do |prefix|
-          prefix = prefix.to_s.chomp("_")
-          search_prefix << prefix if prefix != ""
+        search_prefix = Array(sprefix).collect do |prefix|
+          prefix.to_s.chomp("_")
         end
 
-        search_prefix
+        search_prefix - [""]
       end
     end
 

@@ -45,24 +45,57 @@ describe BinData::Struct, "with anonymous fields" do
     params = { fields: [
                             [:int8, :a, {initial_value: 5}],
                             [:int8, nil],
-                            [:int8, '', {value: :a}]
+                            [:int8, '', {value: :a}],
+                            [:int8, :b]
                           ] }
     BinData::Struct.new(params)
   }
 
   it "only shows non anonymous fields" do
-    _(obj.field_names).must_equal [:a]
+    _(obj.field_names).must_equal [:a, :b]
   end
 
   it "does not include anonymous fields in snapshot" do
-    obj.a = 5
-    _(obj.snapshot).must_equal({a: 5})
+    obj.a = 6
+    _(obj.snapshot).must_equal({a: 6, b: 0})
   end
 
   it "writes anonymous fields" do
-    obj.read("\001\002\003")
+    obj.read("\001\002\003\004")
     obj.a.clear
-    _(obj.to_binary_s).must_equal_binary "\005\002\005"
+    _(obj.to_binary_s).must_equal_binary "\005\002\005\004"
+  end
+
+  it "clears" do
+    obj.b = 3
+    refute obj.clear?
+
+    obj.clear
+    assert obj.clear?
+  end
+end
+
+describe BinData::Struct, "with onlyif fields" do
+  let(:obj) {
+    params = { fields: [
+                            [:int8, :a, {initial_value: 2}],
+                            [:int8, :b, {onlyif: -> { a.odd? }}]
+                          ] }
+    BinData::Struct.new(params)
+  }
+
+  it "#fieldnames includes all fields" do
+    _(obj.field_names).must_equal [:a, :b]
+  end
+
+  it "#snapshot checks for onlyif" do
+    _(obj.snapshot.keys).must_equal [:a]
+  end
+
+  it "includes fields when required" do
+    refute obj.b?
+    obj.a = 3
+    assert obj.b?
   end
 end
 
@@ -140,8 +173,14 @@ describe BinData::Struct, "with multiple fields" do
     _(obj[:a]).must_equal 1
   end
 
-  it "handles not existing elements" do
+  it "handles nonexistent elements" do
     _(obj[:does_not_exist]).must_be_nil
+  end
+
+  it "ignores setting nonexistent elements" do
+    snap = obj.snapshot
+    obj[:does_not_exist] = 3
+    _(obj.snapshot).must_equal snap
   end
 
   it "writes elements dynamically" do
@@ -224,6 +263,20 @@ describe BinData::Struct, "with multiple fields" do
       keys = []
       obj.snapshot.each_pair { |k, v| keys << k }
       _(keys).must_equal [:a, :b]
+    end
+
+    it "accesses field" do
+      _(obj.snapshot[:a]).must_equal 1
+    end
+
+    it "fails on unknown method call" do
+      _ { obj.snapshot.does_not_exist }.must_raise NoMethodError
+    end
+
+    it "will not set attribute with nil value" do
+      refute obj.snapshot.key?(:foo)
+      obj.snapshot[:foo] = nil
+      refute obj.snapshot.key?(:foo)
     end
   end
 end
@@ -402,30 +455,44 @@ describe BinData::Struct, "with byte_align" do
   let(:obj) {
     params = { fields: [[:int8, :a],
                         [:int8, :b, byte_align: 5],
-                        [:bit2, :c],
+                        [:bit2, :c, onlyif: -> { a == 1}],
                         [:int8, :d, byte_align: 3]] }
     BinData::Struct.new(params)
   }
 
   it "has #num_bytes" do
+    _(obj.num_bytes).must_equal 7
+  end
+
+  it "has #num_bytes with onlyif" do
+    obj.a = 1
     _(obj.num_bytes).must_equal 10
   end
 
-  it "reads" do
+  it "reads with onlyif" do
     obj.read("\x01\x00\x00\x00\x00\x02\xc0\x00\x00\x04")
     _(obj.snapshot).must_equal({ a: 1, b: 2, c: 3, d: 4 })
   end
 
-  it "writes" do
+  it "reads without onlyif" do
+    obj.read("\x00\x00\x00\x00\x00\x02\x04")
+    _(obj.snapshot).must_equal({ a: 0, b: 2, d: 4 })
+  end
+
+  it "writes with onlyif" do
     obj.assign(a: 1, b: 2, c: 3, d: 4)
     _(obj.to_binary_s).must_equal_binary "\x01\x00\x00\x00\x00\x02\xc0\x00\x00\x04"
+  end
+
+  it "writes without onlyif" do
+    obj.assign(a: 0, b: 2, c: 3, d: 4)
+    _(obj.to_binary_s).must_equal_binary "\x00\x00\x00\x00\x00\x02\x04"
   end
 
   it "has correct offsets" do
     _(obj.a.rel_offset).must_equal 0
     _(obj.b.rel_offset).must_equal 5
-    _(obj.c.rel_offset).must_equal 6
-    _(obj.d.rel_offset).must_equal 9
+    _(obj.d.rel_offset).must_equal 6
   end
 end
 
