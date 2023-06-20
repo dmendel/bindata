@@ -1,8 +1,9 @@
 # What is BinData?
 
-[![Version     ](https://img.shields.io/gem/v/bindata.svg)                       ](https://rubygems.org/gems/bindata)
-[![Github CI   ](https://github.com/dmendel/bindata/actions/workflows/ci.yml/badge.svg)     ](https://github.com/dmendel/bindata/actions/workflows/ci.yml)
-[![Coverage    ](https://img.shields.io/coveralls/dmendel/bindata.svg)         ](https://coveralls.io/r/dmendel/bindata)
+[![Github CI](https://github.com/dmendel/bindata/actions/workflows/ci.yml/badge.svg)](https://github.com/dmendel/bindata/actions/workflows/ci.yml)
+[![Version](https://img.shields.io/gem/v/bindata.svg)](https://rubygems.org/gems/bindata)
+[![Downloads](https://img.shields.io/gem/dt/bindata.svg)](https://rubygems.org/gems/bindata)
+[![Coverage](https://img.shields.io/coveralls/dmendel/bindata.svg)](https://coveralls.io/r/dmendel/bindata)
 
 Do you ever find yourself writing code like this?
 
@@ -14,7 +15,7 @@ width, height = io.read(8).unpack("VV")
 puts "Rectangle #{name} is #{width} x #{height}"
 ```
 
-It’s ugly, violates DRY and feels like you’re writing Perl, not Ruby.
+It’s ugly, violates DRY and doesn't feel like Ruby.
 
 There is a better way. Here’s how you’d write the above using BinData.
 
@@ -47,13 +48,9 @@ for dependent and variable length fields is built in.
 
     $ gem install bindata
 
-or if running ruby 1.8
-
-    $ gem install bindata -v '~> 1.8.0'
-
 # Documentation
 
-[Read the wiki](http://github.com/dmendel/bindata/wiki).
+[BinData manual](http://github.com/dmendel/bindata/wiki).
 
 # Contact
 
