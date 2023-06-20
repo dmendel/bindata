@@ -266,3 +266,19 @@ describe BinData::DelayedIO, "with auto_call" do
     _(obj.num_bytes).must_equal 2
   end
 end
+
+describe BinData::DelayedIO, "with multiple auto_call" do
+  class MultipleAutoCallDelayedIORecord < BinData::Record
+    auto_call_delayed_io
+    auto_call_delayed_io
+    uint8 :a
+    delayed_io :b, read_abs_offset: 1 do
+      uint8
+    end
+  end
+
+  it "class reads" do
+    obj = MultipleAutoCallDelayedIORecord.read "\x01\x02"
+    _(obj.snapshot).must_equal({a: 1, b: 2})
+  end
+end
