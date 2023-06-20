@@ -144,6 +144,15 @@ describe BinData::Buffer, "nested buffers" do
     _(obj.b).must_equal "klmno"
   end
 
+  it "pads undersize writes" do
+    obj = NestedBufferRecord.new
+    obj.a.aa = "abc"
+    obj.a.bb = "ABC"
+    obj.b = "123"
+
+    _(obj.to_binary_s).must_equal_binary "abc\000\000ABC\000\000123"
+  end
+
   it "restricts oversize writes" do
     obj = NestedBufferRecord.new
     obj.a.aa = "abcdefghij"

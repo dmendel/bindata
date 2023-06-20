@@ -105,13 +105,13 @@ describe BinData::Skip, "with :until_valid" do
     _(io.pos).must_equal 0
   end
 
-  it "raises EOFError when no match" do
+  it "raises IOError when no match" do
     skip_obj = [:string, { read_length: 1, assert: "X" }]
     fields = [ [:skip, :s, { until_valid: skip_obj }] ]
     obj = BinData::Struct.new(fields: fields)
     _ {
       obj.read(io)
-    }.must_raise EOFError
+    }.must_raise IOError
   end
 
   it "raises IOError when validator reads beyond stream" do

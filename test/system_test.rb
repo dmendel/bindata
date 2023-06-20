@@ -407,3 +407,44 @@ describe BinData::Record, "encoding" do
     end
   end
 end
+
+describe BinData::Record, "buffer num_bytes" do
+  class BufferNumBytesRecord < BinData::Record
+    buffer :b, length: 10 do
+      int8 :a
+      count_bytes_remaining :nbytes
+    end
+  end
+
+  it "counts bytes remaining in the buffer" do
+    obj = BufferNumBytesRecord.read "12345678901234567890"
+    _(obj.b.nbytes).must_equal 9
+  end
+
+  it "counts bytes remaining in the buffer with short streams" do
+    obj = BufferNumBytesRecord.read "12345"
+    _(obj.b.nbytes).must_equal 4
+  end
+end
+
+describe BinData::Record, "buffered readahead" do
+  class BufferedReadaheadRecord < BinData::Record
+    buffer :a, length: 5 do
+      skip do
+        string read_length: 1, assert: "X"
+      end
+      string :b, read_length: 1
+    end
+    string :c, read_length: 1
+  end
+
+  it "reads ahead inside the buffer" do
+    obj = BufferedReadaheadRecord.read "12X4567890"
+    _(obj.a.b).must_equal "X"
+    _(obj.c).must_equal "6"
+  end
+
+  it "doesn't readahead outside the buffer" do
+    _ { BufferedReadaheadRecord.read "123456X890" }.must_raise IOError
+  end
+end
