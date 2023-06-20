@@ -1,7 +1,10 @@
 require 'rubygems'
 
-require 'coveralls'
-Coveralls.wear!
+require 'simplecov'
+SimpleCov.start do
+  enable_coverage :branch
+  primary_coverage :branch
+end
 
 require 'minitest/autorun'
 require 'stringio'
