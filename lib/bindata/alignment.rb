@@ -19,11 +19,11 @@ module BinData
     def do_num_bytes; 0; end
 
     def do_read(io)
-      io.reset_read_bits
+      io.readbytes(0)
     end
 
     def do_write(io)
-      io.flushbits
+      io.writebytes("")
     end
   end
 
@@ -50,13 +50,16 @@ module BinData
           bytes += @io.readbits(8, :big).chr
         end
       end
+      def writebytes(str)
+        str.each_byte { |v| @io.writebits(v, 8, :big) }
+      end
     end
 
     def bit_aligned?
       true
     end
 
-    def read_and_return_value(io)
+    def do_read(io)
       super(BitAlignedIO.new(io))
     end
 
@@ -65,7 +68,7 @@ module BinData
     end
 
     def do_write(io)
-      value_to_binary_string(_value).each_byte { |v| io.writebits(v, 8, :big) }
+      super(BitAlignedIO.new(io))
     end
   end
 
@@ -74,6 +77,6 @@ module BinData
   end
 
   def Primitive.bit_aligned
-    fail "'bit_aligned' is not needed for BinData::Primitives"
+    fail "'bit_aligned' is not supported for BinData::Primitives"
   end
 end
