@@ -57,10 +57,11 @@ module BinData
     #---------------
     private
 
-    def value_to_binary_string(val)
+    def value_to_binary_string(_)
       len = skip_length
       if len < 0
-        raise ValidityError, "#{debug_name} attempted to seek backwards by #{len.abs} bytes"
+        msg = "#{debug_name} attempted to seek backwards by #{len.abs} bytes"
+        raise ValidityError, msg
       end
 
       "\000" * skip_length
@@ -69,15 +70,83 @@ module BinData
     def read_and_return_value(io)
       len = skip_length
       if len < 0
-        raise ValidityError, "#{debug_name} attempted to seek backwards by #{len.abs} bytes"
+        msg = "#{debug_name} attempted to seek backwards by #{len.abs} bytes"
+        raise ValidityError, msg
       end
 
-      io.seekbytes(len)
+      io.skipbytes(len)
       ""
     end
 
     def sensible_default
       ""
+    end
+
+    # Logic for the :length parameter
+    module SkipLengthPlugin
+      def skip_length
+        eval_parameter(:length)
+      end
+    end
+
+    # Logic for the :to_abs_offset parameter
+    module SkipToAbsOffsetPlugin
+      def skip_length
+        eval_parameter(:to_abs_offset) - abs_offset
+      end
+
+      def read_and_return_value(io)
+        len = skip_length
+        if len < 0
+          raise ValidityError, "#{debug_name} attempted to seek backwards by #{len.abs} bytes"
+        end
+
+        io.seek_to_abs_offset(eval_parameter(:to_abs_offset))
+      end
+    end
+
+    # Logic for the :until_valid parameter
+    module SkipUntilValidPlugin
+      def skip_length
+        # no skipping when writing
+        0
+      end
+
+      def read_and_return_value(io)
+        prototype = get_parameter(:until_valid)
+        validator = prototype.instantiate(nil, self)
+
+        io.transform(ReadaheadIO.new) do |transformed_io, raw_io|
+          search = 0
+          valid = false
+          until valid
+            begin
+              validator.clear
+              validator.do_read(transformed_io)
+              valid = true
+            rescue ValidityError
+              search += 1
+            end
+            raw_io.rollback
+            io.skipbytes(search)
+          end
+        end
+      end
+
+      class ReadaheadIO < BinData::IO::Transform
+        def chained(io)
+          if !io.seekable?
+            raise IOError, "readahead is not supported on unseekable streams"
+          end
+
+          @mark = io.offset
+          super
+        end
+
+        def rollback
+          @chain_io.seek_abs(@mark)
+        end
+      end
     end
   end
 
@@ -89,45 +158,6 @@ module BinData
       end
       params.must_be_integer(:to_abs_offset, :length)
       params.sanitize_object_prototype(:until_valid)
-    end
-  end
-
-  # Logic for the :length parameter
-  module SkipLengthPlugin
-    def skip_length
-      eval_parameter(:length)
-    end
-  end
-
-  # Logic for the :to_abs_offset parameter
-  module SkipToAbsOffsetPlugin
-    def skip_length
-      eval_parameter(:to_abs_offset) - abs_offset
-    end
-  end
-
-  # Logic for the :until_valid parameter
-  module SkipUntilValidPlugin
-    def skip_length
-      # no skipping when writing
-      0
-    end
-
-    def read_and_return_value(io)
-      prototype = get_parameter(:until_valid)
-      validator = prototype.instantiate(nil, self)
-
-      valid = false
-      until valid
-        begin
-          io.with_readahead do
-            validator.read(io)
-            valid = true
-          end
-        rescue ValidityError
-          io.readbytes(1)
-        end
-      end
     end
   end
 end

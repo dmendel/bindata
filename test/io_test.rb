@@ -15,19 +15,56 @@ describe BinData::IO::Read, "reading from non seekable stream" do
     @rd.close
   end
 
-  it "has correct offset" do
-    @io.readbytes(10)
-    _(@io.offset).must_equal 10
+  it "seeks correctly" do
+    @io.skipbytes(1999)
+    _(@io.readbytes(5)).must_equal "abbbb"
   end
 
-  it "seeks correctly" do
-    @io.seekbytes(1999)
+  it "seeks to abs_offset" do
+    @io.skipbytes(1000)
+    @io.seek_to_abs_offset(1999)
     _(@io.readbytes(5)).must_equal "abbbb"
+  end
+
+  it "wont seek backwards" do
+    @io.skipbytes(5)
+    _ {
+      @io.skipbytes(-1)
+    }.must_raise IOError
   end
 
   it "#num_bytes_remaining raises IOError" do
     _ {
       @io.num_bytes_remaining
+    }.must_raise IOError
+  end
+end
+
+describe BinData::IO::Write, "writing to non seekable stream" do
+  before do
+    @rd, @wr = IO::pipe
+    @io = BinData::IO::Write.new(@wr)
+  end
+
+  after do
+    @rd.close
+    @wr.close
+  end
+
+  def written_data
+    @io.flush
+    @wr.close
+    @rd.read
+  end
+
+  it "writes correctly" do
+    @io.writebytes("hello")
+    _(written_data).must_equal "hello"
+  end
+
+  it "must not attempt to seek" do
+    _ {
+      @io.seek_to_abs_offset(5)
     }.must_raise IOError
   end
 end
@@ -42,18 +79,18 @@ describe BinData::IO::Read, "when reading" do
     }.must_raise ArgumentError
   end
 
-  it "returns correct offset" do
-    stream.seek(3, IO::SEEK_CUR)
-
-    _(io.offset).must_equal 0
-    _(io.readbytes(4)).must_equal "defg"
-    _(io.offset).must_equal 4
-  end
-
   it "seeks correctly" do
-    io.seekbytes(2)
+    io.skipbytes(2)
     _(io.readbytes(4)).must_equal "cdef"
   end
+
+  it "wont seek backwards" do
+    io.skipbytes(5)
+    _ {
+      io.skipbytes(-1)
+    }.must_raise IOError
+  end
+
 
   it "reads all bytes" do
     _(io.read_all_bytes).must_equal "abcdefghij"
@@ -67,7 +104,7 @@ describe BinData::IO::Read, "when reading" do
   end
 
   it "raises error when reading at eof" do
-    io.seekbytes(10)
+    io.skipbytes(10)
     _ {
       io.readbytes(3)
     }.must_raise EOFError
@@ -78,149 +115,6 @@ describe BinData::IO::Read, "when reading" do
       io.readbytes(20)
     }.must_raise IOError
   end
-end
-
-describe BinData::IO::Read, "#with_buffer" do
-  let(:stream) { StringIO.new "abcdefghijklmnopqrst" }
-  let(:io) { BinData::IO::Read.new(stream) }
-
-  it "consumes entire buffer on short reads" do
-    io.with_buffer(10) do
-      _(io.readbytes(4)).must_equal "abcd"
-    end
-    _(io.offset).must_equal(10)
-  end
-
-  it "consumes entire buffer on read_all_bytes" do
-    io.with_buffer(10) do
-      _(io.read_all_bytes).must_equal "abcdefghij"
-    end
-    _(io.offset).must_equal(10)
-  end
-
-  it "restricts large reads" do
-    io.with_buffer(10) do
-      _ {
-        io.readbytes(15)
-      }.must_raise IOError
-    end
-  end
-
-  it "is nestable" do
-    io.with_buffer(10) do
-      _(io.readbytes(2)).must_equal "ab"
-      io.with_buffer(5) do
-        _(io.read_all_bytes).must_equal "cdefg"
-      end
-      _(io.offset).must_equal(2 + 5)
-    end
-    _(io.offset).must_equal(10)
-  end
-
-  it "restricts large nested buffers" do
-    io.with_buffer(10) do
-      _(io.readbytes(2)).must_equal "ab"
-      io.with_buffer(20) do
-        _(io.read_all_bytes).must_equal "cdefghij"
-        _(io.offset).must_equal(10)
-      end
-    end
-    _(io.offset).must_equal(10)
-  end
-
-  it "restricts large seeks" do
-    io.with_buffer(10) do
-      io.seekbytes(15)
-    end
-    _(io.offset).must_equal(10)
-  end
-
-  it "restricts large -ve seeks" do
-    io.readbytes(2)
-    io.with_buffer(10) do
-      io.seekbytes(-1)
-      _(io.offset).must_equal(2)
-    end
-  end
-
-  it "greater than stream size consumes all bytes" do
-    io.with_buffer(30) do
-      _(io.readbytes(4)).must_equal "abcd"
-    end
-    _(io.offset).must_equal(20)
-  end
-
-  it "restricts #num_bytes_remaining" do
-    io.with_buffer(10) do
-      io.readbytes(2)
-      _(io.num_bytes_remaining).must_equal 8
-    end
-  end
-
-  it "greater than stream size doesn't restrict #num_bytes_remaining" do
-    io.with_buffer(30) do
-      io.readbytes(2)
-      _(io.num_bytes_remaining).must_equal 18
-    end
-  end
-end
-
-module IOReadWithReadahead
-  def test_rolls_back_short_reads
-    _(io.readbytes(2)).must_equal "ab"
-    io.with_readahead do
-      _(io.readbytes(4)).must_equal "cdef"
-    end
-    _(io.offset).must_equal 2
-  end
-
-  def test_rolls_back_read_all_bytes
-    _(io.readbytes(3)).must_equal "abc"
-    io.with_readahead do
-      _(io.read_all_bytes).must_equal "defghijklmnopqrst"
-    end
-    _(io.offset).must_equal 3
-  end
-
-  def test_inside_buffer_rolls_back_reads
-    io.with_buffer(10) do
-      io.with_readahead do
-        _(io.readbytes(4)).must_equal "abcd"
-      end
-      _(io.offset).must_equal 0
-    end
-    _(io.offset).must_equal 10
-  end
-
-  def test_outside_buffer_rolls_back_reads
-    io.with_readahead do
-      io.with_buffer(10) do
-        _(io.readbytes(4)).must_equal "abcd"
-      end
-      _(io.offset).must_equal 10
-    end
-    _(io.offset).must_equal 0
-  end
-end
-
-describe BinData::IO::Read, "#with_readahead" do
-  let(:stream) { StringIO.new "abcdefghijklmnopqrst" }
-  let(:io) { BinData::IO::Read.new(stream) }
-
-  include IOReadWithReadahead
-end
-
-describe BinData::IO::Read, "unseekable stream #with_readahead" do
-  let(:stream) {
-    io = StringIO.new "abcdefghijklmnopqrst"
-    def io.pos
-      raise Errno::EPIPE
-    end
-    io
-  }
-  let(:io) { BinData::IO::Read.new(stream) }
-
-  include IOReadWithReadahead
 end
 
 describe BinData::IO::Write, "writing to non seekable stream" do
@@ -237,30 +131,6 @@ describe BinData::IO::Write, "writing to non seekable stream" do
   it "writes data" do
     @io.writebytes("1234567890")
     _(@rd.read(10)).must_equal "1234567890"
-  end
-
-  it "has correct offset" do
-    @io.writebytes("1234567890")
-    _(@io.offset).must_equal 10
-  end
-
-  it "does not seek backwards" do
-    @io.writebytes("1234567890")
-    _ {
-      @io.seekbytes(-5)
-    }.must_raise IOError
-  end
-
-  it "does not seek forwards" do
-    _ {
-      @io.seekbytes(5)
-    }.must_raise IOError
-  end
-
-  it "#num_bytes_remaining raises IOError" do
-    _ {
-      @io.num_bytes_remaining
-    }.must_raise IOError
   end
 end
 
@@ -280,73 +150,11 @@ describe BinData::IO::Write, "when writing" do
     _(stream.value).must_equal "abcd"
   end
 
-  it "has #offset" do
-    _(io.offset).must_equal 0
-
-    io.writebytes("abcd")
-    _(io.offset).must_equal 4
-
-    io.writebytes("ABCD")
-    _(io.offset).must_equal 8
-  end
-
-  it "rounds up #offset when writing bits" do
-    io.writebits(123, 9, :little)
-    _(io.offset).must_equal 2
-  end
-
   it "flushes" do
     io.writebytes("abcd")
     io.flush
 
     _(stream.value).must_equal "abcd"
-  end
-end
-
-describe BinData::IO::Write, "#with_buffer" do
-  let(:stream) { StringIO.new }
-  let(:io) { BinData::IO::Write.new(stream) }
-
-  it "pads entire buffer on short reads" do
-    io.with_buffer(10) do
-      io.writebytes "abcde"
-    end
-
-    _(stream.value).must_equal "abcde\0\0\0\0\0"
-  end
-
-  it "discards excess on large writes" do
-    io.with_buffer(5) do
-      io.writebytes "abcdefghij"
-    end
-
-    _(stream.value).must_equal "abcde"
-  end
-
-  it "is nestable" do
-    io.with_buffer(10) do
-      io.with_buffer(5) do
-        io.writebytes "abc"
-      end
-      io.writebytes "de"
-    end
-
-    _(stream.value).must_equal "abc\0\0de\0\0\0"
-  end
-
-  it "restricts large seeks" do
-    io.with_buffer(10) do
-      io.seekbytes(15)
-    end
-    _(io.offset).must_equal(10)
-  end
-
-  it "restricts large -ve seeks" do
-    io.writebytes("12")
-    io.with_buffer(10) do
-      io.seekbytes(-1)
-      _(io.offset).must_equal(2)
-    end
   end
 end
 

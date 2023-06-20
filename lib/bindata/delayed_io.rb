@@ -83,11 +83,11 @@ module BinData
       @type.num_bytes
     end
 
-    def respond_to?(symbol, include_private = false) #:nodoc:
-      @type.respond_to?(symbol, include_private) || super
+    def respond_to_missing?(symbol, include_all = false) # :nodoc:
+      @type.respond_to?(symbol, include_all) || super
     end
 
-    def method_missing(symbol, *args, &block) #:nodoc:
+    def method_missing(symbol, *args, &block) # :nodoc:
       @type.__send__(symbol, *args, &block)
     end
 
@@ -104,20 +104,20 @@ module BinData
       abs_offset
     end
 
-    def do_read(io) #:nodoc:
+    def do_read(io) # :nodoc:
       @read_io = io
     end
 
-    def do_write(io) #:nodoc:
+    def do_write(io) # :nodoc:
       @write_io = io
     end
 
-    def do_num_bytes #:nodoc:
+    def do_num_bytes # :nodoc:
       0
     end
 
     def include_obj?
-      ! has_parameter?(:onlyif) || eval_parameter(:onlyif)
+      !has_parameter?(:onlyif) || eval_parameter(:onlyif)
     end
 
     # DelayedIO objects aren't read when #read is called.
@@ -126,7 +126,7 @@ module BinData
       return unless include_obj?
       raise IOError, "read from where?" unless @read_io
 
-      @read_io.seekbytes(abs_offset - @read_io.offset)
+      @read_io.seek_to_abs_offset(abs_offset)
       start_read do
         @type.do_read(@read_io)
       end
@@ -138,7 +138,7 @@ module BinData
       return unless include_obj?
       raise IOError, "write to where?" unless @write_io
 
-      @write_io.seekbytes(abs_offset - @write_io.offset)
+      @write_io.seek_to_abs_offset(abs_offset)
       @type.do_write(@write_io)
     end
   end
@@ -153,8 +153,8 @@ module BinData
     end
   end
 
-  # Add +auto_call_delayed_io+ keyword to BinData::Base.
   class Base
+    # Add +auto_call_delayed_io+ keyword to BinData::Base.
     class << self
       # The +auto_call_delayed_io+ keyword sets a data object tree to perform
       # multi pass I/O automatically.

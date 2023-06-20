@@ -425,7 +425,69 @@ describe BinData::Record, "buffer num_bytes" do
     obj = BufferNumBytesRecord.read "12345"
     _(obj.b.nbytes).must_equal 4
   end
+
+  it "assumes buffer is full with non-seekable short streams" do
+    rd, wr = IO::pipe
+    io = BinData::IO::Read.new(rd)
+    wr.write "12345"
+    wr.close
+
+    obj = BufferNumBytesRecord.read(io)
+    _(obj.b.nbytes).must_equal 9
+    rd.close
+  end
 end
+
+describe BinData::Buffer, "with seek_abs" do
+  class BufferSkipRecord < BinData::Record
+    endian :little
+    mandatory_parameter :seek_offset
+
+    uint8
+    buffer :buf, length: 5 do
+      uint8
+      uint8
+      skip to_abs_offset: -> { parent.seek_offset}
+      uint8 :a
+    end
+    uint8
+  end
+
+  let(:str) { "\001\002\003\004\005\006\007" }
+
+# TODO:
+# uncomment this if we decide to allow backwards seeking
+if false
+  it "won't seek backwards before buffer" do
+    _ { BufferSkipRecord.new(seek_offset: 0).read(str) }.must_raise(IOError)
+  end
+
+  it "seeks backwards to start of buffer" do
+    obj = BufferSkipRecord.new(seek_offset: 1).read(str)
+    _(obj.buf.a).must_equal 2
+  end
+
+  it "seeks backwards inside buffer" do
+    obj = BufferSkipRecord.new(seek_offset: 2).read(str)
+    _(obj.buf.a).must_equal 3
+  end
+end
+
+  it "seeks forwards inside buffer" do
+    obj = BufferSkipRecord.new(seek_offset: 4).read(str)
+    _(obj.buf.a).must_equal 5
+  end
+
+  it "seeks to end of buffer" do
+    obj = BufferSkipRecord.new(seek_offset: 5).read(str)
+    _(obj.buf.a).must_equal 6
+  end
+
+  it "won't seek after buffer" do
+    _ { BufferSkipRecord.new(seek_offset: 6).read(str) }.must_raise(IOError)
+  end
+end
+
 
 describe BinData::Record, "buffered readahead" do
   class BufferedReadaheadRecord < BinData::Record
