@@ -65,7 +65,7 @@ module BinData
       @value = nil
     end
 
-    def clear? #:nodoc:
+    def clear? # :nodoc:
       @value.nil?
     end
 
@@ -73,13 +73,7 @@ module BinData
       raise ArgumentError, "can't set a nil value for #{debug_name}" if val.nil?
 
       raw_val = val.respond_to?(:snapshot) ? val.snapshot : val
-      @value =
-        begin
-          raw_val.dup
-        rescue TypeError
-          # can't dup Fixnums
-          raw_val
-        end
+      @value = raw_val.dup
     end
 
     def snapshot
@@ -94,18 +88,19 @@ module BinData
       assign(val)
     end
 
-    def respond_to?(symbol, include_private = false) #:nodoc:
+    def respond_to_missing?(symbol, include_all = false) # :nodoc:
       child = snapshot
-      child.respond_to?(symbol, include_private) || super
+      child.respond_to?(symbol, include_all) || super
     end
 
-    def method_missing(symbol, *args, &block) #:nodoc:
+    def method_missing(symbol, *args, &block) # :nodoc:
       child = snapshot
       if child.respond_to?(symbol)
-        self.class.class_eval \
-          "def #{symbol}(*args, &block);" \
-          "  snapshot.#{symbol}(*args, &block);" \
-          "end"
+        self.class.class_eval <<-END, __FILE__, __LINE__ + 1
+          def #{symbol}(*args, &block)         # def clamp(*args, &block)
+            snapshot.#{symbol}(*args, &block)  #   snapshot.clamp(*args, &block)
+          end                                  # end
+        END
         child.__send__(symbol, *args, &block)
       else
         super
@@ -125,15 +120,15 @@ module BinData
       snapshot.hash
     end
 
-    def do_read(io) #:nodoc:
+    def do_read(io) # :nodoc:
       @value = read_and_return_value(io)
     end
 
-    def do_write(io) #:nodoc:
+    def do_write(io) # :nodoc:
       io.writebytes(value_to_binary_string(_value))
     end
 
-    def do_num_bytes #:nodoc:
+    def do_num_bytes # :nodoc:
       value_to_binary_string(_value).length
     end
 
@@ -172,7 +167,7 @@ module BinData
         assert!
       end
 
-      def do_read(io) #:nodoc:
+      def do_read(io) # :nodoc:
         super(io)
         assert!
       end
@@ -205,7 +200,7 @@ module BinData
         reading? ? @value : eval_parameter(:asserted_value)
       end
 
-      def do_read(io) #:nodoc:
+      def do_read(io) # :nodoc:
         super(io)
         assert!
       end
