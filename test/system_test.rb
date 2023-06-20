@@ -229,6 +229,19 @@ describe "Tracing"  do
 
     _(io.value).must_equal "obj => \"000000000011111111112222222222...\n"
   end
+
+  it "can be nested" do
+    obj = BinData::String.new(read_length: 5)
+
+    io = StringIO.new
+    BinData::trace_reading(io) {
+      BinData::trace_reading(io) {
+        obj.read("12345")
+      }
+    }
+
+    _(io.value).must_equal "obj => \"12345\"\n"
+  end
 end
 
 describe "Forward referencing with Primitive" do
