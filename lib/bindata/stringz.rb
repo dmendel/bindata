@@ -25,6 +25,7 @@ module BinData
   # <tt>:max_length</tt>:: The maximum length of the string including the zero
   #                        byte.
   class Stringz < BinData::BasePrimitive
+    arg_processor :stringz
 
     optional_parameters :max_length
 
@@ -54,7 +55,7 @@ module BinData
       # read until zero byte or we have read in the max number of bytes
       while ch != "\0" && i != max_length
         ch = io.readbytes(1)
-        str += ch
+        str << ch
         i += 1
       end
 
@@ -79,17 +80,26 @@ module BinData
 
     def trim_to!(str, max_length = nil)
       if max_length
-        max_length = 1 if max_length < 1
         str.slice!(max_length..-1)
-        if str.length == max_length && str[-1, 1] != "\0"
-          str[-1, 1] = "\0"
-        end
+        str[-1, 1] = "\0" if str.length == max_length
       end
     end
 
     def append_zero_byte_if_needed!(str)
-      if str.length == 0 || str[-1, 1] != "\0"
+      if str.empty? || str[-1, 1] != "\0"
         str << "\0"
+      end
+    end
+  end
+
+  class StringzArgProcessor < BaseArgProcessor
+    def sanitize_parameters!(obj_class, params)
+      params.must_be_integer(:max_length)
+      params.sanitize(:max_length) do |max_length|
+        if max_length < 1
+          raise ArgumentError, "max_length must be at least 1"
+        end
+        max_length
       end
     end
   end

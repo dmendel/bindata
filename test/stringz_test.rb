@@ -76,6 +76,12 @@ end
 describe BinData::Stringz, "with max_length" do
   let(:obj) { BinData::Stringz.new(max_length: 5) }
 
+  it "fails if max_length is less that 1" do
+    _{
+      BinData::Stringz.new(max_length: 0)
+    }.must_raise ArgumentError
+  end
+
   it "reads less than max_length" do
     io = StringIO.new("abc\0xyz")
     obj.read(io)
