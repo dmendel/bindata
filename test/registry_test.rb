@@ -36,7 +36,7 @@ describe BinData::Registry do
   end
 
   it "allows overriding of registered classes" do
-    w, $-w = $-w, false
+    w, $-w = $-w, nil  # disable warning
 
     begin
       r.register('A', A)
