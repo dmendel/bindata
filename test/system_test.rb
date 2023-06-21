@@ -394,7 +394,7 @@ describe BinData::Record, "encoding" do
   end
 
   it "returns binary encoded data despite Encoding.default_internal" do
-    w, $-w = $-w, false
+    w, $-w = $-w, nil
     before_enc = Encoding.default_internal
 
     begin
@@ -447,7 +447,7 @@ describe BinData::Buffer, "with seek_abs" do
     buffer :buf, length: 5 do
       uint8
       uint8
-      skip to_abs_offset: -> { parent.seek_offset}
+      skip to_abs_offset: :seek_offset
       uint8 :a
     end
     uint8
@@ -455,23 +455,25 @@ describe BinData::Buffer, "with seek_abs" do
 
   let(:str) { "\001\002\003\004\005\006\007" }
 
-# TODO:
-# uncomment this if we decide to allow backwards seeking
-if false
-  it "won't seek backwards before buffer" do
-    _ { BufferSkipRecord.new(seek_offset: 0).read(str) }.must_raise(IOError)
-  end
-
-  it "seeks backwards to start of buffer" do
-    obj = BufferSkipRecord.new(seek_offset: 1).read(str)
-    _(obj.buf.a).must_equal 2
-  end
-
-  it "seeks backwards inside buffer" do
-    obj = BufferSkipRecord.new(seek_offset: 2).read(str)
-    _(obj.buf.a).must_equal 3
-  end
-end
+  ## TODO: enable this if we decide to allow backwards seeking
+  #backwards_seeking = false
+  #
+  #it "won't seek backwards before buffer" do
+  #  skip unless backwards_seeking
+  #  _ { BufferSkipRecord.new(seek_offset: 0).read(str) }.must_raise(IOError)
+  #end
+  #
+  #it "seeks backwards to start of buffer" do
+  #  skip unless backwards_seeking
+  #  obj = BufferSkipRecord.new(seek_offset: 1).read(str)
+  #  _(obj.buf.a).must_equal 2
+  #end
+  #
+  #it "seeks backwards inside buffer" do
+  #  skip unless backwards_seeking
+  #  obj = BufferSkipRecord.new(seek_offset: 2).read(str)
+  #  _(obj.buf.a).must_equal 3
+  #end
 
   it "seeks forwards inside buffer" do
     obj = BufferSkipRecord.new(seek_offset: 4).read(str)

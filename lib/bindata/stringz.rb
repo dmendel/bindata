@@ -1,4 +1,4 @@
-require "bindata/base_primitive"
+require 'bindata/base_primitive'
 
 module BinData
   # A BinData::Stringz object is a container for a zero ("\0") terminated

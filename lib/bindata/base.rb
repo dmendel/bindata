@@ -17,7 +17,7 @@ module BinData
       # Instantiates this class and reads from +io+, returning the newly
       # created data object.  +args+ will be used when instantiating.
       def read(io, *args, &block)
-        obj = self.new(*args)
+        obj = new(*args)
         obj.read(io, &block)
         obj
       end
@@ -90,6 +90,8 @@ module BinData
 
     # Creates a new data object based on this instance.
     #
+    # This implements the prototype design pattern.
+    #
     # All parameters will be be duplicated.  Use this method
     # when creating multiple objects with the same parameters.
     def new(value = nil, parent = nil)
@@ -118,7 +120,7 @@ module BinData
 
     # Returns a lazy evaluator for this object.
     def lazy_evaluator # :nodoc:
-      @lazy ||= LazyEvaluator.new(self)
+      @lazy_evaluator ||= LazyEvaluator.new(self)
     end
 
     # Returns the parameter referenced by +key+.
@@ -177,7 +179,7 @@ module BinData
 
     # Returns the hexadecimal string representation of this data object.
     def to_hex(&block)
-      to_binary_s(&block).unpack('H*')[0]
+      to_binary_s(&block).unpack1('H*')
     end
 
     # Return a human readable representation of this data object.
@@ -202,30 +204,18 @@ module BinData
 
     # Returns a user friendly name of this object for debugging purposes.
     def debug_name
-      if @parent
-        @parent.debug_name_of(self)
-      else
-        "obj"
-      end
+      @parent ? @parent.debug_name_of(self) : 'obj'
     end
 
     # Returns the offset (in bytes) of this object with respect to its most
     # distant ancestor.
     def abs_offset
-      if @parent
-        @parent.abs_offset + @parent.offset_of(self)
-      else
-        0
-      end
+      @parent ? @parent.abs_offset + @parent.offset_of(self) : 0
     end
 
     # Returns the offset (in bytes) of this object with respect to its parent.
     def rel_offset
-      if @parent
-        @parent.offset_of(self)
-      else
-        0
-      end
+      @parent ? @parent.offset_of(self) : 0
     end
 
     def ==(other) # :nodoc:
@@ -329,7 +319,6 @@ module BinData
     # Performs sanity checks on the given parameters.
     # This method converts the parameters to the form expected
     # by the data object.
-    def sanitize_parameters!(obj_class, obj_params)
-    end
+    def sanitize_parameters!(obj_class, obj_params); end
   end
 end

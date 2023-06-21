@@ -15,6 +15,18 @@ describe BinData::Base, "when defining" do
     }.must_raise RuntimeError
   end
 
+  it "fails if #initialize is overridden on BasePrimitive" do
+    class BasePrimitiveWithInitialize < BinData::String
+      def initialize(params = {}, parent = nil)
+        super
+      end
+    end
+
+    _ {
+      BasePrimitiveWithInitialize.new
+    }.must_raise RuntimeError
+  end
+
   it "handles if #initialize is naively renamed to #initialize_instance" do
     class BaseWithInitializeInstance < BinData::Base
       def initialize_instance(params = {}, parent = nil)

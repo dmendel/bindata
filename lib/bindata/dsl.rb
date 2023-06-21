@@ -131,7 +131,7 @@ module BinData
           choice:     [:to_choice_params, :choices,     [:multiple_fields, :all_or_none_fieldnames, :fieldnames_are_values]],
           delayed_io: [:to_object_params, :type,        [:multiple_fields, :optional_fieldnames, :hidden_fields]],
           primitive:  [:to_struct_params, :struct,      [:multiple_fields, :optional_fieldnames]],
-          skip:       [:to_object_params, :until_valid, [:multiple_fields, :optional_fieldnames]],
+          skip:       [:to_object_params, :until_valid, [:multiple_fields, :optional_fieldnames]]
         }
       end
 
@@ -182,21 +182,21 @@ module BinData
         begin
           @validator.validate_field(parser.name)
           append_field(parser.type, parser.name, parser.params)
-        rescue Exception => err
-          dsl_raise err.class, err.message
+        rescue Exception => e
+          dsl_raise e.class, e.message
         end
       end
 
       def append_field(type, name, params)
         fields.add_field(type, name, params)
-      rescue BinData::UnRegisteredTypeError => err
-        raise TypeError, "unknown type '#{err.message}'"
+      rescue BinData::UnRegisteredTypeError => e
+        raise TypeError, "unknown type '#{e.message}'"
       end
 
       def parent_attribute(attr, default = nil)
         parent = @the_class.superclass
         parser = parent.respond_to?(:dsl_parser) ? parent.dsl_parser : nil
-        if parser && parser.respond_to?(attr)
+        if parser&.respond_to?(attr)
           parser.send(attr)
         else
           default
@@ -205,7 +205,7 @@ module BinData
 
       def dsl_raise(exception, msg)
         backtrace = caller
-        backtrace.shift while %r{bindata/dsl.rb} =~ backtrace.first
+        backtrace.shift while %r{bindata/dsl.rb}.match?(backtrace.first)
 
         raise exception, "#{msg} in #{@the_class}", backtrace
       end
@@ -215,9 +215,9 @@ module BinData
         when 0
           {}
         when 1
-          {key => fields[0].prototype}
+          { key => fields[0].prototype }
         else
-          {key=> [:struct, to_struct_params]}
+          { key => [:struct, to_struct_params] }
         end
       end
 
@@ -225,16 +225,16 @@ module BinData
         if fields.empty?
           {}
         elsif fields.all_field_names_blank?
-          {key => fields.collect(&:prototype)}
+          { key => fields.collect(&:prototype) }
         else
           choices = {}
           fields.each { |f| choices[f.name] = f.prototype }
-          {key => choices}
+          { key => choices }
         end
       end
 
-      def to_struct_params(*unused)
-        result = {fields: fields}
+      def to_struct_params(*_)
+        result = { fields: fields }
         if !endian.nil?
           result[:endian] = endian
         end
@@ -274,7 +274,7 @@ module BinData
         def override_new_in_class(bnl_class)
           endian_classes = {
             big:    class_with_endian(bnl_class, :big),
-            little: class_with_endian(bnl_class, :little),
+            little: class_with_endian(bnl_class, :little)
           }
           bnl_class.define_singleton_method(:new) do |*args|
             if self == bnl_class
@@ -290,7 +290,7 @@ module BinData
         def delegate_field_creation(bnl_class)
           endian_classes = {
             big:    class_with_endian(bnl_class, :big),
-            little: class_with_endian(bnl_class, :little),
+            little: class_with_endian(bnl_class, :little)
           }
 
           parser = bnl_class.dsl_parser
@@ -302,28 +302,28 @@ module BinData
 
         def fixup_subclass_hierarchy(bnl_class)
           parent = bnl_class.superclass
-          if obj_attribute(parent, :endian) == :big_and_little
-            be_subclass = class_with_endian(bnl_class, :big)
-            be_parent   = class_with_endian(parent, :big)
-            be_fields   = obj_attribute(be_parent, :fields)
+          return if obj_attribute(parent, :endian) != :big_and_little
 
-            le_subclass = class_with_endian(bnl_class, :little)
-            le_parent   = class_with_endian(parent, :little)
-            le_fields   = obj_attribute(le_parent, :fields)
+          be_subclass = class_with_endian(bnl_class, :big)
+          be_parent   = class_with_endian(parent, :big)
+          be_fields   = obj_attribute(be_parent, :fields)
 
-            be_subclass.dsl_parser.define_singleton_method(:parent_fields) do
-              be_fields
-            end
-            le_subclass.dsl_parser.define_singleton_method(:parent_fields) do
-              le_fields
-            end
+          le_subclass = class_with_endian(bnl_class, :little)
+          le_parent   = class_with_endian(parent, :little)
+          le_fields   = obj_attribute(le_parent, :fields)
+
+          be_subclass.dsl_parser.define_singleton_method(:parent_fields) do
+            be_fields
+          end
+          le_subclass.dsl_parser.define_singleton_method(:parent_fields) do
+            le_fields
           end
         end
 
         def class_with_endian(class_name, endian)
           hints = {
             endian: endian,
-            search_prefix: class_name.dsl_parser.search_prefix,
+            search_prefix: class_name.dsl_parser.search_prefix
           }
           RegisteredClasses.lookup(class_name, hints)
         end
@@ -378,7 +378,7 @@ module BinData
           choice:     BinData::Choice,
           delayed_io: BinData::DelayedIO,
           skip:       BinData::Skip,
-          struct:     BinData::Struct,
+          struct:     BinData::Struct
         }
 
         if bindata_classes.include?(@type)
@@ -457,7 +457,7 @@ module BinData
       end
 
       def malformed_name?(name)
-        /^[a-z_]\w*$/ !~ name.to_s
+        !/^[a-z_]\w*$/.match?(name.to_s)
       end
 
       def duplicate_name?(name)

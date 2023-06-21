@@ -72,18 +72,18 @@ module BinData
     end
 
     def initialize_instance
-      @element_list = nil
+      @elements = nil
     end
 
     def clear?
-      @element_list.nil? || elements.all?(&:clear?)
+      @elements.nil? || elements.all?(&:clear?)
     end
 
     def assign(array)
       return if self.equal?(array)  # prevent self assignment
       raise ArgumentError, "can't set a nil value for #{debug_name}" if array.nil?
 
-      @element_list = []
+      @elements = []
       concat(array)
     end
 
@@ -251,7 +251,7 @@ module BinData
     end
 
     def elements
-      @element_list ||= []
+      @elements ||= []
     end
 
     def append_new_element
@@ -279,6 +279,51 @@ module BinData
         end
       end
     end
+
+    # Logic for the :read_until parameter
+    module ReadUntilPlugin
+      def do_read(io)
+        loop do
+          element = append_new_element
+          element.do_read(io)
+          variables = { index: self.length - 1, element: self.last, array: self }
+          break if eval_parameter(:read_until, variables)
+        end
+      end
+    end
+
+    # Logic for the read_until: :eof parameter
+    module ReadUntilEOFPlugin
+      def do_read(io)
+        loop do
+          element = append_new_element
+          begin
+            element.do_read(io)
+          rescue EOFError, IOError
+            elements.pop
+            break
+          end
+        end
+      end
+    end
+
+    # Logic for the :initial_length parameter
+    module InitialLengthPlugin
+      def do_read(io)
+        elements.each { |el| el.do_read(io) }
+      end
+
+      def elements
+        if @elements.nil?
+          @elements = []
+          eval_parameter(:initial_length).times do
+            @elements << new_element
+          end
+        end
+
+        @elements
+      end
+    end
   end
 
   class ArrayArgProcessor < BaseArgProcessor
@@ -294,51 +339,6 @@ module BinData
 
       params.merge!(obj_class.dsl_params)
       params.sanitize_object_prototype(:type)
-    end
-  end
-
-  # Logic for the :read_until parameter
-  module ReadUntilPlugin
-    def do_read(io)
-      loop do
-        element = append_new_element
-        element.do_read(io)
-        variables = { index: self.length - 1, element: self.last, array: self }
-        break if eval_parameter(:read_until, variables)
-      end
-    end
-  end
-
-  # Logic for the read_until: :eof parameter
-  module ReadUntilEOFPlugin
-    def do_read(io)
-      loop do
-        element = append_new_element
-        begin
-          element.do_read(io)
-        rescue EOFError, IOError
-          elements.pop
-          break
-        end
-      end
-    end
-  end
-
-  # Logic for the :initial_length parameter
-  module InitialLengthPlugin
-    def do_read(io)
-      elements.each { |el| el.do_read(io) }
-    end
-
-    def elements
-      if @element_list.nil?
-        @element_list = []
-        eval_parameter(:initial_length).times do
-          @element_list << new_element
-        end
-      end
-
-      @element_list
     end
   end
 end

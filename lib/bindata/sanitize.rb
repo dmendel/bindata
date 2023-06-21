@@ -49,14 +49,10 @@ module BinData
       @prototype = SanitizedPrototype.new(field_type, field_params, hints)
     end
 
-    attr_reader :prototype
+    attr_reader :prototype, :name
 
     def name_as_sym
-      @name.nil? ? nil : @name.to_sym
-    end
-
-    def name
-      @name
+      @name&.to_sym
     end
 
     def has_parameter?(param)
@@ -74,11 +70,7 @@ module BinData
 
     def initialize(hints, base_fields = nil)
       @hints = hints
-      if base_fields
-        @fields = base_fields.raw_fields
-      else
-        @fields = []
-      end
+      @fields =  base_fields ? base_fields.raw_fields : []
     end
 
     def add_field(type, name, params)
@@ -179,7 +171,6 @@ module BinData
   # is to recursively sanitize the parameters of an entire BinData object chain
   # at a single time.
   class SanitizedParameters < Hash
-
     # Memoized constants
     BIG_ENDIAN    = SanitizedBigEndian.new
     LITTLE_ENDIAN = SanitizedLittleEndian.new
@@ -210,7 +201,7 @@ module BinData
       sanitize!
     end
 
-    alias_method :has_parameter?, :key?
+    alias has_parameter? key?
 
     def has_at_least_one_of?(*keys)
       keys.each do |key|
@@ -257,7 +248,9 @@ module BinData
     end
 
     def sanitize_object_prototype(key)
-      sanitize(key) { |obj_type, obj_params| create_sanitized_object_prototype(obj_type, obj_params) }
+      sanitize(key) do |obj_type, obj_params|
+        create_sanitized_object_prototype(obj_type, obj_params)
+      end
     end
 
     def sanitize_fields(key, &block)
@@ -306,7 +299,7 @@ module BinData
     end
 
     def needs_sanitizing?(key)
-      has_key?(key) && ! self[key].is_a?(SanitizedParameter)
+      has_parameter?(key) && !self[key].is_a?(SanitizedParameter)
     end
 
     def ensure_no_nil_values
@@ -320,7 +313,7 @@ module BinData
 
     def merge_default_parameters!
       @the_class.default_parameters.each do |key, value|
-        self[key] = value unless has_key?(key)
+        self[key] = value unless has_parameter?(key)
       end
     end
 

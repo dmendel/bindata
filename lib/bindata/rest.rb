@@ -1,4 +1,4 @@
-require "bindata/base_primitive"
+require 'bindata/base_primitive'
 
 module BinData
   # Rest will consume the input stream from the current position to the end of

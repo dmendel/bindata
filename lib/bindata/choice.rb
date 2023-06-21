@@ -82,18 +82,19 @@ module BinData
       if selection.nil?
         raise IndexError, ":selection returned nil for #{debug_name}"
       end
+
       selection
     end
 
-    def respond_to?(symbol, include_private = false) # :nodoc:
-      current_choice.respond_to?(symbol, include_private) || super
+    def respond_to?(symbol, include_all = false) # :nodoc:
+      current_choice.respond_to?(symbol, include_all) || super
     end
 
     def method_missing(symbol, *args, &block) # :nodoc:
       current_choice.__send__(symbol, *args, &block)
     end
 
-    %w(clear? assign snapshot do_read do_write do_num_bytes).each do |m|
+    %w[clear? assign snapshot do_read do_write do_num_bytes].each do |m|
       module_eval <<-END
         def #{m}(*args)
           current_choice.#{m}(*args)
@@ -112,8 +113,10 @@ module BinData
     def instantiate_choice(selection)
       prototype = get_parameter(:choices)[selection]
       if prototype.nil?
-        raise IndexError, "selection '#{selection}' does not exist in :choices for #{debug_name}"
+        msg = "selection '#{selection}' does not exist in :choices for #{debug_name}"
+        raise IndexError, msg
       end
+
       prototype.instantiate(nil, self)
     end
   end

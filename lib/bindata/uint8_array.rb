@@ -1,4 +1,4 @@
-require "bindata/base_primitive"
+require 'bindata/base_primitive'
 
 module BinData
   # Uint8Array is a specialised type of array that only contains

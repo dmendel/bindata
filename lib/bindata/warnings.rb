@@ -13,7 +13,7 @@ module BinData
       owner = method(:initialize).owner
       if owner != BinData::Base
         msg = "Don't override #initialize on #{owner}."
-        if %w(BinData::Base BinData::BasePrimitive).include? self.class.superclass.name
+        if %w[BinData::Base BinData::BasePrimitive].include? self.class.superclass.name
           msg += "\nrename #initialize to #initialize_instance."
         end
         fail msg

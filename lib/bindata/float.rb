@@ -15,7 +15,7 @@ module BinData
         [:single, :little] => 'e',
         [:single, :big]    => 'g',
         [:double, :little] => 'E',
-        [:double, :big]    => 'G',
+        [:double, :big]    => 'G'
       }
 
       def define_methods(float_class, precision, endian)
@@ -49,7 +49,7 @@ module BinData
         nbytes = PRECISION[precision]
         unpack = PACK_CODE[[precision, endian]]
 
-        "io.readbytes(#{nbytes}).unpack('#{unpack}').at(0)"
+        "io.readbytes(#{nbytes}).unpack1('#{unpack}')"
       end
 
       def create_to_binary_s_code(precision, endian)

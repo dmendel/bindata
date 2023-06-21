@@ -85,7 +85,7 @@ module BinData
           "io.readbytes(1).ord"
         else
           unpack_str   = create_read_unpack_code(nbits, endian, signed)
-          assemble_str = create_read_assemble_code(nbits, endian, signed)
+          assemble_str = create_read_assemble_code(nbits, endian)
 
           "(#{unpack_str} ; #{assemble_str})"
         end
@@ -98,7 +98,7 @@ module BinData
         "ints = io.readbytes(#{nbytes}).unpack('#{pack_directive}')"
       end
 
-      def create_read_assemble_code(nbits, endian, signed)
+      def create_read_assemble_code(nbits, endian)
         nwords = nbits / bits_per_word(nbits)
 
         idx = (0...nwords).to_a
@@ -117,7 +117,7 @@ module BinData
         return "(val & 0xff).chr" if nbits == 8
 
         pack_directive = pack_directive(nbits, endian, signed)
-        words          = val_as_packed_words(nbits, endian, signed)
+        words          = val_as_packed_words(nbits, endian)
         pack_str       = "[#{words}].pack('#{pack_directive}')"
 
         if need_signed_conversion_code?(nbits, signed)
@@ -127,7 +127,7 @@ module BinData
         end
       end
 
-      def val_as_packed_words(nbits, endian, signed)
+      def val_as_packed_words(nbits, endian)
         nwords = nbits / bits_per_word(nbits)
         mask   = (1 << bits_per_word(nbits)) - 1
 
@@ -136,7 +136,7 @@ module BinData
         vals.reverse! if (endian == :big)
 
         vals = vals.collect { |val| "#{val} & #{mask}" }  # TODO: "& mask" is needed to work around jruby bug. Remove this line when fixed.
-        vals.join(",")
+        vals.join(',')
       end
 
       def create_int2uint_code(nbits)
@@ -157,10 +157,10 @@ module BinData
       def pack_directive(nbits, endian, signed)
         nwords = nbits / bits_per_word(nbits)
 
-        directives = { 8 => "C", 16 => "S", 32 => "L", 64 => "Q" }
+        directives = { 8 => 'C', 16 => 'S', 32 => 'L', 64 => 'Q' }
 
         d = directives[bits_per_word(nbits)]
-        d += ((endian == :big) ? ">" : "<") unless d == "C"
+        d += ((endian == :big) ? '>' : '<') unless d == 'C'
 
         if signed == :signed && directives.key?(nbits)
           (d * nwords).downcase
@@ -193,7 +193,7 @@ module BinData
         /^Uint(\d+)be$/ => [:big,    :unsigned],
         /^Uint(\d+)le$/ => [:little, :unsigned],
         /^Int(\d+)be$/  => [:big,    :signed],
-        /^Int(\d+)le$/  => [:little, :signed],
+        /^Int(\d+)le$/  => [:little, :signed]
       }
 
       mappings.each_pair do |regex, args|

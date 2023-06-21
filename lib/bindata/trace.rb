@@ -46,7 +46,7 @@ module BinData
 
   module TraceHook
     def turn_on_tracing
-      if not method_defined? :do_read_without_hook
+      if !method_defined? :do_read_without_hook
         alias_method :do_read_without_hook, :do_read
         alias_method :do_read, :do_read_with_hook
       end

@@ -1,4 +1,4 @@
-require "bindata/base_primitive"
+require 'bindata/base_primitive'
 
 module BinData
   # Counts the number of bytes remaining in the input stream from the current

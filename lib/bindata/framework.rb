@@ -1,14 +1,13 @@
 module BinData
   # Error raised when unexpected results occur when reading data from IO.
-  class ValidityError < StandardError ; end
+  class ValidityError < StandardError; end
 
   # All methods provided by the framework are to be implemented or overridden 
   # by subclasses of BinData::Base.
   module Framework
     # Initializes the state of the object.  All instance variables that
     # are used by the object must be initialized here.
-    def initialize_instance
-    end
+    def initialize_instance; end
 
     # Initialises state that is shared by objects with the same parameters.
     #
@@ -16,8 +15,7 @@ module BinData
     # variables set here, and changes to the singleton class will be shared
     # between all objects that are initialized with the same parameters.
     # This method is called only once for a particular set of parameters.
-    def initialize_shared_instance
-    end
+    def initialize_shared_instance; end
 
     # Returns true if the object has not been changed since creation.
     def clear?

@@ -62,7 +62,7 @@ describe BinData::Skip, "with :to_abs_offset" do
 
     _ {
       obj.read(io)
-    }.must_raise BinData::ValidityError
+    }.must_raise ArgumentError
   end
 
   it "writes skipping forward" do
@@ -82,12 +82,19 @@ describe BinData::Skip, "with :to_abs_offset" do
     obj = BinData::Struct.new(fields: fields)
     _ {
       obj.to_binary_s
-    }.must_raise BinData::ValidityError
+    }.must_raise ArgumentError
   end
 end
 
 describe BinData::Skip, "with :until_valid" do
   let(:io) { StringIO.new("abcdefghij") }
+
+  it "doesn't skip when writing" do
+    skip_obj = [:string, { read_length: 1, assert: "f" }]
+    args = { until_valid: skip_obj }
+    obj = BinData::Skip.new(args)
+    _(obj.to_binary_s).must_equal ""
+  end
 
   it "skips to valid match" do
     skip_obj = [:string, { read_length: 1, assert: "f" }]
@@ -95,6 +102,19 @@ describe BinData::Skip, "with :until_valid" do
     obj = BinData::Struct.new(fields: fields)
     obj.read(io)
     _(io.pos).must_equal 5
+  end
+
+  it "won't skip on unseekable stream" do
+    rd, wr = IO::pipe
+    unseekable_io = BinData::IO::Read.new(rd)
+    wr.write io
+    wr.close
+
+    skip_obj = [:string, { read_length: 1, assert: "f" }]
+    fields = [ [:skip, :s, { until_valid: skip_obj }] ]
+    obj = BinData::Struct.new(fields: fields)
+    _ {obj.read(unseekable_io)}.must_raise IOError
+    rd.close
   end
 
   it "doesn't skip when validator doesn't assert" do
@@ -123,14 +143,15 @@ describe BinData::Skip, "with :until_valid" do
     }.must_raise IOError
   end
 
-  class DSLSkip < BinData::Record
-    skip :s do
-      string read_length: 1, assert: "f"
-    end
-    string :a, read_length: 1
-  end
 
   it "uses block form" do
+    class DSLSkip < BinData::Record
+      skip :s do
+        string read_length: 1, assert: "f"
+      end
+      string :a, read_length: 1
+    end
+
     obj = DSLSkip.read(io)
     _(obj.a).must_equal "f"
   end

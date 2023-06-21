@@ -176,7 +176,7 @@ module BinData
         elsif n.positive?
           limit = @bytes_remaining
           n > limit ? limit : n
-# uncomment if we decide to allow backwards seeking
+# uncomment if we decide to allow backwards skipping
 #        elsif n.negative?
 #          limit = @bytes_remaining + @buf_start - @buf_end
 #          n < limit ? limit : n

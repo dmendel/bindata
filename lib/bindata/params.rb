@@ -114,13 +114,15 @@ module BinData
         end
       end
 
-      def self.invalid_parameter_names
-        @invalid_names ||= begin
-          all_names = LazyEvaluator.instance_methods(true)
-          allowed_names = [:name, :type]
-          invalid_names = (all_names - allowed_names).uniq
+      class << self
+        def invalid_parameter_names
+          @invalid_parameter_names ||= begin
+            all_names = LazyEvaluator.instance_methods(true)
+            allowed_names = [:name, :type]
+            invalid_names = (all_names - allowed_names).uniq
 
-          Hash[*invalid_names.collect { |key| [key.to_sym, true] }.flatten]
+            Hash[*invalid_names.collect { |key| [key.to_sym, true] }.flatten]
+          end
         end
       end
     end

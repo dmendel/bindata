@@ -156,10 +156,10 @@ module BinData
 
   # Create classes for dynamic bitfields
   {
-    "Bit"    => :big,
-    "BitLe"  => :little,
-    "Sbit"   => [:big, :signed],
-    "SbitLe" => [:little, :signed],
+    'Bit'    => :big,
+    'BitLe'  => :little,
+    'Sbit'   => [:big, :signed],
+    'SbitLe' => [:little, :signed]
   }.each_pair { |name, args| BitField.define_class(name, :nbits, *args) }
 
   # Create classes on demand

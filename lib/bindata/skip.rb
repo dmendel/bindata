@@ -1,4 +1,4 @@
-require "bindata/base_primitive"
+require 'bindata/base_primitive'
 
 module BinData
   # Skip will skip over bytes from the input stream.  If the stream is not
@@ -61,7 +61,7 @@ module BinData
       len = skip_length
       if len < 0
         msg = "#{debug_name} attempted to seek backwards by #{len.abs} bytes"
-        raise ValidityError, msg
+        raise ArgumentError, msg
       end
 
       "\000" * skip_length
@@ -71,7 +71,7 @@ module BinData
       len = skip_length
       if len < 0
         msg = "#{debug_name} attempted to seek backwards by #{len.abs} bytes"
-        raise ValidityError, msg
+        raise ArgumentError, msg
       end
 
       io.skipbytes(len)
@@ -93,15 +93,6 @@ module BinData
     module SkipToAbsOffsetPlugin
       def skip_length
         eval_parameter(:to_abs_offset) - abs_offset
-      end
-
-      def read_and_return_value(io)
-        len = skip_length
-        if len < 0
-          raise ValidityError, "#{debug_name} attempted to seek backwards by #{len.abs} bytes"
-        end
-
-        io.seek_to_abs_offset(eval_parameter(:to_abs_offset))
       end
     end
 

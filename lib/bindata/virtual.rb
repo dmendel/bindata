@@ -1,4 +1,4 @@
-require "bindata/base"
+require 'bindata/base'
 
 module BinData
   # A virtual field is one that is neither read, written nor occupies space in
@@ -29,12 +29,9 @@ module BinData
   # [<tt>:value</tt>]     The virtual object will always have this value.
   #
   class Virtual < BinData::BasePrimitive
+    def do_read(io); end
 
-    def do_read(io)
-    end
-
-    def do_write(io)
-    end
+    def do_write(io); end
 
     def do_num_bytes
       0.0

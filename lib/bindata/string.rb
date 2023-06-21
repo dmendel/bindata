@@ -1,4 +1,4 @@
-require "bindata/base_primitive"
+require 'bindata/base_primitive'
 
 module BinData
   # A String is a sequence of bytes.  This is the same as strings in Ruby 1.8.
@@ -121,6 +121,14 @@ module BinData
     def sensible_default
       ""
     end
+
+    # Warns when reading if :value && no :read_length
+    module WarnNoReadLengthPlugin
+      def read_and_return_value(io)
+        warn "#{debug_name} does not have a :read_length parameter - returning empty string"
+        ""
+      end
+    end
   end
 
   class StringArgProcessor < BaseArgProcessor
@@ -140,14 +148,6 @@ module BinData
         raise ArgumentError, ":pad_byte must not contain more than 1 byte"
       end
       pad_byte
-    end
-  end
-
-  # Warns when reading if :value && no :read_length
-  module WarnNoReadLengthPlugin
-    def read_and_return_value(io)
-      warn "#{debug_name} does not have a :read_length parameter - returning empty string"
-      ""
     end
   end
 end

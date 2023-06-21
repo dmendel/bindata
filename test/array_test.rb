@@ -71,6 +71,10 @@ describe BinData::Array, "with no elements" do
   it "returns [] for the last n elements" do
     _(obj.last(3)).must_equal []
   end
+
+  it "won't assign nil" do
+    _ { obj.assign(nil) }.must_raise ArgumentError
+  end
 end
 
 describe BinData::Array, "with several elements" do
