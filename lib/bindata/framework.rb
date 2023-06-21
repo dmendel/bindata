@@ -37,13 +37,13 @@ module BinData
 
     # Returns the debug name of +child+.  This only needs to be implemented
     # by objects that contain child objects.
-    def debug_name_of(child) #:nodoc:
+    def debug_name_of(child) # :nodoc:
       debug_name
     end
 
     # Returns the offset of +child+.  This only needs to be implemented
     # by objects that contain child objects.
-    def offset_of(child) #:nodoc:
+    def offset_of(child) # :nodoc:
       0
     end
 
@@ -53,17 +53,17 @@ module BinData
     end
 
     # Reads the data for this data object from +io+.
-    def do_read(io) #:nodoc:
+    def do_read(io) # :nodoc:
       raise NotImplementedError
     end
 
     # Writes the value for this data to +io+.
-    def do_write(io) #:nodoc:
+    def do_write(io) # :nodoc:
       raise NotImplementedError
     end
 
     # Returns the number of bytes it will take to write this data.
-    def do_num_bytes #:nodoc:
+    def do_num_bytes # :nodoc:
       raise NotImplementedError
     end
 

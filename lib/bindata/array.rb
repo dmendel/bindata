@@ -220,23 +220,23 @@ module BinData
       elements.each { |el| yield el }
     end
 
-    def debug_name_of(child) #:nodoc:
+    def debug_name_of(child) # :nodoc:
       index = find_index_of(child)
       "#{debug_name}[#{index}]"
     end
 
-    def offset_of(child) #:nodoc:
+    def offset_of(child) # :nodoc:
       index = find_index_of(child)
       sum = sum_num_bytes_below_index(index)
 
       child.bit_aligned? ? sum.floor : sum.ceil
     end
 
-    def do_write(io) #:nodoc:
+    def do_write(io) # :nodoc:
       elements.each { |el| el.do_write(io) }
     end
 
-    def do_num_bytes #:nodoc:
+    def do_num_bytes # :nodoc:
       sum_num_bytes_for_all_elements
     end
 
@@ -282,7 +282,7 @@ module BinData
   end
 
   class ArrayArgProcessor < BaseArgProcessor
-    def sanitize_parameters!(obj_class, params) #:nodoc:
+    def sanitize_parameters!(obj_class, params) # :nodoc:
       # ensure one of :initial_length and :read_until exists
       unless params.has_at_least_one_of?(:initial_length, :read_until)
         params[:initial_length] = 0

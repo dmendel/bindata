@@ -48,7 +48,7 @@ module BinData
       end
 
       # Registers all subclasses of this class for use
-      def register_subclasses #:nodoc:
+      def register_subclasses # :nodoc:
         singleton_class.send(:undef_method, :inherited)
         define_singleton_method(:inherited) do |subclass|
           RegisteredClasses.register(subclass.name, subclass)
@@ -117,7 +117,7 @@ module BinData
     end
 
     # Returns a lazy evaluator for this object.
-    def lazy_evaluator #:nodoc:
+    def lazy_evaluator # :nodoc:
       @lazy ||= LazyEvaluator.new(self)
     end
 
@@ -191,7 +191,7 @@ module BinData
     end
 
     # Work with Ruby's pretty-printer library.
-    def pretty_print(pp) #:nodoc:
+    def pretty_print(pp) # :nodoc:
       pp.pp(snapshot)
     end
 
@@ -228,14 +228,14 @@ module BinData
       end
     end
 
-    def ==(other) #:nodoc:
+    def ==(other) # :nodoc:
       # double dispatch
       other == snapshot
     end
 
     # A version of +respond_to?+ used by the lazy evaluator.  It doesn't
     # reinvoke the evaluator so as to avoid infinite evaluation loops.
-    def safe_respond_to?(symbol, include_private = false) #:nodoc:
+    def safe_respond_to?(symbol, include_private = false) # :nodoc:
       base_respond_to?(symbol, include_private)
     end
 

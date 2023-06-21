@@ -13,7 +13,7 @@ module BinData
   #                  </pre></code>
   module RegisterNamePlugin
 
-    def self.included(base) #:nodoc:
+    def self.included(base) # :nodoc:
       # The registered name may be provided explicitly.
       base.optional_parameter :name
     end

@@ -5,7 +5,7 @@ module BinData
   # Defines a number of classes that contain a bit based integer.
   # The integer is defined by endian and number of bits.
 
-  module BitField #:nodoc: all
+  module BitField # :nodoc: all
     @@mutex = Mutex.new
 
     class << self

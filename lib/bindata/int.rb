@@ -5,7 +5,7 @@ module BinData
   # Defines a number of classes that contain an integer.  The integer
   # is defined by endian, signedness and number of bytes.
 
-  module Int #:nodoc: all
+  module Int # :nodoc: all
     @@mutex = Mutex.new
 
     class << self

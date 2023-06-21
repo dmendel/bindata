@@ -85,11 +85,11 @@ module BinData
       selection
     end
 
-    def respond_to?(symbol, include_private = false) #:nodoc:
+    def respond_to?(symbol, include_private = false) # :nodoc:
       current_choice.respond_to?(symbol, include_private) || super
     end
 
-    def method_missing(symbol, *args, &block) #:nodoc:
+    def method_missing(symbol, *args, &block) # :nodoc:
       current_choice.__send__(symbol, *args, &block)
     end
 
@@ -119,7 +119,7 @@ module BinData
   end
 
   class ChoiceArgProcessor < BaseArgProcessor
-    def sanitize_parameters!(obj_class, params) #:nodoc:
+    def sanitize_parameters!(obj_class, params) # :nodoc:
       params.merge!(obj_class.dsl_params)
 
       params.sanitize_choices(:choices) do |choices|

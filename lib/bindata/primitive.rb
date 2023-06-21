@@ -73,11 +73,11 @@ module BinData
       @struct = BinData::Struct.new(get_parameter(:struct_params), self)
     end
 
-    def respond_to?(symbol, include_private = false) #:nodoc:
+    def respond_to?(symbol, include_private = false) # :nodoc:
       @struct.respond_to?(symbol, include_private) || super
     end
 
-    def method_missing(symbol, *args, &block) #:nodoc:
+    def method_missing(symbol, *args, &block) # :nodoc:
       if @struct.respond_to?(symbol)
         @struct.__send__(symbol, *args, &block)
       else
@@ -91,7 +91,7 @@ module BinData
       @value = get
     end
 
-    def debug_name_of(child) #:nodoc:
+    def debug_name_of(child) # :nodoc:
       debug_name + "-internal-"
     end
 

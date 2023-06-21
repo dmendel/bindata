@@ -20,7 +20,7 @@ module BinData
   # reference to the current tracer
   @tracer ||= nil
 
-  class Tracer #:nodoc:
+  class Tracer # :nodoc:
     def initialize(io)
       @trace_io = io
     end
@@ -38,7 +38,7 @@ module BinData
     end
   end
 
-  def trace_message #:nodoc:
+  def trace_message # :nodoc:
     yield @tracer
   end
 

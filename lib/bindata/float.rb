@@ -4,7 +4,7 @@ module BinData
   # Defines a number of classes that contain a floating point number.
   # The float is defined by precision and endian.
 
-  module FloatingPoint #:nodoc: all
+  module FloatingPoint # :nodoc: all
     class << self
       PRECISION = {
         single: 4,

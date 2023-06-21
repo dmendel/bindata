@@ -49,7 +49,7 @@ module BinData
   end
 
   class Uint8ArrayArgProcessor < BaseArgProcessor
-    def sanitize_parameters!(obj_class, params) #:nodoc:
+    def sanitize_parameters!(obj_class, params) # :nodoc:
       # ensure one of :initial_length and :read_until exists
       unless params.has_at_least_one_of?(:initial_length, :read_until)
         params[:initial_length] = 0

@@ -42,7 +42,7 @@ module BinData
       end
     end
 
-    def method_missing(symbol, *args, &block) #:nodoc:
+    def method_missing(symbol, *args, &block) # :nodoc:
       dsl_parser.__send__(symbol, *args, &block)
     end
 

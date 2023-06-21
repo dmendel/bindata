@@ -27,7 +27,7 @@ module BinData
     alias optional_parameter  optional_parameters
     alias default_parameter   default_parameters
 
-    def accepted_parameters #:nodoc:
+    def accepted_parameters # :nodoc:
       @accepted_parameters ||= begin
         ancestor_params = superclass.respond_to?(:accepted_parameters) ?
                             superclass.accepted_parameters : nil
