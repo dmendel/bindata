@@ -25,8 +25,6 @@ module BinData
   # <tt>:max_length</tt>:: The maximum length of the string including the zero
   #                        byte.
   class Stringz < BinData::BasePrimitive
-    arg_processor :stringz
-
     optional_parameters :max_length
 
     def assign(val)
@@ -67,9 +65,15 @@ module BinData
     end
 
     def trim_and_zero_terminate(str)
+      max_length = eval_parameter(:max_length)
+      if max_length && max_length < 1
+        msg = "max_length must be >= 1 in #{debug_name} (got #{max_length})"
+        raise ArgumentError, msg
+      end
+
       result = binary_string(str)
       truncate_after_first_zero_byte!(result)
-      trim_to!(result, eval_parameter(:max_length))
+      trim_to!(result, max_length)
       append_zero_byte_if_needed!(result)
       result
     end
@@ -88,18 +92,6 @@ module BinData
     def append_zero_byte_if_needed!(str)
       if str.empty? || str[-1, 1] != "\0"
         str << "\0"
-      end
-    end
-  end
-
-  class StringzArgProcessor < BaseArgProcessor
-    def sanitize_parameters!(obj_class, params)
-      params.must_be_integer(:max_length)
-      params.sanitize(:max_length) do |max_length|
-        if max_length < 1
-          raise ArgumentError, "max_length must be at least 1"
-        end
-        max_length
       end
     end
   end
