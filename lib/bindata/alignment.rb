@@ -45,8 +45,13 @@ module BinData
       def initialize(io)
         @io = io
       end
+
+      def binary_string(str)
+        str.to_s.dup.force_encoding(Encoding::BINARY)
+      end
+
       def readbytes(n)
-        n.times.inject("") do |bytes, _|
+        n.times.inject(binary_string("")) do |bytes, _|
           bytes + @io.readbits(8, :big).chr
         end
       end

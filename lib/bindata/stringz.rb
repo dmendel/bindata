@@ -46,7 +46,7 @@ module BinData
 
     def read_and_return_value(io)
       max_length = eval_parameter(:max_length)
-      str = ""
+      str = binary_string("")
       i = 0
       ch = nil
 
