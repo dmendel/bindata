@@ -163,9 +163,21 @@ module BinData
       @field_names.index(base_field_name(key))
     end
 
-    def each_pair
-      @field_names.compact.each do |name|
-        yield [name, find_obj_for_name(name)]
+    # Calls the given block for each field_name-field_obj pair.
+    #
+    # Does not include anonymous or hidden fields unless
+    # +include_all+ is true.
+    def each_pair(include_all = false)
+      instantiate_all_objs
+
+      pairs = @field_names.zip(@field_objs).select do |name, _obj|
+        name || include_all
+      end
+
+      if block_given?
+        pairs.each { |el| yield(el) }
+      else
+        pairs.each
       end
     end
 

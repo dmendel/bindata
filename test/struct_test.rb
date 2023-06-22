@@ -66,6 +66,14 @@ describe BinData::Struct, "with anonymous fields" do
     _(obj.to_binary_s).must_equal_binary "\005\002\005\004"
   end
 
+  it "does not include anonymous fields in each_pair" do
+    _(obj.each_pair.count).must_equal 2
+  end
+
+  it "includes anonymous fields in each_pair when specified" do
+    _(obj.each_pair(true).count).must_equal 4
+  end
+
   it "clears" do
     obj.b = 3
     refute obj.clear?
