@@ -1,4 +1,5 @@
 require 'bindata/base_primitive'
+require 'bindata/dsl'
 
 module BinData
   # Skip will skip over bytes from the input stream.  If the stream is not
@@ -18,12 +19,14 @@ module BinData
   #
   #
   #   class B < BinData::Record
-  #     skip until_valid: [:string, {read_length: 2, assert: "ef"} ]
-  #     string :b, read_length: 5
+  #     skip do
+  #       string read_length: 2, assert: 'ef'
+  #     end
+  #     string :s, read_length: 5
   #   end
   #
   #   obj = B.read("abcdefghij")
-  #   obj.b #=> "efghi"
+  #   obj.s #=> "efghi"
   #
   #
   # == Parameters
@@ -37,11 +40,14 @@ module BinData
   #                           This parameter contains a type that will raise
   #                           a BinData::ValidityError unless an acceptable byte
   #                           sequence is found.  The type is represented by a
-  #                           Symbol, or if the type is to have params #
-  #                           passed to it, then it should be provided as #
+  #                           Symbol, or if the type is to have params
+  #                           passed to it, then it should be provided as
   #                           <tt>[type_symbol, hash_params]</tt>.
   #
   class Skip < BinData::BasePrimitive
+    extend DSLMixin
+
+    dsl_parser    :skip
     arg_processor :skip
 
     optional_parameters :length, :to_abs_offset, :until_valid
@@ -59,9 +65,9 @@ module BinData
 
     def value_to_binary_string(_)
       len = skip_length
-      if len < 0
-        msg = "#{debug_name} attempted to seek backwards by #{len.abs} bytes"
-        raise ArgumentError, msg
+      if len.negative?
+        raise ArgumentError,
+              "#{debug_name} attempted to seek backwards by #{len.abs} bytes"
       end
 
       "\000" * skip_length
@@ -69,9 +75,9 @@ module BinData
 
     def read_and_return_value(io)
       len = skip_length
-      if len < 0
-        msg = "#{debug_name} attempted to seek backwards by #{len.abs} bytes"
-        raise ArgumentError, msg
+      if len.negative?
+        raise ArgumentError,
+              "#{debug_name} attempted to seek backwards by #{len.abs} bytes"
       end
 
       io.skipbytes(len)
@@ -99,28 +105,93 @@ module BinData
     # Logic for the :until_valid parameter
     module SkipUntilValidPlugin
       def skip_length
-        # no skipping when writing
-        0
+        @skip_length ||= 0
+      end
+
+      # A fast search has a pattern string at a specific offset.
+      FastSearch = ::Struct.new('FastSearch', :pattern, :offset)
+
+      def fast_search_for(obj)
+        if obj.respond_to?(:asserted_binary_s)
+          FastSearch.new(obj.asserted_binary_s, obj.rel_offset)
+        else
+          nil
+        end
+      end
+
+      # If a search object has an +asserted_value+ field then we
+      # perform a faster search for a valid object.
+      def fast_search_for_obj(obj)
+        if BinData::Struct === obj
+          obj.each_pair(true) do |_, field|
+            fs = fast_search_for(field)
+            return fs if fs
+          end
+        elsif BinData::BasePrimitive === obj
+          return fast_search_for(obj)
+        end
+
+        nil
+      end
+
+      def read_chunk(io, size)
+        bytes_to_read = [size, io.num_bytes_remaining].min
+        io.readbytes(bytes_to_read)
+      end
+
+      SEARCH_SIZE = 100_000
+
+      def next_search_index(io, fs)
+        buffer = binary_string("")
+
+        # start searching at fast_search offset
+        pos = fs.offset
+        io.skipbytes(fs.offset)
+
+        loop do
+          buffer << read_chunk(io, fs.pattern.size + SEARCH_SIZE)
+
+          index = buffer.index(fs.pattern)
+          if index
+            return pos + index - fs.offset
+          else
+            raise EOFError, "no match" if io.num_bytes_remaining.zero?
+
+            # advance buffer
+            buffer.slice!(0...SEARCH_SIZE)
+            pos += SEARCH_SIZE
+          end
+        end
+      end
+
+      def seek_to_pos(pos, io, rb_io)
+        rb_io.rollback
+        io.skipbytes(pos)
       end
 
       def read_and_return_value(io)
         prototype = get_parameter(:until_valid)
         validator = prototype.instantiate(nil, self)
+        fs = fast_search_for_obj(validator)
 
         io.transform(ReadaheadIO.new) do |transformed_io, raw_io|
-          search = 0
-          valid = false
-          until valid
-            begin
-              validator.clear
-              validator.do_read(transformed_io)
-              valid = true
-            rescue ValidityError
-              search += 1
+          pos = 0
+          loop do
+            seek_to_pos(pos, transformed_io, raw_io)
+            validator.clear
+            validator.do_read(transformed_io)
+            break
+          rescue ValidityError
+            pos += 1
+
+            if fs
+              seek_to_pos(pos, transformed_io, raw_io)
+              pos += next_search_index(transformed_io, fs)
             end
-            raw_io.rollback
-            io.skipbytes(search)
           end
+
+          seek_to_pos(pos, transformed_io, raw_io)
+          @skip_length = pos
         end
       end
 
@@ -143,10 +214,13 @@ module BinData
 
   class SkipArgProcessor < BaseArgProcessor
     def sanitize_parameters!(obj_class, params)
+      params.merge!(obj_class.dsl_params)
+
       unless params.has_at_least_one_of?(:length, :to_abs_offset, :until_valid)
         raise ArgumentError,
-          "#{obj_class} requires either :length, :to_abs_offset or :until_valid"
+              "#{obj_class} requires :length, :to_abs_offset or :until_valid"
       end
+
       params.must_be_integer(:to_abs_offset, :length)
       params.sanitize_object_prototype(:until_valid)
     end

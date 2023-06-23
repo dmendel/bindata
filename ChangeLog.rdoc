@@ -3,8 +3,9 @@
 == Version 2.5.0 (2023-xx-xx)
 
 * Removed experimental :check_offset and :adjust_offset parameters.
-* Allow for nested tracing.
 * Ruby 2.5 is now required.
+* Allow for nested tracing.
+* Skip :until_valid is now fast for :asserted_value.
 
 == Version 2.4.15 (2023-02-07)
 

@@ -143,7 +143,6 @@ describe BinData::Skip, "with :until_valid" do
     }.must_raise IOError
   end
 
-
   it "uses block form" do
     class DSLSkip < BinData::Record
       skip :s do
@@ -154,5 +153,30 @@ describe BinData::Skip, "with :until_valid" do
 
     obj = DSLSkip.read(io)
     _(obj.a).must_equal "f"
+  end
+end
+
+describe BinData::Skip, "with :until_valid" do
+  class SkipSearch < BinData::Record
+    skip :s do
+      uint8
+      uint8 asserted_value: 1
+      uint8 :a
+      uint8 :b
+      virtual assert: -> { a == b }
+    end
+    array :data, type: :uint8, initial_length: 4
+  end
+
+  let(:io) { BinData::IO.create_string_io("\x0f" * 10 + "\x00\x01\x02\x03\x00" + "\x02\x01\x03\x03" + "\x06") }
+
+  it "finds valid match" do
+    obj = SkipSearch.read(io)
+    _(obj.data).must_equal [2, 1, 3, 3]
+  end
+
+  it "match is at expected offset" do
+    obj = SkipSearch.read(io)
+    _(obj.data.rel_offset).must_equal 15
   end
 end

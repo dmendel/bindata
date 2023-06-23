@@ -200,6 +200,15 @@ module BinData
         reading? ? @value : eval_parameter(:asserted_value)
       end
 
+      # The asserted value as a binary string.
+      #
+      # Rationale: while reading, +#to_binary_s+ will use the
+      # value read in, rather than the +:asserted_value+.
+      # This feature is used by Skip.
+      def asserted_binary_s
+        value_to_binary_string(eval_parameter(:asserted_value))
+      end
+
       def do_read(io) # :nodoc:
         super(io)
         assert!
