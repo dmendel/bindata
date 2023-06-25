@@ -6,6 +6,7 @@
 * Ruby 2.5 is now required.
 * Allow for nested tracing.
 * Skip :until_valid is now fast for :asserted_value.
+* Added Section - a way to transform the data stream.
 
 == Version 2.4.15 (2023-02-07)
 

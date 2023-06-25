@@ -131,6 +131,7 @@ module BinData
           choice:     [:to_choice_params, :choices,     [:multiple_fields, :all_or_none_fieldnames, :fieldnames_are_values]],
           delayed_io: [:to_object_params, :type,        [:multiple_fields, :optional_fieldnames, :hidden_fields]],
           primitive:  [:to_struct_params, :struct,      [:multiple_fields, :optional_fieldnames]],
+          section:    [:to_object_params, :type,        [:multiple_fields, :optional_fieldnames]],
           skip:       [:to_object_params, :until_valid, [:multiple_fields, :optional_fieldnames]]
         }
       end
@@ -377,6 +378,7 @@ module BinData
           buffer:     BinData::Buffer,
           choice:     BinData::Choice,
           delayed_io: BinData::DelayedIO,
+          section:    BinData::Section,
           skip:       BinData::Skip,
           struct:     BinData::Struct
         }
