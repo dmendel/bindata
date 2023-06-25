@@ -11,101 +11,6 @@ module BinData
       StringIO.new(bin_str).tap(&:binmode)
     end
 
-    # An IO stream may be transformed before processing.
-    # e.g. encoding, compression, buffered.
-    #
-    # Multiple transforms can be chained together.
-    #
-    # Subclass +Transform+ and customise.  Then call +transform+
-    # to apply.
-    class Transform
-      def initialize
-        @chain_io = nil
-      end
-
-      # Chains +io+ to this +Transform+.  Returns self.
-      def chained(io)
-        @chain_io = io
-        self
-      end
-
-      # Is the IO seekable?
-      def seekable?
-        @chain_io.seekable?
-      end
-
-      # How many bytes are available for reading?
-      def num_bytes_remaining
-        @chain_io.num_bytes_remaining
-      end
-
-      # The current offset within the stream.
-      def offset
-        @chain_io.offset
-      end
-
-      # Skips forward +n+ bytes in the input stream.
-      def skip(n)
-        @chain_io.skip(n)
-      end
-
-      # Seeks to the given absolute position.
-      def seek_abs(n)
-        @chain_io.seek_abs(n)
-      end
-
-      # Reads +n+ bytes from the stream.
-      def read(n)
-        @chain_io.read(n)
-      end
-
-      # Writes +data+ to the stream.
-      def write(data)
-        @chain_io.write(data)
-      end
-    end
-
-    # Common operations for both Read and Write.
-    module Common
-      def initialize(io)
-        if self.class === io
-          raise ArgumentError, "io must not be a #{self.class}"
-        end
-
-        # wrap strings in a StringIO
-        if io.respond_to?(:to_str)
-          io = BinData::IO.create_string_io(io.to_str)
-        end
-
-        # wrap steam with standard accessor methods
-        wrapper_class = seekable?(io) ? SeekableIO : UnSeekableIO
-        @io = wrapper_class.new(io)
-      end
-
-      # Allow transforming data in the input stream.
-      # See +BinData::Buffer+ as an example.
-      #
-      # +io+ must be an instance of +Transform+.
-      #
-      # yields +self+ and +io+ to the given block
-      def transform(io)
-        saved = @io
-        @io = io.chained(@io)
-        yield(self, io)
-      ensure
-        @io = saved
-      end
-
-      #-------------
-      private
-
-      def seekable?(io)
-        io.pos
-      rescue NoMethodError, Errno::ESPIPE, Errno::EPIPE, Errno::EINVAL
-        nil
-      end
-    end
-
     # Create a new IO Read wrapper around +io+.  +io+ must provide #read,
     # #pos if reading the current stream position and #seek if setting the
     # current stream position.  If +io+ is a string it will be automatically
@@ -124,15 +29,39 @@ module BinData
     #   readbits(6), readbits(5) #=> [543210, a9876]
     #
     class Read
-      include Common
-
       def initialize(io)
-        super(io)
+        if self.class === io
+          raise ArgumentError, "io must not be a #{self.class}"
+        end
+
+        # wrap strings in a StringIO
+        if io.respond_to?(:to_str)
+          io = BinData::IO.create_string_io(io.to_str)
+        end
+
+        @io = RawIO.new(io)
 
         # bits when reading
         @rnbits  = 0
         @rval    = 0
         @rendian = nil
+      end
+
+      # Allow transforming data in the input stream.
+      # See +BinData::Buffer+ as an example.
+      #
+      # +io+ must be an instance of +Transform+.
+      #
+      # yields +self+ and +io+ to the given block
+      def transform(io)
+        reset_read_bits
+
+        saved = @io
+        @io = io.prepend_to_chain(@io)
+        yield(self, io)
+        io.after_read_transform
+      ensure
+        @io = saved
       end
 
       # The number of bytes remaining in the io steam.
@@ -148,6 +77,7 @@ module BinData
 
       # Seek to an absolute offset within the io stream.
       def seek_to_abs_offset(n)
+        reset_read_bits
         @io.seek_abs(n)
       end
 
@@ -251,13 +181,38 @@ module BinData
     #
     # See IO::Read for more information.
     class Write
-      include Common
       def initialize(io)
-        super(io)
+        if self.class === io
+          raise ArgumentError, "io must not be a #{self.class}"
+        end
+
+        # wrap strings in a StringIO
+        if io.respond_to?(:to_str)
+          io = BinData::IO.create_string_io(io.to_str)
+        end
+
+        @io = RawIO.new(io)
 
         @wnbits  = 0
         @wval    = 0
         @wendian = nil
+      end
+
+      # Allow transforming data in the output stream.
+      # See +BinData::Buffer+ as an example.
+      #
+      # +io+ must be an instance of +Transform+.
+      #
+      # yields +self+ and +io+ to the given block
+      def transform(io)
+        flushbits
+
+        saved = @io
+        @io = io.prepend_to_chain(@io)
+        yield(self, io)
+        io.after_write_transform
+      ensure
+        @io = saved
       end
 
       # Seek to an absolute offset within the io stream.
@@ -356,10 +311,23 @@ module BinData
       end
     end
 
-    class SeekableIO
+    # API used to access the raw data stream.
+    class RawIO
       def initialize(io)
         @io = io
-        @initial_pos = io.pos
+        @pos = 0
+
+        if is_seekable?(io)
+          @initial_pos = io.pos
+        else
+          singleton_class.prepend(UnSeekableIO)
+        end
+      end
+
+      def is_seekable?(io)
+        io.pos
+      rescue NoMethodError, Errno::ESPIPE, Errno::EPIPE, Errno::EINVAL
+        nil
       end
 
       def seekable?
@@ -376,20 +344,22 @@ module BinData
       end
 
       def offset
-        @io.pos - @initial_pos
+        @pos
       end
 
       def skip(n)
         raise IOError, "can not skip backwards" if n.negative?
         @io.seek(n, ::IO::SEEK_CUR)
+        @pos += n
       end
 
       def seek_abs(n)
         @io.seek(n + @initial_pos, ::IO::SEEK_SET)
+        @pos = n
       end
 
       def read(n)
-        @io.read(n)
+        @io.read(n).tap { |data| @pos += (data&.size || 0) }
       end
 
       def write(data)
@@ -397,22 +367,137 @@ module BinData
       end
     end
 
-    class UnSeekableIO
-      def initialize(io)
-        @io = io
-        @pos = 0
+    # An IO stream may be transformed before processing.
+    # e.g. encoding, compression, buffered.
+    #
+    # Multiple transforms can be chained together.
+    #
+    # To create a new transform layer, subclass +Transform+.
+    # Override the public methods +#read+ and +#write+ at a minimum.
+    # Additionally the hook, +#before_transform+, +#after_read_transfrom+
+    # and +#after_write_transform+ are available as well.
+    #
+    # IMPORTANT!  If your transform changes the size of the underlying
+    # data stream (e.g. compression), then call
+    # +::transfrom_changes_stream_length!+ in your subclass.
+    class Transform
+      class << self
+        # Indicates that this transform changes the length of the
+        # underlying data. e.g. performs compression or error correction
+        def transform_changes_stream_length!
+          prepend(UnSeekableIO)
+        end
       end
 
+      def initialize
+        @chain_io = nil
+      end
+
+      # Initialises this transform.
+      #
+      # Called before any IO operations.
+      def before_transform; end
+
+      # Flushes the input stream.
+      #
+      # Called after the final read operation.
+      def after_read_transform; end
+
+      # Flushes the output stream.
+      #
+      # Called after the final write operation.
+      def after_write_transform; end
+
+      # Prepends this transform to the given +chain+.
+      #
+      # Returns self (the new head of chain).
+      def prepend_to_chain(chain)
+        @chain_io = chain
+        before_transform
+        self
+      end
+
+      # Is the IO seekable?
+      def seekable?
+        @chain_io.seekable?
+      end
+
+      # How many bytes are available for reading?
+      def num_bytes_remaining
+        chain_num_bytes_remaining
+      end
+
+      # The current offset within the stream.
+      def offset
+        chain_offset
+      end
+
+      # Skips forward +n+ bytes in the input stream.
+      def skip(n)
+        chain_skip(n)
+      end
+
+      # Seeks to the given absolute position.
+      def seek_abs(n)
+        chain_seek_abs(n)
+      end
+
+      # Reads +n+ bytes from the stream.
+      def read(n)
+        chain_read(n)
+      end
+
+      # Writes +data+ to the stream.
+      def write(data)
+        chain_write(data)
+      end
+
+      #-------------
+      private
+
+      def create_empty_binary_string
+        "".force_encoding(Encoding::BINARY)
+      end
+
+      def chain_seekable?
+        @chain_io.seekable?
+      end
+
+      def chain_num_bytes_remaining
+        @chain_io.num_bytes_remaining
+      end
+
+      def chain_offset
+        @chain_io.offset
+      end
+
+      def chain_skip(n)
+        @chain_io.skip(n)
+      end
+
+      def chain_seek_abs(n)
+        @chain_io.seek_abs(n)
+      end
+
+      def chain_read(n)
+        @chain_io.read(n)
+      end
+
+      def chain_write(data)
+        @chain_io.write(data)
+      end
+    end
+
+    # A module to be prepended to +RawIO+ or +Transform+ when the data
+    # stream is not seekable.  This is either due to underlying stream
+    # being unseekable or the transform changes the number of bytes.
+    module UnSeekableIO
       def seekable?
         false
       end
 
       def num_bytes_remaining
         raise IOError, "stream is unseekable"
-      end
-
-      def offset
-        @pos
       end
 
       def skip(n)
@@ -428,15 +513,6 @@ module BinData
 
       def seek_abs(n)
         skip(n - offset)
-      end
-
-      def read(n)
-        @io.read(n).tap { |data| @pos += (data&.size || 0) }
-      end
-
-      def write(data)
-        @pos += data.size
-        @io.write(data)
       end
     end
   end

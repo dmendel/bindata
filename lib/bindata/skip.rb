@@ -108,6 +108,37 @@ module BinData
         @skip_length ||= 0
       end
 
+      def read_and_return_value(io)
+        prototype = get_parameter(:until_valid)
+        validator = prototype.instantiate(nil, self)
+        fs = fast_search_for_obj(validator)
+
+        io.transform(ReadaheadIO.new) do |transformed_io, raw_io|
+          pos = 0
+          loop do
+            seek_to_pos(pos, raw_io)
+            validator.clear
+            validator.do_read(transformed_io)
+            break
+          rescue ValidityError
+            pos += 1
+
+            if fs
+              seek_to_pos(pos, raw_io)
+              pos += next_search_index(raw_io, fs)
+            end
+          end
+
+          seek_to_pos(pos, raw_io)
+          @skip_length = pos
+        end
+      end
+
+      def seek_to_pos(pos, io)
+        io.rollback
+        io.skip(pos)
+      end
+
       # A fast search has a pattern string at a specific offset.
       FastSearch = ::Struct.new('FastSearch', :pattern, :offset)
 
@@ -134,11 +165,6 @@ module BinData
         nil
       end
 
-      def read_chunk(io, size)
-        bytes_to_read = [size, io.num_bytes_remaining].min
-        io.readbytes(bytes_to_read)
-      end
-
       SEARCH_SIZE = 100_000
 
       def next_search_index(io, fs)
@@ -146,67 +172,35 @@ module BinData
 
         # start searching at fast_search offset
         pos = fs.offset
-        io.skipbytes(fs.offset)
+        io.skip(fs.offset)
 
         loop do
-          buffer << read_chunk(io, fs.pattern.size + SEARCH_SIZE)
+          data = io.read(SEARCH_SIZE)
+          raise EOFError, "no match" if data.nil?
 
+          buffer << data
           index = buffer.index(fs.pattern)
           if index
             return pos + index - fs.offset
-          else
-            raise EOFError, "no match" if io.num_bytes_remaining.zero?
-
-            # advance buffer
-            buffer.slice!(0...SEARCH_SIZE)
-            pos += SEARCH_SIZE
-          end
-        end
-      end
-
-      def seek_to_pos(pos, io, rb_io)
-        rb_io.rollback
-        io.skipbytes(pos)
-      end
-
-      def read_and_return_value(io)
-        prototype = get_parameter(:until_valid)
-        validator = prototype.instantiate(nil, self)
-        fs = fast_search_for_obj(validator)
-
-        io.transform(ReadaheadIO.new) do |transformed_io, raw_io|
-          pos = 0
-          loop do
-            seek_to_pos(pos, transformed_io, raw_io)
-            validator.clear
-            validator.do_read(transformed_io)
-            break
-          rescue ValidityError
-            pos += 1
-
-            if fs
-              seek_to_pos(pos, transformed_io, raw_io)
-              pos += next_search_index(transformed_io, fs)
-            end
           end
 
-          seek_to_pos(pos, transformed_io, raw_io)
-          @skip_length = pos
+          # advance buffer
+          searched = buffer.slice!(0..-fs.pattern.size)
+          pos += searched.size
         end
       end
 
       class ReadaheadIO < BinData::IO::Transform
-        def chained(io)
-          if !io.seekable?
+        def before_transform
+          if !seekable?
             raise IOError, "readahead is not supported on unseekable streams"
           end
 
-          @mark = io.offset
-          super
+          @mark = offset
         end
 
         def rollback
-          @chain_io.seek_abs(@mark)
+          seek_abs(@mark)
         end
       end
     end

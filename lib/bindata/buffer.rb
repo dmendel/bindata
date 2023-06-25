@@ -90,17 +90,15 @@ module BinData
 
     def do_read(io) # :nodoc:
       buf_len = eval_parameter(:length)
-      io.transform(BufferIO.new(buf_len)) do |transformed_io, raw_io|
+      io.transform(BufferIO.new(buf_len)) do |transformed_io, _|
         @type.do_read(transformed_io)
-        raw_io.read_rest
       end
     end
 
     def do_write(io) # :nodoc:
       buf_len = eval_parameter(:length)
-      io.transform(BufferIO.new(buf_len)) do |transformed_io, raw_io|
+      io.transform(BufferIO.new(buf_len)) do |transformed_io, _|
         @type.do_write(transformed_io)
-        raw_io.write_rest
       end
     end
 
@@ -116,11 +114,9 @@ module BinData
         @bytes_remaining = length
       end
 
-      def chained(io)
-        super.tap do
-          @buf_start = offset
-          @buf_end = @buf_start + @bytes_remaining
-        end
+      def before_transform
+        @buf_start = offset
+        @buf_end = @buf_start + @bytes_remaining
       end
 
       def num_bytes_remaining
@@ -133,7 +129,7 @@ module BinData
         nbytes = buffer_limited_n(n)
         @bytes_remaining -= nbytes
 
-        super(nbytes)
+        chain_skip(nbytes)
       end
 
       def seek_abs(n)
@@ -142,14 +138,14 @@ module BinData
         end
 
         @bytes_remaining -= (n - offset)
-        super(n)
+        chain_seek_abs(n)
       end
 
       def read(n)
         nbytes = buffer_limited_n(n)
         @bytes_remaining -= nbytes
 
-        super(nbytes)
+        chain_read(nbytes)
       end
 
       def write(data)
@@ -159,14 +155,14 @@ module BinData
           data = data[0, nbytes]
         end
 
-        super(data)
+        chain_write(data)
       end
 
-      def read_rest
+      def after_read_transform
         read(nil)
       end
 
-      def write_rest
+      def after_write_transform
         write("\x00" * @bytes_remaining)
       end
 
