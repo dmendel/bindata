@@ -64,7 +64,7 @@ module BinData
       name = underscore_name(name)
 
       if !registered?(name)
-        search_prefix = [""].concat(Array(hints[:search_prefix]))
+        search_prefix = [""] + Array(hints[:search_prefix])
         search_prefix.each do |prefix|
           nwp = name_with_prefix(name, prefix)
           if registered?(nwp)
