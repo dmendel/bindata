@@ -243,7 +243,7 @@ describe BinData::Choice, "subclassed with default parameters" do
     _(obj.num_bytes).must_equal 2
   end
 
-  it "overides default parameter" do
+  it "overrides default parameter" do
     obj = DerivedChoice.new(selection: 'b')
     _(obj.num_bytes).must_equal 4
   end

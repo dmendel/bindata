@@ -27,7 +27,7 @@ describe BinData::Section do
       end
 
       obj = BrotliRecord.new
-      data = "highly compressable" * 100
+      data = "highly compressible" * 100
       obj.s.str = data
       _(obj.len).must_be :<, (data.length / 10)
 
@@ -52,7 +52,7 @@ describe BinData::Section do
       end
 
       obj = LZ4Record.new
-      data = "highly compressable" * 100
+      data = "highly compressible" * 100
       obj.s.str = data
       _(obj.len).must_be :<, (data.length / 10)
 
@@ -75,7 +75,7 @@ describe BinData::Section do
     end
 
     obj = ZlibRecord.new
-    data = "highly compressable" * 100
+    data = "highly compressible" * 100
     obj.s.str = data
     _(obj.len).must_be :<, (data.length / 10)
 
@@ -99,7 +99,7 @@ describe BinData::Section do
       end
 
       obj = ZstdRecord.new
-      data = "highly compressable" * 100
+      data = "highly compressible" * 100
       obj.s.str = data
       _(obj.len).must_be :<, (data.length / 10)
 

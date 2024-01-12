@@ -36,7 +36,7 @@ module BinData
   #
   # <tt>:length</tt>::        The number of bytes to skip.
   # <tt>:to_abs_offset</tt>:: Skips to the given absolute offset.
-  # <tt>:until_valid</tt>::   Skips untils a given byte pattern is matched.
+  # <tt>:until_valid</tt>::   Skips until a given byte pattern is matched.
   #                           This parameter contains a type that will raise
   #                           a BinData::ValidityError unless an acceptable byte
   #                           sequence is found.  The type is represented by a
