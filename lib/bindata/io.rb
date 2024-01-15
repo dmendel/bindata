@@ -374,12 +374,12 @@ module BinData
     #
     # To create a new transform layer, subclass +Transform+.
     # Override the public methods +#read+ and +#write+ at a minimum.
-    # Additionally the hook, +#before_transform+, +#after_read_transfrom+
+    # Additionally the hook, +#before_transform+, +#after_read_transform+
     # and +#after_write_transform+ are available as well.
     #
     # IMPORTANT!  If your transform changes the size of the underlying
     # data stream (e.g. compression), then call
-    # +::transfrom_changes_stream_length!+ in your subclass.
+    # +::transform_changes_stream_length!+ in your subclass.
     class Transform
       class << self
         # Indicates that this transform changes the length of the

@@ -35,7 +35,7 @@ require 'bindata'
 #       end
 #     end
 #
-# Notice how we get stuck on attemping to write a declaration for
+# Notice how we get stuck on attempting to write a declaration for
 # the contents of the list.  We can't determine if the list item is
 # an atom or list because we haven't read it yet.  It appears that
 # we can't proceed.

@@ -362,7 +362,7 @@ describe BinData::IO::Write, "writing bits in little endian" do
 end
 
 describe BinData::IO::Read, "with changing endian" do
-  it "does not mix different endianess when reading" do
+  it "does not mix different endianness when reading" do
     b1 = 0b0110_1010
     b2 = 0b1110_0010
     str = [b1, b2].pack("CC")
@@ -374,7 +374,7 @@ describe BinData::IO::Read, "with changing endian" do
 end
 
 describe BinData::IO::Write, "with changing endian" do
-  it "does not mix different endianess when writing" do
+  it "does not mix different endianness when writing" do
     io = BitWriterHelper.new
     io.writebits(0b110, 3, :big)
     io.writebits(0b010, 3, :little)
