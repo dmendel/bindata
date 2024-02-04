@@ -8,6 +8,7 @@
 * Skip :until_valid is now fast for :asserted_value.
 * Added Section - a way to transform the data stream.
 * Added transforms for brotli, lz4, xor, zlib, zstd.
+* Updated to current minitest
 
 == Version 2.4.15 (2023-02-07)
 

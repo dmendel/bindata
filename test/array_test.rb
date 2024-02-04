@@ -18,17 +18,15 @@ describe BinData::Array, "when instantiating" do
   end
 
   it "warns about :length" do
-    Kernel.must_warn ":length is not used with BinData::Array.  You probably want to change this to :initial_length" do
-    obj = BinData::Array.new(type: :uint8, length: 3)
-      obj.read "123"
-    end
+    _ {
+      obj = BinData::Array.new(type: :uint8, length: 3)
+    }.must_warn ":length is not used with BinData::Array.  You probably want to change this to :initial_length"
   end
 
   it "warns about :read_length" do
-    Kernel.must_warn ":read_length is not used with BinData::Array.  You probably want to change this to :initial_length" do
-    obj = BinData::Array.new(type: :uint8, read_length: 3)
-      obj.read "123"
-    end
+    _ {
+      obj = BinData::Array.new(type: :uint8, read_length: 3)
+    }.must_warn ":read_length is not used with BinData::Array.  You probably want to change this to :initial_length"
   end
 
   it "fails if a given type is unknown" do

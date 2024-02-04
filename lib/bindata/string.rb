@@ -125,7 +125,7 @@ module BinData
     # Warns when reading if :value && no :read_length
     module WarnNoReadLengthPlugin
       def read_and_return_value(io)
-        warn "#{debug_name} does not have a :read_length parameter - returning empty string"
+        Kernel.warn "#{debug_name} does not have a :read_length parameter - returning empty string"
         ""
       end
     end

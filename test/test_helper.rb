@@ -32,32 +32,41 @@ module Kernel
   def value_read_from_written
     self.class.read(self.to_binary_s)
   end
+end
 
-  def must_equal_binary(expected)
-    must_equal expected.dup.force_encoding(Encoding::BINARY)
+module Minitest::Assertions
+  def assert_equals_binary(expected, actual)
+    assert_equal expected.dup.force_encoding(Encoding::BINARY), actual
   end
 
-  def must_raise_on_line(exp, line, msg = nil)
-    ex = self.must_raise exp
-    (ex.message).must_equal msg if msg
+  def assert_raises_on_line(exp, line, msg = nil, &block)
+    ex = assert_raises(exp, &block)
+    assert_equal(msg, ex.message) if msg
 
-    idx = ex.backtrace.find_index { |bt| /:in `must_raise_on_line'$/ =~ bt }
+    idx = ex.backtrace.find_index { |bt| /:in `assert_raises_on_line'$/ =~ bt }
 
     line_num_regex = /.*:(\d+)(:.*|$)/
     err_line = line_num_regex.match(ex.backtrace[0])[1].to_i
-    ref_line = line_num_regex.match(ex.backtrace[idx + 1])[1].to_i
+    ref_line = line_num_regex.match(ex.backtrace[idx + 2])[1].to_i
 
-    (err_line - ref_line).must_equal line
+    assert_equal((err_line - ref_line), line)
   end
 
-  def must_warn(msg, &block)
+  def assert_warns(msg, &block)
     result = ""
     callable = proc { |str|
       result = str
     }
-    self.stub(:warn, callable) do
+    Kernel.stub(:warn, callable) do
       block.call
     end
-    (result).must_equal msg
+
+    assert_equal msg, result
   end
+end
+
+module Minitest::Expectations
+  infect_an_assertion :assert_equals_binary, :must_equal_binary
+  infect_an_assertion :assert_raises_on_line, :must_raise_on_line, :block
+  infect_an_assertion :assert_warns, :must_warn, :block
 end
