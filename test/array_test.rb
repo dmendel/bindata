@@ -19,13 +19,13 @@ describe BinData::Array, "when instantiating" do
 
   it "warns about :length" do
     _ {
-      obj = BinData::Array.new(type: :uint8, length: 3)
+      BinData::Array.new(type: :uint8, length: 3)
     }.must_warn ":length is not used with BinData::Array.  You probably want to change this to :initial_length"
   end
 
   it "warns about :read_length" do
     _ {
-      obj = BinData::Array.new(type: :uint8, read_length: 3)
+      BinData::Array.new(type: :uint8, read_length: 3)
     }.must_warn ":read_length is not used with BinData::Array.  You probably want to change this to :initial_length"
   end
 
