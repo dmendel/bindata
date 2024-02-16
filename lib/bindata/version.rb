@@ -1,3 +1,3 @@
 module BinData
-  VERSION = '2.4.15'
+  VERSION = '2.5.0'
 end

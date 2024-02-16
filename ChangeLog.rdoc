@@ -1,6 +1,6 @@
 = BinData Changelog
 
-== Version 2.5.0 (2023-xx-xx)
+== Version 2.5.0 (2024-02-16)
 
 * Removed experimental :check_offset and :adjust_offset parameters.
 * Ruby 2.5 is now required.
@@ -9,6 +9,7 @@
 * Added Section - a way to transform the data stream.
 * Added transforms for brotli, lz4, xor, zlib, zstd.
 * Updated to current minitest
+* Fixed typos.  Thanks to Patrick Linnane.
 
 == Version 2.4.15 (2023-02-07)
 
