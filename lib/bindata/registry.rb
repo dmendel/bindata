@@ -63,20 +63,18 @@ module BinData
     def normalize_name(name, hints)
       name = underscore_name(name)
 
-      if !registered?(name)
-        search_prefix = [""] + Array(hints[:search_prefix])
-        search_prefix.each do |prefix|
-          nwp = name_with_prefix(name, prefix)
-          if registered?(nwp)
-            name = nwp
-            break
-          end
+      search_prefix = [""] + Array(hints[:search_prefix])
+      search_prefix.each do |prefix|
+        nwp = name_with_prefix(name, prefix)
+        if registered?(nwp)
+          name = nwp
+          break
+        end
 
-          nwe = name_with_endian(nwp, hints[:endian])
-          if registered?(nwe)
-            name = nwe
-            break
-          end
+        nwe = name_with_endian(nwp, hints[:endian])
+        if registered?(nwe)
+          name = nwe
+          break
         end
       end
 
