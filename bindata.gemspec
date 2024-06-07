@@ -31,4 +31,5 @@ Gem::Specification.new do |s|
     format.  It is an easier ( and more readable ) alternative to
     ruby's #pack and #unpack methods.
   END
+  s.metadata['changelog_uri'] = s.homepage + '/blob/master/ChangeLog.rdoc'
 end
