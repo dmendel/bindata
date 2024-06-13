@@ -36,14 +36,22 @@ module BinData
     end
 
     def lookup(name, hints = {})
-      the_class = @registry[normalize_name(name, hints)]
-      if the_class
-        the_class
-      elsif @registry[normalize_name(name, hints.merge(endian: :big))]
-        raise(UnRegisteredTypeError, "#{name}, do you need to specify endian?")
-      else
-        raise(UnRegisteredTypeError, name)
+      search_names(name, hints).each do |search|
+        register_dynamic_class(search)
+        if @registry.has_key?(search)
+          return @registry[search]
+        end
       end
+
+      # give the user a hint if the endian keyword is missing
+      search_names(name, hints.merge(endian: :big)).each do |search|
+        register_dynamic_class(search)
+        if @registry.has_key?(search)
+          raise(UnRegisteredTypeError, "#{name}, do you need to specify endian?")
+        end
+      end
+
+      raise(UnRegisteredTypeError, name)
     end
 
     # Convert CamelCase +name+ to underscore style.
@@ -60,27 +68,20 @@ module BinData
     #---------------
     private
 
-    def normalize_name(name, hints)
-      name = underscore_name(name)
+    def search_names(name, hints)
+      base = underscore_name(name)
+      searches = []
 
-      if !registered?(name)
-        search_prefix = [""] + Array(hints[:search_prefix])
-        search_prefix.each do |prefix|
-          nwp = name_with_prefix(name, prefix)
-          if registered?(nwp)
-            name = nwp
-            break
-          end
+      search_prefix = [""] + Array(hints[:search_prefix])
+      search_prefix.each do |prefix|
+        nwp = name_with_prefix(base, prefix)
+        nwe = name_with_endian(nwp, hints[:endian])
 
-          nwe = name_with_endian(nwp, hints[:endian])
-          if registered?(nwe)
-            name = nwe
-            break
-          end
-        end
+        searches << nwp
+        searches << nwe if nwe
       end
 
-      name
+      searches
     end
 
     def name_with_prefix(name, prefix)
@@ -93,7 +94,7 @@ module BinData
     end
 
     def name_with_endian(name, endian)
-      return name if endian.nil?
+      return nil if endian.nil?
 
       suffix = (endian == :little) ? 'le' : 'be'
       if /^u?int\d+$/.match?(name)
@@ -103,17 +104,11 @@ module BinData
       end
     end
 
-    def registered?(name)
-      register_dynamic_class(name) unless @registry.key?(name)
-
-      @registry.key?(name)
-    end
-
     def register_dynamic_class(name)
       if /^u?int\d+(le|be)$/.match?(name) || /^s?bit\d+(le)?$/.match?(name)
         class_name = name.gsub(/(?:^|_)(.)/) { $1.upcase }
         begin
-          # call const_get for side effects
+          # call const_get for side effect of creating class
           BinData.const_get(class_name)
         rescue NameError
         end
@@ -124,7 +119,7 @@ module BinData
       prev_class = @registry[name]
       if prev_class && prev_class != class_to_register
         Kernel.warn "warning: replacing registered class #{prev_class} " \
-             "with #{class_to_register}"
+                    "with #{class_to_register}"
       end
     end
   end
