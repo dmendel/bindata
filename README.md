@@ -55,4 +55,4 @@ for dependent and variable length fields is built in.
 # Contact
 
 If you have any queries / bug reports / suggestions, please contact me
-(Dion Mendel) via email at bindata@dm9.info
+(Dion Mendel) via email at bindata@dmau.org

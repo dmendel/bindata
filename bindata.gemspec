@@ -7,7 +7,7 @@ Gem::Specification.new do |s|
   s.platform = Gem::Platform::RUBY
   s.summary = 'A declarative way to read and write binary file formats'
   s.author = 'Dion Mendel'
-  s.email = 'bindata@dm9.info'
+  s.email = 'bindata@dmau.org'
   s.homepage = 'https://github.com/dmendel/bindata'
   s.require_path = 'lib'
   s.extra_rdoc_files = ['NEWS.rdoc']
