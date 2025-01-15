@@ -14,7 +14,7 @@ Gem::Specification.new do |s|
   s.rdoc_options << '--main' << 'NEWS.rdoc'
   s.files = Dir.chdir(__dir__) do
     `git ls-files -z`.split("\x0").reject do |file|
-      file.start_with?(*%w[.git INSTALL])
+      file.start_with?(*%w[.git INSTALL test/])
     end
   end
   s.license = 'BSD-2-Clause'
