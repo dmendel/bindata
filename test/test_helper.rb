@@ -43,11 +43,15 @@ module Minitest::Assertions
     ex = assert_raises(exp, &block)
     assert_equal(msg, ex.message) if msg
 
-    idx = ex.backtrace.find_index { |bt| /:in `assert_raises_on_line'$/ =~ bt }
+    line_num_regex = /(.*):(\d+)(:in.*)$/
 
-    line_num_regex = /.*:(\d+)(:.*|$)/
-    err_line = line_num_regex.match(ex.backtrace[0])[1].to_i
-    ref_line = line_num_regex.match(ex.backtrace[idx + 2])[1].to_i
+    filename = line_num_regex.match(ex.backtrace[0])[1]
+
+    filtered = ex.backtrace.grep(/^#{Regexp.escape(filename)}/)
+    top = filtered.grep(Regexp.new(Regexp.escape("in <top (required)>")))
+
+    err_line = line_num_regex.match(filtered[0])[2].to_i
+    ref_line = line_num_regex.match(top[0])[2].to_i - 1
 
     assert_equal((err_line - ref_line), line)
   end
