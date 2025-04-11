@@ -1,5 +1,5 @@
 # BinData -- Binary data manipulator.
-# Copyright (c) 2007 - 2018 Dion Mendel.
+# Copyright (c) 2007 - 2025 Dion Mendel.
 
 require 'bindata/version'
 require 'bindata/array'
@@ -35,4 +35,4 @@ require 'bindata/warnings'
 #
 # BinData is released under the same license as Ruby.
 #
-# Copyright (c) 2007 - 2018 Dion Mendel.
+# Copyright (c) 2007 - 2025 Dion Mendel.

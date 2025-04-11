@@ -1,8 +1,9 @@
 = BinData Changelog
 
-== Version 2.5.1 (202x-xx-xx)
+== Version 2.5.1 (2025-04-11)
 
 * Added changelog link to gemspec. Thanks to Mark Young.
+* Support Ruby 3.4.
 
 == Version 2.5.0 (2024-02-16)
 
