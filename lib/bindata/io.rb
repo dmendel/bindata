@@ -456,7 +456,7 @@ module BinData
       private
 
       def create_empty_binary_string
-        "".force_encoding(Encoding::BINARY)
+        String.new.force_encoding(Encoding::BINARY)
       end
 
       def chain_seekable?
