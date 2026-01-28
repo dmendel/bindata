@@ -1,5 +1,9 @@
 = BinData Changelog
 
+== Version 2.6.0 (2026-xx-xx)
+
+* Added class names to dynamically generated ints and bits.
+
 == Version 2.5.1 (2025-04-11)
 
 * Added changelog link to gemspec. Thanks to Mark Young.

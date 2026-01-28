@@ -26,6 +26,10 @@ module BinData
       def define_methods(int_class, nbits, endian, signed)
         raise "nbits must be divisible by 8" unless (nbits % 8).zero?
 
+        int_class.singleton_class.module_eval <<-END
+          #{create_name_code(nbits, endian, signed)}
+        END
+
         int_class.module_eval <<-END
           def assign(val)
             #{create_clamp_code(nbits, signed)}
@@ -56,6 +60,14 @@ module BinData
 
       #-------------
       private
+
+      def create_name_code(nbits, endian, signed)
+        prefix = "BinData::"
+        base = ((signed == :signed) ? "Int" : "Uint")
+        suffix = ((endian == :little) ? "le" : "be")
+
+        "def name; super || '#{prefix}#{base}#{nbits}#{suffix}' end"
+      end
 
       def create_clamp_code(nbits, signed)
         if signed == :signed

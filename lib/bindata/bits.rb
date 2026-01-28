@@ -24,6 +24,10 @@ module BinData
       end
 
       def define_methods(bit_class, nbits, endian, signed)
+        bit_class.singleton_class.module_eval <<-END
+          #{create_name_code(nbits, endian, signed)}
+        END
+
         bit_class.module_eval <<-END
           #{create_params_code(nbits)}
 
@@ -63,6 +67,18 @@ module BinData
             0
           end
         END
+      end
+
+      def create_name_code(nbits, endian, signed)
+        prefix = "BinData::"
+        base = ((signed == :signed) ? "SBit" : "Bit")
+        suffix = ((endian == :little) ? "Le" : "")
+
+        if nbits == :nbits
+          "def name; super || '#{prefix}#{base}#{suffix}' end"
+        else
+          "def name; super || '#{prefix}#{base}#{nbits}#{suffix}' end"
+        end
       end
 
       def create_params_code(nbits)
