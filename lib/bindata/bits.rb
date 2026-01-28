@@ -12,73 +12,51 @@ module BinData
       def define_class(name, nbits, endian, signed = :unsigned)
         @@mutex.synchronize do
           unless BinData.const_defined?(name)
-            new_class = Class.new(BinData::BasePrimitive)
-            BitField.define_methods(new_class, nbits, endian.to_sym, signed.to_sym)
-            RegisteredClasses.register(name, new_class)
+            BinData.module_eval <<-END
+              class #{name} < BasePrimitive
+                #{create_params_code(nbits)}
 
-            BinData.const_set(name, new_class)
+                def assign(val)
+                  #{create_nbits_code(nbits)}
+                  #{create_clamp_code(nbits, signed)}
+                  super(val)
+                end
+
+                def do_write(io)
+                  #{create_nbits_code(nbits)}
+                  val = _value
+                  #{create_int2uint_code(nbits, signed)}
+                  io.writebits(val, #{nbits}, :#{endian})
+                end
+
+                def do_num_bytes
+                  #{create_nbits_code(nbits)}
+                  #{create_do_num_bytes_code(nbits)}
+                end
+
+                def bit_aligned?
+                  true
+                end
+
+                #---------------
+                private
+
+                def read_and_return_value(io)
+                  #{create_nbits_code(nbits)}
+                  val = io.readbits(#{nbits}, :#{endian})
+                  #{create_uint2int_code(nbits, signed)}
+                  val
+                end
+
+                def sensible_default
+                  0
+                end
+              end
+            END
           end
         end
 
         BinData.const_get(name)
-      end
-
-      def define_methods(bit_class, nbits, endian, signed)
-        bit_class.singleton_class.module_eval <<-END
-          #{create_name_code(nbits, endian, signed)}
-        END
-
-        bit_class.module_eval <<-END
-          #{create_params_code(nbits)}
-
-          def assign(val)
-            #{create_nbits_code(nbits)}
-            #{create_clamp_code(nbits, signed)}
-            super(val)
-          end
-
-          def do_write(io)
-            #{create_nbits_code(nbits)}
-            val = _value
-            #{create_int2uint_code(nbits, signed)}
-            io.writebits(val, #{nbits}, :#{endian})
-          end
-
-          def do_num_bytes
-            #{create_nbits_code(nbits)}
-            #{create_do_num_bytes_code(nbits)}
-          end
-
-          def bit_aligned?
-            true
-          end
-
-          #---------------
-          private
-
-          def read_and_return_value(io)
-            #{create_nbits_code(nbits)}
-            val = io.readbits(#{nbits}, :#{endian})
-            #{create_uint2int_code(nbits, signed)}
-            val
-          end
-
-          def sensible_default
-            0
-          end
-        END
-      end
-
-      def create_name_code(nbits, endian, signed)
-        prefix = "BinData::"
-        base = ((signed == :signed) ? "SBit" : "Bit")
-        suffix = ((endian == :little) ? "Le" : "")
-
-        if nbits == :nbits
-          "def name; super || '#{prefix}#{base}#{suffix}' end"
-        else
-          "def name; super || '#{prefix}#{base}#{nbits}#{suffix}' end"
-        end
       end
 
       def create_params_code(nbits)

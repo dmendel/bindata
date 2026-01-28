@@ -12,62 +12,42 @@ module BinData
       def define_class(name, nbits, endian, signed)
         @@mutex.synchronize do
           unless BinData.const_defined?(name)
-            new_class = Class.new(BinData::BasePrimitive)
-            Int.define_methods(new_class, nbits, endian.to_sym, signed.to_sym)
-            RegisteredClasses.register(name, new_class)
+            BinData.module_eval <<-END
+              class #{name} < BasePrimitive
+                def assign(val)
+                  #{create_clamp_code(nbits, signed)}
+                  super(val)
+                end
 
-            BinData.const_set(name, new_class)
+                def do_num_bytes
+                  #{nbits / 8}
+                end
+
+                #---------------
+                private
+
+                def sensible_default
+                  0
+                end
+
+                def value_to_binary_string(val)
+                  #{create_clamp_code(nbits, signed)}
+                  #{create_to_binary_s_code(nbits, endian, signed)}
+                end
+
+                def read_and_return_value(io)
+                  #{create_read_code(nbits, endian, signed)}
+                end
+              end
+            END
           end
         end
 
         BinData.const_get(name)
       end
 
-      def define_methods(int_class, nbits, endian, signed)
-        raise "nbits must be divisible by 8" unless (nbits % 8).zero?
-
-        int_class.singleton_class.module_eval <<-END
-          #{create_name_code(nbits, endian, signed)}
-        END
-
-        int_class.module_eval <<-END
-          def assign(val)
-            #{create_clamp_code(nbits, signed)}
-            super(val)
-          end
-
-          def do_num_bytes
-            #{nbits / 8}
-          end
-
-          #---------------
-          private
-
-          def sensible_default
-            0
-          end
-
-          def value_to_binary_string(val)
-            #{create_clamp_code(nbits, signed)}
-            #{create_to_binary_s_code(nbits, endian, signed)}
-          end
-
-          def read_and_return_value(io)
-            #{create_read_code(nbits, endian, signed)}
-          end
-        END
-      end
-
       #-------------
       private
-
-      def create_name_code(nbits, endian, signed)
-        prefix = "BinData::"
-        base = ((signed == :signed) ? "Int" : "Uint")
-        suffix = ((endian == :little) ? "le" : "be")
-
-        "def name; super || '#{prefix}#{base}#{nbits}#{suffix}' end"
-      end
 
       def create_clamp_code(nbits, signed)
         if signed == :signed
@@ -188,18 +168,12 @@ module BinData
   end
 
 
-  # Unsigned 1 byte integer.
-  class Uint8 < BinData::BasePrimitive
-    Int.define_methods(self, 8, :little, :unsigned)
-  end
-
-  # Signed 1 byte integer.
-  class Int8 < BinData::BasePrimitive
-    Int.define_methods(self, 8, :little, :signed)
-  end
-
   # Create classes on demand
   module IntFactory
+    # 1 byte integers
+    Int.define_class("Uint8", 8, :big, :unsigned)
+    Int.define_class("Int8", 8, :big, :signed)
+
     def const_missing(name)
       mappings = {
         /^Uint(\d+)be$/ => [:big,    :unsigned],
