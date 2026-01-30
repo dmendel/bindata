@@ -122,7 +122,7 @@ module BinData
       end
 
       def fields
-        @fields ||= SanitizedFields.new(hints, parent_fields)
+        @fields ||= SanitizedFields.new(namespace, hints, parent_fields)
       end
 
       def dsl_params
@@ -153,6 +153,11 @@ module BinData
 
       def option?(opt)
         parser_abilities[@parser_type].at(2).include?(opt)
+      end
+
+      def namespace
+        m = /(.*)::([^:].*)/.match(@the_class.name)
+        m ? m[1] : ""
       end
 
       def ensure_hints

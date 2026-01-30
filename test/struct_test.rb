@@ -566,10 +566,12 @@ end
 
 describe BinData::Struct, "with dynamically named types" do
   it "instantiates" do
-    _ = BinData::Struct.new(name: :my_struct, fields: [[:int8, :a, {initial_value: 3}]])
+    _ = BinData::Struct.new(name: :my_struct, namespace: :ns, fields: [[:int8, :a, {initial_value: 3}]])
 
-    obj = BinData::Struct.new(fields: [[:my_struct, :v]])
+    obj1 = BinData::Struct.new(fields: [[:ns_my_struct, :v]])
+    obj2 = BinData::Struct.new(namespace: :ns, fields: [[:my_struct, :v]])
 
-    _(obj.v.a).must_equal 3
+    _(obj1.v.a).must_equal 3
+    _(obj2.v.a).must_equal 3
   end
 end

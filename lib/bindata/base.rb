@@ -44,14 +44,21 @@ module BinData
 
       # Call this method if this class is abstract and not to be used.
       def unregister_self
-        RegisteredClasses.unregister(name)
+        m = /(.*)::([^:].*)/.match(name)
+        namespace = m ? m[1] : ""
+        shortname = m ? m[2] : name
+
+        RegisteredClasses.unregister(namespace, shortname)
       end
 
       # Registers all subclasses of this class for use
       def register_subclasses # :nodoc:
         singleton_class.send(:undef_method, :inherited)
         define_singleton_method(:inherited) do |subclass|
-          RegisteredClasses.register(subclass.name, subclass)
+          m = /(.*)::([^:].*)/.match(subclass.name)
+          namespace = m ? m[1] : ""
+          shortname = m ? m[2] : subclass
+          RegisteredClasses.register(namespace, shortname, subclass)
           register_subclasses
         end
       end

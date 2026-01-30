@@ -25,7 +25,7 @@ end
 describe BinData::BasePrimitive do
   it "is not registered" do
     _ {
-      BinData::RegisteredClasses.lookup("BasePrimitive")
+      BinData::RegisteredClasses.lookup("BinData", "BasePrimitive")
     }.must_raise BinData::UnRegisteredTypeError
   end
 end

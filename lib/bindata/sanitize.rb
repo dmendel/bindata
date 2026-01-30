@@ -6,7 +6,7 @@ module BinData
   class SanitizedParameter; end
 
   class SanitizedPrototype < SanitizedParameter
-    def initialize(obj_type, obj_params, hints)
+    def initialize(obj_type, obj_params, namespace, hints)
       raw_hints = hints.dup
       if raw_hints[:endian].respond_to?(:endian)
         raw_hints[:endian] = raw_hints[:endian].endian
@@ -16,7 +16,7 @@ module BinData
       if BinData::Base === obj_type
         obj_class = obj_type
       else
-        obj_class = RegisteredClasses.lookup("", obj_type, raw_hints)
+        obj_class = RegisteredClasses.lookup(namespace, obj_type, raw_hints)
       end
 
       if BinData::Base === obj_class
@@ -44,9 +44,9 @@ module BinData
   #----------------------------------------------------------------------------
 
   class SanitizedField < SanitizedParameter
-    def initialize(name, field_type, field_params, hints)
+    def initialize(name, field_type, field_params, namespace, hints)
       @name      = name
-      @prototype = SanitizedPrototype.new(field_type, field_params, hints)
+      @prototype = SanitizedPrototype.new(field_type, field_params, namespace, hints)
     end
 
     attr_reader :prototype, :name
@@ -68,7 +68,8 @@ module BinData
   class SanitizedFields < SanitizedParameter
     include Enumerable
 
-    def initialize(hints, base_fields = nil)
+    def initialize(namespace, hints, base_fields = nil)
+      @namespace = namespace
       @hints = hints
       @fields =  base_fields ? base_fields.raw_fields : []
     end
@@ -76,7 +77,7 @@ module BinData
     def add_field(type, name, params)
       name = nil if name == ""
 
-      @fields << SanitizedField.new(name, type, params, @hints)
+      @fields << SanitizedField.new(name, type, params, @namespace, @hints)
     end
 
     def raw_fields
@@ -122,14 +123,14 @@ module BinData
   #----------------------------------------------------------------------------
 
   class SanitizedChoices < SanitizedParameter
-    def initialize(choices, hints)
+    def initialize(choices, namespace, hints)
       @choices = {}
       choices.each_pair do |key, val|
         if SanitizedParameter === val
           prototype = val
         else
           type, param = val
-          prototype = SanitizedPrototype.new(type, param, hints)
+          prototype = SanitizedPrototype.new(type, param, namespace, hints)
         end
 
         if key == :default
@@ -189,6 +190,13 @@ module BinData
       parameters.each_pair { |key, value| self[key.to_sym] = value }
 
       @the_class = the_class
+
+      if self[:namespace]
+        @namespace = self[:namespace]
+      else
+        m = /(.*)::[^:].*/.match(the_class.name)
+        @namespace = m ? m[1] : ""
+      end
 
       if hints[:endian]
         self[:endian] ||= hints[:endian]
@@ -368,15 +376,15 @@ module BinData
     end
 
     def create_sanitized_choices(choices)
-      SanitizedChoices.new(choices, hints)
+      SanitizedChoices.new(choices, @namespace, hints)
     end
 
     def create_sanitized_fields
-      SanitizedFields.new(hints)
+      SanitizedFields.new(@namespace, hints)
     end
 
     def create_sanitized_object_prototype(obj_type, obj_params)
-      SanitizedPrototype.new(obj_type, obj_params, hints)
+      SanitizedPrototype.new(obj_type, obj_params, @namespace, hints)
     end
   end
   #----------------------------------------------------------------------------

@@ -11,16 +11,26 @@ module BinData
   #                    BinData::Struct.new(name: :my_struct, fields: ...)
   #                    array = BinData::Array.new(type: :my_struct)
   #                  </pre></code>
+  # <tt>:namespace</tt>:: The namespace that this object belongs to may be
+  #                       set explicitly.  This is only useful when dynamically
+  #                       generating types.
+  #                       <code><pre>
+  #                         BinData::Struct.new(name: :my_struct, namespace: :ns1, fields: ...)
+  #                         BinData::Struct.new(name: :my_struct, namespace: :ns2, fields: ...)
+  #                         array = BinData::Array.new(namespace: :ns1, type: :my_struct)
+  #                       </pre></code>
   module RegisterNamePlugin
 
     def self.included(base) # :nodoc:
-      # The registered name may be provided explicitly.
-      base.optional_parameter :name
+      # +name+ and +namespace+ may be provided explicitly.
+      base.optional_parameter :name, :namespace
     end
 
     def initialize_shared_instance
       if has_parameter?(:name)
-        RegisteredClasses.register(get_parameter(:name), self)
+        name = get_parameter(:name)
+        namespace = get_parameter(:namespace) || ""
+        RegisteredClasses.register(namespace, name, self)
       end
       super
     end

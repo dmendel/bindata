@@ -5,7 +5,7 @@ require File.expand_path(File.join(File.dirname(__FILE__), "test_helper"))
 describe BinData::Record do
   it "is not registered" do
     _ {
-      BinData::RegisteredClasses.lookup("Record")
+      BinData::RegisteredClasses.lookup("BinData", "Record")
     }.must_raise BinData::UnRegisteredTypeError
   end
 end
@@ -99,6 +99,15 @@ describe BinData::Record, "when defining with errors" do
         endian :little
       end
     }.must_raise_on_line SyntaxError, 3, "endian must be called before defining fields in BadEndianPosRecord"
+  end
+
+  it "fails when search_namespace is after a field" do
+    _ {
+      class BadSearchNamespacePosRecord < BinData::Record
+        string :a
+        search_namespace :ns
+      end
+    }.must_raise_on_line SyntaxError, 3, "search_namespace must be called before defining fields in BadSearchNamespacePosRecord"
   end
 
   it "fails when search_prefix is after a field" do
@@ -396,6 +405,88 @@ describe BinData::Record, "with an endian defined" do
   end
 end
 
+describe BinData::Record, "with namespaces" do
+  module ModA
+    class MyInt < BinData::Int8; end
+    class ARecord < BinData::Record
+      my_int :a
+    end
+  end
+
+  module ModB
+    class BRecord < BinData::Record
+      mod_a_my_int :a
+    end
+  end
+
+  it "looks up with relative name" do
+    obj = ModA::ARecord.new
+    _(obj.a.class.name).must_equal "ModA::MyInt"
+  end
+
+  it "looks up with absolute name" do
+    obj = ModB::BRecord.new
+    _(obj.a.class.name).must_equal "ModA::MyInt"
+  end
+end
+
+describe BinData::Record, "with search_namespace" do
+  module ModA
+    class Snamespace < BinData::Int8; end
+  end
+  module ModB
+    class Snamespace < BinData::Int8; end
+  end
+
+  class RecordWithSearchNamespace < BinData::Record
+    search_namespace :ModA
+    snamespace :f
+  end
+
+  class RecordWithParentSearchNamespace < BinData::Record
+    search_namespace :ModA
+    struct :s do
+      snamespace :f
+    end
+  end
+
+  class RecordWithNestedSearchNamespace < BinData::Record
+    search_namespace :ModA
+    struct :s do
+      search_namespace :x
+      snamespace :f
+    end
+  end
+
+  class RecordWithPrioritisedNestedSearchNamespace < BinData::Record
+    search_namespace :ModB
+    struct :s do
+      search_namespace :ModA
+      snamespace :f
+    end
+  end
+
+  it "uses search_prefix" do
+    obj = RecordWithSearchNamespace.new
+    _(obj.f.class.name).must_equal "ModA::Snamespace"
+  end
+
+  it "uses parent search_prefix" do
+    obj = RecordWithParentSearchNamespace.new
+    _(obj.s.f.class.name).must_equal "ModA::Snamespace"
+  end
+
+  it "uses nested search_prefix" do
+    obj = RecordWithNestedSearchNamespace.new
+    _(obj.s.f.class.name).must_equal "ModA::Snamespace"
+  end
+
+  it "uses prioritised nested search_prefix" do
+    obj = RecordWithPrioritisedNestedSearchNamespace.new
+    _(obj.s.f.class.name).must_equal "ModA::Snamespace"
+  end
+end
+
 describe BinData::Record, "with search_prefix" do
   class ASprefix < BinData::Int8; end
   class BSprefix < BinData::Int8; end
@@ -449,6 +540,29 @@ describe BinData::Record, "with search_prefix" do
   end
 end
 
+describe BinData::Record, "with endian :big_and_little and search_namespace" do
+  module Ns1
+    class BNLIntBe < BinData::Int16be; end
+    class BNLIntLe < BinData::Int16le; end
+  end
+
+  class RecordWithBnLEndianAndSearchNamespace < BinData::Record
+    endian :big_and_little
+    search_namespace :ns1
+     bnl_int :a, value: 1
+  end
+
+  it "creates big endian version" do
+    obj = RecordWithBnLEndianAndSearchNamespaceBe.new
+    _(obj.to_binary_s).must_equal_binary "\x00\x01"
+  end
+
+  it "creates little endian version" do
+    obj = RecordWithBnLEndianAndSearchNamespaceLe.new
+    _(obj.to_binary_s).must_equal_binary "\x01\x00"
+  end
+end
+
 describe BinData::Record, "with endian :big_and_little" do
   class RecordWithBnLEndian < BinData::Record
     endian :big_and_little
@@ -457,7 +571,7 @@ describe BinData::Record, "with endian :big_and_little" do
 
   it "is not registered" do
     _ {
-      BinData::RegisteredClasses.lookup("RecordWithBnLEndian")
+      BinData::RegisteredClasses.lookup("", "RecordWithBnLEndian")
     }.must_raise BinData::UnRegisteredTypeError
   end
 
@@ -515,7 +629,7 @@ describe BinData::Record, "with endian :big_and_little when subclassed" do
 
   it "is not registered" do
     _ {
-      BinData::RegisteredClasses.lookup("BRecordWithBnLEndian")
+      BinData::RegisteredClasses.lookup("", "BRecordWithBnLEndian")
     }.must_raise BinData::UnRegisteredTypeError
   end
 

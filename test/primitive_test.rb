@@ -5,7 +5,7 @@ require File.expand_path(File.join(File.dirname(__FILE__), "test_helper"))
 describe BinData::Primitive do
   it "is not registered" do
     _ {
-      BinData::RegisteredClasses.lookup("Primitive")
+      BinData::RegisteredClasses.lookup("BinData", "Primitive")
     }.must_raise BinData::UnRegisteredTypeError
   end
 end
