@@ -409,6 +409,66 @@ describe BinData::Struct, "with nested endian" do
   end
 end
 
+describe BinData::Struct, "with a search_namespace" do
+  module ModA
+    class Short < BinData::Uint8; end
+  end
+  module ModB
+    class Short < BinData::Uint8; end
+  end
+
+  it "searches underscore symbol namespaces" do
+    obj = BinData::Struct.new(search_namespace: :mod_a,
+                              fields: [ [:short, :f] ])
+    _(obj.f.class.name).must_equal "ModA::Short"
+  end
+
+  it "searches camelCase symbol namespaces" do
+    obj = BinData::Struct.new(search_namespace: :ModA,
+                              fields: [ [:short, :f] ])
+    _(obj.f.class.name).must_equal "ModA::Short"
+  end
+
+  it "searches string namespaces" do
+    obj = BinData::Struct.new(search_namespace: "ModA",
+                              fields: [ [:short, :f] ])
+    _(obj.f.class.name).must_equal "ModA::Short"
+  end
+
+  it "searches module namespaces" do
+    obj = BinData::Struct.new(search_namespace: ModA,
+                              fields: [ [:short, :f] ])
+    _(obj.f.class.name).must_equal "ModA::Short"
+  end
+
+  it "searches multiple namespaces" do
+    obj = BinData::Struct.new(search_namespace: [:x, :ModA],
+                              fields: [ [:short, :f] ])
+    _(obj.f.class.name).must_equal "ModA::Short"
+  end
+
+  it "uses parent search_namespace" do
+    nested_params = { fields: [[:short, :f]] }
+    obj = BinData::Struct.new(search_namespace: :ModA,
+                              fields: [[:struct, :s, nested_params]])
+    _(obj.s.f.class.name).must_equal "ModA::Short"
+  end
+
+  it "searches parent search_namespace" do
+    nested_params = { search_namespace: :x, fields: [[:short, :f]] }
+    obj = BinData::Struct.new(search_namespace: :ModA,
+                              fields: [[:struct, :s, nested_params]])
+    _(obj.s.f.class.name).must_equal "ModA::Short"
+  end
+
+  it "prioritises nested search_namespace" do
+    nested_params = { search_namespace: :ModA, fields: [[:short, :f]] }
+    obj = BinData::Struct.new(search_namespace: :b,
+                              fields: [[:struct, :s, nested_params]])
+    _(obj.s.f.class.name).must_equal "ModA::Short"
+  end
+end
+
 describe BinData::Struct, "with a search_prefix" do
   class AShort < BinData::Uint8; end
   class BShort < BinData::Uint8; end

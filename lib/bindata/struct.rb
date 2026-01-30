@@ -383,11 +383,7 @@ module BinData
 
     def sanitize_search_namespace(params)
       params.sanitize(:search_namespace) do |snamespace|
-        search_namespace = Array(snamespace).collect do |namespace|
-          namespace.to_s.chomp("_")
-        end
-
-        search_namespace - [""]
+        Array(snamespace).collect &:to_s
       end
     end
 
