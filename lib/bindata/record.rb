@@ -17,7 +17,7 @@ module BinData
     include MultiFieldArgSeparator
 
     def sanitize_parameters!(obj_class, params)
-      super(obj_class, params.merge!(obj_class.dsl_params))
+      super(obj_class, params.merge_dsl_params)
     end
   end
 end

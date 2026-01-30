@@ -60,6 +60,7 @@ module BinData
 
     mandatory_parameter :fields
     optional_parameters :endian, :search_namespace, :search_prefix, :hide
+    mutually_exclusive_parameters :search_namespace, :search_prefix
 
     # These reserved words may not be used as field names
     RESERVED =

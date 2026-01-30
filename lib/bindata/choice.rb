@@ -123,7 +123,7 @@ module BinData
 
   class ChoiceArgProcessor < BaseArgProcessor
     def sanitize_parameters!(obj_class, params) # :nodoc:
-      params.merge!(obj_class.dsl_params)
+      params.merge_dsl_params
 
       params.sanitize_choices(:choices) do |choices|
         hash_choices = choices_as_hash(choices)

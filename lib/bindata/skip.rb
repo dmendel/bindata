@@ -208,13 +208,8 @@ module BinData
 
   class SkipArgProcessor < BaseArgProcessor
     def sanitize_parameters!(obj_class, params)
-      params.merge!(obj_class.dsl_params)
-
-      unless params.has_at_least_one_of?(:length, :to_abs_offset, :until_valid)
-        raise ArgumentError,
-              "#{obj_class} requires :length, :to_abs_offset or :until_valid"
-      end
-
+      params.merge_dsl_params
+      params.must_have_at_least_one_of(:length, :to_abs_offset, :until_valid)
       params.must_be_integer(:to_abs_offset, :length)
       params.sanitize_object_prototype(:until_valid)
     end

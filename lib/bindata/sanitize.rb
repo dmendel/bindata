@@ -215,6 +215,12 @@ module BinData
       false
     end
 
+    def must_have_at_least_one_of(*keys)
+      unless has_at_least_one_of?(*keys)
+        raise ArgumentError, "#{@the_class} requires one of #{keys}"
+      end
+    end
+
     def warn_replacement_parameter(bad_key, suggested_key)
       if has_parameter?(bad_key)
         Kernel.warn ":#{bad_key} is not used with #{@the_class}.  " \
@@ -249,6 +255,10 @@ module BinData
       if has_parameter?(old_key)
         self[new_key] = delete(old_key)
       end
+    end
+
+    def merge_dsl_params
+      self.merge!(@the_class.dsl_params)
     end
 
     def sanitize_object_prototype(key)
