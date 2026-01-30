@@ -80,6 +80,21 @@ module BinData
         @endian
       end
 
+      def search_namespace(*args)
+        @search_namespace ||= parent_attribute(:search_namespace, []).dup
+
+        namespace = args.collect(&:to_sym).compact
+        unless namespace.empty?
+          if fields?
+            dsl_raise SyntaxError, "search_namespace must be called before defining fields"
+          end
+
+          @search_namespace = namespace.concat(@search_namespace)
+        end
+
+        @search_namespace
+      end
+
       def search_prefix(*args)
         @search_prefix ||= parent_attribute(:search_prefix, []).dup
 
@@ -142,11 +157,12 @@ module BinData
 
       def ensure_hints
         endian
+        search_namespace
         search_prefix
       end
 
       def hints
-        { endian: endian, search_prefix: search_prefix }
+        { endian: endian, search_namespace: search_namespace, search_prefix: search_prefix }
       end
 
       def set_endian(endian)
@@ -239,6 +255,9 @@ module BinData
         if !endian.nil?
           result[:endian] = endian
         end
+        if !search_namespace.empty?
+          result[:search_namespace] = search_namespace
+        end
         if !search_prefix.empty?
           result[:search_prefix] = search_prefix
         end
@@ -324,9 +343,10 @@ module BinData
         def class_with_endian(class_name, endian)
           hints = {
             endian: endian,
+            search_namespace: class_name.dsl_parser.search_namespace,
             search_prefix: class_name.dsl_parser.search_prefix
           }
-          RegisteredClasses.lookup(class_name, hints)
+          RegisteredClasses.lookup("", class_name, hints)
         end
 
         def obj_attribute(obj, attr)
@@ -386,6 +406,7 @@ module BinData
         if bindata_classes.include?(@type)
           parser = DSLParser.new(bindata_classes[@type], @type)
           parser.endian(@hints[:endian])
+          parser.search_namespace(*@hints[:search_namespace])
           parser.search_prefix(*@hints[:search_prefix])
           parser.instance_eval(&block)
 

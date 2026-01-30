@@ -42,9 +42,9 @@ module BinData
   # <tt>:endian</tt>::   Either :little or :big.  This specifies the default
   #                      endian of any numerics in this struct, or in any
   #                      nested data objects.
-  # <tt>:search_prefix</tt>::  Allows abbreviated type names.  If a type is
-  #                            unrecognised, then each prefix is applied until
-  #                            a match is found.
+  # <tt>:search_namespace</tt>::  Allows namespaced type names.  If a type is
+  #                               unrecognised, then each namespace is searched
+  #                               until a match is found.
   #
   # == Field Parameters
   #
@@ -59,7 +59,7 @@ module BinData
     arg_processor :struct
 
     mandatory_parameter :fields
-    optional_parameters :endian, :search_prefix, :hide
+    optional_parameters :endian, :search_namespace, :search_prefix, :hide
 
     # These reserved words may not be used as field names
     RESERVED =
@@ -71,7 +71,7 @@ module BinData
             when while yield] +
          %w[array element index value] +
          %w[type initial_length read_until] +
-         %w[fields endian search_prefix hide onlyif byte_align] +
+         %w[fields endian search_namespace search_prefix hide onlyif byte_align] +
          %w[choices selection copy_on_change] +
          %w[read_abs_offset struct_params])
         .collect(&:to_sym)
@@ -367,6 +367,7 @@ module BinData
   class StructArgProcessor < BaseArgProcessor
     def sanitize_parameters!(obj_class, params)
       sanitize_endian(params)
+      sanitize_search_namespace(params)
       sanitize_search_prefix(params)
       sanitize_fields(obj_class, params)
       sanitize_hide(params)
@@ -377,6 +378,16 @@ module BinData
 
     def sanitize_endian(params)
       params.sanitize_endian(:endian)
+    end
+
+    def sanitize_search_namespace(params)
+      params.sanitize(:search_namespace) do |snamespace|
+        search_namespace = Array(snamespace).collect do |namespace|
+          namespace.to_s.chomp("_")
+        end
+
+        search_namespace - [""]
+      end
     end
 
     def sanitize_search_prefix(params)

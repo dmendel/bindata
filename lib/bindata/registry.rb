@@ -12,11 +12,11 @@ module BinData
   # Classes can be looked up based on their full name or an abbreviated +name+
   # with +hints+.
   #
-  # There are two hints supported, :endian and :search_prefix.
+  # There are two hints supported, :endian and :search_namespace.
   #
   #   #lookup("", "int32", { endian: :big }) will return Int32Be.
   #
-  #   #lookup("", "my_type", { search_prefix: :ns }) will return Ns::MyType.
+  #   #lookup("", "my_type", { search_namespace: :ns }) will return Ns::MyType.
   #
   # Names are stored in under_score_style, not camelCase.
   class Registry
@@ -65,7 +65,7 @@ module BinData
     def underscore_name(name)
       name
         .to_s
-        .sub(/.*::/, "")
+        .gsub(/::/, "_")
         .gsub(/([A-Z]+)([A-Z][a-z])/, '\1_\2')
         .gsub(/([a-z\d])([A-Z])/, '\1_\2')
         .tr('-', '_')
@@ -89,7 +89,7 @@ module BinData
 
       ns = underscore_name(namespace)
       loop do
-        search_prefix = [""] + Array(hints[:search_prefix])
+        search_prefix = [""] + Array(hints[:search_namespace])
         search_prefix.each do |prefix|
           nwp = name_with_prefix(name, name_with_prefix(prefix, ns))
           nwe = name_with_endian(nwp, hints[:endian])

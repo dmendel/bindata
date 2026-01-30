@@ -56,10 +56,6 @@ describe BinData::Registry do
   it "converts adjacent caps camelCase to underscores" do
     _(r.underscore_name('XYZCamelCase')).must_equal 'xyz_camel_case'
   end
-
-  it "ignores the outer nestings of classes" do
-    _(r.underscore_name('A::B::C')).must_equal 'c'
-  end
 end
 
 describe BinData::Registry, "with numerics" do
@@ -156,7 +152,7 @@ describe BinData::Registry, "with endian specific types" do
   end
 end
 
-describe BinData::Registry, "with search_prefix" do
+describe BinData::Registry, "with search_namespace" do
   let(:r) { BinData::Registry.new }
 
   before do
@@ -164,20 +160,20 @@ describe BinData::Registry, "with search_prefix" do
     r.register("", 'b_f', B)
   end
 
-  it "lookup single search_prefix" do
-    _(r.lookup("", 'f', {search_prefix: :a})).must_equal A
+  it "lookup single search_namespace" do
+    _(r.lookup("", 'f', {search_namespace: :a})).must_equal A
   end
 
-  it "lookup single search_prefix with endian" do
-    _(r.lookup("", 'f', {search_prefix: :a, endian: :little})).must_equal A
+  it "lookup single search_namespace with endian" do
+    _(r.lookup("", 'f', {search_namespace: :a, endian: :little})).must_equal A
   end
 
-  it "lookup multiple search_prefix" do
-    _(r.lookup("", 'f', {search_prefix: [:x, :a]})).must_equal A
+  it "lookup multiple search_namespace" do
+    _(r.lookup("", 'f', {search_namespace: [:x, :a]})).must_equal A
   end
 
-  it "lookup first match in search_prefix" do
-    _(r.lookup("", 'f', {search_prefix: [:a, :b]})).must_equal A
+  it "lookup first match in search_namespace" do
+    _(r.lookup("", 'f', {search_namespace: [:a, :b]})).must_equal A
   end
 end
 
@@ -185,16 +181,16 @@ describe BinData::Registry, "with namespaces" do
   let(:r) { BinData::Registry.new }
 
   before do
-    r.register('mod_a_mod_b', 'obj1', A)      # ModA::ModB::Obj1
-    r.register('mod_a_mod_b', 'obj2', B)      # ModA::ModB::Obj2
+    r.register('ModA::ModB', 'obj1', A)       # ModA::ModB::Obj1
+    r.register('ModA::ModB', 'obj2', B)       # ModA::ModB::Obj2
     r.register('mod_a_mod_b', 'ns1_obj3', C)  # ModA::ModB::Ns1Obj3
-    r.register('mod_a_mod_c', 'obj1', D)      # ModA::ModC::Obj1
-    r.register('mod_a_mod_c', 'obj4', E)      # ModA::ModC::Obj4
+    r.register('mod_a_mod_c', 'Obj1', D)      # ModA::ModC::Obj1
+    r.register('mod_a_mod_c', 'Obj4', E)      # ModA::ModC::Obj4
   end
 
   it "lookups inside the namespace" do
     _(r.lookup("mod_a_mod_c", 'obj1')).must_equal D
-    _(r.lookup("mod_a_mod_c", 'obj4')).must_equal E
+    _(r.lookup("ModA::ModC", 'obj4')).must_equal E
   end
 
   it "doesn't lookup inside a different namespace" do
@@ -221,13 +217,13 @@ describe BinData::Registry, "with namespaces" do
     _(r.lookup("", 'mod_a_mod_b_obj1')).must_equal A
   end
 
-  it "lookups with search_prefix" do
-    _(r.lookup("mod_a_mod_c", 'obj1', {search_prefix: :mod_b})).must_equal D
-    _(r.lookup("mod_a", 'obj1', {search_prefix: :mod_b})).must_equal A
-    _(r.lookup("mod_a_mod_c", 'obj2', {search_prefix: :mod_b})).must_equal B
-    _(r.lookup("mod_a_mod_c", 'obj2', {search_prefix: :mod_a_mod_b})).must_equal B
-    _(r.lookup("", 'obj1', {search_prefix: [:mod_a_mod_b, :mod_a_mod_c]})).must_equal A
-    _(r.lookup("", 'obj1', {search_prefix: [:mod_a_mod_c, :mod_a_mod_b]})).must_equal D
+  it "lookups with search_namespace" do
+    _(r.lookup("mod_a_mod_c", 'obj1', {search_namespace: :mod_b})).must_equal D
+    _(r.lookup("mod_a", 'obj1', {search_namespace: :mod_b})).must_equal A
+    _(r.lookup("mod_a_mod_c", 'obj2', {search_namespace: :mod_b})).must_equal B
+    _(r.lookup("mod_a_mod_c", 'obj2', {search_namespace: :mod_a_mod_b})).must_equal B
+    _(r.lookup("", 'obj1', {search_namespace: [:mod_a_mod_b, :mod_a_mod_c]})).must_equal A
+    _(r.lookup("", 'obj1', {search_namespace: [:mod_a_mod_c, :mod_a_mod_b]})).must_equal D
   end
 
   it "lookups with old style search_prefix" do

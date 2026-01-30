@@ -16,7 +16,7 @@ module BinData
       if BinData::Base === obj_type
         obj_class = obj_type
       else
-        obj_class = RegisteredClasses.lookup(obj_type, raw_hints)
+        obj_class = RegisteredClasses.lookup("", obj_type, raw_hints)
       end
 
       if BinData::Base === obj_class
@@ -194,6 +194,10 @@ module BinData
         self[:endian] ||= hints[:endian]
       end
 
+      if hints[:search_namespace] && !hints[:search_namespace].empty?
+        self[:search_namespace] = Array(self[:search_namespace]).concat(Array(hints[:search_namespace]))
+      end
+
       if hints[:search_prefix] && !hints[:search_prefix].empty?
         self[:search_prefix] = Array(self[:search_prefix]).concat(Array(hints[:search_prefix]))
       end
@@ -282,7 +286,11 @@ module BinData
     end
 
     def hints
-      { endian: self[:endian], search_prefix: self[:search_prefix] }
+      {
+        endian: self[:endian],
+        search_namespace: self[:search_namespace],
+        search_prefix: self[:search_prefix]
+      }
     end
 
     #---------------
