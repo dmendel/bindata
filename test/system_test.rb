@@ -490,7 +490,6 @@ describe BinData::Buffer, "with seek_abs" do
   end
 end
 
-
 describe BinData::Record, "buffered readahead" do
   class BufferedReadaheadRecord < BinData::Record
     buffer :a, length: 5 do
@@ -510,5 +509,30 @@ describe BinData::Record, "buffered readahead" do
 
   it "doesn't readahead outside the buffer" do
     _ { BufferedReadaheadRecord.read "123456X890" }.must_raise IOError
+  end
+end
+
+describe BinData::Record, "inside modules" do
+  module M
+    class Type1 < BinData::Record
+      int8 :v
+    end
+    class MyRec < BinData::Record
+      type1 :f1
+
+      struct :s1, fields: [ [:type1, :f2] ]
+      struct :s2 do
+        type1 :f3
+      end
+
+      array :arr1, type: :type1, initial_length: 3
+      array :arr2, initial_length: 3 do
+        type1
+      end
+    end
+  end
+
+  it "parses" do
+    M::MyRec.new
   end
 end

@@ -67,9 +67,13 @@ module BinData
         @parser_type    = parser_type
         @validator      = DSLFieldValidator.new(the_class, self)
         @endian         = nil
+
+        m = /(.*)::([^:].*)/.match(@the_class.name)
+        @namespace = m ? m[1] : ""
       end
 
       attr_reader :parser_type
+      attr_accessor :namespace
 
       def endian(endian = nil)
         if endian
@@ -155,11 +159,6 @@ module BinData
         parser_abilities[@parser_type].at(2).include?(opt)
       end
 
-      def namespace
-        m = /(.*)::([^:].*)/.match(@the_class.name)
-        m ? m[1] : ""
-      end
-
       def ensure_hints
         endian
         search_namespace
@@ -200,7 +199,7 @@ module BinData
       end
 
       def parse_and_append_field(*args, &block)
-        parser = DSLFieldParser.new(hints, *args, &block)
+        parser = DSLFieldParser.new(namespace, hints, *args, &block)
         begin
           @validator.validate_field(parser.name)
           append_field(parser.type, parser.name, parser.params)
@@ -362,7 +361,8 @@ module BinData
 
     # Extracts the details from a field declaration.
     class DSLFieldParser
-      def initialize(hints, symbol, *args, &block)
+      def initialize(namespace, hints, symbol, *args, &block)
+        @namespace = namespace
         @hints  = hints
         @type   = symbol
         @name   = name_from_field_declaration(args)
@@ -410,6 +410,7 @@ module BinData
 
         if bindata_classes.include?(@type)
           parser = DSLParser.new(bindata_classes[@type], @type)
+          parser.namespace = @namespace
           parser.endian(@hints[:endian])
           parser.search_namespace(*@hints[:search_namespace])
           parser.search_prefix(*@hints[:search_prefix])

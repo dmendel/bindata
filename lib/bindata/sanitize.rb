@@ -23,7 +23,7 @@ module BinData
         @factory = obj_class
       else
         @obj_class  = obj_class
-        @obj_params = SanitizedParameters.new(obj_params, @obj_class, hints)
+        @obj_params = SanitizedParameters.new(obj_params, @obj_class, namespace, hints)
       end
     end
 
@@ -181,22 +181,21 @@ module BinData
         if SanitizedParameters === parameters
           parameters
         else
-          SanitizedParameters.new(parameters, the_class, {})
+          namespace = parameters[:namespace]
+          unless namespace
+            m = /(.*)::[^:].*/.match(the_class.name)
+            namespace = m ? m[1] : ""
+          end
+          SanitizedParameters.new(parameters, the_class, namespace, {})
         end
       end
     end
 
-    def initialize(parameters, the_class, hints)
+    def initialize(parameters, the_class, namespace, hints)
       parameters.each_pair { |key, value| self[key.to_sym] = value }
 
       @the_class = the_class
-
-      if self[:namespace]
-        @namespace = self[:namespace]
-      else
-        m = /(.*)::[^:].*/.match(the_class.name)
-        @namespace = m ? m[1] : ""
-      end
+      @namespace = namespace
 
       if hints[:endian]
         self[:endian] ||= hints[:endian]
@@ -300,7 +299,7 @@ module BinData
     end
 
     def create_sanitized_params(params, the_class)
-      SanitizedParameters.new(params, the_class, hints)
+      SanitizedParameters.new(params, the_class, @namespace, hints)
     end
 
     def hints
