@@ -259,6 +259,14 @@ describe BinData::String, "with :pad_front" do
   end
 end
 
+describe BinData::String, "delegated methods" do
+  let(:obj) { BinData::String.new("testing\x92") }
+
+  it "successfully delegates calls with keyword args" do
+    _(obj.encode('UTF-8', invalid: :replace, undef: :replace, replace: '?')).must_equal "testing?"
+  end
+end
+
 describe BinData::String, "with Ruby 1.9 encodings" do
   class UTF8String < BinData::String
     def snapshot
