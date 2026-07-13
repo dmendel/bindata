@@ -2,7 +2,15 @@ This package is designed to be installed with rubygems.
 
     $ gem install bindata
 
-If you are using ruby 1.8
+If you are using Ruby 2.5 - 2.7
+
+    $ gem install bindata -v '~> 2.5.0'
+
+If you are using Ruby 2.0 - 2.4
+
+    $ gem install bindata -v '~> 2.4.0'
+
+If you are using Ruby 1.8
 
     $ gem install bindata -v '~> 1.8.0'
 

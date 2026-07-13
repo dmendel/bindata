@@ -48,11 +48,6 @@ for dependent and variable length fields is built in.
 
     $ gem install bindata
 
-## Installation for older Ruby versions
-
-    $ gem install bindata -v 1.8.3   # Ruby 1.8
-    $ gem install bindata -v 2.5.1   # Ruby 2.x
-
 # Documentation
 
 [BinData manual](http://github.com/dmendel/bindata/wiki).
