@@ -77,9 +77,9 @@ module BinData
       @struct.respond_to?(symbol, include_private) || super
     end
 
-    def method_missing(symbol, *args, &block) # :nodoc:
+    def method_missing(symbol, *args, **kwargs, &block) # :nodoc:
       if @struct.respond_to?(symbol)
-        @struct.__send__(symbol, *args, &block)
+        @struct.__send__(symbol, *args, **kwargs, &block)
       else
         super
       end

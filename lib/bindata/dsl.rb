@@ -42,8 +42,8 @@ module BinData
       end
     end
 
-    def method_missing(symbol, *args, &block) # :nodoc:
-      dsl_parser.__send__(symbol, *args, &block)
+    def method_missing(symbol, *args, **kwargs, &block) # :nodoc:
+      dsl_parser.__send__(symbol, *args, **kwargs, &block)
     end
 
     # Assert object is not an array or string.
@@ -134,9 +134,9 @@ module BinData
         send(abilities.at(0), abilities.at(1))
       end
 
-      def method_missing(*args, &block)
+      def method_missing(*args, **kwargs, &block)
         ensure_hints
-        parse_and_append_field(*args, &block)
+        parse_and_append_field(*args, **kwargs, &block)
       end
 
       #-------------

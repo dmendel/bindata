@@ -87,8 +87,8 @@ module BinData
       @type.respond_to?(symbol, include_all) || super
     end
 
-    def method_missing(symbol, *args, &block) # :nodoc:
-      @type.__send__(symbol, *args, &block)
+    def method_missing(symbol, *args, **kwargs, &block) # :nodoc:
+      @type.__send__(symbol, *args, **kwargs, &block)
     end
 
     def abs_offset

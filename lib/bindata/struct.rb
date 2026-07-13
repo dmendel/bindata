@@ -293,7 +293,7 @@ module BinData
         key?(symbol) || super
       end
 
-      def method_missing(symbol, *args)
+      def method_missing(symbol, *args, **kwargs)
         key?(symbol) ? self[symbol] : super
       end
     end

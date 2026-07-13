@@ -295,6 +295,14 @@ describe BinData::String, "with Ruby 1.9 encodings" do
   end
 end
 
+describe BinData::String, "with Ruby 3.0 keyword arguments" do
+  let(:obj) { BinData::String.new("testing\x92") }
+
+  it "successfully delegates calls with keyword args" do
+    _(obj.encode('UTF-8', invalid: :replace, undef: :replace, replace: '?')).must_equal "testing?"
+  end
+end
+
 describe BinData::String, "warnings" do
   it "warns if has :asserted_value but no :length" do
     obj = BinData::String.new(asserted_value: "ABC")

@@ -62,11 +62,11 @@ module BinData
       raise NoMethodError, "no index found"
     end
 
-    def method_missing(symbol, *args)
+    def method_missing(symbol, *args, **kwargs)
       return @overrides[symbol] if defined?(@overrides) && @overrides.key?(symbol)
 
       if @obj.parent
-        eval_symbol_in_parent_context(symbol, args)
+        eval_symbol_in_parent_context(symbol, args, kwargs)
       else
         super
       end
@@ -75,26 +75,26 @@ module BinData
     #---------------
     private
 
-    def eval_symbol_in_parent_context(symbol, args)
-      result = resolve_symbol_in_parent_context(symbol, args)
-      recursively_eval(result, args)
+    def eval_symbol_in_parent_context(symbol, args, kwargs)
+      result = resolve_symbol_in_parent_context(symbol, args, kwargs)
+      recursively_eval(result, args, kwargs)
     end
 
-    def resolve_symbol_in_parent_context(symbol, args)
+    def resolve_symbol_in_parent_context(symbol, args, kwargs)
       obj_parent = @obj.parent
 
       if obj_parent.has_parameter?(symbol)
         obj_parent.get_parameter(symbol)
       elsif obj_parent.safe_respond_to?(symbol, true)
-        obj_parent.__send__(symbol, *args)
+        obj_parent.__send__(symbol, *args, **kwargs)
       else
         symbol
       end
     end
 
-    def recursively_eval(val, args)
+    def recursively_eval(val, args, kwargs)
       if val.is_a?(Symbol)
-        parent.__send__(val, *args)
+        parent.__send__(val, *args, **kwargs)
       elsif callable?(val)
         parent.instance_exec(&val)
       else
