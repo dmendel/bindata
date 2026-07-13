@@ -1,3 +1,54 @@
+= 3.0.0
+
+BinData 3.0.0 requires Ruby 3.0 or greater.  Support for Ruby 2.x is found in
+BinData versions 2.5.1.
+
+This release introduces a new way to handle namespaces.  It uses the Ruby
+module hierarchy instead of the previous flat namespace.  Code using the old
+`:search_prefix` method should still work, but consider migrating to the new
+method.
+
+== 2.5.x
+
+    class Ns1Foo << BinData::Record; end
+    class Ns1Bar << BinData::Record; end
+    class Ns2Foo << BinData::Record; end
+
+    class MyClass < BinData::Record
+      search_prefix ns2
+      foo :a     # resolves to ns2_foo
+      bar :b     # resolves to ns1_bar
+      ns1_foo :c # explicitly  ns1_foo
+    end
+
+== 3.0.0
+
+    module Ns1
+      class Foo << BinData::Record; end
+      class Bar << BinData::Record; end
+    end
+
+    module Ns2
+      class Foo << BinData::Record; end
+    end
+
+    module Ns2
+      class MyClass < BinData::Record
+        foo     :a
+        bar     :b
+        ns1_foo :c
+      end
+    end
+
+    -or-
+
+    class MyClass < BinData::Record
+      search_namespace :ns2
+      foo :a
+      bar :b
+      ns1_foo :c
+    end
+
 = 2.4.15
 
 This software was originally dual licensed under the Ruby license and the
@@ -8,14 +59,14 @@ BSD-2-Clause license.  It is now licensed solely as BSD-2-Clause.
 This release changes the internal API for sanitizing parameters.  This only
 affects those that implement the `#sanitize_parameters` method.
 
-= 2.3.x
+== 2.3.x
 
     if params.needs_sanitizing?(:type)
       el_type, el_params = params[:type]
       params[:type] = params.create_sanitized_object_prototype(el_type, el_params)
     end
 
-= 2.4.0
+== 2.4.0
 
     params.sanitize_object_prototype(:type)
 

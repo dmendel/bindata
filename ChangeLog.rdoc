@@ -1,6 +1,6 @@
 = BinData Changelog
 
-== Version 3.0.0 (2026-xx-xx)
+== Version 3.0.0 (2026-07-13)
 
 * Ruby 2.x now has its own separate branch.
 * Namespacing now uses Ruby modules, rather than prefixes.
