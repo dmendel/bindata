@@ -38,7 +38,7 @@ BinData provides a _declarative_ way to read and write structured binary data.
 This means the programmer specifies *what* the format of the binary
 data is, and BinData works out *how* to read and write data in this
 format.  It is an easier (and more readable) alternative to
-ruby's `#pack` and `#unpack` methods.
+Ruby's `#pack` and `#unpack` methods.
 
 BinData makes it easy to create new data types. It supports all the common
 primitive datatypes that are found in structured binary data formats. Support
@@ -47,6 +47,11 @@ for dependent and variable length fields is built in.
 # Installation
 
     $ gem install bindata
+
+## Installation for older Ruby versions
+
+    $ gem install bindata -v 1.8.3   # Ruby 1.8
+    $ gem install bindata -v 2.5.1   # Ruby 2.x
 
 # Documentation
 
