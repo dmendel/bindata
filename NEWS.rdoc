@@ -11,25 +11,26 @@ method.
 == 2.5.x
 
     class Ns1Foo << BinData::Record; end
-    class Ns1Bar << BinData::Record; end
+
     class Ns2Foo << BinData::Record; end
+    class Ns2Bar << BinData::Record; end
 
     class MyClass < BinData::Record
       search_prefix ns2
-      foo :a     # resolves to ns2_foo
-      bar :b     # resolves to ns1_bar
-      ns1_foo :c # explicitly  ns1_foo
+      foo     :a    # resolves to ns2_foo
+      bar     :b    # resolves to ns2_bar
+      ns1_foo :c    # explicitly  ns1_foo
     end
 
 == 3.0.0
 
     module Ns1
       class Foo << BinData::Record; end
-      class Bar << BinData::Record; end
     end
 
     module Ns2
       class Foo << BinData::Record; end
+      class Bar << BinData::Record; end
     end
 
     module Ns2
@@ -44,8 +45,8 @@ method.
 
     class MyClass < BinData::Record
       search_namespace :ns2
-      foo :a
-      bar :b
+      foo     :a
+      bar     :b
       ns1_foo :c
     end
 
