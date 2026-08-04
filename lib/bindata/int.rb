@@ -72,9 +72,17 @@ module BinData
       end
 
       def create_raw_read_code(nbits, endian, signed)
-        # special case 8bit integers for speed
+        nwords = nbits / bits_per_word(nbits)
+
         if nbits == 8
+          # faster code for 8bit integers
           "io.readbytes(1).ord"
+        elsif nwords == 1
+          # avoid transient arrays for 16, 32 and 64 bit integers
+          nbytes         = nbits / 8
+          pack_directive = pack_directive(nbits, endian, signed)
+
+          "io.readbytes(#{nbytes}).unpack1('#{pack_directive}')"
         else
           unpack_str   = create_read_unpack_code(nbits, endian, signed)
           assemble_str = create_read_assemble_code(nbits, endian)
