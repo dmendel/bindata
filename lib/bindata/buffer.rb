@@ -84,8 +84,8 @@ module BinData
       @type.respond_to?(symbol, include_all) || super
     end
 
-    def method_missing(symbol, *args, **kwargs, &block) # :nodoc:
-      @type.__send__(symbol, *args, **kwargs, &block)
+    def method_missing(...) # :nodoc:
+      @type.__send__(...)
     end
 
     def do_read(io) # :nodoc:

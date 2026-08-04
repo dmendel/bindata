@@ -90,8 +90,8 @@ module BinData
       current_choice.respond_to?(symbol, include_all) || super
     end
 
-    def method_missing(symbol, *args, **kwargs, &block) # :nodoc:
-      current_choice.__send__(symbol, *args, **kwargs, &block)
+    def method_missing(...) # :nodoc:
+      current_choice.__send__(...)
     end
 
     %w[clear? assign snapshot do_read do_write do_num_bytes].each do |m|

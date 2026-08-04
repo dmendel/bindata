@@ -93,15 +93,15 @@ module BinData
       child.respond_to?(symbol, include_all) || super
     end
 
-    def method_missing(symbol, *args, **kwargs, &block) # :nodoc:
+    def method_missing(symbol, ...) # :nodoc:
       child = snapshot
       if child.respond_to?(symbol)
         self.class.class_eval <<-END, __FILE__, __LINE__ + 1
-          def #{symbol}(*args, **kwargs, &block)         # def clamp(*args, **kwargs, &block)
-            snapshot.#{symbol}(*args, **kwargs, &block)  #   snapshot.clamp(*args, **kwargs, &block)
-          end                                            # end
+          def #{symbol}(...)         # def clamp(...)
+            snapshot.#{symbol}(...)  #   snapshot.clamp(...)
+          end                        # end
         END
-        child.__send__(symbol, *args, **kwargs, &block)
+        child.__send__(symbol, ...)
       else
         super
       end
