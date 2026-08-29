@@ -51,9 +51,9 @@ module BinData
       end
 
       def readbytes(n)
-        n.times.inject(binary_string("")) do |bytes, _|
-          bytes + @io.readbits(8, :big).chr
-        end
+        bytes = binary_string("")
+        n.times { bytes << @io.readbits(8, :big).chr }
+        bytes
       end
       def writebytes(str)
         str.each_byte { |v| @io.writebits(v, 8, :big) }
