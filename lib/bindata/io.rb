@@ -363,7 +363,7 @@ module BinData
       end
 
       def write(data)
-        @io.write(data)
+        @io.write(data).tap { |n| @pos += n }
       end
     end
 
