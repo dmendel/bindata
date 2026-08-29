@@ -177,7 +177,7 @@ module BinData
     end
 
     def get_previous_choice(selection)
-      if @last_selection && selection != @last_selection
+      if !@last_selection.nil? && selection != @last_selection
         @choices[@last_selection]
       end
     end
