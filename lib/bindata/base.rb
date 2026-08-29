@@ -89,7 +89,7 @@ module BinData
 
       initialize_shared_instance
       initialize_instance
-      assign(value) if value
+      assign(value) unless value.nil?
     end
 
     attr_accessor :parent
@@ -105,7 +105,7 @@ module BinData
       obj = clone
       obj.parent = parent if parent
       obj.initialize_instance
-      obj.assign(value) if value
+      obj.assign(value) unless value.nil?
 
       obj
     end
