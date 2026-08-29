@@ -299,7 +299,7 @@ module BinData
           element = append_new_element
           begin
             element.do_read(io)
-          rescue EOFError, IOError
+          rescue EOFError, TruncatedDataError
             elements.pop
             break
           end

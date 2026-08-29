@@ -1,6 +1,9 @@
 require 'stringio'
 
 module BinData
+  # Error raised when fewer bytes are available than were requested.
+  class TruncatedDataError < IOError; end
+
   # A wrapper around an IO object.  The wrapper provides a consistent
   # interface for BinData objects to use when accessing the IO.
   module IO
@@ -127,7 +130,7 @@ module BinData
         str = @io.read(n)
         if n
           raise EOFError, "End of file reached" if str.nil?
-          raise IOError, "data truncated" if str.size < n
+          raise TruncatedDataError, "data truncated" if str.size < n
         end
         str
       end
