@@ -102,10 +102,11 @@ module BinData
     end
 
     def trim_padding(str)
+      pad_pattern = Regexp.escape(eval_parameter(:pad_byte))
       if get_parameter(:pad_front)
-        str.sub(/\A#{eval_parameter(:pad_byte)}*/, "")
+        str.sub(/\A#{pad_pattern}*/, "")
       else
-        str.sub(/#{eval_parameter(:pad_byte)}*\z/, "")
+        str.sub(/#{pad_pattern}*\z/, "")
       end
     end
 
