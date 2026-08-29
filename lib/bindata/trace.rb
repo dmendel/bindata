@@ -4,15 +4,16 @@ module BinData
   # If +block+ is given then the tracing only occurs for that block.
   # This is useful for debugging a BinData declaration.
   def trace_reading(io = STDERR)
+    previous_tracer = @tracer
     @tracer = Tracer.new(io)
-    [BasePrimitive, Choice].each(&:turn_on_tracing)
+    [BasePrimitive, Choice].each(&:turn_on_tracing) unless previous_tracer
 
     if block_given?
       begin
         yield
       ensure
-        [BasePrimitive, Choice].each(&:turn_off_tracing)
-        @tracer = nil
+        @tracer = previous_tracer
+        [BasePrimitive, Choice].each(&:turn_off_tracing) unless previous_tracer
       end
     end
   end
