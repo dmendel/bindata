@@ -79,7 +79,8 @@ module BinData
     end
 
     def truncate_after_first_zero_byte!(str)
-      str.sub!(/([^\0]*\0).*/, '\1')
+      zero_index = str.index("\0")
+      str.slice!(zero_index + 1, str.length) if zero_index
     end
 
     def trim_to!(str, max_length = nil)
