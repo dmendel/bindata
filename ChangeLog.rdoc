@@ -1,6 +1,6 @@
 = BinData Changelog
 
-== Version 3.0.x (2026-xx-xx)
+== Version 3.0.1 (2026-09-27)
 
 * Fixed regression with anon classes. Thanks to Babar Al-Amin.
 
