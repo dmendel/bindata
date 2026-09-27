@@ -1,5 +1,9 @@
 = BinData Changelog
 
+== Version 3.0.x (2026-xx-xx)
+
+* Fixed regression with anon classes. Thanks to Babar Al-Amin.
+
 == Version 3.0.0 (2026-07-13)
 
 * Ruby 2.x now has its own separate branch.

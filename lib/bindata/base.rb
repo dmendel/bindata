@@ -57,7 +57,7 @@ module BinData
         define_singleton_method(:inherited) do |subclass|
           m = /(.*)::([^:].*)/.match(subclass.name)
           namespace = m ? m[1] : ""
-          shortname = m ? m[2] : subclass
+          shortname = m ? m[2] : subclass.name
           RegisteredClasses.register(namespace, shortname, subclass)
           register_subclasses
         end
