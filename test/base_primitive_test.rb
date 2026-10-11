@@ -174,9 +174,9 @@ describe BinData::BasePrimitive, "with :value" do
 
   it "changes during reading" do
     obj.read(io)
-    obj.stub :reading?, true do
-      _(obj).must_equal 56
-    end
+    def obj.reading?; true; end
+
+    _(obj).must_equal 56
   end
 
   it "does not change after reading" do
@@ -270,9 +270,9 @@ describe BinData::BasePrimitive do
     data = ExampleSingle.new(value: 5)
     data.read(io)
 
-    data.stub :reading?, true do
-      _(data).must_equal 42
-    end
+    def data.reading?; true; end
+
+    _(data).must_equal 42
   end
 
   it "conforms to rule 3 for returning a value" do

@@ -104,9 +104,9 @@ describe BinData::Primitive do
     obj.read "\x05\x00"
     _(obj).must_equal 2
 
-    obj.stub :reading?, true do
-      _(obj).must_equal 5
-    end
+    def obj.reading?; true; end
+
+    _(obj).must_equal 5
   end
 
   it "behaves as primitive" do

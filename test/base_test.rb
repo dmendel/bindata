@@ -72,9 +72,20 @@ describe BinData::Base, "ArgExtractor" do
     data.each do |el|
       args, val, param_keys, parent = *el
       obj = ParamParserBase.new(*args)
-      _(obj.val).must_be_same_as val
+
+      if val
+        _(obj.val).must_be_same_as val
+      else
+        _(obj.val).must_be_nil
+      end
+
       _(obj.params.keys).must_equal param_keys
-      _(obj.parent).must_be_same_as parent
+
+      if parent
+        _(obj.parent).must_be_same_as parent
+      else
+        _(obj.parent).must_be_nil
+      end
     end
   end
 end
@@ -109,32 +120,32 @@ describe BinData::Base do
   end
 
   it "#to_hex uses #to_binary_s representation" do
-    obj.stub :to_binary_s, "\x01\xab\xCD" do
-      _(obj.to_hex).must_equal "01abcd"
-    end
+    def obj.to_binary_s; "\x01\xab\xCD"; end
+
+    _(obj.to_hex).must_equal "01abcd"
   end
 
   it "#inspect is forwarded to snapshot" do
-    obj.stub :snapshot, [1, 2, 3] do
-      _(obj.inspect).must_equal obj.snapshot.inspect
-    end
+    def obj.snapshot; [1, 2, 3]; end
+
+    _(obj.inspect).must_equal obj.snapshot.inspect
   end
 
   it "#to_s is forwarded to snapshot" do
-    obj.stub :snapshot, [1, 2, 3] do
-      _(obj.to_s).must_equal obj.snapshot.to_s
-    end
+    def obj.snapshot; [1, 2, 3]; end
+
+    _(obj.to_s).must_equal obj.snapshot.to_s
   end
 
   it "pretty prints object as snapshot" do
     actual_io = StringIO.new
     expected_io = StringIO.new
 
-    obj.stub :snapshot, [1, 2, 3] do
-      require 'pp'
-      PP.pp(obj, actual_io)
-      PP.pp(obj.snapshot, expected_io)
-    end
+    def obj.snapshot; [1, 2, 3]; end
+
+    require 'pp'
+    PP.pp(obj, actual_io)
+    PP.pp(obj.snapshot, expected_io)
 
     _(actual_io.value).must_equal expected_io.value
   end
@@ -155,11 +166,10 @@ describe BinData::Base do
     called_clear = lambda { |*a| calls << :clear }
     called_do_read = lambda { |*a| calls << :do_read }
 
-    obj.stub :clear, called_clear do
-      obj.stub :do_read, called_do_read do
-        obj.read(nil)
-      end
-    end
+    obj.define_singleton_method(:clear, called_clear)
+    obj.define_singleton_method(:do_read, called_do_read)
+
+    obj.read(nil)
 
     _(calls).must_equal [:clear, :do_read]
   end
@@ -168,22 +178,22 @@ describe BinData::Base do
     calls = []
     called_do_write = lambda { |*a| calls << :do_write }
 
-    obj.stub :do_write, called_do_write do
-      obj.write(nil)
-    end
+    obj.define_singleton_method(:do_write, called_do_write)
+
+    obj.write(nil)
 
     _(calls).must_equal [:do_write]
   end
 
   it "#num_bytes is forwarded to #do_num_bytes" do
-    obj.stub :do_num_bytes, 42 do
-      _(obj.num_bytes).must_equal 42
-    end
+    def obj.do_num_bytes; 42; end
+
+    _(obj.num_bytes).must_equal 42
   end
 
   it "#num_bytes rounds up fractional values" do
-    obj.stub :do_num_bytes, 42.1 do
-      _(obj.num_bytes).must_equal 43
-    end
+    def obj.do_num_bytes; 42.1; end
+
+    _(obj.num_bytes).must_equal 43
   end
 end

@@ -1,4 +1,27 @@
 module BinData
+  # Outputs warnings to $stderr
+  class Warning
+    class << self
+      # Executes +block+, returning the last warning
+      def capture(&block)
+        @capture = true
+        block.call
+        @capture = false
+
+        msg, @msg = @msg, nil
+        msg
+      end
+
+      def warn(msg)
+        if @capture
+          @msg = msg
+        else
+          Kernel.warn(msg)
+        end
+      end
+    end
+  end
+
   class Base
     # Don't override initialize.  If you are defining a new kind of datatype
     # (list, array, choice etc) then put your initialization code in

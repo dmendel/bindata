@@ -141,9 +141,9 @@ describe BinData::String, "with :read_length and :value" do
     end
 
     it "returns read value while reading" do
-      obj.stub :reading?, true do
-        _(obj).must_equal "ABCDE"
-      end
+      def obj.reading?; true; end
+
+      _(obj).must_equal "ABCDE"
     end
   end
 end

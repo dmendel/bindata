@@ -166,8 +166,8 @@ module BinData
     def warn_if_name_is_already_registered(name, class_to_register)
       prev_class = @registry[name]
       if prev_class && prev_class != class_to_register
-        Kernel.warn "warning: replacing registered class #{prev_class} " \
-                    "with #{class_to_register}"
+        Warning.warn "warning: replacing registered class #{prev_class} " \
+                     "with #{class_to_register}"
       end
     end
   end

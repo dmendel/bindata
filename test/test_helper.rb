@@ -57,15 +57,7 @@ module Minitest::Assertions
   end
 
   def assert_warns(msg, &block)
-    result = ""
-    callable = proc { |str|
-      result = str
-    }
-    Kernel.stub(:warn, callable) do
-      block.call
-    end
-
-    assert_equal msg, result
+    assert_equal msg, BinData::Warning.capture(&block)
   end
 end
 
